@@ -1,0 +1,66 @@
+# ─── macOS ───────────────────────────────────
+.DS_Store
+.AppleDouble
+
+# ─── Windows ─────────────────────────────────
+Thumbs.db
+Desktop.ini
+
+# ─── Xcode ────────────────────────────────────
+build/
+DerivedData/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ─── Swift Package Manager ───────────────────
+ios/.build/
+ios/.swiftpm/
+
+# ─── CocoaPods ───────────────────────────────
+Pods/
+
+# ─── Next.js / Node ──────────────────────────
+web/node_modules/
+web/.next/
+web/out/
+web/.vercel/
+web/.env.local
+web/.env*.local
+
+# ─── Python / scripts ────────────────────────
+scripts/__pycache__/
+scripts/*.pyc
+scripts/.env
+scripts/venv/
+scripts/.venv/
+
+# ─── Supabase ────────────────────────────────
+supabase/.temp/
+
+# ─── IDE / editor ────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Secrets ─────────────────────────────────
+.env
+.env.local
+*.p12
+*.pem
+*.key
+*.mobileprovision
+
+# ─── Claude Code locale ──────────────────────
+.claude/cache/
+.claude/sessions/
