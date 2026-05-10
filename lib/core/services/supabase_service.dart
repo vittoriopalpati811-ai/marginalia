@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
@@ -159,7 +161,7 @@ class SupabaseService {
 
   // ─── File upload (My Clippings.txt) ───────────────────────────────────────
 
-  Future<String> uploadClippingsFile(List<int> bytes, String filename) async {
+  Future<String> uploadClippingsFile(Uint8List bytes, String filename) async {
     final path = '$userId/$filename';
     await _client.storage.from('clippings').uploadBinary(
           path,

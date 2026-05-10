@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:isar/isar.dart';
 
 import 'core/theme.dart';
 import 'features/library/library_screen.dart';
@@ -48,7 +47,7 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (_, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-        return BookDetailScreen(bookId: id as Id);
+        return BookDetailScreen(bookId: id);
       },
     ),
     GoRoute(
@@ -56,7 +55,7 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       builder: (_, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-        return HighlightDetailScreen(highlightId: id as Id);
+        return HighlightDetailScreen(highlightId: id);
       },
     ),
     GoRoute(

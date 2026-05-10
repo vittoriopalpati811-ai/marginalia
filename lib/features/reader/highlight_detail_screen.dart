@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:isar/isar.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
@@ -11,7 +10,7 @@ import '../../core/providers/books_provider.dart';
 class HighlightDetailScreen extends ConsumerWidget {
   const HighlightDetailScreen({super.key, required this.highlightId});
 
-  final Id highlightId;
+  final int highlightId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
