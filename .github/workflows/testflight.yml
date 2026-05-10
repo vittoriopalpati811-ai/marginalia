@@ -1,0 +1,73 @@
+name: Build & TestFlight
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # trigger manuale dalla UI GitHub
+
+jobs:
+  build:
+    name: Build iOS + Upload TestFlight
+    runs-on: macos-14   # Apple Silicon (M1) — più veloce e uguale prezzo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Cache Gems (fastlane)
+      - name: Cache Ruby Gems
+        uses: actions/cache@v4
+        with:
+          path: ios/vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('ios/Gemfile.lock') }}
+          restore-keys: ${{ runner.os }}-gems-
+
+      # Cache Swift packages
+      - name: Cache Swift Packages
+        uses: actions/cache@v4
+        with:
+          path: ios/.build
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/Package.resolved') }}
+          restore-keys: ${{ runner.os }}-spm-
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: false
+          working-directory: ios
+
+      - name: Install Fastlane
+        working-directory: ios
+        run: bundle install --path vendor/bundle
+
+      # NOTA: Xcode project deve esistere (creato al primo accesso Mac).
+      # Quando non esiste ancora, questo step fallisce con errore chiaro.
+      - name: Check Xcode project exists
+        run: |
+          if [ ! -f "ios/MarginaliaApp.xcodeproj/project.pbxproj" ]; then
+            echo "⚠️  MarginaliaApp.xcodeproj non ancora creato."
+            echo "Accedi a un Mac, crea il progetto Xcode, committa il .xcodeproj."
+            echo "Vedi docs/SETUP_MAC.md per i passi."
+            exit 1
+          fi
+
+      - name: Build & Upload to TestFlight
+        working-directory: ios
+        env:
+          MATCH_PASSWORD:     ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL:      ${{ secrets.MATCH_GIT_URL }}
+          ASC_KEY_ID:         ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID:      ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT:    ${{ secrets.ASC_KEY_CONTENT }}
+          APPLE_TEAM_ID:      ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ITC_TEAM_ID:  ${{ secrets.APPLE_ITC_TEAM_ID }}
+          GITHUB_RUN_NUMBER:  ${{ github.run_number }}
+        run: bundle exec fastlane beta
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ios/fastlane/logs/
