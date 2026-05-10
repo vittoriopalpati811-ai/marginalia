@@ -40,13 +40,16 @@ class MyClippingsParser {
     caseSensitive: false,
   );
 
-  // Date formats across Kindle firmware locales
-  static final List<DateFormat> _dateFormats = [
-    DateFormat('EEEE, MMMM d, yyyy h:mm:ss a', 'en'),
-    DateFormat('EEEE d MMMM yyyy HH:mm:ss', 'it'),
-    DateFormat("EEEE d MMMM yyyy HH'h'mm", 'fr'),
-    DateFormat('dd MMMM yyyy HH:mm:ss', 'it'),
-    DateFormat('MMMM d, yyyy h:mm:ss a', 'en'),
+  // Date format patterns across Kindle firmware locales.
+  // Kept as (pattern, locale) pairs so each DateFormat is constructed lazily
+  // inside a try-catch — avoids static initializer errors when locale data
+  // hasn't been loaded (common in unit tests without initializeDateFormatting).
+  static const _dateFormatSpecs = [
+    ('EEEE, MMMM d, yyyy h:mm:ss a', 'en_US'),
+    ('EEEE d MMMM yyyy HH:mm:ss', 'it'),
+    ("EEEE d MMMM yyyy HH'h'mm", 'fr'),
+    ('dd MMMM yyyy HH:mm:ss', 'it'),
+    ('MMMM d, yyyy h:mm:ss a', 'en_US'),
   ];
 
   List<ParsedClipping> parse(String rawText) {
@@ -126,7 +129,6 @@ class MyClippingsParser {
   }
 
   DateTime? _extractDate(String metaLine) {
-    // Extract the date substring after "Added on" / "Aggiunto il" / "Ajouté le"
     final addedOnRegex = RegExp(
       r'(?:Added on|Aggiunto il|Ajouté le|Hinzugef[üu]gt am|[Aa]gregado el)\s+(.+)',
       caseSensitive: false,
@@ -134,9 +136,10 @@ class MyClippingsParser {
     final match = addedOnRegex.firstMatch(metaLine);
     final dateStr = match?.group(1)?.trim() ?? metaLine;
 
-    for (final fmt in _dateFormats) {
+    for (final (pattern, locale) in _dateFormatSpecs) {
       try {
-        return fmt.parse(dateStr, true);
+        // DateFormat constructed inside try-catch: locale init errors are caught.
+        return DateFormat(pattern, locale).parse(dateStr, true);
       } catch (_) {}
     }
     return null;

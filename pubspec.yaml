@@ -58,8 +58,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/fonts/
-
-  # Nessuna font inclusa direttamente: usiamo google_fonts che le scarica
-  # e le mette in cache (funziona anche offline dopo il primo avvio).
+  # Nessuna asset locale: google_fonts scarica Lora a runtime e la mette in cache.
