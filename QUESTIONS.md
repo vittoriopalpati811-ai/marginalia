@@ -12,33 +12,26 @@
 
 ---
 
-## 2026-05-10 (sessione 3) - Setup Codemagic e Supabase: azioni founder necessarie
-**Status**: 🔴 BLOCCANTE per il primo build iOS
+## 2026-05-10 (sessione 3) - Setup Codemagic e Supabase
+**Status**: 🟡 PROCEDIBILE — Supabase completato da Claude, Codemagic richiede credenziali Apple
 
-**Contesto**:
-Il codice Flutter è pronto. Prima di avere l'app su iPhone, il founder deve completare due setup una-tantum.
+**Supabase** ✅ FATTO DA CLAUDE (2026-05-11):
+- Progetto `marginalia` creato: `https://ibucvloawkfwobaelwbr.supabase.co`
+- Migration 001 (schema) e 002 (RLS) applicate — 9 tabelle attive
+- Bucket `clippings` (privato) e `avatars` (pubblico) creati
+- `lib/main.dart` aggiornato con URL e anon key reali
 
-**Azione 1 — Supabase** (10 min, da browser, ora):
-1. [supabase.com](https://supabase.com) → New project → nome: `marginalia`
-2. SQL Editor → esegui `supabase/migrations/001_initial_schema.sql`
-3. SQL Editor → esegui `supabase/migrations/002_rls_policies.sql`
-4. Storage → Crea bucket `clippings` (privato) e `avatars` (pubblico)
-5. Edge Functions → Deploy `supabase/functions/parse-clippings/`
-6. Project Settings → API → copia URL e anon key
-7. **Sostituisci** i placeholder in `lib/main.dart`:
-   - `_supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co'`
-   - `_supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'`
-
-**Azione 2 — Codemagic** (30 min, da browser, dopo primo push):
+**Codemagic** 🔴 RICHIEDE AZIONE FOUNDER (30 min, da browser):
 1. [codemagic.io](https://codemagic.io) → Sign up con GitHub
 2. Add app → seleziona repo `marginalia`
-3. Integrations → App Store Connect → aggiungi API key (vai su App Store Connect → Users & Access → Integrations → App Store Connect API)
-4. iOS signing → seleziona "Automatic" → Codemagic gestisce i certificati
-5. Aggiorna `codemagic.yaml`: sostituisci `APP_STORE_APPLE_ID` con il tuo ID numerico dell'app
+3. Integrations → App Store Connect → aggiungi API key
+   (App Store Connect → Users & Access → Integrations → App Store Connect API)
+4. iOS signing → seleziona "Automatic"
+5. In `codemagic.yaml` sostituisci `APP_STORE_APPLE_ID: "1234567890"` con il tuo ID numerico app
 6. Push su main → prima build automatica
 
-**Bloccante per**: nessuna build iOS, nessun TestFlight
-**Cosa faccio nel frattempo**: il codice Flutter è testabile su Windows (`flutter run -d windows`) dopo `dart run build_runner build`
+**Bloccante per**: build iOS / TestFlight
+**Nel frattempo**: `flutter run -d windows` funziona subito (dopo `dart run build_runner build`)
 
 ---
 

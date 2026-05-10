@@ -11,10 +11,9 @@ import 'core/models/tag.dart';
 import 'core/models/jam.dart';
 import 'core/providers/isar_provider.dart';
 
-// ⚠️  Replace with your actual Supabase project values.
-// Find them in: Supabase dashboard → Project Settings → API
-const _supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co';
-const _supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+const _supabaseUrl = 'https://ibucvloawkfwobaelwbr.supabase.co';
+const _supabaseAnonKey =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
