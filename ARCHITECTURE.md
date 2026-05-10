@@ -8,26 +8,28 @@
 ## 1. Panoramica sistema
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        UTENTE FINALE                            │
-│                                                                 │
-│  iPhone / iPad          Browser (web)         Windows / Mac     │
-│  ┌──────────────┐      ┌──────────────┐      ┌──────────────┐  │
-│  │  iOS App     │      │  Web App     │      │  kindle-     │  │
-│  │  (Swift)     │      │  (Next.js)   │      │  sync.py     │  │
-│  │  Widgets     │      │  Vercel      │      │  (script)    │  │
-│  └──────┬───────┘      └──────┬───────┘      └──────┬───────┘  │
-│         │                    │                      │           │
-└─────────┼────────────────────┼──────────────────────┼───────────┘
-          │                    │                      │
-          └────────────────────┴──────────────────────┘
-                               │
-                    ┌──────────▼──────────┐
-                    │     SUPABASE        │
-                    │                     │
-                    │  Auth               │
-                    │  PostgreSQL DB      │
-                    │  Storage            │
+┌──────────────────────────────────────────────────────────────────┐
+│                         UTENTE FINALE                            │
+│                                                                  │
+│       iPhone / iPad                    Kindle (WiFi sync)        │
+│       ┌──────────────────┐            ┌──────────────────┐       │
+│       │   iOS App        │            │  Amazon Cloud    │       │
+│       │   (Swift/SwiftUI)│◄──────────►│  read.amazon.com │       │
+│       │   WidgetKit      │  WKWebView │  /kp/notebook    │       │
+│       └────────┬─────────┘  + JS      └──────────────────┘       │
+│                │                                                  │
+└────────────────┼──────────────────────────────────────────────────┘
+                 │
+      ┌──────────▼──────────┐
+      │     SUPABASE        │
+      │  Auth               │
+      │  PostgreSQL DB      │
+      │  Storage            │
+      │  Realtime (Jam)     │
+      └─────────────────────┘
+
+Distribuzione:
+  Windows → git push → GitHub Actions (macOS runner) → build IPA → TestFlight → iPhone
                     │  Realtime           │
                     │  Edge Functions     │
                     └─────────────────────┘
@@ -63,11 +65,18 @@
 - **Realtime**: canali Jam per aggiornamenti live highlights condivisi
 - **Free tier**: 500MB DB, 1GB storage, 200 connessioni realtime — ok per MVP
 
-### 2d. Script Kindle sync (`scripts/kindle-sync.py`)
-- **Tecnologia**: Python 3.10+, librerie: psutil, supabase-py
-- **Funzionamento Windows**: polling ogni 5s, rileva drive con `My Clippings.txt`, upload a Supabase Storage
-- **Trigger**: upload → webhook → Edge Function `parse-clippings` → highlights in DB → iOS/web si aggiornano
-- **Alternativa Mac**: stesso script, funziona anche su macOS
+### 2d. ~~Script Kindle sync~~ — SUPERATA 2026-05-10
+**Sostituita da**: Amazon WKWebView sync diretto nell'app iOS.
+Il kindle-sync.py (USB) è stato rimosso dal repo. Vedi sezione "Flusso Amazon sync" sotto.
+
+### 2d. CI/CD — GitHub Actions + TestFlight
+- **Trigger**: push su `main`
+- **Runner**: `macos-14` (Apple Silicon, GitHub hosted)
+- **Tool**: fastlane + fastlane match (certificati in repo privato)
+- **Output**: build IPA caricato su TestFlight → installabile su iPhone in ~15 min
+- **Costo**: incluso in GitHub Free (200 min macOS/mese, build ~5-8 min → ~25-40 build/mese)
+- **Config**: `.github/workflows/testflight.yml` + `ios/fastlane/Fastfile`
+- **Prima volta**: richiede setup su Mac reale (vedi `docs/SETUP_MAC.md`)
 
 ---
 
@@ -100,25 +109,44 @@ I libri sono per-utente (non globali). Due utenti con lo stesso libro = due righ
 
 ---
 
-## 4. Flusso auto-import Kindle
+## 4. Flusso Amazon Kindle Sync (senza USB)
 
 ```
-[Kindle USB] → [Windows PC con kindle-sync.py in esecuzione]
-                         │
-                         ▼ (rileva My Clippings.txt)
-               [Upload a Supabase Storage]
-                         │
-                         ▼ (webhook / polling Edge Function)
-               [Edge Function parse-clippings]
-                         │
-                         ├── Parsa blocchi
-                         ├── Dedup per content_hash
-                         ├── Insert books + highlights
-                         └── Aggiorna clippings_imports
-
-[iOS App] ──► pull on next open ──► SwiftData locale aggiornato
-[Web App] ──► Realtime subscription ──► UI aggiornata live
+[Kindle device] ──WiFi──► [Amazon Cloud / read.amazon.com]
+                                       │
+                              (sync automatico Amazon)
+                                       │
+[iPhone apre Marginalia]               ▼
+        │                  ┌─────────────────────────┐
+        │                  │  read.amazon.com        │
+        └─────────────────►│  /kp/notebook           │
+          WKWebView         │  (pagina highlights)    │
+          (Amazon login)    └─────────────┬───────────┘
+                                         │
+                               JavaScript injection
+                               estrae highlights dal DOM
+                                         │
+                                         ▼
+                              ImportService → SwiftData
+                                         │
+                              (opzionale) sync → Supabase
 ```
+
+**Dettaglio tecnico:**
+1. Utente tocca "Sincronizza Kindle" in Impostazioni
+2. `AmazonLoginView` apre WKWebView su `read.amazon.com/kp/notebook`
+3. Amazon reindirizza al login se non autenticato (il form Amazon è nativo, Marginalia non vede le credenziali)
+4. Dopo login, WebView torna su `/kp/notebook` con tutti gli highlight
+5. `AmazonSyncCoordinator.extractFromWebView()` inietta JS nel DOM
+6. JS interroga i selettori della pagina e restituisce JSON con highlights
+7. `ImportService.importContent()` processa, deduplica, salva in SwiftData
+8. Background refresh periodico ripete il flusso silenziosamente
+
+**Fragilità:** Amazon può cambiare i selettori CSS/DOM senza preavviso. Se il sync smette di funzionare: aggiornare i selettori in `AmazonSyncService.amazonExtractorJS` e aggiungere voce in `LESSONS-LEARNED.md`.
+
+**Note ToS:** l'utente accede a dati suoi, sulla pagina Amazon autentica, con le sue credenziali. Stesso approccio di Readwise, Obsidian, Notion per Kindle sync.
+
+**Flusso alternativo (manuale):** `LibraryView` mantiene il DocumentPicker per import da file `My Clippings.txt` come fallback.
 
 ---
 
@@ -200,6 +228,8 @@ Border:      #E8E4DF  (bordo carta)
 | 2026-05-10 | Monorepo ios/ + web/ + supabase/ | Un solo repo, un solo git, più facile da gestire |
 | 2026-05-10 | Supabase al MVP (non post-MVP) | Social Jam richiede backend; meglio iniziare subito con architettura finale |
 | 2026-05-10 | Account obbligatorio | Social Jam incompatibile con no-account; highlight locali restano (offline-first), ma Jam richiede identità |
-| 2026-05-10 | Next.js su Vercel come web companion | Soluzione gratis, permette a Vittorio di vedere e testare da Windows senza Mac |
-| 2026-05-10 | Python per Kindle sync (non app nativa) | Più rapido da costruire, cross-platform (Windows + Mac), nessun signing requirement |
+| 2026-05-10 | ~~Next.js su Vercel come web companion~~ SUPERATA | Rimossa: il prodotto è un'app iOS, non un sito web |
+| 2026-05-10 | TestFlight via GitHub Actions | "Vercel per iOS": push → CI macOS → build → TestFlight → iPhone. Gratis entro i limiti GitHub Free |
+| 2026-05-10 | ~~Python kindle-sync.py (USB)~~ SUPERATA | Rimossa: USB troppo scomodo, sostituita da Amazon WKWebView sync |
+| 2026-05-10 | Amazon sync via WKWebView + JS injection | Sync diretto dai server Amazon senza USB. Stesso approccio di Readwise. Fragile ma standard del settore |
 | 2026-05-10 | Package.swift per library, Xcode per app | Scrivibile da Windows, testabile da Windows, minima dipendenza da Xcode per la fase blind compile |

@@ -12,8 +12,24 @@
 
 ---
 
-## 2026-05-10 - Architettura espansa: social Jam + web companion + auto-sync
+## 2026-05-10 (sessione 2) - Rimozione web, Amazon sync, TestFlight CI
 **Status**: ✅ RISOLTA
+
+**Decisioni prese dal founder (chat, sessione 2)**:
+1. **Nessun Vercel / web app** — il prodotto è un'app iOS nativa. Web rimosso.
+2. **Kindle sync = Amazon server** (non USB) — WKWebView login su read.amazon.com + JS injection
+3. **"Come Vercel per iOS"** = TestFlight via GitHub Actions con macOS runner (gratis entro limiti Free)
+4. **App Store mindset** — si sviluppa come se si andasse in produzione: fastlane, match, certificati, build automatiche
+
+**Rationale**: autorizzato con "non voglio che ci sia bisogno di collegamento USB" + "deve essere un'app installabile da App Store".
+
+**Risposto da**: Vittorio
+**Data risposta**: 2026-05-10
+
+---
+
+## 2026-05-10 - Architettura espansa: social Jam + web companion + auto-sync
+**Status**: ✅ RISOLTA (parzialmente superata dalla sessione 2)
 
 **Contesto**:
 Prima sessione. Il founder ha autorizzato una serie di cambiamenti significativi rispetto alla bozza iniziale.
@@ -30,6 +46,20 @@ Prima sessione. Il founder ha autorizzato una serie di cambiamenti significativi
 
 **Risposto da**: Vittorio
 **Data risposta**: 2026-05-10
+
+---
+
+## 2026-05-10 - Amazon sync: implicazioni ToS
+**Status**: ⚪ INFORMATIVA — no risposta urgente, ma devi essere consapevole
+
+**Contesto**:
+Il sync Amazon avviene tramite WKWebView + JavaScript injection su `read.amazon.com/kp/notebook`. L'utente si autentica con le sue credenziali su pagina Amazon autentica — Marginalia non vede le credenziali e non le conserva.
+
+**Zona grigia ToS**: Amazon non espone una API pubblica per gli highlight. L'approccio è lo stesso usato da Readwise, Obsidian, Notion e decine di app con milioni di utenti. Amazon non ha mai preso provvedimenti contro queste app perché l'utente accede a dati suoi.
+
+**Rischio principale**: Amazon può cambiare il markup di read.amazon.com senza preavviso, rompendo il sync. Soluzione: aggiornare i selettori JS in `AmazonSyncService.swift`. Non è un rischio di shutdown ma di manutenzione.
+
+**Cosa fare**: niente di urgente. Se ti chiede un avvocato, puoi dimostrare che l'accesso è fatto dall'utente per conto proprio. Se Amazon dovesse rendere disponibile una API ufficiale (poco probabile), migriamo lì.
 
 ---
 
