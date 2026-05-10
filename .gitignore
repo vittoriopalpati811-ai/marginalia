@@ -21,7 +21,7 @@ android/
 linux/
 macos/
 windows/
-web/
+# web/ NON ignorato: contiene index.html e manifest.json scritti a mano
 
 # ─── Supabase ────────────────────────────────
 supabase/.temp/

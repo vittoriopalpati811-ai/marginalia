@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -27,6 +28,8 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) return; // WebView not available on web
+
     _webController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -44,7 +47,6 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
   }
 
   Future<void> _onPageFinished(String url) async {
-    // Only attempt extraction when we're on the notebook page
     if (!AmazonSyncService.isOnNotebookPage(url)) return;
     if (_syncState != _SyncState.browsing) return;
 
@@ -54,7 +56,6 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
       final amazonHighlights = await AmazonSyncService.extractHighlights(_webController);
 
       if (amazonHighlights.isEmpty) {
-        // Page loaded but no highlights found — likely still navigating
         setState(() => _syncState = _SyncState.browsing);
         return;
       }
@@ -87,36 +88,8 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: Stack(
-        children: [
-          // WebView always in tree (keeps the session alive)
-          AnimatedOpacity(
-            opacity: _syncState == _SyncState.browsing ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: WebViewWidget(controller: _webController),
-          ),
-
-          // Overlay states
-          if (_syncState == _SyncState.extracting) _ExtractingOverlay(),
-          if (_syncState == _SyncState.done)
-            _DoneOverlay(
-              count: _highlightsImported,
-              onClose: () => context.pop(),
-            ),
-          if (_syncState == _SyncState.error)
-            _ErrorOverlay(
-              message: _errorMessage ?? 'Errore sconosciuto',
-              onRetry: () {
-                setState(() => _syncState = _SyncState.browsing);
-                _webController.loadRequest(
-                  Uri.parse(AmazonSyncService.notebookUrl),
-                );
-              },
-            ),
-        ],
-      ),
-      // Manual trigger in case auto-detection fails
-      bottomNavigationBar: _syncState == _SyncState.browsing
+      body: kIsWeb ? const _WebNotSupported() : _nativeBody(),
+      bottomNavigationBar: (!kIsWeb && _syncState == _SyncState.browsing)
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -128,6 +101,82 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
               ),
             )
           : null,
+    );
+  }
+
+  Widget _nativeBody() {
+    return Stack(
+      children: [
+        AnimatedOpacity(
+          opacity: _syncState == _SyncState.browsing ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 300),
+          child: WebViewWidget(controller: _webController),
+        ),
+        if (_syncState == _SyncState.extracting) _ExtractingOverlay(),
+        if (_syncState == _SyncState.done)
+          _DoneOverlay(
+            count: _highlightsImported,
+            onClose: () => context.pop(),
+          ),
+        if (_syncState == _SyncState.error)
+          _ErrorOverlay(
+            message: _errorMessage ?? 'Errore sconosciuto',
+            onRetry: () {
+              setState(() => _syncState = _SyncState.browsing);
+              _webController.loadRequest(
+                Uri.parse(AmazonSyncService.notebookUrl),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _WebNotSupported extends StatelessWidget {
+  const _WebNotSupported();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.phone_iphone,
+                size: 64, color: MarginaliaColors.accentLight),
+            const SizedBox(height: 24),
+            const Text(
+              'Sync automatico non disponibile sul web',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: MarginaliaColors.text),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Il sync diretto con Amazon Kindle richiede l\'app iOS nativa.\n\n'
+              'Su web puoi importare i tuoi highlight manualmente: vai su Settings e carica il file My Clippings.txt dalla memoria del tuo Kindle.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 14,
+                  height: 1.6,
+                  color: MarginaliaColors.textMuted),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () => context.go('/settings'),
+              icon: const Icon(Icons.upload_file_outlined),
+              label: const Text('Vai a Import manuale'),
+              style: FilledButton.styleFrom(
+                backgroundColor: MarginaliaColors.accent,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -182,8 +231,8 @@ class _DoneOverlay extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '$count highlight importati.',
-              style:
-                  const TextStyle(fontSize: 16, color: MarginaliaColors.textMuted),
+              style: const TextStyle(
+                  fontSize: 16, color: MarginaliaColors.textMuted),
             ),
             const SizedBox(height: 32),
             ElevatedButton(

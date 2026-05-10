@@ -7,16 +7,44 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter migration completata — pronto per test locale su Windows
+**Fase**: Flutter foundation completa, infrastruttura cloud parzialmente operativa
 **Sprint corrente**: Sprint 1 (Flutter) — Foundation completata
-**Prossima azione founder**: sostituire Supabase placeholder in `lib/main.dart` + setup Codemagic (vedi QUESTIONS.md)
+**Prossima azione founder**: iscriversi all'Apple Developer Program (€99/anno) — vedi QUESTIONS.md
 **Branch attivo**: main
-**Build status Flutter/Windows**: 🟡 pronto — manca `dart run build_runner build` + Supabase keys
-**Build status iOS (TestFlight)**: 🔴 richiede setup Codemagic (vedi QUESTIONS.md)
+**Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
+**Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)
+
+**Infrastruttura cloud**:
+- Supabase `marginalia`: ✅ operativo (`https://ibucvloawkfwobaelwbr.supabase.co`)
+- Codemagic: ✅ app creata, repo connesso, tipo Flutter impostato
+- App Store Connect API key: 🔴 manca (richiede Developer Program)
 
 ---
 
 ## Sessioni
+
+### Sessione 4 — 2026-05-11
+**Durata**: ~1h
+**Branch**: main
+**Mac access in questa sessione?**: NO
+
+#### Fatto
+
+**Codemagic setup (✅)**
+- Onboarding completato: GitHub connesso, repo `marginalia`, tipo Flutter
+- Bloccato su App Store Connect API key (account non iscritto ad Apple Developer Program)
+
+**Flutter Web + GitHub Pages (✅)**
+- `web/index.html` + `web/manifest.json` aggiunti (PWA-ready, palette sepia)
+- `.github/workflows/deploy-web.yml`: build Flutter web + deploy su ogni push a `main`
+- URL risultante: `https://vittoriopalpati811-ai.github.io/marginalia/`
+- `AmazonLoginScreen` aggiornato con `kIsWeb` guard — su web mostra messaggio + redirect a import manuale
+
+#### Prossima azione founder (1 click)
+GitHub → repo marginalia → Settings → Pages → Source → "GitHub Actions" → Save
+Poi fai un push qualsiasi su main e l'app web è live in ~3 minuti.
+
+---
 
 ### Sessione 3 — 2026-05-10
 **Durata**: ~3h

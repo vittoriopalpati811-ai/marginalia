@@ -12,6 +12,31 @@
 
 ---
 
+## 2026-05-11 (sessione 4) - Apple Developer Program non attivo
+**Status**: 🔴 BLOCCANTE per build iOS / TestFlight
+
+**Problema**: L'account `vittoriopalpati811@gmail.com` non è iscritto all'Apple Developer Program.
+App Store Connect ha risposto: *"devi essere un individuo o un componente di un team di Apple Developer Program"*.
+
+**Cosa serve**: iscriversi all'Apple Developer Program su [developer.apple.com/enroll](https://developer.apple.com/enroll) — €99/anno.
+
+**Cosa ho completato comunque** (sessione 4):
+- Codemagic connesso a GitHub (`vittoriopalpati811-ai/marginalia`) ✅
+- App creata su Codemagic come tipo Flutter ✅
+- `codemagic.yaml` già presente nel repo ✅
+- Manca solo: App Store Connect API key (richiede Developer Program attivo)
+
+**Passi dopo iscrizione** (~30 min, da browser):
+1. Vai su [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Users & Access → Integrations → App Store Connect API
+2. Crea una nuova chiave con ruolo "App Manager" → scarica il file `.p8`
+3. Vai su Codemagic → Settings → Integrations → Developer Portal → Connect
+4. Inserisci: nome chiave, Issuer ID, Key ID, carica il file `.p8`
+5. Sostituisci `APP_STORE_APPLE_ID: "1234567890"` in `codemagic.yaml` con l'ID numerico della tua app
+
+**Bloccante per**: build iOS, TestFlight, distribuzione
+
+---
+
 ## 2026-05-10 (sessione 3) - Setup Codemagic e Supabase
 **Status**: 🟡 PROCEDIBILE — Supabase completato da Claude, Codemagic richiede credenziali Apple
 
@@ -21,17 +46,18 @@
 - Bucket `clippings` (privato) e `avatars` (pubblico) creati
 - `lib/main.dart` aggiornato con URL e anon key reali
 
-**Codemagic** 🔴 RICHIEDE AZIONE FOUNDER (30 min, da browser):
-1. [codemagic.io](https://codemagic.io) → Sign up con GitHub
-2. Add app → seleziona repo `marginalia`
-3. Integrations → App Store Connect → aggiungi API key
-   (App Store Connect → Users & Access → Integrations → App Store Connect API)
-4. iOS signing → seleziona "Automatic"
-5. In `codemagic.yaml` sostituisci `APP_STORE_APPLE_ID: "1234567890"` con il tuo ID numerico app
-6. Push su main → prima build automatica
+**Codemagic** ✅ APP CREATA (sessione 4):
+- Account Codemagic connesso a GitHub (`vittoriopalpati811-ai`)
+- App `marginalia` creata, tipo Flutter impostato
+- Manca solo API key App Store Connect (bloccata da Apple Developer Program)
 
-**Bloccante per**: build iOS / TestFlight
-**Nel frattempo**: `flutter run -d windows` funziona subito (dopo `dart run build_runner build`)
+**GitHub Pages** ✅ CONFIGURATO (sessione 4):
+- Workflow `.github/workflows/deploy-web.yml` aggiunto al repo
+- Ogni push su `main` → build Flutter web → deploy automatico
+- URL: `https://vittoriopalpati811-ai.github.io/marginalia/`
+- **Una sola azione manuale**: vai su GitHub → repo marginalia → Settings → Pages → Source → seleziona "GitHub Actions"
+
+**TestFlight / iOS** 🔴 BLOCCATO — richiede Apple Developer Program (€99/anno, vedi entry sotto)
 
 ---
 
