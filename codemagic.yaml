@@ -1,0 +1,67 @@
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: io.marginalia.app
+      vars:
+        FLUTTER_VERSION: "3.22.0"
+        BUNDLE_ID: io.marginalia.app
+        APP_STORE_APPLE_ID: "1234567890"  # sostituisci con il tuo Apple ID numerico
+      app_store_connect:
+        auth: integration  # configura in Codemagic UI → Integrations → App Store Connect
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+
+    scripts:
+      - name: Set up Flutter
+        script: |
+          flutter version $FLUTTER_VERSION
+
+      - name: Get packages
+        script: flutter pub get
+
+      - name: Generate Isar schemas
+        script: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run tests
+        script: flutter test
+
+      - name: Build iOS (no codesign)
+        script: |
+          flutter build ios --release --no-codesign
+
+      - name: Code sign and package
+        script: |
+          xcode-project use-profiles
+          cd ios && xcodebuild \
+            -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath build/Runner.xcarchive \
+            archive CODE_SIGN_STYLE=Manual \
+            PROVISIONING_PROFILE_SPECIFIER="match AppStore $BUNDLE_ID"
+
+          xcodebuild -exportArchive \
+            -archivePath build/Runner.xcarchive \
+            -exportOptionsPlist /Users/builder/export_options.plist \
+            -exportPath build/ipa
+
+    artifacts:
+      - build/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Tester interni

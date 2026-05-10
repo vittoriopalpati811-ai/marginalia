@@ -12,6 +12,53 @@
 
 ---
 
+## 2026-05-10 (sessione 3) - Setup Codemagic e Supabase: azioni founder necessarie
+**Status**: 🔴 BLOCCANTE per il primo build iOS
+
+**Contesto**:
+Il codice Flutter è pronto. Prima di avere l'app su iPhone, il founder deve completare due setup una-tantum.
+
+**Azione 1 — Supabase** (10 min, da browser, ora):
+1. [supabase.com](https://supabase.com) → New project → nome: `marginalia`
+2. SQL Editor → esegui `supabase/migrations/001_initial_schema.sql`
+3. SQL Editor → esegui `supabase/migrations/002_rls_policies.sql`
+4. Storage → Crea bucket `clippings` (privato) e `avatars` (pubblico)
+5. Edge Functions → Deploy `supabase/functions/parse-clippings/`
+6. Project Settings → API → copia URL e anon key
+7. **Sostituisci** i placeholder in `lib/main.dart`:
+   - `_supabaseUrl = 'https://YOUR_PROJECT_REF.supabase.co'`
+   - `_supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY'`
+
+**Azione 2 — Codemagic** (30 min, da browser, dopo primo push):
+1. [codemagic.io](https://codemagic.io) → Sign up con GitHub
+2. Add app → seleziona repo `marginalia`
+3. Integrations → App Store Connect → aggiungi API key (vai su App Store Connect → Users & Access → Integrations → App Store Connect API)
+4. iOS signing → seleziona "Automatic" → Codemagic gestisce i certificati
+5. Aggiorna `codemagic.yaml`: sostituisci `APP_STORE_APPLE_ID` con il tuo ID numerico dell'app
+6. Push su main → prima build automatica
+
+**Bloccante per**: nessuna build iOS, nessun TestFlight
+**Cosa faccio nel frattempo**: il codice Flutter è testabile su Windows (`flutter run -d windows`) dopo `dart run build_runner build`
+
+---
+
+## 2026-05-10 (sessione 3) - Pivot Swift → Flutter
+**Status**: ✅ RISOLTA
+
+**Decisione presa dal founder (chat, sessione 3)**:
+Pivot da Swift/SwiftUI a Flutter perché il founder sviluppa su Windows e non ha accesso quotidiano a un Mac.
+
+**Conseguenze**:
+- Tutto il codice Swift rimosso (ios/ → git rm)
+- Flutter: `flutter run -d windows` per sviluppo locale su Windows
+- CI/CD: Codemagic (invece di GitHub Actions + fastlane) per build iOS cloud senza Mac
+- Stack: Flutter + Riverpod + Isar + Supabase + go_router + flutter_animate
+
+**Risposto da**: Vittorio
+**Data risposta**: 2026-05-10
+
+---
+
 ## 2026-05-10 (sessione 2) - Rimozione web, Amazon sync, TestFlight CI
 **Status**: ✅ RISOLTA
 
@@ -53,48 +100,23 @@ Prima sessione. Il founder ha autorizzato una serie di cambiamenti significativi
 **Status**: ⚪ INFORMATIVA — no risposta urgente, ma devi essere consapevole
 
 **Contesto**:
-Il sync Amazon avviene tramite WKWebView + JavaScript injection su `read.amazon.com/kp/notebook`. L'utente si autentica con le sue credenziali su pagina Amazon autentica — Marginalia non vede le credenziali e non le conserva.
+Il sync Amazon avviene tramite WebView + JavaScript injection su `read.amazon.com/kp/notebook`. L'utente si autentica con le sue credenziali su pagina Amazon autentica — Marginalia non vede le credenziali e non le conserva.
 
 **Zona grigia ToS**: Amazon non espone una API pubblica per gli highlight. L'approccio è lo stesso usato da Readwise, Obsidian, Notion e decine di app con milioni di utenti. Amazon non ha mai preso provvedimenti contro queste app perché l'utente accede a dati suoi.
 
-**Rischio principale**: Amazon può cambiare il markup di read.amazon.com senza preavviso, rompendo il sync. Soluzione: aggiornare i selettori JS in `AmazonSyncService.swift`. Non è un rischio di shutdown ma di manutenzione.
+**Rischio principale**: Amazon può cambiare il markup di read.amazon.com senza preavviso, rompendo il sync. Soluzione: aggiornare i selettori JS in `lib/core/services/amazon_sync_service.dart` (`_extractorJs`). Non è un rischio di shutdown ma di manutenzione.
 
 **Cosa fare**: niente di urgente. Se ti chiede un avvocato, puoi dimostrare che l'accesso è fatto dall'utente per conto proprio. Se Amazon dovesse rendere disponibile una API ufficiale (poco probabile), migriamo lì.
 
 ---
 
-## 2026-05-10 - Dubbio tecnico: @Relationship M:M Tag↔Highlight in SwiftData
-**Status**: 🟡 PROCEDIBILE — ho implementato con sintassi che ritengo corretta, da verificare su Mac
+## 2026-05-10 - Dubbi tecnici SwiftData M:M e FetchDescriptor
+**Status**: ✅ RISOLTI — non più rilevanti dopo il pivot a Flutter
 
-**Contesto**:
-SwiftData gestisce le relazioni M:M con array su entrambi i lati e `@Relationship` con `deleteRule`.
-Ho implementato `Tag.highlights: [Highlight]` e `Highlight.tags: [Tag]` con `@Relationship(deleteRule: .cascade, inverse: \Tag.highlights)`.
-Non sono sicuro al 100% che la sintassi `inverse:` sia corretta per M:M (vs 1:N).
-
-**Mia inclinazione**: la sintassi sembra corretta basandomi su documentazione Apple, ma è una delle zone più fragili del codice blind compile.
-
-**Bloccante per**: niente subito (Tag non usati attivamente nell'MVP UI). Ma da verificare al primo accesso Mac.
-**Cosa faccio nel frattempo**: Tag presenti nello schema ma UI di tagging non implementata (sprint 2).
-
----
-
-## 2026-05-10 - Dubbio tecnico: FetchDescriptor con predicate su relazione nested
-**Status**: 🟡 PROCEDIBILE
-
-**Contesto**:
-In `BookDetailView.swift` uso:
-```swift
-_highlights = Query(
-    filter: #Predicate<Highlight> { $0.book.id == bookId },
-    ...
-)
-```
-Il predicate attraversa una relazione (`book.id`). In SwiftData i predicate su relazioni nested possono avere comportamenti non ovvi — in alcuni casi richiedono `.book?.id` con optional chaining.
-
-**Mia inclinazione**: ho usato `$0.book.id` (non optional) perché la relazione è non-optional. Ritengo corretto ma confidence 3/5.
-
-**Bloccante per**: BookDetailView (TASK-007). UI è scritta, ma potrebbe non compilare o dare risultati vuoti.
-**Cosa faccio nel frattempo**: niente, il pattern è nel codice così com'è.
+**Nota**: i dubbi su `@Relationship M:M` in SwiftData e `FetchDescriptor` su relazioni nested sono stati
+superati dal pivot a Flutter/Isar (2026-05-10). Il codice Swift è stato rimosso dal repo.
+In Isar, la relazione M:M Tag↔Highlight è gestita con `IsarLinks<Tag>` su Highlight — pattern
+documentato e verificabile localmente su Windows.
 
 ---
 

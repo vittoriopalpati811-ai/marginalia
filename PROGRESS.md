@@ -7,16 +7,85 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Foundation completata (Swift + Web), pronta per setup Supabase
-**Sprint corrente**: Sprint 1 - Foundation (COMPLETATO al 90%)
-**Prossima task**: TASK-W01 (setup progetto Supabase e deploy web su Vercel)
-**Branch attivo**: main (prima sessione, non ancora branch separati)
-**Build status iOS**: ⚪ blind compile (non verificabile da Windows — necessita Mac)
-**Build status Web**: 🟡 pronto per deploy, manca solo `.env.local` con chiavi Supabase
+**Fase**: Flutter migration completata — pronto per test locale su Windows
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation completata
+**Prossima azione founder**: sostituire Supabase placeholder in `lib/main.dart` + setup Codemagic (vedi QUESTIONS.md)
+**Branch attivo**: main
+**Build status Flutter/Windows**: 🟡 pronto — manca `dart run build_runner build` + Supabase keys
+**Build status iOS (TestFlight)**: 🔴 richiede setup Codemagic (vedi QUESTIONS.md)
 
 ---
 
 ## Sessioni
+
+### Sessione 3 — 2026-05-10
+**Durata**: ~3h
+**Branch**: main
+**Commit**: vedi git log
+
+#### Fatto
+
+**Pivot Swift → Flutter (✅ completo)**
+- Rimosso tutto il codice Swift (`ios/` rimosso via git rm)
+- Rimosso GitHub Actions + fastlane
+- Aggiornato `.gitignore` per Flutter
+
+**Flutter foundation (✅)**
+- `pubspec.yaml`: tutte le dipendenze Flutter
+- `lib/main.dart`: entry point con Supabase.initialize + Isar.open + ProviderScope
+- `lib/app.dart`: MaterialApp.router con go_router (ShellRoute per bottom nav)
+- `lib/core/theme.dart`: design tokens completi (palette, typography, ThemeData)
+
+**Modelli Isar (✅)**
+- `Book`, `Highlight`, `Tag`, `Jam` — tutti annotati con `@collection`
+- Relazioni: Book→Highlights (IsarLinks + @Backlink), Highlight→Book (IsarLink), Highlight→Tags (IsarLinks)
+
+**Parser (✅)**
+- `lib/core/parser/my_clippings_parser.dart`: port completo da Swift
+- Supporto EN/IT/FR, dedup, filtro bookmark, ordine cronologico
+
+**Servizi (✅)**
+- `ImportService`: parsing → dedup → scrittura Isar in transazione
+- `AmazonSyncService`: stesso JavaScript extractor, adattato per `webview_flutter`
+- `SupabaseService`: auth, books, highlights, jams, realtime, file upload
+
+**Provider Riverpod (✅)**
+- `isarProvider`, collections
+- `authStateProvider`, `currentUserProvider`, `isAuthenticatedProvider`
+- `booksProvider`, `highlightsByBookProvider`, `favoriteHighlightsProvider`, `randomHighlightProvider`
+- `searchQueryProvider`, `searchResultsProvider`, `highlightFavoriteNotifierProvider`
+
+**Screens (✅)**
+- `LibraryScreen`: lista libri + card highlight del giorno + import file
+- `BookDetailScreen`: lista highlight con color badge + condivisione
+- `HighlightDetailScreen`: lettura full con tipografia Lora + toggle preferito
+- `SearchScreen`: ricerca in-memory con highlighting del testo
+- `SocialScreen`: Jam list + create + join + realtime
+- `SettingsScreen`: account + sync Kindle + import manuale
+- `AmazonLoginScreen`: WebView Amazon + extractor JS + stati (browsing/extracting/done/error)
+
+**CI/CD (✅)**
+- `codemagic.yaml`: build iOS cloud → TestFlight (no Mac richiesto)
+
+**Documentazione (✅)**
+- `CLAUDE.md`: aggiornato per Flutter pivot
+- `ARCHITECTURE.md`: aggiornato, decisioni Swift marchiate SUPERATA
+- `QUESTIONS.md`: dubbi SwiftData risolti, nuova entry 🔴 per setup Supabase+Codemagic
+
+**Test (✅)**
+- `test/parser/my_clippings_parser_test.dart`: 8 test case (EN/IT, dedup, bookmark filter)
+
+#### Da fare (prossima sessione)
+- Founder: setup Supabase + chiavi in `lib/main.dart` (vedi QUESTIONS.md)
+- Founder: setup Codemagic (vedi QUESTIONS.md)
+- `flutter run -d windows` per primo smoke test locale
+- Auth screen (login/signup con Supabase)
+- Widget home screen (WidgetKit → Flutter home widget via `home_widget` package)
+- Supabase sync bidirezionale Isar↔cloud
+
+#### Problemi incontrati
+- `webview_flutter` non supporta Windows desktop: l'Amazon sync non è testabile su Windows.
+  Per test locale su Windows, usare import da file `My Clippings.txt` invece.
 
 ### Sessione 1 — 2026-05-10
 **Durata**: ~3h

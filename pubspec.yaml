@@ -1,0 +1,65 @@
+name: marginalia
+description: Riscopri i tuoi highlight Kindle attraverso widget intelligenti e cerchie di lettura.
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ─── State management ─────────────────────────────────────
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # ─── Local database ───────────────────────────────────────
+  # Isar: database embedded ultra-veloce, NoSQL, ottimo per highlights
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1   # include librerie native pre-compilate
+  path_provider: ^2.1.3
+
+  # ─── Backend ──────────────────────────────────────────────
+  supabase_flutter: ^2.5.0
+
+  # ─── WebView (Amazon sync) ────────────────────────────────
+  webview_flutter: ^4.8.0
+
+  # ─── Navigation ───────────────────────────────────────────
+  go_router: ^13.2.4
+
+  # ─── Animazioni ───────────────────────────────────────────
+  # flutter_animate: API dichiarativa per sequenze di animazione
+  flutter_animate: ^4.5.0
+  # animations: transizioni Material condivise (Hero, FadeThrough, ecc.)
+  animations: ^2.0.11
+
+  # ─── Tipografia ───────────────────────────────────────────
+  google_fonts: ^6.2.1   # Lora (serif) + DM Sans (UI)
+
+  # ─── File / condivisione ──────────────────────────────────
+  file_picker: ^8.1.2
+  share_plus: ^9.0.0
+
+  # ─── Utility ──────────────────────────────────────────────
+  intl: ^0.19.0
+  crypto: ^3.0.3
+  collection: ^1.18.0
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.4.0
+  isar_generator: ^3.1.0+1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/fonts/
+
+  # Nessuna font inclusa direttamente: usiamo google_fonts che le scarica
+  # e le mette in cache (funziona anche offline dopo il primo avvio).

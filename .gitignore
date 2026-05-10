@@ -6,35 +6,25 @@
 Thumbs.db
 Desktop.ini
 
-# ─── Xcode ────────────────────────────────────
+# ─── Flutter / Dart ──────────────────────────
 build/
-DerivedData/
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.xcuserdata/
-*.moved-aside
-*.xccheckout
-*.xcscmblueprint
-*.ipa
-*.dSYM.zip
-*.dSYM
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+*.freezed.dart
+pubspec.lock
 
-# ─── Swift Package Manager ───────────────────
-ios/.build/
-ios/.swiftpm/
+# Flutter per-platform generated (riaggiunto da flutter create)
+ios/
+android/
+linux/
+macos/
+windows/
+web/
 
-# ─── CocoaPods ───────────────────────────────
-Pods/
-
-# ─── Next.js / Node ──────────────────────────
-web/node_modules/
-web/.next/
-web/out/
-web/.vercel/
-web/.env.local
-web/.env*.local
+# ─── Supabase ────────────────────────────────
+supabase/.temp/
 
 # ─── Python / scripts ────────────────────────
 scripts/__pycache__/
@@ -42,9 +32,6 @@ scripts/*.pyc
 scripts/.env
 scripts/venv/
 scripts/.venv/
-
-# ─── Supabase ────────────────────────────────
-supabase/.temp/
 
 # ─── IDE / editor ────────────────────────────
 .vscode/

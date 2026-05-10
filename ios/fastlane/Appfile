@@ -1,6 +1,0 @@
-app_identifier("io.marginalia.app")
-apple_id("vittorio@marginalia.app")   # sostituisci con la tua Apple ID
-team_id(ENV["APPLE_TEAM_ID"])
-
-# App Store Connect (usato da pilot/deliver)
-itc_team_id(ENV["APPLE_ITC_TEAM_ID"])

@@ -1,208 +1,211 @@
-# Project: Marginalia (working title)
+# Project: Marginalia
 
-> App iOS nativa + web companion per riscoprire gli highlight Kindle attraverso widget intelligenti, cerchie di lettura sociali (Jam) e sync automatico.
+> App iOS nativa per riscoprire gli highlight Kindle attraverso widget intelligenti, cerchie di lettura sociali (Jam) e sync automatico con Amazon.
 
 ---
 
 ## ⚠️ Nota meta-importante per Claude
 
-Questi file (CLAUDE.md, BACKLOG.md, PROGRESS.md, QUESTIONS.md, e quelli in `.claude/`) sono stati scritti dal founder come bozza iniziale insieme a un'altra istanza di Claude. **Sono base di partenza, non vangelo.**
+Questi file (CLAUDE.md, BACKLOG.md, PROGRESS.md, QUESTIONS.md) sono stati scritti con il founder. **Sono base di partenza, non vangelo.**
 
 Sei autorizzato — anzi, incoraggiato — a:
 - **Riorganizzare** i file se trovi una struttura migliore
 - **Aggiungere** sezioni mancanti che ti renderebbero più efficace
 - **Correggere** incoerenze o ambiguità che noti leggendo
-- **Spezzare** un file in più file se è troppo monolitico
-- **Unire** file se sono ridondanti
 
-L'unica regola: **prima di una riorganizzazione strutturale**, scrivi in `QUESTIONS.md` cosa vuoi cambiare e perché, e procedi solo dopo l'OK del founder. Per modifiche piccole (typo, chiarimenti, esempi aggiuntivi) procedi pure in autonomia e segnala nel commit.
-
-Non sei limitato dalla mia immaginazione su come strutturare il lavoro. Se hai un'idea migliore, dilla.
+L'unica regola: **prima di una riorganizzazione strutturale**, scrivi in `QUESTIONS.md` cosa vuoi cambiare e perché, e procedi solo dopo l'OK del founder.
 
 ---
 
 ## 1. Contesto e principi
 
 ### Cosa sto costruendo
-App nativa iOS che importa highlight da Kindle (`My Clippings.txt`) e li ripropone all'utente attraverso widget home/lockscreen, ricerca, e feature AI.
+App iOS che importa highlight da Kindle e li ripropone all'utente attraverso widget home/lockscreen, ricerca semantica, e feature social (Jam — cerchie di lettura).
 
 ### Target utente
-Lettori avidi (Kindle owners) che soffrono il "ho letto 40 libri e non ricordo niente". Sovra-rappresentazione su iOS, gusto estetico curato, disposti a pagare €25/anno per un'app fatta bene.
+Lettori avidi (Kindle owners) che soffrono il "ho letto 40 libri e non ricordo niente". Sovra-rappresentazione su iOS, gusto estetico curato, disposti a pagare €25/anno.
 
 ### Filosofia di prodotto
-- **Rituale, non database.** L'app deve far venire voglia di aprirla, non sembrare un Excel di citazioni.
-- **Estetica giapponese minimalista.** Bianchi caldi, tipografia da libro, niente skeumorfismi, nessuna gamification rumorosa.
-- **Offline-first.** Tutto deve funzionare senza rete. AI è un layer opzionale, non il core.
-- **Privacy first.** Zero account obbligatorio per le feature base. iCloud sync opzionale.
-
-### Stack tecnico (DECISIONE PRESA — cambiamenti richiedono QUESTIONS.md)
-
-**iOS App** (`ios/`)
-- Swift 5.10+ / SwiftUI — iOS 17.0+
-- SwiftData (persistenza locale, offline-first)
-- WidgetKit
-- Supabase Swift SDK (sync con backend)
-
-**Web Companion** (`web/`)
-- Next.js 14+ (App Router), TypeScript, Tailwind CSS
-- Deploy: Vercel (free tier)
-- Scopo: vedere tutto funzionare da Windows, social Jam, upload highlights
-
-**Backend** (`supabase/`)
-- Supabase: PostgreSQL + RLS + Storage + Realtime + Edge Functions
-- Tier: free (sufficiente per MVP)
-- AI post-lancio: Claude Haiku 4.5 + OpenAI text-embedding-3-small
-
-**Kindle Sync** (`scripts/`)
-- Python 3.10+ + psutil + supabase-py
-- Rileva Kindle USB su Windows/Mac, carica My Clippings.txt automaticamente
-
-**Paywall (post-MVP)**: RevenueCat
-**Analytics (post-MVP)**: TelemetryDeck
-
-### Vincoli (aggiornati 2026-05-10)
-1. iOS only fino a 1000 utenti paganti, poi si valuta Android
-2. Nessuna feature AI nell'MVP. Si aggiungono dopo il lancio.
-3. ~~Nessun account obbligatorio~~ → **Account obbligatorio** (richiesto dalle Jam sociali). Highlight locali restano in SwiftData offline, ma Jam e sync richiedono identità.
-4. Tempo budget founder: massimo 5 ore/settimana
-5. Monorepo: `ios/` + `web/` + `supabase/` + `scripts/` in un unico repo
+- **Rituale, non database.** L'app deve far venire voglia di aprirla.
+- **Estetica giapponese minimalista.** Bianchi caldi (#FAFAF8), Lora serif, sepia accent (#8B7355).
+- **Offline-first.** Tutto funziona senza rete. Supabase è un layer opzionale.
 
 ---
 
-## 2. ⚠️ Setup tecnico del founder (LEGGI ATTENTAMENTE)
+## 2. Stack tecnico (DECISIONE DEFINITIVA — 2026-05-10)
 
-Questo è un caso particolare che cambia come lavoriamo.
+### ⚠️ Pivot da Swift a Flutter
 
-### La realtà
-- **Il founder usa un PC Windows** come macchina principale
-- **Tu (Claude) giri nell'app desktop Claude per Windows**, tab Code o Cowork
-- **Per compilare e testare un'app iOS serve macOS + Xcode** (non aggirabile, è un vincolo Apple)
-- **Il founder NON ha (al momento) un Mac fisico**
+**Motivo**: il founder sviluppa su Windows. Flutter compila e gira nativamente su Windows
+(`flutter run -d windows`) senza nessun Mac. La qualità delle animazioni (Impeller engine)
+è paragonabile a SwiftUI nativo.
 
-### Cosa significa concretamente
-Tu puoi:
-- ✅ Scrivere tutto il codice Swift/SwiftUI corretto
-- ✅ Strutturare il progetto Xcode (file `.xcodeproj`/`.xcworkspace` sono editabili anche da Windows)
-- ✅ Scrivere i test
-- ✅ Gestire git, fare commit, push, PR
-- ✅ Mantenere CLAUDE.md, BACKLOG.md, PROGRESS.md aggiornati
+### Stack corrente
 
-Tu NON puoi:
-- ❌ Compilare il codice (serve `xcodebuild`, solo macOS)
-- ❌ Lanciare il simulatore iPhone (solo macOS)
-- ❌ Eseguire test che richiedono iOS runtime (ne saprai solo che sono scritti, non se passano)
-- ❌ Fare archive e pubblicare sull'App Store
+**Framework**: Flutter/Dart
+- Target primario: iOS (App Store)
+- Development & test: Windows desktop + Chrome (`flutter run -d windows`)
+- Animazioni: Impeller engine (60/120fps)
 
-### Strategia operativa
+**State management**: flutter_riverpod 2.x
+- Provider manuali (senza riverpod_generator per semplicità)
 
-**Fase 1 — Sviluppo "blind compile" (settimane 1-6)**
-- Tu scrivi codice Swift di alta qualità seguendo best practice rigorose
-- Compensi l'assenza di feedback compiler con: linting concettuale, doppio controllo type, riferimenti continui alla documentazione Apple ufficiale
-- Quando hai dubbi su API specifiche (firma di un metodo SwiftUI, comportamento di un modificatore), invece di indovinare consulta Apple Developer Documentation tramite web search
-- Scrivi unit test esaustivi, anche se non possiamo eseguirli ora
+**Database locale**: Isar 3.x
+- NoSQL embedded, offline-first
+- ⚠️ Richiede code generation: `dart run build_runner build --delete-conflicting-outputs`
+- I file `*.g.dart` sono in .gitignore (si rigenerano)
 
-**Fase 2 — Validazione su Mac (occasionale, 1-2 giorni)**
-- Il founder periodicamente accederà a un Mac (servizio cloud tipo MacInCloud, oppure Mac di un familiare)
-- In quei giorni: clone del repo, apertura in Xcode, fix di errori di compilazione veri, test reali sul simulatore
-- Tu in quei giorni lavori in modalità "interattiva" (sessioni più brevi, supervisionate)
-- Tutti gli errori di compilazione che emergono → diventano voci in un file `LESSONS-LEARNED.md` che crei e mantieni, così la fase blind successiva è meno cieca
+**Backend**: Supabase
+- PostgreSQL + RLS + Storage + Realtime + Edge Functions
+- Tier free sufficiente per MVP
+- Auth: email + password (magic link in roadmap)
 
-**Fase 3 — Pre-lancio (Mac dedicato)**
-- Quando si avvicina il lancio (~2 mesi prima), il founder valuterà: comprare Mac mini base (~700€) o noleggiare cloud Mac per il periodo finale
-- Tutta la fase di rifinitura, screenshot App Store, archivio, submission richiede Mac dedicato
+**Navigation**: go_router 13.x
+- ShellRoute per bottom nav (Library, Search, Jam, Settings)
+- Route full-screen per book detail, highlight detail, Amazon sync
 
-### Implicazioni sul tuo modo di lavorare
+**Amazon Kindle sync**: webview_flutter + JavaScript injection
+- L'utente accede ad Amazon sul proprio account (credenziali non visibili all'app)
+- JS iniettato su `read.amazon.com/kp/notebook` per estrarre highlights
+- Stesso approccio usato da Readwise, Obsidian, Notion
 
-1. **Doppio del rigore sul codice.** Non hai il safety net del compiler. Ogni linea deve essere verosimilmente corretta. In caso di dubbio, consulta documentazione, non improvvisare.
+**CI/CD**: Codemagic (free: 500 min/mese)
+- Build iOS in cloud senza Mac → TestFlight → iPhone
+- Config: `codemagic.yaml` nella root del repo
 
-2. **Test esaustivi anche se non eseguibili.** Scrivili comunque. Quando arriveranno su Mac e gireranno, troveremo i bug che adesso non vediamo.
+**Animazioni**: flutter_animate 4.x
 
-3. **Niente over-engineering.** Codice semplice = meno superficie per errori invisibili. Pattern semplici, niente metaprogrammazione, niente trucchi.
+**Tipografia**: google_fonts (Lora serif per highlights, system-ui per UI)
 
-4. **Documentazione interna ricca.** Per ogni file che crei, commenti chiari su cosa fa e perché. Quando torneremo su Mac e qualcosa non compila, vogliamo capire al volo perché era stato scritto così.
-
-5. **`LESSONS-LEARNED.md` è critico.** Crealo dalla prima sessione. Ogni volta che il founder torna da Mac con errori, li annotiamo lì. Diventa la tua "memoria di realtà" del progetto.
+### Struttura monorepo
+```
+Marginalia/
+├── lib/                    # Flutter source
+│   ├── main.dart           # Entry point
+│   ├── app.dart            # MaterialApp + router
+│   ├── core/
+│   │   ├── theme.dart
+│   │   ├── models/         # Isar models (+ *.g.dart generati)
+│   │   ├── parser/         # MyClippingsParser
+│   │   ├── services/       # ImportService, AmazonSyncService, SupabaseService
+│   │   └── providers/      # Riverpod providers
+│   └── features/
+│       ├── library/        # LibraryScreen, BookDetailScreen
+│       ├── reader/         # HighlightDetailScreen
+│       ├── search/         # SearchScreen
+│       ├── social/         # SocialScreen (Jam)
+│       ├── settings/       # SettingsScreen
+│       └── onboarding/     # AmazonLoginScreen
+├── supabase/               # Migrations + Edge Functions
+│   ├── migrations/
+│   └── functions/parse-clippings/
+├── test/                   # Flutter tests
+│   └── parser/
+├── pubspec.yaml
+├── codemagic.yaml
+└── [file di processo]
+```
 
 ---
 
-## 3. Come Claude deve lavorare in questo repo
+## 3. Setup del founder (Windows)
+
+### Sviluppo locale
+
+1. Installa Flutter SDK: https://docs.flutter.dev/get-started/install/windows
+2. Clona il repo
+3. `flutter pub get`
+4. Genera schemi Isar: `dart run build_runner build --delete-conflicting-outputs`
+5. Testa su Windows: `flutter run -d windows`
+6. Testa su Chrome: `flutter run -d chrome`
+
+### Build iOS (senza Mac)
+
+Ogni push su `main` → Codemagic builda → TestFlight → iPhone in ~20 minuti.
+
+Prima configurazione Codemagic (una sola volta, dal browser):
+1. Crea account su codemagic.io
+2. Connetti repo GitHub
+3. Configura integrazione App Store Connect (API key)
+4. Aggiungi certificati (Codemagic gestisce il keychain automaticamente)
+
+Vedi `codemagic.yaml` per la config completa.
+
+### ⚠️ Code generation obbligatoria
+
+Prima di ogni `flutter run`, se hai modificato un modello Isar:
+```
+dart run build_runner build --delete-conflicting-outputs
+```
+
+I file `*.g.dart` non sono in git (sono in .gitignore) — si rigenerano localmente.
+
+---
+
+## 4. Come Claude deve lavorare in questo repo
 
 ### Modalità di lavoro
-Lavori in autonomia per sessioni di 2-4 ore (in tab Code o Cowork dell'app Claude). Quando finisci una sessione:
-1. Fai commit con messaggio descrittivo
-2. Aggiorni `PROGRESS.md` con: cosa hai fatto, cosa resta, problemi incontrati
-3. Se hai dubbi importanti, scrivi in `QUESTIONS.md` e procedi su altre task
+Sessioni autonome di 2-4 ore. A fine sessione:
+1. Commit con messaggio descrittivo
+2. Aggiorna `PROGRESS.md`
+3. Dubbi importanti → `QUESTIONS.md`
 
 ### Cosa fai in autonomia
-- Implementare feature da `BACKLOG.md` seguendo l'ordine di priorità
-- Scrivere unit test (target: 70% coverage sulle parti business logic)
-- Refactoring locali quando il codice puzza
-- Aggiornare documentazione tecnica in `docs/`
-- Fare ricerche tecniche sulla documentazione Apple per API che non conosci
+- Implementare feature da `BACKLOG.md`
+- Scrivere test Flutter (`flutter test`)
+- Aggiornare documentazione tecnica
+- Refactoring locali
 
-### Cosa NON fai mai senza conferma esplicita
-- Cambiare lo stack o aggiungere dipendenze esterne
-- Modificare lo schema database in modi non retrocompatibili
-- Toccare il provisioning profile, certificates, App Store Connect
-- Pushare su `main` (lavora sempre su feature branch + PR per il founder)
-- Aggiungere chiamate API a servizi esterni non già in lista
-- Fare commit che cambiano >500 righe in un colpo solo (spezza in commit logici)
+### Cosa NON fai senza conferma
+- Cambiare stack o aggiungere dipendenze a `pubspec.yaml`
+- Modificare schema Supabase in modo non retrocompatibile
+- Pushare su `main`
+- Commit > 500 righe (spezza in commit logici)
 
 ### Stile di codice
-- SwiftUI dichiarativo, niente UIKit se non strettamente necessario (widget esclusi)
-- MVVM leggero: View + ViewModel + Repository. Niente architetture astronave.
+- Flutter dichiarativo, widget composabili e piccoli
+- Provider Riverpod manuali (non riverpod_generator)
 - Naming in inglese, commenti in inglese tecnico
-- Niente abbreviazioni: `clipping` non `clp`, `highlightCount` non `hCnt`
-- Errori gestiti con `Result` o `throws`, mai con optional silenziosi
-- **Doppio del rigore** rispetto al normale (vedi sezione 2)
+- Niente abbreviazioni (clipping non clp, highlightCount non hCnt)
+- Errori gestiti con try/catch + AsyncValue, mai silenziosi
 
-### Stile messaggi di commit
+### Stile commit
 Vedi `.claude/commit-style.md`
 
 ---
 
-## 4. Architettura — vedi ARCHITECTURE.md
+## 5. Vincoli MVP
 
-Struttura monorepo implementata:
-```
-Marginalia/
-├── ios/                    # Swift app (SwiftData, SwiftUI, WidgetKit)
-│   ├── Sources/Marginalia/ # Library: modelli, parser, services, views
-│   ├── Sources/MarginaliaWidgets/
-│   └── Tests/
-├── web/                    # Next.js companion (Vercel)
-│   ├── app/
-│   ├── components/
-│   └── lib/supabase/
-├── supabase/               # Migrations + Edge Functions
-│   ├── migrations/
-│   └── functions/parse-clippings/
-├── scripts/                # kindle-sync.py (Windows/Mac)
-├── ARCHITECTURE.md         # Decisioni architetturali dettagliate
-└── [file di processo]
-```
-
-Modelli implementati: `Book`, `Highlight`, `Tag`, `Jam` in `ios/Sources/Marginalia/Core/Models/`.
+1. iOS primario. Flutter permette Android gratis, ma foco su iOS fino a 1000 utenti.
+2. Nessuna AI nell'MVP. Si aggiunge post-lancio (Claude Haiku).
+3. Account obbligatorio (richiesto dalle Jam). Highlight locali offline funzionano, Jam richiede identity.
+4. Tempo founder: max 5h/settimana. Niente over-engineering.
 
 ---
 
-## 5. Convenzioni e gotchas
+## 6. Errori noti e gotchas
 
-### Lingua
-- UI in italiano (mercato primario) + inglese (secondario)
-- Stringhe in `Localizable.xcstrings` (formato nuovo iOS 17)
-- Commenti tecnici nel codice in inglese
+### Isar code generation
+`*.g.dart` devono essere rigenerati dopo ogni modifica ai modelli. Se dimentichi:
+`type 'Null' is not a subtype of type 'IsarCollection<Book>'` al runtime.
 
-### Performance
-- Una libreria reale può avere 10.000+ highlight. Tutto deve scalare.
-- Usa `@Query` con predicates limitate, mai caricare tutto in memoria
-- Widget: budget memoria 30MB. Pre-calcola gli highlight da mostrare (background task notturno).
+### Flutter Windows: webview_flutter non supportato
+`webview_flutter` funziona su iOS/Android ma non su Windows desktop.
+Per test locale su Windows, l'Amazon sync non funzionerà — usa mock data.
 
-### Errori comuni che hai già fatto e che NON DEVI ripetere
-*(Sezione che si popola nel tempo. Vuota all'inizio. Riempila tu quando ricevi feedback dal founder.)*
+### Supabase constants
+`lib/main.dart` ha `_supabaseUrl` e `_supabaseAnonKey` come placeholder.
+Il founder deve sostituirli con i valori reali prima del primo build.
 
 ---
 
-## 6. Chiusura sessione
+## 7. Decision log (riassunto)
 
-Vedi `.claude/end-session.md` per la checklist completa.
+| Data | Decisione | Motivazione |
+|------|-----------|-------------|
+| 2026-05-10 | Pivot Swift → Flutter | Founder su Windows: Flutter gira nativamente su Windows senza Mac |
+| 2026-05-10 | Codemagic invece di GitHub Actions | Specializzato Flutter, gestisce certificati iOS automaticamente, 500 min gratis |
+| 2026-05-10 | Riverpod manuale (no generator) | Evita dipendenza da code gen per i provider; solo Isar richiede build_runner |
+| 2026-05-10 | Account obbligatorio | Jam sociali incompatibili con no-account |
+| 2026-05-10 | Supabase al MVP | Social Jam richiede backend; meglio architettura finale subito |
+| 2026-05-10 | Amazon WKWebView sync | No USB, stesso approccio di Readwise, credenziali non visibili all'app |
