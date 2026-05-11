@@ -60,6 +60,8 @@ final allHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
     final isar = ref.watch(isarProvider);
     final userId = ref.watch(currentUserProvider)?.id;
     if (userId == null) return [];
-    return isar.highlights.filter().userIdEqualTo(userId).sortByAddedAtDesc().findAll();
+    final all = await isar.highlights.filter().userIdEqualTo(userId).findAll();
+    all.sort((a, b) => (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
+    return all;
   },
 );
