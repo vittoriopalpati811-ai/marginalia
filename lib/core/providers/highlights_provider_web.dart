@@ -20,3 +20,7 @@ class HighlightFavoriteNotifier extends Notifier<void> {
 
 final highlightFavoriteNotifierProvider =
     NotifierProvider<HighlightFavoriteNotifier, void>(HighlightFavoriteNotifier.new);
+
+final allHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
+  (ref) async => [],
+);

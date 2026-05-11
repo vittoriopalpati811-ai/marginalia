@@ -35,7 +35,7 @@ class SettingsScreen extends ConsumerWidget {
               leading: const Icon(Icons.login_outlined, color: MarginaliaColors.accent),
               title: const Text('Accedi o Registrati'),
               subtitle: const Text('Richiesto per le Jam'),
-              onTap: () => context.push('/auth'),
+              onTap: () => context.push('/auth').then((_) => ref.invalidate(currentUserProvider)),
               trailing: const Icon(Icons.chevron_right,
                   color: MarginaliaColors.textMuted, size: 18),
             ),

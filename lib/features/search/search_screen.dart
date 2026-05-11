@@ -293,7 +293,7 @@ class _HighlightedText extends StatelessWidget {
           TextSpan(
             text: match,
             style: const TextStyle(
-              backgroundColor: Color(0xFFFFF0C2),
+              backgroundColor: MarginaliaColors.highlightAmber,
               fontWeight: FontWeight.w600,
               color: MarginaliaColors.ink,
             ),

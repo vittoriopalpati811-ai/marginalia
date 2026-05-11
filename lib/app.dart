@@ -7,10 +7,11 @@ import 'features/library/book_detail_screen.dart';
 import 'features/reader/highlight_detail_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/social/social_screen.dart';
+import 'features/social/jam_detail_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
+import 'features/auth/auth_screen.dart';
 
-// Shell route with bottom navigation bar
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -22,26 +23,14 @@ final router = GoRouter(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => _ScaffoldWithNav(child: child),
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (_, __) => const LibraryScreen(),
-        ),
-        GoRoute(
-          path: '/search',
-          builder: (_, __) => const SearchScreen(),
-        ),
-        GoRoute(
-          path: '/social',
-          builder: (_, __) => const SocialScreen(),
-        ),
-        GoRoute(
-          path: '/settings',
-          builder: (_, __) => const SettingsScreen(),
-        ),
+        GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
+        GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
+        GoRoute(path: '/social', builder: (_, __) => const SocialScreen()),
+        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],
     ),
 
-    // Full-screen routes (no bottom nav)
+    // Full-screen routes
     GoRoute(
       path: '/book/:id',
       parentNavigatorKey: _rootNavigatorKey,
@@ -57,6 +46,20 @@ final router = GoRouter(
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
         return HighlightDetailScreen(highlightId: id);
       },
+    ),
+    GoRoute(
+      path: '/jam/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        final name = state.uri.queryParameters['name'] ?? 'Jam';
+        return JamDetailScreen(jamId: id, jamName: name);
+      },
+    ),
+    GoRoute(
+      path: '/auth',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (_, __) => const AuthScreen(),
     ),
     GoRoute(
       path: '/sync/kindle',
@@ -102,12 +105,20 @@ class _ScaffoldWithNav extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (i) => context.go(_tabs[i].path),
-        destinations: _tabs
-            .map((t) => NavigationDestination(icon: Icon(t.icon), label: t.label))
-            .toList(),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surface,
+          border: const Border(
+            top: BorderSide(color: MarginaliaColors.ruleFaint, width: 1),
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: (i) => context.go(_tabs[i].path),
+          destinations: _tabs
+              .map((t) => NavigationDestination(icon: Icon(t.icon), label: t.label))
+              .toList(),
+        ),
       ),
     );
   }

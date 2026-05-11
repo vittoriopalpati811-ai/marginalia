@@ -53,3 +53,13 @@ class HighlightFavoriteNotifier extends Notifier<void> {
 
 final highlightFavoriteNotifierProvider =
     NotifierProvider<HighlightFavoriteNotifier, void>(HighlightFavoriteNotifier.new);
+
+// All highlights for current user (used by Jam share picker)
+final allHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
+  (ref) async {
+    final isar = ref.watch(isarProvider);
+    final userId = ref.watch(currentUserProvider)?.id;
+    if (userId == null) return [];
+    return isar.highlights.filter().userIdEqualTo(userId).sortByAddedAtDesc().findAll();
+  },
+);
