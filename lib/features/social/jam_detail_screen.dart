@@ -103,7 +103,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       try {
                         await service.shareHighlightInJam(
                           widget.jamId,
-                          h.supabaseId.isNotEmpty ? h.supabaseId : '${h.id}',
+                          (h.supabaseId != null && h.supabaseId!.isNotEmpty)
+                              ? h.supabaseId!
+                              : '${h.id}',
                         );
                         ref.invalidate(jamHighlightsProvider(widget.jamId));
                         if (mounted) {
