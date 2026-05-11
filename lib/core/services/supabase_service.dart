@@ -132,13 +132,40 @@ class SupabaseService {
   }
 
   Future<List<Map<String, dynamic>>> fetchMyJams() async {
-    // Returns jams where user is owner or member
-    final response = await _client
-        .from('jams')
-        .select('*, jam_members!inner(user_id)')
-        .or('owner_id.eq.$userId,jam_members.user_id.eq.$userId')
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(response as List);
+    // Fetch jams owned by user
+    final owned = List<Map<String, dynamic>>.from(
+      await _client
+          .from('jams')
+          .select()
+          .eq('owner_id', userId!)
+          .order('created_at', ascending: false) as List,
+    );
+
+    // Fetch jam IDs where user is a member (but not owner)
+    final memberRows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('jam_members')
+          .select('jam_id')
+          .eq('user_id', userId!) as List,
+    );
+
+    final ownedIds = owned.map((r) => r['id'] as String).toSet();
+    final memberOnlyIds = memberRows
+        .map((r) => r['jam_id'] as String)
+        .where((id) => !ownedIds.contains(id))
+        .toList();
+
+    if (memberOnlyIds.isEmpty) return owned;
+
+    final memberJams = List<Map<String, dynamic>>.from(
+      await _client
+          .from('jams')
+          .select()
+          .inFilter('id', memberOnlyIds)
+          .order('created_at', ascending: false) as List,
+    );
+
+    return [...owned, ...memberJams];
   }
 
   Future<Map<String, dynamic>?> fetchJamByInviteCode(String code) async {
