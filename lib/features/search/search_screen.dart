@@ -15,10 +15,12 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -28,72 +30,151 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final resultsAsync = ref.watch(searchResultsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: TextField(
-          controller: _controller,
-          autofocus: true,
-          style: const TextStyle(fontSize: 16, color: MarginaliaColors.text),
-          decoration: const InputDecoration(
-            hintText: 'Cerca tra i tuoi highlight…',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-            hintStyle: TextStyle(color: MarginaliaColors.textMuted),
-          ),
-          onChanged: (value) =>
-              ref.read(searchQueryProvider.notifier).state = value,
-        ),
-        actions: [
-          if (query.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                _controller.clear();
-                ref.read(searchQueryProvider.notifier).state = '';
-              },
-            ),
-        ],
-      ),
-      body: query.isEmpty
-          ? _EmptySearch()
-          : resultsAsync.when(
-              data: (highlights) => highlights.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Nessun risultato trovato.',
-                        style: TextStyle(color: MarginaliaColors.textMuted),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: highlights.length,
-                      itemBuilder: (ctx, i) {
-                        final h = highlights[i];
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 8),
-                          title: _HighlightedText(
-                            text: h.content,
-                            query: query,
+      backgroundColor: MarginaliaColors.background,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Search bar ─────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: MarginaliaDecorations.card(radius: 14),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        autofocus: true,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: MarginaliaColors.ink,
+                          height: 1.4,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Cerca nei tuoi highlight…',
+                          hintStyle: const TextStyle(
+                            color: MarginaliaColors.inkFaint,
+                            fontSize: 16,
                           ),
-                          subtitle: h.book.value != null
-                              ? Text(
-                                  h.book.value!.title,
-                                  style: MarginaliaTextStyles.bookAuthor,
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: MarginaliaColors.inkFaint,
+                            size: 20,
+                          ),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.clear,
+                                    color: MarginaliaColors.inkFaint,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _controller.clear();
+                                    ref.read(searchQueryProvider.notifier).state = '';
+                                  },
                                 )
                               : null,
-                          onTap: () => context.push('/highlight/${h.id}'),
-                        ).animate(delay: (i * 30).ms).fadeIn(duration: 200.ms);
-                      },
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 14,
+                          ),
+                        ),
+                        onChanged: (v) =>
+                            ref.read(searchQueryProvider.notifier).state = v,
+                      ),
                     ),
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: MarginaliaColors.accent),
+                  ),
+                ],
               ),
-              error: (e, _) => Center(child: Text('$e')),
             ),
+
+            // ── Risultati ─────────────────────────────────────────────────
+            Expanded(
+              child: query.isEmpty
+                  ? _EmptySearch()
+                  : resultsAsync.when(
+                      data: (highlights) => highlights.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.search_off_outlined,
+                                    size: 40,
+                                    color: MarginaliaColors.inkFaint,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Nessun risultato per "$query"',
+                                    style: const TextStyle(
+                                      color: MarginaliaColors.inkMuted,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 10),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        '${highlights.length} RISULTATI',
+                                        style: MarginaliaTextStyles.sectionTitle,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Expanded(
+                                        child: Divider(
+                                          color: MarginaliaColors.ruleFaint,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                                    itemCount: highlights.length,
+                                    itemBuilder: (ctx, i) {
+                                      final h = highlights[i];
+                                      return _SearchResultCard(
+                                        content: h.content,
+                                        query: query,
+                                        onTap: () => context.push('/highlight/${h.id}'),
+                                        index: i,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: MarginaliaColors.sienna,
+                          strokeWidth: 1.5,
+                        ),
+                      ),
+                      error: (e, _) => Center(child: Text('$e')),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
 
 class _EmptySearch extends StatelessWidget {
   @override
@@ -102,12 +183,38 @@ class _EmptySearch extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search, size: 56, color: MarginaliaColors.accentLight),
-          const SizedBox(height: 12),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.siennaFaint,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.search,
+              size: 28,
+              color: MarginaliaColors.siennaLight,
+            ),
+          ),
+          const SizedBox(height: 20),
           const Text(
-            'Cerca per parola chiave\nnei tuoi highlight',
+            'Cerca per parola chiave',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: MarginaliaColors.ink,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Trova qualsiasi frase tra tutti\ni tuoi highlight Kindle.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: MarginaliaColors.textMuted, height: 1.5),
+            style: TextStyle(
+              color: MarginaliaColors.inkMuted,
+              height: 1.6,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -115,7 +222,41 @@ class _EmptySearch extends StatelessWidget {
   }
 }
 
-// Highlights matching query text in the displayed content
+// ─── Card risultato di ricerca ────────────────────────────────────────────────
+
+class _SearchResultCard extends StatelessWidget {
+  const _SearchResultCard({
+    required this.content,
+    required this.query,
+    required this.onTap,
+    required this.index,
+  });
+
+  final String content;
+  final String query;
+  final VoidCallback onTap;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: MarginaliaDecorations.card(),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _HighlightedText(text: content, query: query),
+        ),
+      ),
+    )
+        .animate(delay: (index * 30).ms)
+        .fadeIn(duration: 250.ms, curve: Curves.easeOut);
+  }
+}
+
+// ─── Testo con match evidenziato ──────────────────────────────────────────────
+
 class _HighlightedText extends StatelessWidget {
   const _HighlightedText({required this.text, required this.query});
 
@@ -130,9 +271,9 @@ class _HighlightedText extends StatelessWidget {
 
     if (index < 0) {
       return Text(
-        text.length > 120 ? '${text.substring(0, 120)}…' : text,
+        text.length > 160 ? '${text.substring(0, 160)}…' : text,
         style: MarginaliaTextStyles.highlightBodySmall,
-        maxLines: 3,
+        maxLines: 4,
         overflow: TextOverflow.ellipsis,
       );
     }
@@ -152,15 +293,16 @@ class _HighlightedText extends StatelessWidget {
           TextSpan(
             text: match,
             style: const TextStyle(
-              backgroundColor: MarginaliaColors.highlightYellow,
+              backgroundColor: Color(0xFFFFF0C2),
               fontWeight: FontWeight.w600,
+              color: MarginaliaColors.ink,
             ),
           ),
           TextSpan(text: afterTrimmed),
         ],
         style: MarginaliaTextStyles.highlightBodySmall,
       ),
-      maxLines: 3,
+      maxLines: 4,
       overflow: TextOverflow.ellipsis,
     );
   }
