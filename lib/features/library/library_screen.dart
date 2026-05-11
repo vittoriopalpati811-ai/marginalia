@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/models/book.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 
@@ -180,6 +181,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final supabase = ref.read(supabaseServiceProvider);
       final service = ImportService(isar, userId, supabaseService: supabase);
       final importResult = await service.importClippingsText(rawText);
+      _invalidateAfterImport();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -203,6 +205,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }
   }
 
+  void _invalidateAfterImport() {
+    ref.invalidate(booksProvider);
+    ref.invalidate(randomHighlightProvider);
+    ref.invalidate(allHighlightsProvider);
+  }
+
   Future<void> _loadDemoData() async {
     if (!_requireAuth()) return;
     setState(() => _isImporting = true);
@@ -213,6 +221,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final supabase = ref.read(supabaseServiceProvider);
       final service = ImportService(isar, userId, supabaseService: supabase);
       final result = await service.importClippingsText(rawText);
+      _invalidateAfterImport();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
