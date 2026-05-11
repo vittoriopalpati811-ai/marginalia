@@ -140,7 +140,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+  bool _requireAuth() {
+    final supabase = ref.read(supabaseServiceProvider);
+    if (!supabase.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Accedi per importare i tuoi highlight.'),
+          action: SnackBarAction(
+            label: 'Accedi',
+            textColor: Colors.white,
+            onPressed: () => context.push('/auth'),
+          ),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _pickAndImportFile() async {
+    if (!_requireAuth()) return;
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['txt'],
@@ -184,6 +204,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   Future<void> _loadDemoData() async {
+    if (!_requireAuth()) return;
     setState(() => _isImporting = true);
     try {
       final rawText = await rootBundle.loadString('assets/demo/My Clippings.txt');
