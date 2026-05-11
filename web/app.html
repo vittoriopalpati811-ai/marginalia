@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <base href="/marginalia/">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=393, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Marginalia — riscopri i tuoi highlight Kindle">
@@ -10,16 +11,6 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.png">
   <title>Marginalia</title>
-  <script>
-    // Derive base href dynamically so $FLUTTER_BASE_HREF substitution is not needed
-    (function() {
-      var href = window.location.href;
-      var base = href.substring(0, href.lastIndexOf('/') + 1);
-      var el = document.createElement('base');
-      el.href = base;
-      document.head.insertBefore(el, document.head.firstChild);
-    })();
-  </script>
   <style>
     html, body {
       margin: 0;

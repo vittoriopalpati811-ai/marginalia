@@ -61,11 +61,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           _emailController.text.trim(),
           _passwordController.text,
         );
+        // profiles upsert is best-effort — table may not exist yet
         if (res.user != null && _nameController.text.trim().isNotEmpty) {
-          await Supabase.instance.client.from('profiles').upsert({
-            'id': res.user!.id,
-            'display_name': _nameController.text.trim(),
-          });
+          try {
+            await Supabase.instance.client.from('profiles').upsert({
+              'id': res.user!.id,
+              'display_name': _nameController.text.trim(),
+            });
+          } catch (_) {}
         }
         if (res.session == null && mounted) {
           _showConfirmEmail();

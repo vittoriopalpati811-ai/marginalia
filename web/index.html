@@ -299,32 +299,9 @@
       z-index: 10;
     }
 
-    /* ── Status bar overlay ── */
-    .status-bar {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 40px;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 20px 0;
+    /* Dynamic Island: decorativo, non blocca interazioni */
+    .dynamic-island {
       pointer-events: none;
-    }
-    .status-time {
-      font-size: 13px;
-      font-weight: 700;
-      color: #09090B;
-      letter-spacing: -0.2px;
-      font-family: -apple-system, sans-serif;
-    }
-    .status-icons {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .status-icons svg {
-      fill: #09090B;
     }
 
     /* ── Rotation hint ── */
@@ -409,29 +386,6 @@
           <!-- Dynamic Island -->
           <div class="dynamic-island"></div>
 
-          <!-- Status bar -->
-          <div class="status-bar">
-            <span class="status-time" id="clock">9:41</span>
-            <div class="status-icons">
-              <svg width="16" height="11" viewBox="0 0 16 11">
-                <rect x="0" y="5" width="3" height="6" rx="1"/>
-                <rect x="4" y="3" width="3" height="8" rx="1"/>
-                <rect x="8" y="1" width="3" height="10" rx="1"/>
-                <rect x="12" y="0" width="3" height="11" rx="1" opacity=".3"/>
-              </svg>
-              <svg width="15" height="11" viewBox="0 0 15 11">
-                <path d="M7.5 2.8C9.5 2.8 11.3 3.7 12.5 5.1L14 3.5C12.3 1.8 10 .8 7.5.8S2.7 1.8 1 3.5L2.5 5.1C3.7 3.7 5.5 2.8 7.5 2.8z" opacity=".3"/>
-                <path d="M7.5 5.3c1.2 0 2.3.5 3.1 1.3L12 5.2C10.8 4 9.2 3.3 7.5 3.3S4.2 4 3 5.2L4.4 6.6C5.2 5.8 6.3 5.3 7.5 5.3z"/>
-                <circle cx="7.5" cy="9.5" r="1.5"/>
-              </svg>
-              <svg width="25" height="11" viewBox="0 0 25 11">
-                <rect x=".5" y=".5" width="20" height="10" rx="2.5" stroke="currentColor" stroke-opacity=".35" fill="none"/>
-                <rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/>
-                <path d="M22 3.5v4a2 2 0 0 0 0-4z" fill="currentColor" opacity=".4"/>
-              </svg>
-            </div>
-          </div>
-
           <!-- App Flutter dentro iframe -->
           <iframe
             id="app-frame"
@@ -451,16 +405,6 @@
   </div>
 
   <script>
-    // Orologio live
-    function tick() {
-      const d = new Date();
-      const h = String(d.getHours()).padStart(2,'0');
-      const m = String(d.getMinutes()).padStart(2,'0');
-      document.getElementById('clock').textContent = h + ':' + m;
-    }
-    tick();
-    setInterval(tick, 15000);
-
     // Su mobile reindirizza direttamente all'app
     if (window.innerWidth < 769 || window.innerHeight < 751) {
       window.location.replace('app.html');
