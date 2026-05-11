@@ -41,7 +41,19 @@ class HighlightFavoriteNotifier extends Notifier<void> {
   @override
   void build() {}
 
-  Future<void> toggleFavorite(int highlightId) async {}
+  Future<void> toggleFavorite(int highlightId) async {
+    final service = ref.read(supabaseServiceProvider);
+    final all = await ref.read(allHighlightsProvider.future);
+    final highlight = all.where((h) => h.id == highlightId).firstOrNull;
+    if (highlight == null || highlight.supabaseId == null) return;
+    try {
+      await service.updateHighlightFavorite(
+        highlight.supabaseId!,
+        !highlight.isFavorite,
+      );
+      ref.invalidate(allHighlightsProvider);
+    } catch (_) {}
+  }
 }
 
 final highlightFavoriteNotifierProvider =
@@ -77,6 +89,13 @@ Highlight _highlightFromMap(Map<String, dynamic> m, int intId) {
 
   final addedAtStr = m['added_at'] as String?;
   if (addedAtStr != null) h.addedAt = DateTime.tryParse(addedAtStr);
+
+  // Book info from Supabase join: select('*, books(title, author)')
+  final bookMap = m['books'] as Map<String, dynamic>?;
+  if (bookMap != null) {
+    h.bookTitle = bookMap['title'] as String?;
+    h.bookAuthor = bookMap['author'] as String?;
+  }
 
   return h;
 }

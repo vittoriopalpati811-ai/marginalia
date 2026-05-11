@@ -80,9 +80,29 @@ class _HighlightBody extends ConsumerWidget {
 
   final dynamic highlight;
 
+  // Resolve book title/author from the highlight itself (web: embedded from
+  // Supabase join) or from a provider lookup (native: Isar IsarLink).
+  static (String?, String?) _embeddedBook(dynamic h) {
+    try {
+      final title = h.bookTitle as String?;
+      final author = h.bookAuthor as String?;
+      if (title != null) return (title, author);
+    } catch (_) {}
+    return (null, null);
+  }
+
+  static int _bookId(dynamic h) {
+    try { return (h.book?.value?.id as int?) ?? -1; } catch (_) {}
+    try { return (h.bookId as int?) ?? -1; } catch (_) {}
+    return -1;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookAsync = ref.watch(bookByIdProvider(highlight.book?.id ?? highlight.book?.value?.id ?? -1));
+    final (embTitle, embAuthor) = _embeddedBook(highlight);
+    final bookAsync = embTitle == null
+        ? ref.watch(bookByIdProvider(_bookId(highlight)))
+        : null;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(28, 0, 28, 60),
@@ -90,30 +110,18 @@ class _HighlightBody extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Info libro ─────────────────────────────────────────────────────
-          bookAsync.when(
-            data: (book) => book != null
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 2,
-                        color: MarginaliaColors.siennaLight,
-                        margin: const EdgeInsets.only(bottom: 14),
-                      ),
-                      Text(book.title, style: MarginaliaTextStyles.bookTitle),
-                      const SizedBox(height: 4),
-                      Text(
-                        book.author.toUpperCase(),
-                        style: MarginaliaTextStyles.bookAuthor,
-                      ),
-                      const SizedBox(height: 32),
-                    ],
-                  )
-                : const SizedBox(height: 16),
-            loading: () => const SizedBox(height: 16),
-            error: (_, __) => const SizedBox(height: 16),
-          ),
+          if (embTitle != null)
+            _BookHeader(title: embTitle, author: embAuthor ?? '')
+          else if (bookAsync != null)
+            bookAsync.when(
+              data: (book) => book != null
+                  ? _BookHeader(title: book.title, author: book.author)
+                  : const SizedBox(height: 16),
+              loading: () => const SizedBox(height: 16),
+              error: (_, __) => const SizedBox(height: 16),
+            )
+          else
+            const SizedBox(height: 16),
 
           // ── Virgoletta decorativa ──────────────────────────────────────────
           Text('"', style: MarginaliaTextStyles.quoteDecor),
@@ -234,6 +242,31 @@ class _HighlightBody extends ConsumerWidget {
         'orange' => const Color(0xFFBF7A34),
         _ => MarginaliaColors.inkFaint,
       };
+}
+
+class _BookHeader extends StatelessWidget {
+  const _BookHeader({required this.title, required this.author});
+  final String title;
+  final String author;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 2,
+          color: MarginaliaColors.siennaLight,
+          margin: const EdgeInsets.only(bottom: 14),
+        ),
+        Text(title, style: MarginaliaTextStyles.bookTitle),
+        const SizedBox(height: 4),
+        Text(author.toUpperCase(), style: MarginaliaTextStyles.bookAuthor),
+        const SizedBox(height: 32),
+      ],
+    );
+  }
 }
 
 class _MetaChip extends StatelessWidget {

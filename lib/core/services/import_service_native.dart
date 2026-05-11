@@ -19,7 +19,7 @@ class ImportResult {
 }
 
 class ImportService {
-  const ImportService(this._isar, this._userId);
+  const ImportService(this._isar, this._userId, {dynamic supabaseService});
 
   final Isar _isar;
   final String _userId;

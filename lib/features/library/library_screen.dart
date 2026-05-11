@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -101,7 +102,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           booksAsync.when(
             data: (books) => books.isEmpty
                 ? SliverFillRemaining(
-                    child: _EmptyLibrary(onImport: _pickAndImportFile),
+                    child: _EmptyLibrary(
+                      onImport: _pickAndImportFile,
+                      onDemo: _loadDemoData,
+                    ),
                   )
                 : SliverPadding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
@@ -153,14 +157,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     try {
       final userId = ref.read(currentUserProvider)?.id ?? 'local';
       final isar = ref.read(isarProvider);
-      final service = ImportService(isar, userId);
+      final supabase = ref.read(supabaseServiceProvider);
+      final service = ImportService(isar, userId, supabaseService: supabase);
       final importResult = await service.importClippingsText(rawText);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${importResult.highlightsAdded} highlight importati da ${importResult.booksAdded} libri.',
+              importResult.highlightsAdded > 0
+                  ? '${importResult.highlightsAdded} highlight importati da ${importResult.booksAdded} libri.'
+                  : 'Nessun nuovo highlight (${importResult.highlightsDeduplicated} già presenti).',
             ),
           ),
         );
@@ -169,6 +176,37 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Errore importazione: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isImporting = false);
+    }
+  }
+
+  Future<void> _loadDemoData() async {
+    setState(() => _isImporting = true);
+    try {
+      final rawText = await rootBundle.loadString('assets/demo/My Clippings.txt');
+      final userId = ref.read(currentUserProvider)?.id ?? 'local';
+      final isar = ref.read(isarProvider);
+      final supabase = ref.read(supabaseServiceProvider);
+      final service = ImportService(isar, userId, supabaseService: supabase);
+      final result = await service.importClippingsText(rawText);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.highlightsAdded > 0
+                  ? 'Demo caricata: ${result.highlightsAdded} highlight da ${result.booksAdded} libri.'
+                  : 'I dati demo sono già presenti.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore caricamento demo: $e')),
         );
       }
     } finally {
@@ -332,9 +370,10 @@ class _BookTile extends StatelessWidget {
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary({required this.onImport});
+  const _EmptyLibrary({required this.onImport, required this.onDemo});
 
   final VoidCallback onImport;
+  final VoidCallback onDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -377,6 +416,16 @@ class _EmptyLibrary extends StatelessWidget {
               onPressed: onImport,
               icon: const Icon(Icons.upload_file_outlined, size: 18),
               label: const Text('Importa Clippings'),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: onDemo,
+              icon: Icon(Icons.auto_awesome_outlined,
+                  size: 16, color: MarginaliaColors.siennaLight),
+              label: Text(
+                'Prova con dati demo',
+                style: TextStyle(color: MarginaliaColors.siennaLight),
+              ),
             ),
           ],
         ),

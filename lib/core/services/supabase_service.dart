@@ -41,6 +41,41 @@ class SupabaseService {
     });
   }
 
+  Future<void> upsertRawBook({
+    required String id,
+    required String userId,
+    required String title,
+    required String author,
+  }) async {
+    await _client.from('books').upsert({
+      'id': id,
+      'user_id': userId,
+      'title': title,
+      'author': author,
+    });
+  }
+
+  Future<void> upsertRawHighlight({
+    required String id,
+    required String userId,
+    required String bookId,
+    required String content,
+    String? location,
+    DateTime? addedAt,
+    String? color,
+  }) async {
+    await _client.from('highlights').upsert({
+      'id': id,
+      'user_id': userId,
+      'book_id': bookId,
+      'content': content,
+      'location': location,
+      'added_at': addedAt?.toIso8601String(),
+      'color': color,
+      'is_favorite': false,
+    });
+  }
+
   Future<List<Map<String, dynamic>>> fetchBooks() async {
     final response = await _client
         .from('books')
@@ -64,6 +99,14 @@ class SupabaseService {
       'color': highlight.color,
       'is_favorite': highlight.isFavorite,
     });
+  }
+
+  Future<void> updateHighlightFavorite(String highlightId, bool isFavorite) async {
+    await _client
+        .from('highlights')
+        .update({'is_favorite': isFavorite})
+        .eq('id', highlightId)
+        .eq('user_id', userId!);
   }
 
   Future<List<Map<String, dynamic>>> fetchHighlights({String? bookId}) async {

@@ -8,4 +8,10 @@ class Highlight {
   String? color;
   bool isFavorite = false;
   String userId = '';
+
+  // Populated from Supabase join so HighlightDetailScreen can display book
+  // info without a secondary lookup.
+  int bookId = 0;
+  String? bookTitle;
+  String? bookAuthor;
 }

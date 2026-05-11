@@ -58,4 +58,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Nessuna asset locale: google_fonts scarica Lora a runtime e la mette in cache.
+  assets:
+    - assets/demo/My Clippings.txt
