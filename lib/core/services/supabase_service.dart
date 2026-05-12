@@ -127,9 +127,9 @@ class SupabaseService {
 
   // ─── Jams ─────────────────────────────────────────────────────────────────
 
-  Future<Map<String, dynamic>> createJam(String name) async {
+  Future<Map<String, dynamic>> createJam(String title) async {
     final response = await _client.from('jams').insert({
-      'name': name,
+      'title': title,
       'owner_id': userId,
     }).select().single();
     return response;

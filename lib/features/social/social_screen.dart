@@ -112,7 +112,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                         index: i,
                         onTap: () {
                           final id = jams[i]['id'] as String? ?? '';
-                          final name = jams[i]['name'] as String? ?? 'Jam';
+                          final name = (jams[i]['title'] ?? jams[i]['name']) as String? ?? 'Jam';
                           context.push('/jam/$id?name=${Uri.encodeComponent(name)}');
                         },
                       ),
@@ -303,7 +303,7 @@ class _JamCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = jam['name'] as String? ?? '';
+    final name = (jam['title'] ?? jam['name']) as String? ?? '';
     final code = jam['invite_code'] as String? ?? '';
     final memberCount = (jam['jam_members'] as List?)?.length ?? 0;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'J';
