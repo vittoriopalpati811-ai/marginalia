@@ -47,9 +47,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   }
 
   Future<void> _shareHighlight() async {
-    final highlights = ref.read(allHighlightsProvider);
-    final list = highlights.valueOrNull ?? [];
+    // Await the future so we don't show "empty" while loading
+    final list = await ref.read(allHighlightsProvider.future);
 
+    if (!mounted) return;
     if (list.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nessun highlight disponibile. Importa prima un file Kindle.')),
