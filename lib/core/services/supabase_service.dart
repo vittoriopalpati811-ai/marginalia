@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
@@ -64,11 +66,13 @@ class SupabaseService {
     DateTime? addedAt,
     String? color,
   }) async {
+    final hash = sha256.convert(utf8.encode(content)).toString();
     await _client.from('highlights').upsert({
       'id': id,
       'user_id': userId,
       'book_id': bookId,
       'content': content,
+      'content_hash': hash,
       'location': location,
       'added_at': addedAt?.toIso8601String(),
       'color': color,
