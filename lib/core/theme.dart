@@ -3,55 +3,50 @@ import 'package:google_fonts/google_fonts.dart';
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 //
-// Warm parchment base — Chapel White backgrounds, Rich Sabel text,
-// violet kept only for interactive CTAs and gradient headers.
-//
-// Base colors from reference palette:
-//   Chapel White    #F1EEE7  (241,238,231)
-//   Cream Beige     #EAE3D3  (234,227,211)
-//   Antique Veil    #D3CEC2  (211,206,194)
-//   Deep Taupe      #7B6F67  (123,111,103)
-//   Taupe           #7F785B  (127,120,91)
-//   Rich Sabel      #4C3B3A  (76,59,58)
-//   Burnt Oak       #261E1D  (38,30,29)
+// Warm parchment — niente violetto. Tutto declinato sui toni della carta:
+// Chapel White → Cream Beige → Antique Veil → Deep Taupe → Taupe →
+// Rich Sabel → Burnt Oak.
 
 class MarginaliaColors {
   // Backgrounds
-  static const background   = Color(0xFFF1EEE7); // Chapel White
-  static const surface      = Color(0xFFEAE3D3); // Cream Beige
-  static const surfaceElevated = Color(0xFFEAE3D3);
+  static const background      = Color(0xFFF1EEE7); // Chapel White
+  static const surface         = Color(0xFFEAE3D3); // Cream Beige
+  static const surfaceElevated = Color(0xFFF6F1E5); // tra Chapel e Cream
 
   // Text hierarchy
-  static const ink          = Color(0xFF261E1D); // Burnt Oak
-  static const inkMuted     = Color(0xFF7B6F67); // Deep Taupe
-  static const inkFaint     = Color(0xFFB0A89E); // mid-point, softer
+  static const ink      = Color(0xFF261E1D); // Burnt Oak
+  static const inkMuted = Color(0xFF7B6F67); // Deep Taupe
+  static const inkFaint = Color(0xFFB0A89E); // mid-tone
 
-  // Warm accent (sienna / taupe family)
-  static const sienna       = Color(0xFF7F785B); // Taupe — labels, active nav
-  static const siennaLight  = Color(0xFF9E9578); // lighter taupe
-  static const siennaFaint  = Color(0xFFEDE5D5); // very light warm tint
+  // Warm accent — Taupe family (labels, light interactions)
+  static const sienna      = Color(0xFF7F785B); // Taupe
+  static const siennaLight = Color(0xFF9E9578);
+  static const siennaFaint = Color(0xFFEDE5D5);
 
-  // Violet — kept only for gradient headers and primary CTA buttons
-  static const violet       = Color(0xFF7C3AED);
-  static const violetDark   = Color(0xFF4C1D95);
-  static const violetFaint  = Color(0xFFEDE9FE);
+  // Primary action — Rich Sabel (CTA, gradient start)
+  static const primary     = Color(0xFF4C3B3A); // Rich Sabel
+  static const primaryDark = Color(0xFF261E1D); // Burnt Oak
+  static const primaryFaint = Color(0xFFE8DED0);
 
   // Borders / dividers
-  static const rule         = Color(0xFFD3CEC2); // Antique Veil
-  static const ruleFaint    = Color(0xFFE8E3D8); // slightly lighter
+  static const rule      = Color(0xFFD3CEC2); // Antique Veil
+  static const ruleFaint = Color(0xFFE8E3D8);
 
-  // Kindle highlight palette (kept warm)
-  static const highlightAmber     = Color(0xFFFEF3C7);
-  static const highlightSky       = Color(0xFFDBEAFE);
-  static const highlightRose      = Color(0xFFFCE7F3);
-  static const highlightTangerine = Color(0xFFFFEDD5);
+  // Kindle highlight tints (warm-leaning)
+  static const highlightAmber     = Color(0xFFF6E4B0);
+  static const highlightSky       = Color(0xFFD4DCEA);
+  static const highlightRose      = Color(0xFFEED4D8);
+  static const highlightTangerine = Color(0xFFF5DBC0);
 
-  // Aliases for existing widgets that reference old names
-  static const accent       = violet;
-  static const accentLight  = Color(0xFF8B5CF6);
-  static const text         = ink;
-  static const textMuted    = inkMuted;
-  static const border       = rule;
+  // Legacy aliases (still referenced in some widgets)
+  static const accent      = primary;
+  static const accentLight = sienna;
+  static const text        = ink;
+  static const textMuted   = inkMuted;
+  static const border      = rule;
+  static const violet      = primary;       // alias per codice vecchio
+  static const violetDark  = primaryDark;
+  static const violetFaint = primaryFaint;
   static const highlightYellow = highlightAmber;
   static const highlightBlue   = highlightSky;
   static const highlightPink   = highlightRose;
@@ -76,11 +71,11 @@ class MarginaliaTextStyles {
         letterSpacing: 0.1,
       );
 
-  static TextStyle get bookTitle => const TextStyle(
+  static TextStyle get bookTitle => GoogleFonts.lora(
         fontSize: 16,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: MarginaliaColors.ink,
-        letterSpacing: -0.3,
+        letterSpacing: -0.2,
         height: 1.3,
       );
 
@@ -110,7 +105,7 @@ class MarginaliaTextStyles {
   static TextStyle get sectionTitle => const TextStyle(
         fontSize: 10,
         fontWeight: FontWeight.w800,
-        color: MarginaliaColors.inkFaint,
+        color: MarginaliaColors.inkMuted,
         letterSpacing: 2.2,
       );
 
@@ -150,43 +145,43 @@ class MarginaliaDecorations {
         ],
       );
 
-  // Hero card — violet gradient on warm base
+  // Hero card — Rich Sabel → Burnt Oak (caldo profondo)
   static const BoxDecoration heroCard = BoxDecoration(
     gradient: LinearGradient(
-      colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)],
+      colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
     borderRadius: BorderRadius.all(Radius.circular(20)),
     boxShadow: [
       BoxShadow(
-        color: Color(0x337C3AED),
+        color: Color(0x33261E1D),
         blurRadius: 24,
         offset: Offset(0, 8),
       ),
     ],
   );
 
-  // Auth/jam/social gradient header — violet
+  // Auth / Jam header — Burnt Oak → Rich Sabel → Taupe
   static const BoxDecoration gradientHeader = BoxDecoration(
     gradient: LinearGradient(
-      colors: [Color(0xFF6D28D9), Color(0xFF7C3AED), Color(0xFF8B5CF6)],
+      colors: [Color(0xFF261E1D), Color(0xFF4C3B3A), Color(0xFF7F785B)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
   );
 
-  // Book cover colors — warm literary tones + violet pop
+  // Cover libri — solo toni caldi
   static Color bookCoverColor(String title) {
     const covers = [
       Color(0xFF7F785B), // Taupe
       Color(0xFF4C3B3A), // Rich Sabel
-      Color(0xFF7C3AED), // Violet pop
-      Color(0xFF0F766E), // Teal
-      Color(0xFFB45309), // Amber dark
       Color(0xFF7B6F67), // Deep Taupe
-      Color(0xFF6D28D9), // Violet dark
-      Color(0xFF15803D), // Green
+      Color(0xFF261E1D), // Burnt Oak
+      Color(0xFF9E9578), // siennaLight
+      Color(0xFF6B5D54), // intermedio
+      Color(0xFF8E7B5E), // dorato caldo
+      Color(0xFF5C4A40), // marrone tabacco
     ];
     return covers[title.hashCode.abs() % covers.length];
   }
@@ -197,24 +192,24 @@ class MarginaliaDecorations {
 ThemeData buildMarginaliaTheme() {
   return ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       surface: MarginaliaColors.background,
       surfaceContainerHighest: MarginaliaColors.surface,
-      primary: MarginaliaColors.violet,
-      onPrimary: Colors.white,
+      primary: MarginaliaColors.primary,
+      onPrimary: Color(0xFFF1EEE7),
       secondary: MarginaliaColors.sienna,
       onSurface: MarginaliaColors.ink,
       outline: MarginaliaColors.rule,
     ),
     scaffoldBackgroundColor: MarginaliaColors.background,
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: MarginaliaColors.background,
       foregroundColor: MarginaliaColors.ink,
       elevation: 0,
       scrolledUnderElevation: 0.5,
-      shadowColor: const Color(0x10261E1D),
+      shadowColor: Color(0x10261E1D),
       centerTitle: false,
-      titleTextStyle: const TextStyle(
+      titleTextStyle: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
         color: MarginaliaColors.ink,
@@ -222,31 +217,31 @@ ThemeData buildMarginaliaTheme() {
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: MarginaliaColors.surface,
+      backgroundColor: MarginaliaColors.surfaceElevated,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       height: 64,
-      indicatorColor: MarginaliaColors.siennaFaint,
+      indicatorColor: MarginaliaColors.primaryFaint,
       indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: MarginaliaColors.sienna, size: 22);
+          return const IconThemeData(color: MarginaliaColors.primary, size: 22);
         }
-        return const IconThemeData(color: MarginaliaColors.inkFaint, size: 22);
+        return const IconThemeData(color: MarginaliaColors.inkMuted, size: 22);
       }),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: MarginaliaColors.sienna,
+            color: MarginaliaColors.primary,
             letterSpacing: 0.4,
           );
         }
         return const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          color: MarginaliaColors.inkFaint,
+          color: MarginaliaColors.inkMuted,
           letterSpacing: 0.4,
         );
       }),
@@ -266,37 +261,37 @@ ThemeData buildMarginaliaTheme() {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: MarginaliaColors.siennaFaint,
+      fillColor: MarginaliaColors.surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: MarginaliaColors.rule, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: MarginaliaColors.rule, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: MarginaliaColors.violet, width: 2),
+        borderSide: const BorderSide(color: MarginaliaColors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFFB54848), width: 1.5),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+        borderSide: const BorderSide(color: Color(0xFFB54848), width: 2),
       ),
       hintStyle: const TextStyle(color: MarginaliaColors.inkFaint, fontSize: 15),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: MarginaliaColors.violet),
+      style: TextButton.styleFrom(foregroundColor: MarginaliaColors.primary),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: MarginaliaColors.violet,
-        foregroundColor: Colors.white,
+        backgroundColor: MarginaliaColors.primary,
+        foregroundColor: const Color(0xFFF1EEE7),
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -305,8 +300,8 @@ ThemeData buildMarginaliaTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MarginaliaColors.violet,
-        foregroundColor: Colors.white,
+        backgroundColor: MarginaliaColors.primary,
+        foregroundColor: const Color(0xFFF1EEE7),
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -314,9 +309,9 @@ ThemeData buildMarginaliaTheme() {
       ),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: MarginaliaColors.siennaFaint,
+      backgroundColor: MarginaliaColors.primaryFaint,
       labelStyle: const TextStyle(
-        color: MarginaliaColors.sienna,
+        color: MarginaliaColors.primary,
         fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
@@ -326,7 +321,7 @@ ThemeData buildMarginaliaTheme() {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: MarginaliaColors.ink,
-      contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
+      contentTextStyle: const TextStyle(color: Color(0xFFF1EEE7), fontSize: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       behavior: SnackBarBehavior.floating,
     ),

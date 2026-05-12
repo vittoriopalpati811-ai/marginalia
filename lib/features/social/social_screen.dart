@@ -184,8 +184,19 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                 onPressed: () async {
                   if (nameController.text.trim().isEmpty) return;
                   final service = ref.read(supabaseServiceProvider);
-                  await service.createJam(nameController.text.trim());
-                  if (ctx.mounted) Navigator.pop(ctx, true);
+                  try {
+                    await service.createJam(nameController.text.trim());
+                    if (ctx.mounted) Navigator.pop(ctx, true);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: Text('Errore creazione Jam: $e'),
+                          duration: const Duration(seconds: 15),
+                        ),
+                      );
+                    }
+                  }
                 },
                 child: const Text('Crea Jam'),
               ),
@@ -246,16 +257,28 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   final code = codeController.text.trim();
                   if (code.isEmpty) return;
                   final service = ref.read(supabaseServiceProvider);
-                  final jam = await service.fetchJamByInviteCode(code);
-                  if (jam == null) {
+                  try {
+                    final jam = await service.fetchJamByInviteCode(code);
+                    if (jam == null) {
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Codice non valido.')),
+                        );
+                      }
+                      return;
+                    }
+                    await service.joinJam(jam['id'] as String);
+                  } catch (e) {
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                        const SnackBar(content: Text('Codice non valido.')),
+                        SnackBar(
+                          content: Text('Errore: $e'),
+                          duration: const Duration(seconds: 15),
+                        ),
                       );
                     }
                     return;
                   }
-                  await service.joinJam(jam['id'] as String);
                   if (ctx.mounted) Navigator.pop(ctx);
                   ref.invalidate(jamsProvider);
                 },
@@ -299,7 +322,7 @@ class _JamCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)],
+                    colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -376,7 +399,7 @@ class _EmptyJams extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF7C3AED), Color(0xFF4C1D95)],
+                  colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
