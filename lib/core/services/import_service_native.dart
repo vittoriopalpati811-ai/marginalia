@@ -11,11 +11,17 @@ class ImportResult {
     required this.booksAdded,
     required this.highlightsAdded,
     required this.highlightsDeduplicated,
+    this.highlightsFailed = 0,
+    this.booksFailed = 0,
+    this.firstError,
   });
 
   final int booksAdded;
   final int highlightsAdded;
   final int highlightsDeduplicated;
+  final int highlightsFailed;
+  final int booksFailed;
+  final String? firstError;
 }
 
 class ImportService {

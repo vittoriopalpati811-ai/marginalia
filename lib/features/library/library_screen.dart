@@ -223,13 +223,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final result = await service.importClippingsText(rawText);
       _invalidateAfterImport();
       if (mounted) {
+        final msg = result.firstError != null
+            ? 'Import parziale — libri OK: ${result.booksAdded}, falliti: ${result.booksFailed}. HL OK: ${result.highlightsAdded}, falliti: ${result.highlightsFailed}.\n\nERRORE: ${result.firstError}'
+            : result.highlightsAdded > 0
+                ? 'Demo caricata: ${result.highlightsAdded} highlight da ${result.booksAdded} libri.'
+                : 'I dati demo sono già presenti.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              result.highlightsAdded > 0
-                  ? 'Demo caricata: ${result.highlightsAdded} highlight da ${result.booksAdded} libri.'
-                  : 'I dati demo sono già presenti.',
-            ),
+            content: Text(msg),
+            duration: const Duration(seconds: 15),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }

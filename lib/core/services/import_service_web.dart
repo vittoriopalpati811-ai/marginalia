@@ -8,11 +8,17 @@ class ImportResult {
     required this.booksAdded,
     required this.highlightsAdded,
     required this.highlightsDeduplicated,
+    this.firstError,
+    this.highlightsFailed = 0,
+    this.booksFailed = 0,
   });
 
   final int booksAdded;
   final int highlightsAdded;
   final int highlightsDeduplicated;
+  final int highlightsFailed;
+  final int booksFailed;
+  final String? firstError;
 }
 
 class ImportService {
@@ -53,8 +59,11 @@ class ImportService {
     }
 
     int booksAdded = 0;
+    int booksFailed = 0;
     int highlightsAdded = 0;
+    int highlightsFailed = 0;
     int highlightsDeduplicated = 0;
+    String? firstError;
 
     for (final clipping in clippings) {
       if (clipping.type == ClippingType.bookmark) continue;
@@ -65,14 +74,20 @@ class ImportService {
 
       if (bookId == null) {
         bookId = _stableUuid(clipping.bookTitle, clipping.bookAuthor);
-        await svc.upsertRawBook(
-          id: bookId,
-          userId: _userId,
-          title: clipping.bookTitle,
-          author: clipping.bookAuthor,
-        );
-        bookTitleAuthorToId[bookKey] = bookId;
-        booksAdded++;
+        try {
+          await svc.upsertRawBook(
+            id: bookId,
+            userId: _userId,
+            title: clipping.bookTitle,
+            author: clipping.bookAuthor,
+          );
+          bookTitleAuthorToId[bookKey] = bookId;
+          booksAdded++;
+        } catch (e) {
+          booksFailed++;
+          firstError ??= 'BOOK "${clipping.bookTitle}": $e';
+          continue; // skip highlights for this book
+        }
       }
 
       // Deduplicate by book + location
@@ -83,23 +98,31 @@ class ImportService {
       }
 
       final hlId = _stableUuid(bookId, clipping.content);
-      await svc.upsertRawHighlight(
-        id: hlId,
-        userId: _userId,
-        bookId: bookId,
-        content: clipping.content,
-        location: clipping.location,
-        addedAt: clipping.addedAt,
-        color: clipping.color,
-      );
-      existingHlKeys.add(hlKey);
-      highlightsAdded++;
+      try {
+        await svc.upsertRawHighlight(
+          id: hlId,
+          userId: _userId,
+          bookId: bookId,
+          content: clipping.content,
+          location: clipping.location,
+          addedAt: clipping.addedAt,
+          color: clipping.color,
+        );
+        existingHlKeys.add(hlKey);
+        highlightsAdded++;
+      } catch (e) {
+        highlightsFailed++;
+        firstError ??= 'HIGHLIGHT: $e';
+      }
     }
 
     return ImportResult(
       booksAdded: booksAdded,
+      booksFailed: booksFailed,
       highlightsAdded: highlightsAdded,
+      highlightsFailed: highlightsFailed,
       highlightsDeduplicated: highlightsDeduplicated,
+      firstError: firstError,
     );
   }
 
