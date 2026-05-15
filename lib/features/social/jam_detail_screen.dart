@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
-import 'jam_highlight_detail_screen.dart' show reactionsProvider, commentsProvider;
+import 'jam_highlight_detail_screen.dart' show reactionsProvider, commentsProvider, JamHighlightDetailScreen;
 import 'weekly_prompt.dart';
 
 // Provider: highlights condivisi nella jam
