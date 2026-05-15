@@ -218,6 +218,108 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response as List);
   }
 
+  // ─── Reactions & Comments (Jam interaction) ───────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchReactions(String jamHighlightId) async {
+    final response = await _client
+        .from('jam_highlight_reactions')
+        .select('emoji, user_id, created_at')
+        .eq('jam_highlight_id', jamHighlightId);
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  // Toggles reaction: if user has this emoji on this highlight, remove it; else add it.
+  Future<void> toggleReaction(String jamHighlightId, String emoji) async {
+    final existing = await _client
+        .from('jam_highlight_reactions')
+        .select('id')
+        .eq('jam_highlight_id', jamHighlightId)
+        .eq('user_id', userId!)
+        .eq('emoji', emoji)
+        .maybeSingle();
+    if (existing != null) {
+      await _client
+          .from('jam_highlight_reactions')
+          .delete()
+          .eq('id', existing['id'] as String);
+    } else {
+      await _client.from('jam_highlight_reactions').insert({
+        'jam_highlight_id': jamHighlightId,
+        'user_id': userId,
+        'emoji': emoji,
+      });
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchComments(String jamHighlightId) async {
+    final response = await _client
+        .from('jam_highlight_comments')
+        .select('*, profiles(display_name)')
+        .eq('jam_highlight_id', jamHighlightId)
+        .order('created_at', ascending: true);
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
+  Future<void> addComment(String jamHighlightId, String content) async {
+    await _client.from('jam_highlight_comments').insert({
+      'jam_highlight_id': jamHighlightId,
+      'user_id': userId,
+      'content': content,
+    });
+  }
+
+  Future<void> deleteComment(String commentId) async {
+    await _client
+        .from('jam_highlight_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', userId!);
+  }
+
+  // ─── Profile ──────────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> fetchProfile([String? id]) async {
+    final target = id ?? userId;
+    if (target == null) return null;
+    return await _client
+        .from('profiles')
+        .select()
+        .eq('id', target)
+        .maybeSingle();
+  }
+
+  Future<void> updateCurrentlyReading({String? title, String? author}) async {
+    await _client.from('profiles').update({
+      'currently_reading_title': title,
+      'currently_reading_author': author,
+    }).eq('id', userId!);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchJamMembers(String jamId) async {
+    final memberRows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('jam_members')
+          .select('user_id, role, joined_at')
+          .eq('jam_id', jamId) as List,
+    );
+    if (memberRows.isEmpty) return [];
+    final ids = memberRows.map((r) => r['user_id'] as String).toList();
+    final profiles = List<Map<String, dynamic>>.from(
+      await _client
+          .from('profiles')
+          .select('id, display_name, currently_reading_title, currently_reading_author')
+          .inFilter('id', ids) as List,
+    );
+    final profileById = {for (var p in profiles) p['id'] as String: p};
+    return [
+      for (var m in memberRows)
+        {
+          ...m,
+          'profile': profileById[m['user_id']],
+        }
+    ];
+  }
+
   // ─── Realtime ─────────────────────────────────────────────────────────────
 
   RealtimeChannel subscribeToJam(String jamId, void Function(Map<String, dynamic>) onHighlightShared) {
