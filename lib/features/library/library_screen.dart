@@ -142,7 +142,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ),
                   )
                 : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 40),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
                     sliver: SliverGrid(
                       delegate: SliverChildBuilderDelegate(
                         (ctx, i) => _BookGridCard(

@@ -104,7 +104,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     ),
                   )
                 : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                     sliver: SliverList.builder(
                       itemCount: jams.length,
                       itemBuilder: (ctx, i) => _JamCard(

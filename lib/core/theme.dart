@@ -216,36 +216,6 @@ ThemeData buildMarginaliaTheme() {
         letterSpacing: -0.4,
       ),
     ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: MarginaliaColors.surfaceElevated,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      height: 64,
-      indicatorColor: MarginaliaColors.primaryFaint,
-      indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: MarginaliaColors.primary, size: 22);
-        }
-        return const IconThemeData(color: MarginaliaColors.inkMuted, size: 22);
-      }),
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: MarginaliaColors.primary,
-            letterSpacing: 0.4,
-          );
-        }
-        return const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: MarginaliaColors.inkMuted,
-          letterSpacing: 0.4,
-        );
-      }),
-    ),
     dividerTheme: const DividerThemeData(
       color: MarginaliaColors.rule,
       space: 1,

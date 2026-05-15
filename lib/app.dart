@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme.dart';
@@ -83,7 +84,7 @@ class MarginaliaApp extends StatelessWidget {
   }
 }
 
-// ─── Shell scaffold with bottom nav ──────────────────────────────────────────
+// ─── Shell scaffold with floating nav ────────────────────────────────────────
 
 class _ScaffoldWithNav extends StatelessWidget {
   const _ScaffoldWithNav({required this.child});
@@ -91,10 +92,10 @@ class _ScaffoldWithNav extends StatelessWidget {
   final Widget child;
 
   static const _tabs = [
-    (path: '/', icon: Icons.library_books_outlined, label: 'Libreria'),
-    (path: '/search', icon: Icons.search, label: 'Cerca'),
-    (path: '/social', icon: Icons.group_outlined, label: 'Jam'),
-    (path: '/settings', icon: Icons.settings_outlined, label: 'Impostazioni'),
+    (path: '/', icon: Icons.library_books_outlined, activeIcon: Icons.library_books, label: 'Libreria'),
+    (path: '/search', icon: Icons.search_outlined, activeIcon: Icons.search, label: 'Cerca'),
+    (path: '/social', icon: Icons.group_outlined, activeIcon: Icons.group, label: 'Jam'),
+    (path: '/settings', icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profilo'),
   ];
 
   @override
@@ -104,20 +105,135 @@ class _ScaffoldWithNav extends StatelessWidget {
         _tabs.indexWhere((t) => t.path == location).clamp(0, _tabs.length - 1);
 
     return Scaffold(
+      extendBody: true,
       body: child,
-      bottomNavigationBar: Container(
+      bottomNavigationBar: _FloatingNavBar(
+        selectedIndex: selectedIndex,
+        tabs: _tabs,
+        onTap: (i) {
+          HapticFeedback.lightImpact();
+          context.go(_tabs[i].path);
+        },
+      ),
+    );
+  }
+}
+
+// ─── Floating pill nav bar ────────────────────────────────────────────────────
+
+typedef _Tab = ({String path, IconData icon, IconData activeIcon, String label});
+
+class _FloatingNavBar extends StatelessWidget {
+  const _FloatingNavBar({
+    required this.selectedIndex,
+    required this.tabs,
+    required this.onTap,
+  });
+
+  final int selectedIndex;
+  final List<_Tab> tabs;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 16),
+      child: Container(
+        height: 64,
         decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
-          border: const Border(
-            top: BorderSide(color: MarginaliaColors.ruleFaint, width: 1),
-          ),
+          color: MarginaliaColors.primary,
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x40261E1D),
+              blurRadius: 24,
+              offset: Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Color(0x18261E1D),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
         ),
-        child: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: (i) => context.go(_tabs[i].path),
-          destinations: _tabs
-              .map((t) => NavigationDestination(icon: Icon(t.icon), label: t.label))
-              .toList(),
+        child: LayoutBuilder(
+          builder: (ctx, constraints) {
+            final tabWidth = constraints.maxWidth / tabs.length;
+
+            return Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                // ── Pill indicatore animato ──────────────────────────────
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeInOutCubic,
+                  left: tabWidth * selectedIndex + 8,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.easeInOutCubic,
+                    width: tabWidth - 16,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1EEE7).withAlpha(22),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                ),
+
+                // ── Tab items ────────────────────────────────────────────
+                Row(
+                  children: List.generate(tabs.length, (i) {
+                    final active = i == selectedIndex;
+                    final tab = tabs[i];
+                    return Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => onTap(i),
+                        child: SizedBox(
+                          height: 64,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                transitionBuilder: (child, anim) =>
+                                    ScaleTransition(scale: anim, child: child),
+                                child: Icon(
+                                  active ? tab.activeIcon : tab.icon,
+                                  key: ValueKey(active),
+                                  size: active ? 22 : 21,
+                                  color: active
+                                      ? const Color(0xFFF1EEE7)
+                                      : const Color(0xFFF1EEE7).withAlpha(110),
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 200),
+                                style: TextStyle(
+                                  fontSize: active ? 9.5 : 9,
+                                  fontWeight: active
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: active
+                                      ? const Color(0xFFF1EEE7)
+                                      : const Color(0xFFF1EEE7).withAlpha(110),
+                                  letterSpacing: active ? 0.3 : 0.1,
+                                ),
+                                child: Text(tab.label),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

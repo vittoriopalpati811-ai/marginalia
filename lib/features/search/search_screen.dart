@@ -143,7 +143,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 ),
                                 Expanded(
                                   child: ListView.builder(
-                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
                                     itemCount: highlights.length,
                                     itemBuilder: (ctx, i) {
                                       final h = highlights[i];

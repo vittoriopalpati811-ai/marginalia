@@ -28,6 +28,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Impostazioni')),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 120),
         children: [
           // ─── Account ─────────────────────────────────────────────────────
           _SectionHeader('ACCOUNT'),
