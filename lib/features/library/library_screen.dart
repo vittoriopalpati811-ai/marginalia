@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -172,7 +174,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final file = result.files.first;
     if (file.bytes == null) return;
 
-    final rawText = String.fromCharCodes(file.bytes!);
+    // utf8.decode handles multi-byte characters correctly (è, à, ù, etc.)
+    // allowMalformed: true tolerates BOM or mixed encodings from older Kindle firmware.
+    var rawText = utf8.decode(file.bytes!, allowMalformed: true);
+    // Strip UTF-8 BOM if present (﻿ at position 0)
+    if (rawText.startsWith('﻿')) rawText = rawText.substring(1);
     setState(() => _isImporting = true);
 
     try {
@@ -215,7 +221,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (!_requireAuth()) return;
     setState(() => _isImporting = true);
     try {
-      final rawText = await rootBundle.loadString('assets/demo/My Clippings.txt');
+      var rawText = await rootBundle.loadString('assets/demo/My Clippings.txt');
+      if (rawText.startsWith('﻿')) rawText = rawText.substring(1);
       final userId = ref.read(currentUserProvider)?.id ?? 'local';
       final isar = ref.read(isarProvider);
       final supabase = ref.read(supabaseServiceProvider);
