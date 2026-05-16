@@ -540,6 +540,44 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response as List);
   }
 
+  // ─── My profile ───────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchMyBooks() async {
+    if (!isAuthenticated || userId == null) return [];
+    final rows = await _client
+        .from('books')
+        .select('id, title, author')
+        .eq('user_id', userId!)
+        .order('title') as List;
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  /// Returns the longest highlight the user has (good for spotlight card).
+  Future<Map<String, dynamic>?> fetchMyHighlightSpotlight() async {
+    if (!isAuthenticated || userId == null) return null;
+    final rows = await _client
+        .from('highlights')
+        .select('id, content, color, books(title, author)')
+        .eq('user_id', userId!)
+        .order('added_at', ascending: false)
+        .limit(30) as List;
+    if (rows.isEmpty) return null;
+    final list = List<Map<String, dynamic>>.from(rows);
+    list.sort((a, b) =>
+        (b['content'] as String? ?? '').length
+            .compareTo((a['content'] as String? ?? '').length));
+    return list.first;
+  }
+
+  Future<void> updateProfileAppearance(
+      String gradientPreset, String patternPreset) async {
+    if (!isAuthenticated || userId == null) return;
+    await _client.from('profiles').update({
+      'gradient_preset': gradientPreset,
+      'pattern_preset': patternPreset,
+    }).eq('id', userId!);
+  }
+
   // ─── Realtime ─────────────────────────────────────────────────────────────
 
   RealtimeChannel subscribeToJam(String jamId, void Function(Map<String, dynamic>) onHighlightShared) {

@@ -11,6 +11,7 @@ import 'features/search/search_screen.dart';
 import 'features/social/social_screen.dart';
 import 'features/social/jam_detail_screen.dart';
 import 'features/profile/user_profile_screen.dart';
+import 'features/profile/my_profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/auth/auth_screen.dart';
@@ -77,7 +78,7 @@ final router = GoRouter(
         GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
         GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
         GoRoute(path: '/social', builder: (_, __) => const SocialScreen()),
-        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+        GoRoute(path: '/settings', builder: (_, __) => const MyProfileScreen()),
       ],
     ),
 
@@ -114,6 +115,11 @@ final router = GoRouter(
         final id = state.pathParameters['id'] ?? '';
         return _pushPage(UserProfileScreen(userId: id), state);
       },
+    ),
+    GoRoute(
+      path: '/account',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) => _modalPage(const SettingsScreen(), state),
     ),
 
     // Modal routes — fade + subtle slide up
