@@ -172,6 +172,10 @@ class SupabaseService {
     return [...owned, ...memberJams];
   }
 
+  Future<Map<String, dynamic>?> fetchJam(String jamId) async {
+    return await _client.from('jams').select().eq('id', jamId).maybeSingle();
+  }
+
   Future<Map<String, dynamic>?> fetchJamByInviteCode(String code) async {
     final response = await _client
         .from('jams')

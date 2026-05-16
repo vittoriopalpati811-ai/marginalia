@@ -23,6 +23,53 @@
 
 ## Sessioni
 
+### Sessione 5 — 2026-05-16
+**Durata**: ~2h
+**Branch**: main
+**Mac access in questa sessione?**: NO
+
+#### Fatto
+
+**Fix encoding caratteri speciali — round 2 (✅ definitivo)**
+- Root cause identificata: UUID dell'highlight era basato sul `content` → re-import con content corretto generava UUID diverso → dedup by location trovava match → `continue` impediva l'upsert → dati corrotti restavano in Supabase
+- Fix `import_service_web.dart`:
+  - UUID basato su `(bookId, location)` invece che `(bookId, content)` — stabile tra re-import
+  - Rimosso `continue` sul path dedup: upsert gira sempre, aggiorna automaticamente content corrotto
+  - `isDuplicate` calcolato PRIMA dell'upsert, contatori `deduplicated`/`added` separati correttamente
+- Aggiunto `deleteAllUserData()` a `SupabaseService` — nuclear option per dati già corrotti
+- Aggiunto "forza re-importazione" in `LibraryScreen` (long-press su import): cancella tutti i dati e reimporta
+
+**Redesign UI — design_course template (✅)**
+- `LibraryScreen`: griglia 2 colonne (SliverGrid), strip highlight recenti orizzontale, FilterChips animati, header editoriale senza AppBar
+- `BookDetailScreen`: stack hero 300px + DraggableScrollableSheet stile CourseInfoScreen, stat boxes, floating back button
+- `highlight_native.dart`: aggiunti getter cross-platform `bookTitle`, `bookAuthor`, `bookId`
+
+**Bottom nav floating pill (✅)**
+- `app.dart` completamente riscritto: `AnimatedPositioned` pill indicator, `AnimatedSwitcher` icon/label, `HapticFeedback`, `extendBody: true`
+- Transizioni push: `SharedAxisTransition` horizontal (package `animations`) — 380ms avanti, 320ms back
+- Transizioni modal: `FadeTransition` + `SlideTransition(Offset(0, 0.06))` — 420ms easeOutCubic
+- Transizioni tab: `AnimatedSwitcher` + `FadeTransition` keyed su `routePath` — 220ms
+
+**SocialScreen — Spotify-inspired (✅)**
+- Griglia 2×2 Jam card con cover art gradient, initial letter, JAM badge
+- Share invite via `share_plus` (codice invito + link download)
+- FAB create + pulsante join nel header
+- Sheets `_CreateJamSheet` e `_JoinJamSheet` estratti come StatelessWidget
+
+**JamDetailScreen — Spotify-inspired (✅ questa sessione)**
+- `_TrendingSection`: strip orizzontale dei 3 highlight più recenti, card con gradiente scuro, badge #1/#2/#3
+- Invite code visibile direttamente nell'header espanso (pill tappabile → copia negli appunti)
+- Share icon in `SliverAppBar.actions` → `share_plus` con messaggio formattato
+- `_MembersStrip` migliorato: avatar con gradiente personalizzato per utente, dot "📖" se sta leggendo, `Tooltip` con titolo libro, bordo dorato per owner
+- `_EmptyJamHighlights` potenziato: CTA primaria + card codice invito con pulsanti Copia / Condividi
+- `_SharePickerSheet` completamente ridisegnato: search bar con clear button, list raggruppata per libro con header colorati (Taupe), contatore highlight per libro
+- `SupabaseService.fetchJam(jamId)` aggiunto per recuperare invite_code e metadata Jam
+- Padding bottom 120px su tutti gli screen per clearance floating nav
+
+#### Prossima azione founder
+- `dart run build_runner build` dopo qualsiasi modifica ai modelli Isar
+- `flutter run -d windows` o `flutter run -d chrome` per smoke test
+
 ### Sessione 4 — 2026-05-11
 **Durata**: ~1h
 **Branch**: main

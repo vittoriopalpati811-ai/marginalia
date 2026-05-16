@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -26,75 +27,20 @@ class SocialScreen extends ConsumerStatefulWidget {
 class _SocialScreenState extends ConsumerState<SocialScreen> {
   @override
   Widget build(BuildContext context) {
-    final isAuth = ref.watch(isAuthenticatedProvider);
-
-    if (!isAuth) return _UnauthenticatedState();
+    if (!ref.watch(isAuthenticatedProvider)) return const _UnauthenticatedState();
 
     final jamsAsync = ref.watch(jamsProvider);
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
+      floatingActionButton: _CreateJamFab(onTap: _showCreateJamSheet),
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
-          // ── App bar con gradiente ────────────────────────────────────────
-          SliverAppBar(
-            floating: true,
-            snap: true,
-            expandedHeight: 120,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: MarginaliaDecorations.gradientHeader,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'Jam',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Text(
-                          'Le tue cerchie di lettura',
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(180),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              titlePadding: EdgeInsets.zero,
-              title: const SizedBox.shrink(),
-            ),
-            backgroundColor: MarginaliaColors.sienna,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                tooltip: 'Crea Jam',
-                onPressed: _showCreateJamSheet,
-              ),
-              IconButton(
-                icon: const Icon(Icons.group_add_outlined, color: Colors.white),
-                tooltip: 'Unisciti con codice',
-                onPressed: _showJoinJamSheet,
-              ),
-              const SizedBox(width: 4),
-            ],
-          ),
+          // ── Header ─────────────────────────────────────────────────────────
+          SliverToBoxAdapter(child: _JamHeader(onJoin: _showJoinJamSheet)),
 
-          // ── Contenuto ───────────────────────────────────────────────────
+          // ── Intro card (se nessuna jam) o griglia ──────────────────────────
           jamsAsync.when(
             data: (jams) => jams.isEmpty
                 ? SliverFillRemaining(
@@ -104,26 +50,38 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     ),
                   )
                 : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                    sliver: SliverList.builder(
-                      itemCount: jams.length,
-                      itemBuilder: (ctx, i) => _JamCard(
-                        jam: jams[i],
-                        index: i,
-                        onTap: () {
-                          final id = jams[i]['id'] as String? ?? '';
-                          final name = (jams[i]['title'] ?? jams[i]['name']) as String? ?? 'Jam';
-                          context.push('/jam/$id?name=${Uri.encodeComponent(name)}');
-                        },
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                        (ctx, i) => _JamGridCard(
+                          jam: jams[i],
+                          index: i,
+                          onTap: () {
+                            final id = jams[i]['id'] as String? ?? '';
+                            final name =
+                                (jams[i]['title'] ?? jams[i]['name'])
+                                        as String? ??
+                                    'Jam';
+                            context.push(
+                                '/jam/$id?name=${Uri.encodeComponent(name)}');
+                          },
+                          onShare: () => _shareInviteCode(jams[i]),
+                        ),
+                        childCount: jams.length,
+                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.9,
                       ),
                     ),
                   ),
             loading: () => const SliverFillRemaining(
               child: Center(
                 child: CircularProgressIndicator(
-                  color: MarginaliaColors.sienna,
-                  strokeWidth: 1.5,
-                ),
+                    color: MarginaliaColors.sienna, strokeWidth: 1.5),
               ),
             ),
             error: (e, _) => SliverFillRemaining(
@@ -135,74 +93,50 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     );
   }
 
+  // ── Share invite code ───────────────────────────────────────────────────────
+
+  void _shareInviteCode(Map<String, dynamic> jam) {
+    final code = jam['invite_code'] as String? ?? '';
+    final name = (jam['title'] ?? jam['name']) as String? ?? 'Jam';
+    if (code.isEmpty) {
+      Clipboard.setData(ClipboardData(text: name));
+      return;
+    }
+    Share.share(
+      '📚 Unisciti alla mia cerchia di lettura "$name" su Marginalia!\n\nCodice invito: $code',
+      subject: 'Marginalia Jam – $name',
+    );
+  }
+
+  // ── Sheets ──────────────────────────────────────────────────────────────────
+
   Future<void> _showCreateJamSheet() async {
     final nameController = TextEditingController();
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.surface,
+      backgroundColor: MarginaliaColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: MarginaliaColors.siennaFaint,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.group_add_outlined,
-                      color: MarginaliaColors.sienna, size: 20),
-                ),
-                const SizedBox(width: 12),
-                const Text('Nuova Jam',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: nameController,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'es. "Il Nome della Rosa"',
-                prefixIcon: Icon(Icons.auto_stories_outlined),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  if (nameController.text.trim().isEmpty) return;
-                  final service = ref.read(supabaseServiceProvider);
-                  try {
-                    await service.createJam(nameController.text.trim());
-                    if (ctx.mounted) Navigator.pop(ctx, true);
-                  } catch (e) {
-                    if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: Text('Errore creazione Jam: $e'),
-                          duration: const Duration(seconds: 15),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Crea Jam'),
-              ),
-            ),
-          ],
-        ),
+      builder: (ctx) => _CreateJamSheet(
+        controller: nameController,
+        onConfirm: () async {
+          final title = nameController.text.trim();
+          if (title.isEmpty) return;
+          final service = ref.read(supabaseServiceProvider);
+          try {
+            await service.createJam(title);
+            if (ctx.mounted) Navigator.pop(ctx, true);
+          } catch (e) {
+            if (ctx.mounted) {
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(content: Text('Errore: $e'),
+                    duration: const Duration(seconds: 10)),
+              );
+            }
+          }
+        },
       ),
     );
     if (created == true) ref.invalidate(jamsProvider);
@@ -213,168 +147,436 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.surface,
+      backgroundColor: MarginaliaColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: MarginaliaColors.siennaFaint,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.link_outlined,
-                      color: MarginaliaColors.sienna, size: 20),
+      builder: (ctx) => _JoinJamSheet(
+        controller: codeController,
+        onConfirm: () async {
+          final code = codeController.text.trim();
+          if (code.isEmpty) return;
+          final service = ref.read(supabaseServiceProvider);
+          try {
+            final jam = await service.fetchJamByInviteCode(code);
+            if (jam == null) {
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Codice non valido.')),
+                );
+              }
+              return;
+            }
+            await service.joinJam(jam['id'] as String);
+            if (ctx.mounted) Navigator.pop(ctx);
+            ref.invalidate(jamsProvider);
+          } catch (e) {
+            if (ctx.mounted) {
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(content: Text('Errore: $e'),
+                    duration: const Duration(seconds: 10)),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+class _JamHeader extends StatelessWidget {
+  const _JamHeader({required this.onJoin});
+  final VoidCallback onJoin;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: MarginaliaDecorations.gradientHeader,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 16, 24),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Jam',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Le tue cerchie di lettura',
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(170),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                const Text('Unisciti a una Jam',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: codeController,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Incolla il codice invito',
-                prefixIcon: Icon(Icons.tag_outlined),
               ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final code = codeController.text.trim();
-                  if (code.isEmpty) return;
-                  final service = ref.read(supabaseServiceProvider);
-                  try {
-                    final jam = await service.fetchJamByInviteCode(code);
-                    if (jam == null) {
-                      if (ctx.mounted) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(content: Text('Codice non valido.')),
-                        );
-                      }
-                      return;
-                    }
-                    await service.joinJam(jam['id'] as String);
-                  } catch (e) {
-                    if (ctx.mounted) {
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: Text('Errore: $e'),
-                          duration: const Duration(seconds: 15),
-                        ),
-                      );
-                    }
-                    return;
-                  }
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  ref.invalidate(jamsProvider);
-                },
-                child: const Text('Unisciti'),
+              TextButton.icon(
+                onPressed: onJoin,
+                icon: const Icon(Icons.link_outlined,
+                    size: 16, color: Colors.white),
+                label: const Text('Unisciti',
+                    style: TextStyle(color: Colors.white, fontSize: 13)),
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white.withAlpha(25),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// ─── Jam card ─────────────────────────────────────────────────────────────────
+// ─── Jam grid card (stile playlist Spotify) ───────────────────────────────────
 
-class _JamCard extends StatelessWidget {
-  const _JamCard({required this.jam, required this.index, required this.onTap});
+class _JamGridCard extends StatelessWidget {
+  const _JamGridCard({
+    required this.jam,
+    required this.index,
+    required this.onTap,
+    required this.onShare,
+  });
 
   final Map<String, dynamic> jam;
   final int index;
   final VoidCallback onTap;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
     final name = (jam['title'] ?? jam['name']) as String? ?? '';
     final code = jam['invite_code'] as String? ?? '';
-    final memberCount = (jam['jam_members'] as List?)?.length ?? 0;
+
+    // Colour derived from name hash (consistent per Jam)
+    final colors = [
+      [const Color(0xFF4C3B3A), const Color(0xFF261E1D)],
+      [const Color(0xFF7F785B), const Color(0xFF4C3B3A)],
+      [const Color(0xFF5C4A40), const Color(0xFF261E1D)],
+      [const Color(0xFF6B5D54), const Color(0xFF4C3B3A)],
+    ];
+    final palette = colors[name.hashCode.abs() % colors.length];
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'J';
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: MarginaliaDecorations.card(),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: MarginaliaColors.rule),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0E261E1D),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Cover art ──────────────────────────────────────────────
+            Expanded(
+              flex: 65,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: palette,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Decorative ring
+                    Positioned(
+                      bottom: -20,
+                      right: -20,
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withAlpha(12),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            initial,
+                            style: const TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(25),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'JAM',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Info ────────────────────────────────────────────────────
+            Expanded(
+              flex: 35,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 6, 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: MarginaliaTextStyles.bookTitle
+                                .copyWith(fontSize: 13),
+                          ),
+                          if (code.isNotEmpty)
+                            Text(
+                              '# $code',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: MarginaliaColors.inkFaint,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Share button
+                    GestureDetector(
+                      onTap: onShare,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.ios_share_outlined,
+                          size: 16,
+                          color: MarginaliaColors.inkFaint,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    )
+        .animate(delay: (index * 60).ms)
+        .fadeIn(duration: 350.ms, curve: Curves.easeOut)
+        .slideY(begin: 0.05, end: 0, duration: 350.ms);
+  }
+}
+
+// ─── FAB crea Jam ─────────────────────────────────────────────────────────────
+
+class _CreateJamFab extends StatelessWidget {
+  const _CreateJamFab({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 96),
+      child: FloatingActionButton.extended(
+        onPressed: onTap,
+        backgroundColor: MarginaliaColors.primary,
+        foregroundColor: const Color(0xFFF1EEE7),
+        elevation: 6,
+        icon: const Icon(Icons.add, size: 20),
+        label: const Text('Nuova Jam',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      ),
+    );
+  }
+}
+
+// ─── Create Jam sheet ─────────────────────────────────────────────────────────
+
+class _CreateJamSheet extends StatelessWidget {
+  const _CreateJamSheet(
+      {required this.controller, required this.onConfirm});
+  final TextEditingController controller;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
+                child: const Icon(Icons.group_add_outlined,
+                    color: Colors.white, size: 18),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name, style: MarginaliaTextStyles.bookTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$memberCount ${memberCount == 1 ? "membro" : "membri"}',
-                      style: MarginaliaTextStyles.bookAuthor,
-                    ),
-                  ],
-                ),
+              const SizedBox(width: 12),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nuova Jam',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text('Crea una cerchia di lettura',
+                      style: TextStyle(
+                          fontSize: 12, color: MarginaliaColors.inkMuted)),
+                ],
               ),
-              if (code.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.copy_outlined,
-                      size: 18, color: MarginaliaColors.inkFaint),
-                  tooltip: 'Copia codice invito',
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: code));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Codice invito copiato!')),
-                    );
-                  },
-                ),
-              const Icon(Icons.chevron_right,
-                  color: MarginaliaColors.inkFaint, size: 18),
             ],
           ),
-        ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              hintText: 'es. "Classici del Novecento"',
+              prefixIcon: Icon(Icons.auto_stories_outlined),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Riceverai un codice invito da condividere con gli amici.',
+            style: TextStyle(
+                fontSize: 12,
+                color: MarginaliaColors.inkMuted,
+                height: 1.5),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: onConfirm,
+              child: const Text('Crea Jam'),
+            ),
+          ),
+        ],
       ),
-    )
-        .animate(delay: (index * 50).ms)
-        .fadeIn(duration: 300.ms, curve: Curves.easeOut)
-        .slideY(begin: 0.04, end: 0, duration: 300.ms);
+    );
+  }
+}
+
+// ─── Join Jam sheet ───────────────────────────────────────────────────────────
+
+class _JoinJamSheet extends StatelessWidget {
+  const _JoinJamSheet(
+      {required this.controller, required this.onConfirm});
+  final TextEditingController controller;
+  final VoidCallback onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.siennaFaint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.link_outlined,
+                    color: MarginaliaColors.sienna, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Text('Unisciti a una Jam',
+                  style:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              hintText: 'Codice invito (es. ABC123)',
+              prefixIcon: Icon(Icons.tag_outlined),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(onPressed: onConfirm, child: const Text('Unisciti')),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -382,7 +584,6 @@ class _JamCard extends StatelessWidget {
 
 class _EmptyJams extends StatelessWidget {
   const _EmptyJams({required this.onCreateJam, required this.onJoinJam});
-
   final VoidCallback onCreateJam;
   final VoidCallback onJoinJam;
 
@@ -395,43 +596,37 @@ class _EmptyJams extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(22),
               ),
-              child: const Icon(Icons.group_outlined, size: 32, color: Colors.white),
+              child: const Icon(Icons.group_outlined,
+                  size: 36, color: Colors.white),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Nessuna Jam ancora',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: MarginaliaColors.ink,
-                letterSpacing: -0.3,
-              ),
-            ),
+            const Text('Nessuna Jam ancora',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3)),
             const SizedBox(height: 10),
             const Text(
-              'Crea una cerchia di lettura\no unisciti a quella di un amico.',
+              'Crea una cerchia di lettura o\nunisciti a quella di un amico.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: MarginaliaColors.inkMuted,
-                height: 1.6,
-                fontSize: 14,
-              ),
+                  color: MarginaliaColors.inkMuted, height: 1.6, fontSize: 14),
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
               onPressed: onCreateJam,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Crea Jam'),
+              label: const Text('Crea la prima Jam'),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -442,9 +637,9 @@ class _EmptyJams extends StatelessWidget {
                 foregroundColor: MarginaliaColors.sienna,
                 side: const BorderSide(color: MarginaliaColors.sienna),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
             ),
           ],
@@ -454,16 +649,17 @@ class _EmptyJams extends StatelessWidget {
   }
 }
 
-// ─── Unauthenticated state ────────────────────────────────────────────────────
+// ─── Unauthenticated ──────────────────────────────────────────────────────────
 
 class _UnauthenticatedState extends StatelessWidget {
+  const _UnauthenticatedState();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
       body: Column(
         children: [
-          // Header gradient
           Container(
             width: double.infinity,
             decoration: MarginaliaDecorations.gradientHeader,
@@ -471,19 +667,15 @@ class _UnauthenticatedState extends StatelessWidget {
               bottom: false,
               child: const Padding(
                 padding: EdgeInsets.fromLTRB(20, 20, 20, 32),
-                child: Text(
-                  'Jam',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                child: Text('Jam',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6)),
               ),
             ),
           ),
-          // Content
           Expanded(
             child: Center(
               child: Padding(
@@ -495,31 +687,25 @@ class _UnauthenticatedState extends StatelessWidget {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.siennaFaint,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                          color: MarginaliaColors.siennaFaint,
+                          borderRadius: BorderRadius.circular(20)),
                       child: const Icon(Icons.lock_outline,
                           size: 32, color: MarginaliaColors.sienna),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Accedi per usare le Jam',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: MarginaliaColors.ink,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
+                    const Text('Accedi per usare le Jam',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3)),
                     const SizedBox(height: 10),
                     const Text(
                       'Le cerchie di lettura richiedono\nun account Marginalia.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: MarginaliaColors.inkMuted,
-                        height: 1.6,
-                        fontSize: 14,
-                      ),
+                          color: MarginaliaColors.inkMuted,
+                          height: 1.6,
+                          fontSize: 14),
                     ),
                     const SizedBox(height: 32),
                     FilledButton(
