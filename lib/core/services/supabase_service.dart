@@ -288,6 +288,14 @@ class SupabaseService {
         .maybeSingle();
   }
 
+  /// Delete all highlights and books for the current user.
+  /// Used by "force reimport" to clear corrupted data before re-upload.
+  Future<void> deleteAllUserData() async {
+    final uid = userId!;
+    await _client.from('highlights').delete().eq('user_id', uid);
+    await _client.from('books').delete().eq('user_id', uid);
+  }
+
   Future<void> updateCurrentlyReading({String? title, String? author}) async {
     await _client.from('profiles').update({
       'currently_reading_title': title,

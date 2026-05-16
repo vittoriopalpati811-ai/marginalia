@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -16,13 +17,61 @@ import 'features/auth/auth_screen.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+// ─── Transition helpers ───────────────────────────────────────────────────────
+
+/// Push transition: shared axis horizontal (slide + fade, Material motion spec).
+CustomTransitionPage<void> _pushPage(Widget child, GoRouterState state) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 380),
+    reverseTransitionDuration: const Duration(milliseconds: 320),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return SharedAxisTransition(
+        animation: animation,
+        secondaryAnimation: secondaryAnimation,
+        transitionType: SharedAxisTransitionType.horizontal,
+        fillColor: MarginaliaColors.background,
+        child: child,
+      );
+    },
+  );
+}
+
+/// Modal transition: slide from bottom + fade (for auth, settings overlays).
+CustomTransitionPage<void> _modalPage(Widget child, GoRouterState state) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 420),
+    reverseTransitionDuration: const Duration(milliseconds: 340),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final slide = Tween<Offset>(
+        begin: const Offset(0.0, 0.06),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      ));
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: SlideTransition(position: slide, child: child),
+      );
+    },
+  );
+}
+
+// ─── Router ───────────────────────────────────────────────────────────────────
+
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
   routes: [
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => _ScaffoldWithNav(child: child),
+      builder: (context, state, child) =>
+          _ScaffoldWithNav(routePath: state.uri.path, child: child),
       routes: [
         GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
         GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
@@ -31,44 +80,48 @@ final router = GoRouter(
       ],
     ),
 
-    // Full-screen routes
+    // Full-screen push routes — horizontal shared axis
     GoRoute(
       path: '/book/:id',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (_, state) {
+      pageBuilder: (_, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-        return BookDetailScreen(bookId: id);
+        return _pushPage(BookDetailScreen(bookId: id), state);
       },
     ),
     GoRoute(
       path: '/highlight/:id',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (_, state) {
+      pageBuilder: (_, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-        return HighlightDetailScreen(highlightId: id);
+        return _pushPage(HighlightDetailScreen(highlightId: id), state);
       },
     ),
     GoRoute(
       path: '/jam/:id',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (_, state) {
+      pageBuilder: (_, state) {
         final id = state.pathParameters['id'] ?? '';
         final name = state.uri.queryParameters['name'] ?? 'Jam';
-        return JamDetailScreen(jamId: id, jamName: name);
+        return _pushPage(JamDetailScreen(jamId: id, jamName: name), state);
       },
     ),
+
+    // Modal routes — fade + subtle slide up
     GoRoute(
       path: '/auth',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (_, __) => const AuthScreen(),
+      pageBuilder: (_, state) => _modalPage(const AuthScreen(), state),
     ),
     GoRoute(
       path: '/sync/kindle',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (_, __) => const AmazonLoginScreen(),
+      pageBuilder: (_, state) => _modalPage(const AmazonLoginScreen(), state),
     ),
   ],
 );
+
+// ─── App ─────────────────────────────────────────────────────────────────────
 
 class MarginaliaApp extends StatelessWidget {
   const MarginaliaApp({super.key});
@@ -87,9 +140,13 @@ class MarginaliaApp extends StatelessWidget {
 // ─── Shell scaffold with floating nav ────────────────────────────────────────
 
 class _ScaffoldWithNav extends StatelessWidget {
-  const _ScaffoldWithNav({required this.child});
+  const _ScaffoldWithNav({
+    required this.child,
+    required this.routePath,
+  });
 
   final Widget child;
+  final String routePath;
 
   static const _tabs = [
     (path: '/', icon: Icons.library_books_outlined, activeIcon: Icons.library_books, label: 'Libreria'),
@@ -100,13 +157,25 @@ class _ScaffoldWithNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
     final selectedIndex =
-        _tabs.indexWhere((t) => t.path == location).clamp(0, _tabs.length - 1);
+        _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
 
     return Scaffold(
       extendBody: true,
-      body: child,
+      // Tab transitions: fade between screens
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+        child: KeyedSubtree(
+          key: ValueKey(routePath),
+          child: child,
+        ),
+      ),
       bottomNavigationBar: _FloatingNavBar(
         selectedIndex: selectedIndex,
         tabs: _tabs,

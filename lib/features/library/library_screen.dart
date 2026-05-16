@@ -64,6 +64,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             child: _EditorialHeader(
               isImporting: _isImporting,
               onImport: _pickAndImportFile,
+              onForceReimport: () => _pickAndImportFile(forceClean: true),
             ),
           ),
 
@@ -204,8 +205,42 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   // ─── Import da file picker ────────────────────────────────────────────────
 
-  Future<void> _pickAndImportFile() async {
+  Future<void> _pickAndImportFile({bool forceClean = false}) async {
     if (!_requireAuth()) return;
+
+    // If forceClean, confirm then wipe before importing
+    if (forceClean) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: MarginaliaColors.surfaceElevated,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Cancella e reimporta?',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+          content: const Text(
+            'Tutti i tuoi highlight e libri verranno eliminati da Supabase, '
+            'poi reimportati dal file scelto.\n\n'
+            'Utile per correggere caratteri corrotti da import precedenti.',
+            style:
+                TextStyle(color: MarginaliaColors.inkMuted, fontSize: 14, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFB54848)),
+              child: const Text('Cancella e reimporta'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -223,6 +258,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (rawText.startsWith('﻿')) rawText = rawText.substring(1);
 
     setState(() => _isImporting = true);
+
+    // Wipe existing data if force-clean was requested
+    if (forceClean) {
+      try {
+        await ref.read(supabaseServiceProvider).deleteAllUserData();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Errore pulizia dati: $e')),
+          );
+        }
+        setState(() => _isImporting = false);
+        return;
+      }
+    }
     try {
       final userId = ref.read(currentUserProvider)?.id ?? 'local';
       final isar = ref.read(isarProvider);
@@ -310,10 +360,12 @@ class _EditorialHeader extends StatelessWidget {
   const _EditorialHeader({
     required this.isImporting,
     required this.onImport,
+    required this.onForceReimport,
   });
 
   final bool isImporting;
   final VoidCallback onImport;
+  final VoidCallback onForceReimport;
 
   @override
   Widget build(BuildContext context) {
@@ -362,11 +414,14 @@ class _EditorialHeader extends StatelessWidget {
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.upload_file_outlined),
-              color: MarginaliaColors.inkMuted,
-              tooltip: 'Importa My Clippings.txt',
-              onPressed: onImport,
+            GestureDetector(
+              onLongPress: onForceReimport,
+              child: IconButton(
+                icon: const Icon(Icons.upload_file_outlined),
+                color: MarginaliaColors.inkMuted,
+                tooltip: 'Importa · Tieni premuto per reimportare da zero',
+                onPressed: onImport,
+              ),
             ),
         ],
       ),

@@ -41,7 +41,7 @@ class ImportService {
 
     final clippings = MyClippingsParser().parse(rawText);
 
-    // Fetch existing books and highlights once to detect duplicates
+    // Fetch existing books once to detect new vs existing.
     final existingBooks = await svc.fetchBooks();
     final bookTitleAuthorToId = <String, String>{};
     for (final b in existingBooks) {
@@ -49,8 +49,9 @@ class ImportService {
       bookTitleAuthorToId[key] = b['id'] as String;
     }
 
+    // Fetch existing highlights once to track deduplication.
+    // Key: bookId|location — SAME key used to generate stable UUIDs.
     final existingHighlights = await svc.fetchHighlights();
-    // Key: bookId|location → highlight id
     final existingHlKeys = <String>{};
     for (final h in existingHighlights) {
       final loc = h['location'] as String?;
@@ -68,7 +69,7 @@ class ImportService {
     for (final clipping in clippings) {
       if (clipping.type == ClippingType.bookmark) continue;
 
-      // Find or create book
+      // ── Find or create book ──────────────────────────────────────────────
       final bookKey = '${clipping.bookTitle}|${clipping.bookAuthor}';
       String? bookId = bookTitleAuthorToId[bookKey];
 
@@ -86,18 +87,28 @@ class ImportService {
         } catch (e) {
           booksFailed++;
           firstError ??= 'BOOK "${clipping.bookTitle}": $e';
-          continue; // skip highlights for this book
+          continue;
         }
       }
 
-      // Deduplicate by book + location
-      final hlKey = '$bookId|${clipping.location ?? clipping.content.hashCode}';
-      if (existingHlKeys.contains(hlKey)) {
-        highlightsDeduplicated++;
-        continue;
-      }
+      // ── Upsert highlight ─────────────────────────────────────────────────
+      //
+      // UUID is keyed on (bookId, location) — NOT on content.
+      // This means the UUID is stable across re-imports even if the content
+      // encoding was previously corrupted (Ã¨ vs è).  Re-importing always
+      // updates the content column via upsert, automatically fixing any
+      // data that was stored with broken encoding in a prior import.
+      final locationKey = clipping.location ?? '';
+      final hlKey = '$bookId|$locationKey';
+      final isDuplicate = locationKey.isNotEmpty && existingHlKeys.contains(hlKey);
 
-      final hlId = _stableUuid(bookId, clipping.content);
+      // Use location as stable UUID seed; fall back to content only when
+      // location is absent (e.g. notes without position metadata).
+      final hlId = _stableUuid(
+        bookId,
+        locationKey.isNotEmpty ? locationKey : clipping.content,
+      );
+
       try {
         await svc.upsertRawHighlight(
           id: hlId,
@@ -109,7 +120,12 @@ class ImportService {
           color: clipping.color,
         );
         existingHlKeys.add(hlKey);
-        highlightsAdded++;
+
+        if (isDuplicate) {
+          highlightsDeduplicated++;
+        } else {
+          highlightsAdded++;
+        }
       } catch (e) {
         highlightsFailed++;
         firstError ??= 'HIGHLIGHT: $e';
@@ -126,12 +142,13 @@ class ImportService {
     );
   }
 
-  // Generate a stable UUID-like ID from two strings so re-importing the same
-  // file is idempotent even without a prior fetch.
+  // Stable UUID from two strings — idempotent across re-imports.
+  // Formatted as UUID v4 shape for Supabase compatibility.
   String _stableUuid(String a, String b) {
     final bytes = utf8.encode('$a||$b');
     final hash = sha256.convert(bytes).toString();
-    // Format as UUID v4 shape for Supabase compatibility
-    return '${hash.substring(0, 8)}-${hash.substring(8, 12)}-4${hash.substring(13, 16)}-${hash.substring(16, 20)}-${hash.substring(20, 32)}';
+    return '${hash.substring(0, 8)}-${hash.substring(8, 12)}'
+        '-4${hash.substring(13, 16)}-${hash.substring(16, 20)}'
+        '-${hash.substring(20, 32)}';
   }
 }
