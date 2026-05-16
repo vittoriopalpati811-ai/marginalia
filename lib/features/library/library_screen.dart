@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -189,6 +190,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+  // ─── Encoding ────────────────────────────────────────────────────────────────
+
+  /// Decodes My Clippings.txt bytes to a Dart string.
+  ///
+  /// Modern Kindles write UTF-8, sometimes with BOM.
+  /// Older firmware and files copied via Windows may use Latin-1 / Windows-1252.
+  /// Strategy: strip BOM at byte level → try strict UTF-8 → fall back to Latin-1.
+  String _decodeClippings(Uint8List bytes) {
+    // Strip UTF-8 BOM (EF BB BF) at the byte level so the decoder never sees it.
+    var data = bytes;
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xEF &&
+        bytes[1] == 0xBB &&
+        bytes[2] == 0xBF) {
+      data = bytes.sublist(3);
+    }
+    // Try strict UTF-8 first (covers virtually all modern Kindles).
+    try {
+      return utf8.decode(data);
+    } catch (_) {}
+    // Fall back to Latin-1 (ISO 8859-1).  Every byte is a valid codepoint so
+    // this never throws.  Correctly decodes accented Italian/French characters
+    // (è à ù é ê ô ü …) written by older Kindle firmware or transcoded on Windows.
+    return latin1.decode(data);
+  }
+
   // ─── Auth guard ─────────────────────────────────────────────────────────────
 
   bool _requireAuth() {
@@ -260,8 +287,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     // utf8.decode handles multi-byte characters (è, à, ù, etc.) correctly.
     // allowMalformed: true tolerates BOM or mixed encodings from older Kindle.
-    var rawText = utf8.decode(file.bytes!, allowMalformed: true);
-    if (rawText.startsWith('﻿')) rawText = rawText.substring(1);
+    var rawText = _decodeClippings(file.bytes!);
 
     setState(() => _isImporting = true);
 

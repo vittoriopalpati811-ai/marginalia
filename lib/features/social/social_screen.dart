@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'amici_tab.dart';
+import 'feed_tab.dart';
 
 final jamsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
   (ref) {
@@ -32,7 +33,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
     // Rebuild to show/hide FAB when switching tabs.
     _tabController.addListener(() => setState(() {}));
   }
@@ -51,8 +52,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      // FAB only visible on the Jam tab
-      floatingActionButton: _tabController.index == 0
+      // FAB only visible on the Jam tab (index 1)
+      floatingActionButton: _tabController.index == 1
           ? _CreateJamFab(onTap: _showCreateJamSheet)
           : null,
       body: Column(
@@ -67,6 +68,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
+                const FeedTab(),
                 _JamTabContent(
                   onCreateJam: _showCreateJamSheet,
                   onJoinJam: _showJoinJamSheet,
@@ -262,6 +264,7 @@ class _SocialHeader extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             tabs: const [
+              Tab(text: 'Feed'),
               Tab(text: 'Jam'),
               Tab(text: 'Amici'),
             ],

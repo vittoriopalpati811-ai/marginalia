@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -243,16 +244,19 @@ class _UserRow extends StatelessWidget {
     final name = user['display_name'] as String? ?? 'Utente';
     final readingTitle = user['currently_reading_title'] as String?;
     final readingAuthor = user['currently_reading_author'] as String?;
+    final uid = user['id'] as String?;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final avatarColor = MarginaliaDecorations.bookCoverColor(name);
     final isReading = readingTitle != null && readingTitle.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-        decoration: MarginaliaDecorations.card(),
-        child: Row(
+      child: GestureDetector(
+        onTap: uid != null ? () => context.push('/user/$uid') : null,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          decoration: MarginaliaDecorations.card(),
+          child: Row(
           children: [
             // ── Avatar ─────────────────────────────────────────────────
             Container(
@@ -380,6 +384,7 @@ class _UserRow extends StatelessWidget {
                         ),
             ),
           ],
+          ),
         ),
       ),
     )

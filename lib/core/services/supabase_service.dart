@@ -469,6 +469,77 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response as List);
   }
 
+  // ─── Feed (highlights shared by people I follow) ──────────────────────────
+
+  /// Recent highlights shared by followed users across all Jams, newest first.
+  Future<List<Map<String, dynamic>>> fetchFeed() async {
+    if (!isAuthenticated) return [];
+    final followingIds = (await fetchFollowingIds()).toList();
+    if (followingIds.isEmpty) return [];
+
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('jam_highlights')
+              .select(
+                  '*, highlights(id, content, color, books(title, author)), jams(id, title)')
+              .inFilter('shared_by', followingIds)
+              .order('shared_at', ascending: false)
+              .limit(60) as List,
+    );
+    if (rows.isEmpty) return [];
+
+    // Fetch profiles for the users who shared
+    final userIds =
+        rows.map((r) => r['shared_by'] as String).toSet().toList();
+    final profiles = List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select('id, display_name, currently_reading_title')
+              .inFilter('id', userIds) as List,
+    );
+    final profileById = {for (var p in profiles) p['id'] as String: p};
+
+    return rows
+        .map((r) => {...r, 'profile': profileById[r['shared_by'] as String]})
+        .toList();
+  }
+
+  // ─── Other user profile ────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> fetchPublicProfile(String targetId) async {
+    return await _client
+        .from('profiles')
+        .select()
+        .eq('id', targetId)
+        .maybeSingle();
+  }
+
+  Future<Map<String, int>> fetchUserStats(String targetId) async {
+    final results = await Future.wait([
+      _client.from('highlights').select('id').eq('user_id', targetId),
+      _client.from('jam_highlights').select('highlight_id').eq('shared_by', targetId),
+      _client.from('follows').select('following_id').eq('follower_id', targetId),
+      _client.from('follows').select('follower_id').eq('following_id', targetId),
+    ]);
+    return {
+      'highlights': (results[0] as List).length,
+      'shared': (results[1] as List).length,
+      'following': (results[2] as List).length,
+      'followers': (results[3] as List).length,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserSharedHighlights(
+      String targetId) async {
+    final response = await _client
+        .from('jam_highlights')
+        .select(
+            '*, highlights(content, color, books(title, author)), jams(title, id)')
+        .eq('shared_by', targetId)
+        .order('shared_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
   // ─── Realtime ─────────────────────────────────────────────────────────────
 
   RealtimeChannel subscribeToJam(String jamId, void Function(Map<String, dynamic>) onHighlightShared) {

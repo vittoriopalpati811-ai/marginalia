@@ -23,6 +23,50 @@
 
 ## Sessioni
 
+### Sessione 7 — 2026-05-16
+**Durata**: ~1.5h
+**Branch**: main
+**Mac access in questa sessione?**: NO
+
+#### Fatto
+
+**Fix encoding caratteri accentati — definitivo (✅)**
+- Root cause: `utf8.decode(bytes, allowMalformed: true)` sostituiva silenziosamente i byte Latin-1 invalidi con U+FFFD invece di fare fallback
+- Fix `library_screen.dart`: nuovo metodo `_decodeClippings(Uint8List)` → strip BOM (0xEF 0xBB 0xBF) → `utf8.decode()` strict → catch FormatException → `latin1.decode()` come fallback sicuro (copre tutti i 256 valori byte)
+- Kindles moderni usano UTF-8; vecchi firmware Latin-1 / Windows-1252 — ora entrambi gestiti
+
+**5 dummy user per test social (✅)**
+- `supabase/migrations/004_profile_reading_social.sql`: aggiunge `currently_reading_title`, `currently_reading_author`, `bio` ai profili; colonna `role` a `jam_members`; crea `jam_highlight_reactions`, `jam_highlight_comments`, `follows` con RLS
+- `supabase/seed_dummy_users.sql`: script idempotente da eseguire nel SQL Editor del dashboard Supabase — 5 utenti (Marco Rossi, Sofia Bianchi, Luca Ferrari, Elena Conti, Davide Russo), 7 libri con citazioni italiane reali, 2 Jam (Libri di Settembre / Classici del 900), highlight condivisi, follow reciproci
+- Sezione commentata in fondo per collegare il proprio account reale ai dummy users
+
+**Feed sociale (✅)**
+- `lib/features/social/feed_tab.dart` (nuovo, ~290 righe): `feedProvider` → `svc.fetchFeed()` → join client-side con profili; `FeedTab` con stati loaded/empty/notLoggedIn; `_FeedCard` con avatar gradiente, timestamp relativo, badge Jam tappabile, accent strip colore Kindle, estratto highlight 240 chars; animazione staggered fadeIn + slideY
+- `SupabaseService.fetchFeed()`: query `jam_highlights` filtrata su `followingIds`, join `highlights(books)` e `jams`, poi fetch profili in parallelo e merge
+
+**Profilo utente pubblico (✅)**
+- `lib/features/profile/user_profile_screen.dart` (nuovo, ~380 righe): provider family per profilo, statistiche, highlight condivisi, isFollowing; `SliverAppBar(expandedHeight: 260)` con avatar gradiente; `_StatsRow` (Highlight/Condivisi/Seguiti/Follower); bottone Segui/Smetti (nascosto per se stessi); griglia 2 colonne di `_SharedCell` con gradiente e badge Jam
+- `SupabaseService`: aggiunti `fetchPublicProfile`, `fetchUserStats`, `fetchUserSharedHighlights`
+
+**SocialScreen a 3 tab (✅)**
+- Feed (index 0) → Jam (index 1, default) → Amici (index 2)
+- `TabController(length: 3, initialIndex: 1)` — apre sempre sul Jam
+- FAB "crea Jam" appare solo nella tab Jam
+
+**AmiciTab — righe tappabili (✅)**
+- `_UserRow` wrappato in `GestureDetector` → `context.push('/user/$uid')` su tap della card
+- Import `go_router` aggiunto ad `amici_tab.dart`
+
+**Route `/user/:id` (✅)**
+- `app.dart`: GoRoute `path: '/user/:id'` con `parentNavigatorKey: _rootNavigatorKey` → `UserProfileScreen(userId: id)` con transizione `SharedAxisTransition` horizontal
+
+#### Prossima azione founder
+1. Esegui migration `004_profile_reading_social.sql` nel SQL Editor Supabase
+2. Esegui `seed_dummy_users.sql` — poi decommentare la sezione in fondo con il tuo UUID
+3. `flutter run -d windows` o `-d chrome` per smoke test Feed + Profili
+
+---
+
 ### Sessione 6 — 2026-05-16
 **Durata**: ~2h
 **Branch**: main

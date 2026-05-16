@@ -10,6 +10,7 @@ import 'features/reader/highlight_detail_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/social/social_screen.dart';
 import 'features/social/jam_detail_screen.dart';
+import 'features/profile/user_profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/auth/auth_screen.dart';
@@ -104,6 +105,14 @@ final router = GoRouter(
         final id = state.pathParameters['id'] ?? '';
         final name = state.uri.queryParameters['name'] ?? 'Jam';
         return _pushPage(JamDetailScreen(jamId: id, jamName: name), state);
+      },
+    ),
+    GoRoute(
+      path: '/user/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return _pushPage(UserProfileScreen(userId: id), state);
       },
     ),
 
