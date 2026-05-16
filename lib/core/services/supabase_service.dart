@@ -332,6 +332,143 @@ class SupabaseService {
     ];
   }
 
+  // ─── Follows ──────────────────────────────────────────────────────────────
+
+  /// Follow another user (idempotent upsert).
+  Future<void> followUser(String targetId) async {
+    await _client.from('follows').upsert({
+      'follower_id': userId,
+      'following_id': targetId,
+    });
+  }
+
+  /// Stop following a user.
+  Future<void> unfollowUser(String targetId) async {
+    await _client
+        .from('follows')
+        .delete()
+        .eq('follower_id', userId!)
+        .eq('following_id', targetId);
+  }
+
+  /// Profiles of users I follow, with their reading status.
+  Future<List<Map<String, dynamic>>> fetchFollowing() async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', userId!) as List,
+    );
+    if (rows.isEmpty) return [];
+    final ids = rows.map((r) => r['following_id'] as String).toList();
+    return List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select(
+                  'id, display_name, currently_reading_title, currently_reading_author')
+              .inFilter('id', ids) as List,
+    );
+  }
+
+  /// Set of user IDs I currently follow — used for follow-button toggle state.
+  Future<Set<String>> fetchFollowingIds() async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', userId!) as List,
+    );
+    return rows.map((r) => r['following_id'] as String).toSet();
+  }
+
+  /// Profiles of users who follow me.
+  Future<List<Map<String, dynamic>>> fetchFollowers() async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('follows')
+              .select('follower_id')
+              .eq('following_id', userId!) as List,
+    );
+    if (rows.isEmpty) return [];
+    final ids = rows.map((r) => r['follower_id'] as String).toList();
+    return List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select(
+                  'id, display_name, currently_reading_title, currently_reading_author')
+              .inFilter('id', ids) as List,
+    );
+  }
+
+  /// Jam members I haven't followed yet — used as "Suggeriti".
+  Future<List<Map<String, dynamic>>> fetchFollowingSuggestions() async {
+    final uid = userId!;
+    final myJams = await fetchMyJams();
+    if (myJams.isEmpty) return [];
+
+    final jamIds = myJams.map((j) => j['id'] as String).toList();
+    final memberRows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('jam_members')
+              .select('user_id')
+              .inFilter('jam_id', jamIds)
+              .neq('user_id', uid) as List,
+    );
+    if (memberRows.isEmpty) return [];
+
+    final memberIds =
+        memberRows.map((r) => r['user_id'] as String).toSet().toList();
+    final followingIds = await fetchFollowingIds();
+    final suggestionIds = memberIds
+        .where((id) => !followingIds.contains(id))
+        .take(10)
+        .toList();
+    if (suggestionIds.isEmpty) return [];
+
+    return List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select(
+                  'id, display_name, currently_reading_title, currently_reading_author')
+              .inFilter('id', suggestionIds) as List,
+    );
+  }
+
+  // ─── Profile stats ─────────────────────────────────────────────────────────
+
+  Future<void> updateDisplayName(String displayName) async {
+    await _client
+        .from('profiles')
+        .update({'display_name': displayName}).eq('id', userId!);
+  }
+
+  /// Aggregate counts for the current user's profile stats row.
+  Future<Map<String, int>> fetchMyStats() async {
+    final uid = userId!;
+    final results = await Future.wait([
+      _client.from('books').select('id').eq('user_id', uid),
+      _client.from('highlights').select('id').eq('user_id', uid),
+      _client.from('follows').select('following_id').eq('follower_id', uid),
+      _client.from('follows').select('follower_id').eq('following_id', uid),
+    ]);
+    return {
+      'books': (results[0] as List).length,
+      'highlights': (results[1] as List).length,
+      'following': (results[2] as List).length,
+      'followers': (results[3] as List).length,
+    };
+  }
+
+  /// Highlights shared by the current user in any Jam — for the profile grid.
+  Future<List<Map<String, dynamic>>> fetchMySharedHighlights() async {
+    final response = await _client
+        .from('jam_highlights')
+        .select('*, highlights(content, color, books(title, author)), jams(title, id)')
+        .eq('shared_by', userId!)
+        .order('shared_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
   // ─── Realtime ─────────────────────────────────────────────────────────────
 
   RealtimeChannel subscribeToJam(String jamId, void Function(Map<String, dynamic>) onHighlightShared) {

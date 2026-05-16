@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 
-// Profile of the current user — currently_reading + display_name
+// ─── Providers ────────────────────────────────────────────────────────────────
+
 final myProfileProvider =
     FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
   final svc = ref.watch(supabaseServiceProvider);
@@ -17,117 +21,392 @@ final myProfileProvider =
   }
 });
 
-class SettingsScreen extends ConsumerWidget {
+final myStatsProvider =
+    FutureProvider.autoDispose<Map<String, int>>((ref) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated) return {};
+  try {
+    return await svc.fetchMyStats();
+  } catch (_) {
+    return {};
+  }
+});
+
+final mySharedHighlightsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated) return [];
+  try {
+    return await svc.fetchMySharedHighlights();
+  } catch (_) {
+    return [];
+  }
+});
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final profileAsync = ref.watch(myProfileProvider);
+    final statsAsync = ref.watch(myStatsProvider);
+    final sharedHighlightsAsync = ref.watch(mySharedHighlightsProvider);
+
+    // Derived values (with fallbacks while loading)
+    final profile = profileAsync.asData?.value;
+    final displayName = profile?['display_name'] as String? ??
+        user?.email?.split('@').first ??
+        'Lettore';
+    final readingTitle = profile?['currently_reading_title'] as String?;
+    final readingAuthor = profile?['currently_reading_author'] as String?;
+    final stats = statsAsync.asData?.value ?? {};
+    final sharedHighlights =
+        sharedHighlightsAsync.asData?.value ?? [];
+
+    if (user == null) return const _UnauthenticatedProfile();
+
+    final initial = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : user.email?[0].toUpperCase() ?? 'L';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Impostazioni')),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 120),
-        children: [
-          // ─── Account ─────────────────────────────────────────────────────
-          _SectionHeader('ACCOUNT'),
-          if (user != null)
-            ListTile(
-              leading: const Icon(Icons.person_outline,
-                  color: MarginaliaColors.primary),
-              title: Text(user.email ?? 'Utente'),
-              subtitle: const Text('Connesso'),
-              trailing: TextButton(
-                onPressed: () async {
-                  await ref.read(supabaseServiceProvider).signOut();
-                },
-                child: const Text('Esci',
-                    style: TextStyle(color: Color(0xFFB54848))),
+      backgroundColor: MarginaliaColors.background,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // ── Profile header ────────────────────────────────────────────
+          SliverAppBar(
+            expandedHeight: 240,
+            pinned: true,
+            stretch: true,
+            backgroundColor: MarginaliaColors.primary,
+            foregroundColor: const Color(0xFFF1EEE7),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: 'Impostazioni',
+                onPressed: () => _showSettingsSheet(context, ref, profile),
+              ),
+              const SizedBox(width: 4),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              title: Text(
+                displayName,
+                style: const TextStyle(
+                  color: Color(0xFFF1EEE7),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              titlePadding:
+                  const EdgeInsetsDirectional.fromSTEB(56, 0, 56, 16),
+              background: Container(
+                decoration: MarginaliaDecorations.gradientHeader,
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Avatar ──────────────────────────────────────
+                        Container(
+                          width: 86,
+                          height: 86,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                MarginaliaDecorations.bookCoverColor(
+                                    displayName),
+                                MarginaliaColors.primaryDark,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(43),
+                            border: Border.all(
+                              color: const Color(0xFFF1EEE7).withAlpha(60),
+                              width: 3,
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x40261E1D),
+                                blurRadius: 20,
+                                offset: Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              initial,
+                              style: const TextStyle(
+                                color: Color(0xFFF1EEE7),
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // ── Display name ────────────────────────────────
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Color(0xFFF1EEE7),
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.6,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          user.email ?? '',
+                          style: TextStyle(
+                            color: const Color(0xFFF1EEE7).withAlpha(140),
+                            fontSize: 12,
+                          ),
+                        ),
+
+                        // ── Currently reading (bio) ──────────────────────
+                        if (readingTitle != null &&
+                            readingTitle.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Text('📖',
+                                  style: TextStyle(fontSize: 12)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  '$readingTitle'
+                                  '${(readingAuthor ?? '').isNotEmpty ? ' · $readingAuthor' : ''}',
+                                  style: TextStyle(
+                                    color: const Color(0xFFF1EEE7)
+                                        .withAlpha(200),
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Stats row ─────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _StatsRow(stats: stats),
+          ),
+
+          // ── Action buttons ─────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () =>
+                          _showEditProfileSheet(context, ref, profile),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('Modifica profilo'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: MarginaliaColors.primary,
+                        side: const BorderSide(color: MarginaliaColors.rule),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        textStyle: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton(
+                    onPressed: () => Share.share(
+                      'Leggo su Marginalia 📚\n'
+                      'Vieni a leggere con me!\nhttps://marginalia.app',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: MarginaliaColors.primary,
+                      side: const BorderSide(color: MarginaliaColors.rule),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                    ),
+                    child: const Icon(Icons.ios_share_outlined, size: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Currently reading card (if set) ───────────────────────────
+          if (readingTitle != null && readingTitle.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _CurrentlyReadingCard(
+                title: readingTitle,
+                author: readingAuthor,
+                onTap: () =>
+                    _showEditProfileSheet(context, ref, profile),
+              ),
+            ),
+
+          // ── Shared highlights grid ──────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+              child: Row(
+                children: [
+                  Text('NELLE JAM',
+                      style: MarginaliaTextStyles.sectionTitle),
+                  const SizedBox(width: 8),
+                  Text(
+                    sharedHighlights.isNotEmpty
+                        ? '${sharedHighlights.length}'
+                        : '',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: MarginaliaColors.inkFaint,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                ],
+              ),
+            ),
+          ),
+
+          if (sharedHighlights.isEmpty)
+            SliverToBoxAdapter(
+              child: _EmptySharedHighlights(
+                onShare: () => context.go('/social'),
               ),
             )
           else
-            ListTile(
-              leading: const Icon(Icons.login_outlined,
-                  color: MarginaliaColors.primary),
-              title: const Text('Accedi o Registrati'),
-              subtitle: const Text('Richiesto per le Jam'),
-              onTap: () => context.push('/auth'),
-              trailing: const Icon(Icons.chevron_right,
-                  color: MarginaliaColors.inkMuted, size: 18),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (ctx, i) => _SharedHighlightCell(
+                    data: sharedHighlights[i],
+                    index: i,
+                  ),
+                  childCount: sharedHighlights.length,
+                ),
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 3,
+                  mainAxisSpacing: 3,
+                  childAspectRatio: 1.0,
+                ),
+              ),
             ),
 
-          const Divider(),
-
-          // ─── Sto leggendo ────────────────────────────────────────────────
-          if (user != null) ...[
-            _SectionHeader('STO LEGGENDO'),
-            profileAsync.when(
-              data: (profile) => _CurrentlyReadingTile(
-                title: profile?['currently_reading_title'] as String?,
-                author: profile?['currently_reading_author'] as String?,
-                onTap: () => _editCurrentlyReading(context, ref, profile),
+          // ── Settings section ──────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+              child: Row(
+                children: [
+                  Text('IMPOSTAZIONI',
+                      style: MarginaliaTextStyles.sectionTitle),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                ],
               ),
-              loading: () => const ListTile(
-                leading: Icon(Icons.menu_book_outlined,
-                    color: MarginaliaColors.primary),
-                title: Text('Caricamento…'),
-              ),
-              error: (_, __) => const SizedBox.shrink(),
             ),
-            const Divider(),
-          ],
-
-          // ─── Kindle Sync ──────────────────────────────────────────────────
-          _SectionHeader('KINDLE'),
-          ListTile(
-            leading: const Icon(Icons.sync_outlined,
-                color: MarginaliaColors.primary),
-            title: const Text('Sincronizza con Amazon Kindle'),
-            subtitle: const Text('Accedi ad Amazon e importa gli highlight'),
-            onTap: () => context.push('/sync/kindle'),
-            trailing: const Icon(Icons.chevron_right,
-                color: MarginaliaColors.inkMuted, size: 18),
-          ),
-          ListTile(
-            leading: const Icon(Icons.upload_file_outlined,
-                color: MarginaliaColors.primary),
-            title: const Text('Importa My Clippings.txt'),
-            subtitle: const Text('Importa manualmente dal file Kindle'),
-            onTap: () => context.push('/'),
-            trailing: const Icon(Icons.chevron_right,
-                color: MarginaliaColors.inkMuted, size: 18),
           ),
 
-          const Divider(),
-
-          // ─── Informazioni ─────────────────────────────────────────────────
-          _SectionHeader('INFORMAZIONI'),
-          const ListTile(
-            leading:
-                Icon(Icons.info_outline, color: MarginaliaColors.primary),
-            title: Text('Versione'),
-            trailing:
-                Text('1.0.0', style: TextStyle(color: MarginaliaColors.inkMuted)),
-          ),
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined,
-                color: MarginaliaColors.primary),
-            title: const Text('Privacy Policy'),
-            trailing: const Icon(Icons.open_in_new,
-                size: 16, color: MarginaliaColors.inkMuted),
-            onTap: () {},
+          SliverList(
+            delegate: SliverChildListDelegate([
+              _SettingsTile(
+                icon: Icons.sync_outlined,
+                label: 'Sincronizza con Kindle',
+                subtitle: 'Accedi ad Amazon e importa gli highlight',
+                onTap: () => context.push('/sync/kindle'),
+              ),
+              _SettingsTile(
+                icon: Icons.upload_file_outlined,
+                label: 'Importa My Clippings.txt',
+                subtitle: 'Importa manualmente dal file Kindle',
+                onTap: () => context.go('/'),
+              ),
+              _SettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Privacy Policy',
+                onTap: () {},
+                trailing: const Icon(Icons.open_in_new,
+                    size: 14, color: MarginaliaColors.inkFaint),
+              ),
+              const _SettingsTile(
+                icon: Icons.info_outline,
+                label: 'Versione',
+                trailing: Text(
+                  '1.0.0',
+                  style: TextStyle(
+                      color: MarginaliaColors.inkFaint, fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Sign out
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await ref.read(supabaseServiceProvider).signOut();
+                  },
+                  icon: const Icon(Icons.logout_outlined, size: 16),
+                  label: const Text('Esci dall\'account'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFB54848),
+                    side: const BorderSide(color: Color(0xFFD4AAAA)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ]),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _editCurrentlyReading(
+  // ── Edit profile sheet ────────────────────────────────────────────────────
+
+  Future<void> _showEditProfileSheet(
     BuildContext context,
     WidgetRef ref,
     Map<String, dynamic>? profile,
   ) async {
+    final nameController = TextEditingController(
+        text: profile?['display_name'] as String? ?? '');
     final titleController = TextEditingController(
         text: profile?['currently_reading_title'] as String? ?? '');
     final authorController = TextEditingController(
@@ -136,9 +415,9 @@ class SettingsScreen extends ConsumerWidget {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.surfaceElevated,
+      backgroundColor: MarginaliaColors.background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(
@@ -147,15 +426,43 @@ class SettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Cosa stai leggendo?',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            const Text(
-              'I membri delle tue Jam lo vedranno nella cerchia.',
-              style:
-                  TextStyle(color: MarginaliaColors.inkMuted, fontSize: 13),
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.rule,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
+            const Text('Modifica profilo',
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4)),
+            const SizedBox(height: 20),
+            TextField(
+              controller: nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                hintText: 'Nome visualizzato',
+                prefixIcon: Icon(Icons.person_outline),
+                labelText: 'Nome',
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'STO LEGGENDO',
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: MarginaliaColors.inkMuted,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: titleController,
               textCapitalization: TextCapitalization.words,
@@ -164,7 +471,7 @@ class SettingsScreen extends ConsumerWidget {
                 prefixIcon: Icon(Icons.menu_book_outlined),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             TextField(
               controller: authorController,
               textCapitalization: TextCapitalization.words,
@@ -174,50 +481,108 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () async {
-                      try {
-                        await ref
-                            .read(supabaseServiceProvider)
-                            .updateCurrentlyReading(title: null, author: null);
-                        ref.invalidate(myProfileProvider);
-                      } catch (_) {}
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
-                    child: const Text('Rimuovi'),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final svc = ref.read(supabaseServiceProvider);
+                  try {
+                    final name = nameController.text.trim();
+                    if (name.isNotEmpty) {
+                      await svc.updateDisplayName(name);
+                    }
+                    final t = titleController.text.trim();
+                    final a = authorController.text.trim();
+                    await svc.updateCurrentlyReading(
+                      title: t.isEmpty ? null : t,
+                      author: a.isEmpty ? null : a,
+                    );
+                    ref.invalidate(myProfileProvider);
+                    ref.invalidate(myStatsProvider);
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: Text('Errore: $e')));
+                    }
+                  }
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: const Text('Salva'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Settings sheet (gear icon) ────────────────────────────────────────────
+
+  void _showSettingsSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic>? profile,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: MarginaliaColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.rule,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton(
-                    onPressed: () async {
-                      final t = titleController.text.trim();
-                      final a = authorController.text.trim();
-                      try {
-                        await ref
-                            .read(supabaseServiceProvider)
-                            .updateCurrentlyReading(
-                              title: t.isEmpty ? null : t,
-                              author: a.isEmpty ? null : a,
-                            );
-                        ref.invalidate(myProfileProvider);
-                      } catch (e) {
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(content: Text('Errore: $e')),
-                          );
-                        }
-                      }
-                      if (ctx.mounted) Navigator.pop(ctx);
-                    },
-                    child: const Text('Salva'),
-                  ),
-                ),
-              ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined,
+                  color: MarginaliaColors.primary),
+              title: const Text('Modifica profilo'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showEditProfileSheet(context, ref, profile);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.sync_outlined,
+                  color: MarginaliaColors.primary),
+              title: const Text('Sincronizza con Kindle'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/sync/kindle');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined,
+                  color: MarginaliaColors.primary),
+              title: const Text('Importa My Clippings.txt'),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.go('/');
+              },
+            ),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              leading: const Icon(Icons.logout_outlined,
+                  color: Color(0xFFB54848)),
+              title: const Text('Esci dall\'account',
+                  style: TextStyle(color: Color(0xFFB54848))),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await ref.read(supabaseServiceProvider).signOut();
+              },
             ),
           ],
         ),
@@ -226,54 +591,440 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _CurrentlyReadingTile extends StatelessWidget {
-  const _CurrentlyReadingTile({
+// ─── Stats row ────────────────────────────────────────────────────────────────
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.stats});
+  final Map<String, int> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: MarginaliaDecorations.card(),
+      child: Row(
+        children: [
+          _StatBox(label: 'Libri', value: stats['books'] ?? 0),
+          _Divider(),
+          _StatBox(label: 'Highlight', value: stats['highlights'] ?? 0),
+          _Divider(),
+          _StatBox(label: 'Jam', value: stats['jams'] ?? 0),
+          _Divider(),
+          _StatBox(label: 'Seguiti', value: stats['following'] ?? 0),
+          _Divider(),
+          _StatBox(label: 'Seguaci', value: stats['followers'] ?? 0),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  const _StatBox({required this.label, required this.value});
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: MarginaliaColors.ink,
+              letterSpacing: -0.5,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: MarginaliaColors.inkMuted,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 32,
+      color: MarginaliaColors.rule,
+    );
+  }
+}
+
+// ─── Currently reading card ───────────────────────────────────────────────────
+
+class _CurrentlyReadingCard extends StatelessWidget {
+  const _CurrentlyReadingCard({
     required this.title,
-    required this.author,
+    this.author,
     required this.onTap,
   });
-
-  final String? title;
+  final String title;
   final String? author;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final hasBook = title != null && title!.isNotEmpty;
-    return ListTile(
-      leading: const Icon(Icons.menu_book_outlined,
-          color: MarginaliaColors.primary),
-      title: Text(
-        hasBook ? title! : 'Aggiungi un libro in corso',
-        style: TextStyle(
-          fontWeight: hasBook ? FontWeight.w600 : FontWeight.w400,
-          color: hasBook ? MarginaliaColors.ink : MarginaliaColors.inkMuted,
+    final coverColor = MarginaliaDecorations.bookCoverColor(title);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        padding: const EdgeInsets.all(14),
+        decoration: MarginaliaDecorations.card(),
+        child: Row(
+          children: [
+            // Mini book cover
+            Container(
+              width: 44,
+              height: 58,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [coverColor, MarginaliaColors.primaryDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x22261E1D),
+                      blurRadius: 8,
+                      offset: Offset(0, 3)),
+                ],
+              ),
+              child: const Center(
+                child: Icon(Icons.menu_book_outlined,
+                    size: 18, color: Color(0xCCF1EEE7)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'STO LEGGENDO',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: MarginaliaColors.sienna,
+                      letterSpacing: 1.8,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: MarginaliaTextStyles.bookTitle
+                        .copyWith(fontSize: 15),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if ((author ?? '').isNotEmpty)
+                    Text(
+                      (author!).toUpperCase(),
+                      style: MarginaliaTextStyles.bookAuthor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            const Icon(Icons.edit_outlined,
+                size: 16, color: MarginaliaColors.inkFaint),
+          ],
         ),
       ),
-      subtitle: hasBook
-          ? Text((author ?? '').toUpperCase(),
-              style: MarginaliaTextStyles.bookAuthor)
-          : const Text(
-              'Visibile ai membri delle tue Jam',
-              style: TextStyle(fontSize: 12),
+    );
+  }
+}
+
+// ─── Shared highlight cell (Instagram-style grid) ─────────────────────────────
+
+class _SharedHighlightCell extends StatelessWidget {
+  const _SharedHighlightCell({required this.data, required this.index});
+  final Map<String, dynamic> data;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlight = data['highlights'] as Map<String, dynamic>?;
+    final content = highlight?['content'] as String? ?? '';
+    final book = highlight?['books'] as Map<String, dynamic>?;
+    final bookTitle = book?['title'] as String? ?? '';
+    final jam = data['jams'] as Map<String, dynamic>?;
+    final jamTitle = jam?['title'] as String? ?? '';
+    final color = highlight?['color'] as String?;
+
+    final bgColor = _bgFor(color, bookTitle);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [bgColor, _darken(bgColor)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    content.length > 80
+                        ? '${content.substring(0, 80)}…'
+                        : content,
+                    style: const TextStyle(
+                      color: Color(0xEEF1EEE7),
+                      fontSize: 11,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    overflow: TextOverflow.fade,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (bookTitle.isNotEmpty)
+                  Text(
+                    bookTitle,
+                    style: const TextStyle(
+                      color: Color(0xAAF1EEE7),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
             ),
-      trailing: const Icon(Icons.chevron_right,
-          color: MarginaliaColors.inkMuted, size: 18),
+          ),
+          // Jam badge (top-right)
+          if (jamTitle.isNotEmpty)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(22),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  jamTitle.length > 8
+                      ? '${jamTitle.substring(0, 8)}…'
+                      : jamTitle,
+                  style: const TextStyle(
+                    color: Color(0xDDF1EEE7),
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    )
+        .animate(delay: (index * 30).ms)
+        .fadeIn(duration: 220.ms, curve: Curves.easeOut);
+  }
+
+  Color _bgFor(String? color, String bookTitle) => switch (color) {
+        'yellow' => const Color(0xFFB8860B),
+        'blue' => const Color(0xFF3A6B8A),
+        'pink' => const Color(0xFF8A3A5A),
+        'orange' => const Color(0xFF8A5A28),
+        _ => MarginaliaDecorations.bookCoverColor(bookTitle),
+      };
+
+  Color _darken(Color c) => Color.fromARGB(
+        255,
+        (c.red * 0.65).round(),
+        (c.green * 0.65).round(),
+        (c.blue * 0.65).round(),
+      );
+}
+
+// ─── Empty shared highlights ──────────────────────────────────────────────────
+
+class _EmptySharedHighlights extends StatelessWidget {
+  const _EmptySharedHighlights({required this.onShare});
+  final VoidCallback onShare;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: MarginaliaColors.rule),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.share_outlined,
+                size: 28, color: MarginaliaColors.inkFaint),
+            const SizedBox(height: 10),
+            const Text(
+              'Nessun highlight condiviso',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: MarginaliaColors.inkMuted,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Condividi un highlight in una Jam\nper vederlo qui.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 12, color: MarginaliaColors.inkFaint, height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed: onShare,
+              child: const Text('Vai alle Jam'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Settings tile ────────────────────────────────────────────────────────────
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    this.onTap,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: MarginaliaColors.primary, size: 22),
+      title: Text(label,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null
+          ? Text(subtitle!,
+              style: const TextStyle(
+                  fontSize: 12, color: MarginaliaColors.inkMuted))
+          : null,
+      trailing: trailing ??
+          (onTap != null
+              ? const Icon(Icons.chevron_right,
+                  color: MarginaliaColors.inkFaint, size: 18)
+              : null),
       onTap: onTap,
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
+// ─── Unauthenticated state ────────────────────────────────────────────────────
 
-  final String title;
+class _UnauthenticatedProfile extends StatelessWidget {
+  const _UnauthenticatedProfile();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      child: Text(title, style: MarginaliaTextStyles.sectionTitle),
+    return Scaffold(
+      backgroundColor: MarginaliaColors.background,
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: MarginaliaDecorations.gradientHeader,
+            child: SafeArea(
+              bottom: false,
+              child: const Padding(
+                padding: EdgeInsets.fromLTRB(20, 20, 20, 36),
+                child: Text('Profilo',
+                    style: TextStyle(
+                        color: Color(0xFFF1EEE7),
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6)),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: MarginaliaColors.primaryFaint,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(Icons.person_outline,
+                          size: 32, color: MarginaliaColors.primary),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('Accedi per vedere il profilo',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3)),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Tieni traccia dei tuoi libri,\nhighlight e connessioni.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: MarginaliaColors.inkMuted,
+                          height: 1.65,
+                          fontSize: 14),
+                    ),
+                    const SizedBox(height: 32),
+                    FilledButton(
+                      onPressed: () => context.push('/auth'),
+                      child: const Text('Accedi o Registrati'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

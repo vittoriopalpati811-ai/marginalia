@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
+import 'amici_tab.dart';
 
 final jamsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
   (ref) {
@@ -24,68 +25,55 @@ class SocialScreen extends ConsumerStatefulWidget {
   ConsumerState<SocialScreen> createState() => _SocialScreenState();
 }
 
-class _SocialScreenState extends ConsumerState<SocialScreen> {
+class _SocialScreenState extends ConsumerState<SocialScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    // Rebuild to show/hide FAB when switching tabs.
+    _tabController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!ref.watch(isAuthenticatedProvider)) return const _UnauthenticatedState();
-
-    final jamsAsync = ref.watch(jamsProvider);
+    if (!ref.watch(isAuthenticatedProvider)) {
+      return const _UnauthenticatedState();
+    }
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      floatingActionButton: _CreateJamFab(onTap: _showCreateJamSheet),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── Header ─────────────────────────────────────────────────────────
-          SliverToBoxAdapter(child: _JamHeader(onJoin: _showJoinJamSheet)),
-
-          // ── Intro card (se nessuna jam) o griglia ──────────────────────────
-          jamsAsync.when(
-            data: (jams) => jams.isEmpty
-                ? SliverFillRemaining(
-                    child: _EmptyJams(
-                      onCreateJam: _showCreateJamSheet,
-                      onJoinJam: _showJoinJamSheet,
-                    ),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                    sliver: SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) => _JamGridCard(
-                          jam: jams[i],
-                          index: i,
-                          onTap: () {
-                            final id = jams[i]['id'] as String? ?? '';
-                            final name =
-                                (jams[i]['title'] ?? jams[i]['name'])
-                                        as String? ??
-                                    'Jam';
-                            context.push(
-                                '/jam/$id?name=${Uri.encodeComponent(name)}');
-                          },
-                          onShare: () => _shareInviteCode(jams[i]),
-                        ),
-                        childCount: jams.length,
-                      ),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.9,
-                      ),
-                    ),
-                  ),
-            loading: () => const SliverFillRemaining(
-              child: Center(
-                child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna, strokeWidth: 1.5),
-              ),
-            ),
-            error: (e, _) => SliverFillRemaining(
-              child: Center(child: Text('Errore: $e')),
+      // FAB only visible on the Jam tab
+      floatingActionButton: _tabController.index == 0
+          ? _CreateJamFab(onTap: _showCreateJamSheet)
+          : null,
+      body: Column(
+        children: [
+          // ── Gradient header with embedded TabBar ──────────────────────
+          _SocialHeader(
+            tabController: _tabController,
+            onJoin: _showJoinJamSheet,
+          ),
+          // ── Tab content ───────────────────────────────────────────────
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _JamTabContent(
+                  onCreateJam: _showCreateJamSheet,
+                  onJoinJam: _showJoinJamSheet,
+                  onShareJam: _shareInviteCode,
+                ),
+                const AmiciTab(),
+              ],
             ),
           ),
         ],
@@ -93,7 +81,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     );
   }
 
-  // ── Share invite code ───────────────────────────────────────────────────────
+  // ── Share invite code ─────────────────────────────────────────────────────
 
   void _shareInviteCode(Map<String, dynamic> jam) {
     final code = jam['invite_code'] as String? ?? '';
@@ -103,12 +91,13 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       return;
     }
     Share.share(
-      '📚 Unisciti alla mia cerchia di lettura "$name" su Marginalia!\n\nCodice invito: $code',
+      '📚 Unisciti alla mia cerchia di lettura "$name" su Marginalia!\n\n'
+      'Codice invito: $code',
       subject: 'Marginalia Jam – $name',
     );
   }
 
-  // ── Sheets ──────────────────────────────────────────────────────────────────
+  // ── Sheets ────────────────────────────────────────────────────────────────
 
   Future<void> _showCreateJamSheet() async {
     final nameController = TextEditingController();
@@ -131,7 +120,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           } catch (e) {
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
-                SnackBar(content: Text('Errore: $e'),
+                SnackBar(
+                    content: Text('Errore: $e'),
                     duration: const Duration(seconds: 10)),
               );
             }
@@ -173,7 +163,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           } catch (e) {
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
-                SnackBar(content: Text('Errore: $e'),
+                SnackBar(
+                    content: Text('Errore: $e'),
                     duration: const Duration(seconds: 10)),
               );
             }
@@ -184,71 +175,166 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── Gradient header with Jam/Amici TabBar ────────────────────────────────────
 
-class _JamHeader extends StatelessWidget {
-  const _JamHeader({required this.onJoin});
+class _SocialHeader extends StatelessWidget {
+  const _SocialHeader({required this.tabController, required this.onJoin});
+  final TabController tabController;
   final VoidCallback onJoin;
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.of(context).padding.top;
     return Container(
       decoration: MarginaliaDecorations.gradientHeader,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 16, 24),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Jam',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
-                        height: 1,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Top row: title + join button ──────────────────────────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, topPadding + 16, 16, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Sociale',
+                        style: TextStyle(
+                          color: Color(0xFFF1EEE7),
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
+                          height: 1,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Le tue cerchie di lettura',
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(170),
-                        fontSize: 13,
+                      const SizedBox(height: 2),
+                      Text(
+                        'Jam e amici lettori',
+                        style: TextStyle(
+                          color: const Color(0xFFF1EEE7).withAlpha(160),
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              TextButton.icon(
-                onPressed: onJoin,
-                icon: const Icon(Icons.link_outlined,
-                    size: 16, color: Colors.white),
-                label: const Text('Unisciti',
-                    style: TextStyle(color: Colors.white, fontSize: 13)),
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white.withAlpha(25),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+                TextButton.icon(
+                  onPressed: onJoin,
+                  icon: const Icon(Icons.link_outlined,
+                      size: 15, color: Color(0xFFF1EEE7)),
+                  label: const Text(
+                    'Unisciti',
+                    style: TextStyle(color: Color(0xFFF1EEE7), fontSize: 13),
+                  ),
+                  style: TextButton.styleFrom(
+                    backgroundColor:
+                        const Color(0xFFF1EEE7).withAlpha(25),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
                 ),
-              ),
+              ],
+            ),
+          ),
+
+          // ── TabBar ────────────────────────────────────────────────────
+          TabBar(
+            controller: tabController,
+            labelColor: const Color(0xFFF1EEE7),
+            unselectedLabelColor:
+                const Color(0xFFF1EEE7).withAlpha(110),
+            indicatorColor: const Color(0xFFF1EEE7),
+            indicatorSize: TabBarIndicatorSize.label,
+            indicatorWeight: 2.5,
+            dividerColor: Colors.transparent,
+            labelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.1,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            tabs: const [
+              Tab(text: 'Jam'),
+              Tab(text: 'Amici'),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-// ─── Jam grid card (stile playlist Spotify) ───────────────────────────────────
+// ─── Jam tab content ──────────────────────────────────────────────────────────
+
+class _JamTabContent extends ConsumerWidget {
+  const _JamTabContent({
+    required this.onCreateJam,
+    required this.onJoinJam,
+    required this.onShareJam,
+  });
+
+  final VoidCallback onCreateJam;
+  final VoidCallback onJoinJam;
+  final void Function(Map<String, dynamic>) onShareJam;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final jamsAsync = ref.watch(jamsProvider);
+
+    return jamsAsync.when(
+      data: (jams) => jams.isEmpty
+          ? _EmptyJams(onCreateJam: onCreateJam, onJoinJam: onJoinJam)
+          : CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _JamGridCard(
+                        jam: jams[i],
+                        index: i,
+                        onTap: () {
+                          final id = jams[i]['id'] as String? ?? '';
+                          final name = (jams[i]['title'] ?? jams[i]['name'])
+                                  as String? ??
+                              'Jam';
+                          context.push(
+                              '/jam/$id?name=${Uri.encodeComponent(name)}');
+                        },
+                        onShare: () => onShareJam(jams[i]),
+                      ),
+                      childCount: jams.length,
+                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.9,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+            color: MarginaliaColors.sienna, strokeWidth: 1.5),
+      ),
+      error: (e, _) => Center(child: Text('Errore: $e')),
+    );
+  }
+}
+
+// ─── Jam grid card (playlist Spotify style) ───────────────────────────────────
 
 class _JamGridCard extends StatelessWidget {
   const _JamGridCard({
@@ -268,7 +354,6 @@ class _JamGridCard extends StatelessWidget {
     final name = (jam['title'] ?? jam['name']) as String? ?? '';
     final code = jam['invite_code'] as String? ?? '';
 
-    // Colour derived from name hash (consistent per Jam)
     final colors = [
       [const Color(0xFF4C3B3A), const Color(0xFF261E1D)],
       [const Color(0xFF7F785B), const Color(0xFF4C3B3A)],
@@ -296,7 +381,6 @@ class _JamGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Cover art ──────────────────────────────────────────────
             Expanded(
               flex: 65,
               child: Container(
@@ -313,7 +397,6 @@ class _JamGridCard extends StatelessWidget {
                 ),
                 child: Stack(
                   children: [
-                    // Decorative ring
                     Positioned(
                       bottom: -20,
                       right: -20,
@@ -364,8 +447,6 @@ class _JamGridCard extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Info ────────────────────────────────────────────────────
             Expanded(
               flex: 35,
               child: Padding(
@@ -397,11 +478,10 @@ class _JamGridCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Share button
                     GestureDetector(
                       onTap: onShare,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
                         child: Icon(
                           Icons.ios_share_outlined,
                           size: 16,
@@ -423,7 +503,7 @@ class _JamGridCard extends StatelessWidget {
   }
 }
 
-// ─── FAB crea Jam ─────────────────────────────────────────────────────────────
+// ─── FAB ─────────────────────────────────────────────────────────────────────
 
 class _CreateJamFab extends StatelessWidget {
   const _CreateJamFab({required this.onTap});
@@ -449,8 +529,7 @@ class _CreateJamFab extends StatelessWidget {
 // ─── Create Jam sheet ─────────────────────────────────────────────────────────
 
 class _CreateJamSheet extends StatelessWidget {
-  const _CreateJamSheet(
-      {required this.controller, required this.onConfirm});
+  const _CreateJamSheet({required this.controller, required this.onConfirm});
   final TextEditingController controller;
   final VoidCallback onConfirm;
 
@@ -484,8 +563,8 @@ class _CreateJamSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Nuova Jam',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                   Text('Crea una cerchia di lettura',
                       style: TextStyle(
                           fontSize: 12, color: MarginaliaColors.inkMuted)),
@@ -507,9 +586,7 @@ class _CreateJamSheet extends StatelessWidget {
           const Text(
             'Riceverai un codice invito da condividere con gli amici.',
             style: TextStyle(
-                fontSize: 12,
-                color: MarginaliaColors.inkMuted,
-                height: 1.5),
+                fontSize: 12, color: MarginaliaColors.inkMuted, height: 1.5),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -528,8 +605,7 @@ class _CreateJamSheet extends StatelessWidget {
 // ─── Join Jam sheet ───────────────────────────────────────────────────────────
 
 class _JoinJamSheet extends StatelessWidget {
-  const _JoinJamSheet(
-      {required this.controller, required this.onConfirm});
+  const _JoinJamSheet({required this.controller, required this.onConfirm});
   final TextEditingController controller;
   final VoidCallback onConfirm;
 
@@ -572,7 +648,8 @@ class _JoinJamSheet extends StatelessWidget {
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            child: FilledButton(onPressed: onConfirm, child: const Text('Unisciti')),
+            child: FilledButton(
+                onPressed: onConfirm, child: const Text('Unisciti')),
           ),
         ],
       ),
@@ -620,7 +697,9 @@ class _EmptyJams extends StatelessWidget {
               'Crea una cerchia di lettura o\nunisciti a quella di un amico.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  color: MarginaliaColors.inkMuted, height: 1.6, fontSize: 14),
+                  color: MarginaliaColors.inkMuted,
+                  height: 1.6,
+                  fontSize: 14),
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
@@ -638,8 +717,8 @@ class _EmptyJams extends StatelessWidget {
                 side: const BorderSide(color: MarginaliaColors.sienna),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 14),
               ),
             ),
           ],
@@ -667,9 +746,9 @@ class _UnauthenticatedState extends StatelessWidget {
               bottom: false,
               child: const Padding(
                 padding: EdgeInsets.fromLTRB(20, 20, 20, 32),
-                child: Text('Jam',
+                child: Text('Sociale',
                     style: TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFFF1EEE7),
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.6)),
@@ -700,7 +779,7 @@ class _UnauthenticatedState extends StatelessWidget {
                             letterSpacing: -0.3)),
                     const SizedBox(height: 10),
                     const Text(
-                      'Le cerchie di lettura richiedono\nun account Marginalia.',
+                      'Le cerchie di lettura e la sezione\namici richiedono un account.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: MarginaliaColors.inkMuted,
