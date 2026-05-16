@@ -56,7 +56,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        onRefresh: () async => _invalidateAfterImport(),
+        color: MarginaliaColors.sienna,
+        backgroundColor: MarginaliaColors.surfaceElevated,
+        displacement: 60,
+        child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           // ── Header editoriale ────────────────────────────────────────────────
@@ -179,6 +184,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

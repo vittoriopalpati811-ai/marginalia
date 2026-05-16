@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
+import '../../core/services/share_card_service.dart';
 
 class HighlightDetailScreen extends ConsumerWidget {
   const HighlightDetailScreen({super.key, required this.highlightId});
@@ -41,7 +41,13 @@ class HighlightDetailScreen extends ConsumerWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.ios_share, color: MarginaliaColors.inkMuted),
-                        onPressed: () => Share.share(h.content),
+                        onPressed: () => ShareCardService.show(
+                          context,
+                          content: h.content,
+                          bookTitle: h.bookTitle,
+                          bookAuthor: h.bookAuthor,
+                          kindleColor: h.color,
+                        ),
                       ),
                     ],
                   )

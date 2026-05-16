@@ -21,18 +21,27 @@ final searchResultsProvider = FutureProvider.autoDispose<List<Highlight>>(
     final lowerQuery = query.toLowerCase();
     final all = await isar.highlights.filter().userIdEqualTo(userId).findAll();
 
-    return all
+    final results = all
         .where((h) =>
             h.content.toLowerCase().contains(lowerQuery) ||
             (h.note?.toLowerCase().contains(lowerQuery) ?? false))
         .toList()
       ..sort((a, b) => (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
+
+    // Load book links so bookTitle/bookAuthor are available in search cards
+    await Future.wait(results.map((h) => h.book.load()));
+    return results;
   },
 );
 
-// Single highlight by Isar ID
+// Single highlight by Isar ID — loads the book IsarLink so bookTitle/bookAuthor
+// are available in HighlightDetailScreen and ShareCardService.
 final highlightByIdProvider = FutureProvider.autoDispose.family<Highlight?, Id>(
-  (ref, id) => ref.watch(isarProvider).highlights.get(id),
+  (ref, id) async {
+    final h = await ref.watch(isarProvider).highlights.get(id);
+    if (h != null) await h.book.load();
+    return h;
+  },
 );
 
 // Notifier for toggling favorite on a highlight
@@ -62,6 +71,8 @@ final allHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
     if (userId == null) return [];
     final all = await isar.highlights.filter().userIdEqualTo(userId).findAll();
     all.sort((a, b) => (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
+    // Load book links so bookTitle is available in library strip and share picker
+    await Future.wait(all.map((h) => h.book.load()));
     return all;
   },
 );

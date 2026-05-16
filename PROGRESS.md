@@ -23,6 +23,42 @@
 
 ## Sessioni
 
+### Sessione 6 — 2026-05-16
+**Durata**: ~2h
+**Branch**: main
+**Mac access in questa sessione?**: NO
+
+#### Fatto
+
+**Instagram share card — stile Spotify (✅)**
+- `lib/core/services/share_card_service.dart`: `ShareCardService.show()` apre un bottom sheet con preview della card 4:5 e due pulsanti
+- Card: gradiente scuro (variante per colore Kindle), Lora italic corsivo, virgoletta decorativa 130px, wordmark "MARGINALIA" top-right, badge "marginalia.app", info libro + autore
+- Bottoni: "Copia" (clipboard) + "Condividi immagine" → `RepaintBoundary.toImage(pixelRatio: 3.0)` → file PNG in temp → `Share.shareXFiles`
+- Testo share: include excerpt + autore + link `https://marginalia.app` ("Apri in Marginalia →")
+- Web fallback: `kIsWeb` → `Share.share()` text-only
+- Conditional import `share_file_helper.dart` → `_native.dart` (dart:io) / `_web.dart` (stub)
+- `HighlightDetailScreen`: share icon usa ora `ShareCardService.show()` invece di `Share.share(content)`
+
+**Fix bug: IsarLink book non caricato (✅)**
+- `highlights_provider_native.dart`: `highlightByIdProvider`, `searchResultsProvider`, `allHighlightsProvider` ora caricano tutti i link libro con `Future.wait(results.map((h) => h.book.load()))`
+- Prima di questo fix: `h.bookTitle` e `h.bookAuthor` erano sempre null in HighlightDetailScreen e nella library strip
+
+**SearchScreen modernizzata (✅)**
+- Header con gradiente scuro (come SocialScreen), gestisce notch via `MediaQuery.of(context).padding.top`
+- Search bar traslucida (bianco 22% alfa) embedded nel gradiente
+- `_SearchResultCard`: accent strip colorato (basato su colore Kindle), titolo libro + autore sopra l'excerpt
+- `_NoResults` estratto come widget separato
+
+**Pull-to-refresh LibraryScreen (✅)**
+- `RefreshIndicator` wrappa `CustomScrollView`, `onRefresh` chiama `_invalidateAfterImport()`
+- Colore indicator: `MarginaliaColors.sienna`
+
+#### Prossima azione founder
+- `flutter run -d windows` o `flutter run -d chrome` per smoke test visivo delle nuove card di ricerca e share
+- Testare share immagine su device iOS reale (via TestFlight) per verificare il file PNG temporaneo
+
+---
+
 ### Sessione 5 — 2026-05-16
 **Durata**: ~2h
 **Branch**: main
