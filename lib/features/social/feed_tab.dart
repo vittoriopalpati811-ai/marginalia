@@ -47,8 +47,9 @@ class FeedTab extends ConsumerWidget {
 
     return Stack(
       children: [
-        CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        Positioned.fill(
+          child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
         slivers: [
 
           // ── Post section header ───────────────────────────────────────────
@@ -147,7 +148,8 @@ class FeedTab extends ConsumerWidget {
                   ),
           ),
         ],
-      ),
+          ),
+        ),
 
       // ── Create post FAB (bottom-right, above nav bar) ───────────────────────
       Positioned(

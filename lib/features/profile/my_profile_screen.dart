@@ -377,72 +377,35 @@ class _ProfileHeader extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // ── Background: cover photo OR gradient ───────────────────────────
-          GestureDetector(
-            onTap: onCoverTap,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (coverUrl != null && coverUrl.isNotEmpty)
-                  Image.network(coverUrl, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: gp.colors,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                      ))
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: gp.colors,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                  ),
-
-                // Pattern overlay
-                if (patternKey != 'none')
-                  CustomPaint(painter: _PatternPainter(patternKey)),
-
-                // Cover upload hint
-                if (uploadingCover)
-                  Container(
-                    color: Colors.black.withAlpha(80),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 1.5),
-                    ),
-                  )
-                else
-                  Positioned(
-                    bottom: 8, right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+          Stack(
+            fit: StackFit.expand,
+            children: [
+              if (coverUrl != null && coverUrl.isNotEmpty)
+                Image.network(coverUrl, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withAlpha(60),
-                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          colors: gp.colors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.camera_alt_outlined,
-                              size: 12, color: Colors.white.withAlpha(180)),
-                          const SizedBox(width: 4),
-                          Text('Copertina',
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white.withAlpha(180))),
-                        ],
-                      ),
+                    ))
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gp.colors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
                   ),
-              ],
-            ),
+                ),
+
+              // Pattern overlay
+              if (patternKey != 'none')
+                CustomPaint(painter: _PatternPainter(patternKey)),
+            ],
           ),
 
           // Bottom fade
@@ -465,12 +428,8 @@ class _ProfileHeader extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // ── Avatar with camera badge ────────────────────────────────
-                GestureDetector(
-                  onTap: onAvatarTap,
-                  child: Stack(
-                    children: [
-                      Container(
+                // ── Avatar ─────────────────────────────────────────────────
+                Container(
                         width: 78,
                         height: 78,
                         decoration: BoxDecoration(
@@ -518,26 +477,7 @@ class _ProfileHeader extends StatelessWidget {
                                           fontWeight: FontWeight.w800,
                                         )),
                                   ),
-                      ),
-                      // Camera badge
-                      Positioned(
-                        bottom: 0, right: 0,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: MarginaliaColors.primary,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color: Colors.white.withAlpha(200), width: 1.5),
-                          ),
-                          child: const Icon(Icons.camera_alt,
-                              size: 12, color: Color(0xFFF2F5EA)),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
                 const SizedBox(width: 16),
 
                 // Name + bio
@@ -575,7 +515,7 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
 
-          // Top-right buttons
+          // Top-right buttons (palette · settings · avatar · copertina)
           Positioned(
             top: top + 8,
             right: 14,
@@ -584,6 +524,28 @@ class _ProfileHeader extends StatelessWidget {
                 _IconBtn(icon: Icons.palette_outlined, onTap: onPalette),
                 const SizedBox(width: 8),
                 _IconBtn(icon: Icons.settings_outlined, onTap: onSettings),
+                const SizedBox(width: 8),
+                uploadingAvatar
+                    ? const SizedBox(
+                        width: 36, height: 36,
+                        child: Center(child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 1.5)))
+                    : _IconBtn(
+                        icon: Icons.account_circle_outlined,
+                        onTap: onAvatarTap,
+                        tooltip: 'Foto profilo',
+                      ),
+                const SizedBox(width: 8),
+                uploadingCover
+                    ? const SizedBox(
+                        width: 36, height: 36,
+                        child: Center(child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 1.5)))
+                    : _IconBtn(
+                        icon: Icons.image_outlined,
+                        onTap: onCoverTap,
+                        tooltip: 'Foto copertina',
+                      ),
               ],
             ),
           ),
@@ -594,13 +556,14 @@ class _ProfileHeader extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  const _IconBtn({required this.icon, required this.onTap});
+  const _IconBtn({required this.icon, required this.onTap, this.tooltip});
   final IconData icon;
   final VoidCallback onTap;
+  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final btn = GestureDetector(
       onTap: onTap,
       child: Container(
         width: 36,
@@ -613,6 +576,8 @@ class _IconBtn extends StatelessWidget {
         child: Icon(icon, color: Colors.white.withAlpha(210), size: 17),
       ),
     );
+    if (tooltip != null) return Tooltip(message: tooltip!, child: btn);
+    return btn;
   }
 }
 
