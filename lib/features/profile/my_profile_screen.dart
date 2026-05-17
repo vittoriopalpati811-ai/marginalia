@@ -389,11 +389,7 @@ class _ProfileHeader extends StatelessWidget {
                                 offset: Offset(0, 4)),
                           ],
                         ),
-                        child: uploadingAvatar
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 1.5))
-                            : avatarUrl != null && avatarUrl.isNotEmpty
+                        child: avatarUrl != null && avatarUrl.isNotEmpty
                                 ? ClipOval(
                                     child: Image.network(
                                       avatarUrl,
