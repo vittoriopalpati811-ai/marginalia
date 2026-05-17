@@ -7,8 +7,8 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter foundation completa, infrastruttura cloud parzialmente operativa
-**Sprint corrente**: Sprint 1 (Flutter) — Foundation completata
+**Fase**: Flutter MVP completo — feed post, pinned highlights, foto profilo, stats cliccabili
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX completata
 **Prossima azione founder**: iscriversi all'Apple Developer Program (€99/anno) — vedi QUESTIONS.md
 **Branch attivo**: main
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
@@ -22,6 +22,92 @@
 ---
 
 ## Sessioni
+
+### Sessione 9 — 2026-05-17
+**Durata**: ~1.5h
+**Branch**: main
+**Mac access in questa sessione?**: NO
+
+#### Fatto
+
+**Fix compilazione `svc._client` privato (✅)**
+- `followers_screen.dart` accedeva a `svc._client` direttamente → non compilabile
+- Aggiunto `fetchUserBooks(String targetId)` a `SupabaseService` come metodo pubblico
+- `followers_screen.dart` aggiornato per usare il nuovo metodo
+
+**Profilo: stats cliccabili + foto profilo/copertina (✅)**
+- `my_profile_screen.dart`: `_StatsRow` ora accetta callback `onFollowers`, `onFollowing`, `onBooks` — tap apre `showProfileList` con il tipo corretto
+- `_StatBox` con `onTap` → valore + label colorati di verde matcha quando tappabile
+- `_ProfileHeader` completamente riscritta:
+  - Se `cover_url` è settata mostra `Image.network` come sfondo, altrimenti il gradiente
+  - Badge "Copertina" in basso a destra del cover → tap chiama `onCoverTap`
+  - Avatar mostra `Image.network(avatarUrl)` se disponibile, altrimenti gradiente iniziale
+  - Badge fotocamera (cerchio verde) in basso a destra dell'avatar → tap chiama `onAvatarTap`
+- `_MyProfileScreenState`:
+  - `_pickAndUploadAvatar()` / `_pickAndUploadCover()` via `FilePicker.platform.pickFiles(type: FileType.image)` → `svc.uploadAvatar/uploadCover` → `ref.invalidate(_myProfileProvider)`
+  - Indicatori di caricamento mentre upload in corso
+
+**Highlight in evidenza (pinned) sul profilo (✅)**
+- Nuovo file `lib/features/profile/pinned_highlights_section.dart` (~280 righe):
+  - `pinnedHighlightsProvider` (family<String>) → `svc.fetchPinnedHighlights(userId)`
+  - `PinnedHighlightsSection` widget con header "IN EVIDENZA" + bottone "Modifica"
+  - `_PinnedCard`: stessa card style del feed, accent strip colore Kindle
+  - `_EditPinnedSheet` (`DraggableScrollableSheet`): lista di tutti gli highlight locali (solo quelli con `supabaseId`), checkbox interattivi, max 3 selezionabili, bottone Salva → `svc.updatePinnedHighlights(ids)` → invalidate provider
+- Integrato in `my_profile_screen.dart` come sliver tra Spotlight e Libreria
+
+**Feed: post reali + creazione post (✅)**
+- `supabase/migrations/006_avatar_pinned_posts.sql`: tabelle `pinned_highlights`, `posts`, `post_likes` con RLS + index su `created_at`
+- `supabase/seed_posts.sql`: 10 post dummy dai 5 utenti dummy (testo libero + highlight allegato, timestamp da 1h a 5gg fa)
+- `SupabaseService.togglePostLike()` semplificato: insert/delete su `post_likes` + recompute count dal table count
+- `feed_tab.dart` completamente riscritto:
+  - `postsProvider` → `svc.fetchPosts()` (own + following, newest first)
+  - `feedProvider` → `svc.fetchFeed()` (legacy shared highlights)
+  - Due sezioni distinte: "POST" in testa, "HIGHLIGHT CONDIVISI" sotto
+  - `_PostCard` (ConsumerStatefulWidget): avatar con `Image.network` se disponibile, body testo, highlight allegato con accent strip, bottone like con animazione ottimistica, timestamp relativo
+  - `_CreatePostSheet`: bottom sheet con `TextField` multilinea, contatore 1000 chars, bottone "Pubblica" → `svc.createPost(body: text)` → invalidate provider
+  - `_CreatePostFab`: FAB verde matcha "Scrivi" posizionato via `Positioned` dentro `Stack` (non in `Scaffold` per compatibilità con la shell nav)
+
+#### Prossima azione founder
+1. Esegui `supabase/migrations/006_avatar_pinned_posts.sql` nel SQL Editor Supabase
+2. Esegui `supabase/seed_posts.sql` per vedere i post dummy nel feed
+3. Per avatar/copertina: crea i bucket Storage `avatars` e `covers` (pubblici) dal dashboard Supabase
+4. `flutter run -d windows` o `flutter run -d chrome` per smoke test
+
+---
+
+### Sessione 8 — 2026-05-17
+**Durata**: ~1.5h
+**Branch**: main
+**Mac access in questa sessione?**: NO
+
+#### Fatto
+
+**Onboarding interattivo — primo avvio (✅)**
+- `lib/core/services/onboarding_service.dart` + `_native.dart` + `_web.dart`: flag "onboarding completato" scritto come file marker `.onboarding_complete` in `getApplicationDocumentsDirectory()` su native; stub su web (sempre skip)
+- `lib/core/providers/onboarding_provider.dart`: `StateProvider<bool>` inizializzato al launch via `ProviderScope.overrides`
+- `lib/core/storage/app_startup_native.dart`: `Future.wait([Isar.open(...), OnboardingService.isComplete()])` in parallelo — aggiunto override `onboardingCompleteProvider`
+- `lib/features/onboarding/onboarding_screen.dart` (~220 righe): schermata 3-slide con `PageView`, `AnimatedContainer` per gradiente di sfondo animato tra i colori delle slide, dot indicator con pill animata, animazioni `flutter_animate` (fadeIn + slideY staggered per icona/titolo/body), bottone "Avanti"→"Inizia a leggere", link "Salta" in alto a destra (nascosto sull'ultima slide)
+  - Slide 1: Bentornato tra le pagine (gradiente seppia)
+  - Slide 2: Importa in un tocco (gradiente foresta)
+  - Slide 3: Leggi insieme / Jam (gradiente oceano)
+- `lib/app.dart`: `MarginaliaApp` ora è `ConsumerWidget`; se `!onboardingComplete` mostra `MaterialApp(home: OnboardingScreen)`, altrimenti `MaterialApp.router` come prima. Flippare il provider causa rebuild automatico → router parte da `/` (LibraryScreen)
+
+**Export Markdown degli highlight (✅)**
+- `lib/core/services/export_file_writer.dart` + `_native.dart` + `_web.dart`: conditional export che isola `dart:io`; native scrive file `.md` in tmp e usa `Share.shareXFiles`; web usa `Share.share` text-only
+- `lib/core/services/export_service.dart` (~180 righe, nessun `dart:io` diretto):
+  - `buildBookSection(bookTitle, bookAuthor, highlights)` → sezione Markdown con quote block, metadata posizione/data, nota personale
+  - `buildFullMarkdown(List<Highlight>)` → documento completo con header, totale highlight/libri, auto-grouped per bookTitle, ordinati cronologicamente; cross-platform grazie ai getter `bookTitle`/`bookAuthor` già presenti su entrambi i modelli (Isar + web)
+  - `buildSingleBookMarkdown(...)` → export singolo libro con header dedicato
+  - `exportAll(highlights)` e `exportBook(bookTitle, bookAuthor, highlights)` come API pubblica
+- `lib/features/settings/settings_screen.dart`: nuovo `_SettingsTile` "Esporta in Markdown" → `_exportAllHighlights()` usa `allHighlightsProvider.future` (cross-platform, book links già caricati) + snackbar di loading + gestione errori
+- `lib/features/library/book_detail_screen.dart`: bottone download sovrapposto all'hero (in alto a destra, stessa card del back button) → `ExportService.exportBook(...)` per libro singolo
+
+#### Prossima azione founder
+1. `flutter run -d windows` o `-d chrome` per smoke test onboarding (cancella `.onboarding_complete` dalla cartella docs per rivederlo)
+2. Testare export su device iOS — il `.md` deve aprirsi in Obsidian / Notes / Files
+3. Per resettare l'onboarding su Windows dev: cancella il file `.onboarding_complete` nella cartella documenti dell'app
+
+---
 
 ### Sessione 7 — 2026-05-16
 **Durata**: ~1.5h

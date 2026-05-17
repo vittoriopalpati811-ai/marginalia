@@ -1,9 +1,11 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme.dart';
+import 'core/providers/onboarding_provider.dart';
 import 'features/library/library_screen.dart';
 import 'features/library/book_detail_screen.dart';
 import 'features/reader/highlight_detail_screen.dart';
@@ -14,6 +16,7 @@ import 'features/profile/user_profile_screen.dart';
 import 'features/profile/my_profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -138,11 +141,25 @@ final router = GoRouter(
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-class MarginaliaApp extends StatelessWidget {
+class MarginaliaApp extends ConsumerWidget {
   const MarginaliaApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onboardingComplete = ref.watch(onboardingCompleteProvider);
+
+    // Before onboarding is done, show a standalone MaterialApp with the
+    // onboarding screen. Once the user completes it the provider flips to true
+    // and Flutter rebuilds the router-based shell immediately.
+    if (!onboardingComplete) {
+      return MaterialApp(
+        title: 'Marginalia',
+        theme: buildMarginaliaTheme(),
+        debugShowCheckedModeBanner: false,
+        home: const OnboardingScreen(),
+      );
+    }
+
     return MaterialApp.router(
       title: 'Marginalia',
       theme: buildMarginaliaTheme(),

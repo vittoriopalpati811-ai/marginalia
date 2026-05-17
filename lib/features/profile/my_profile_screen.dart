@@ -1,5 +1,7 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -8,6 +10,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import 'followers_screen.dart';
+import 'pinned_highlights_section.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
@@ -90,6 +94,56 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   bool _appearanceInit = false;
+  bool _uploadingAvatar = false;
+  bool _uploadingCover  = false;
+
+  // ── Photo upload ──────────────────────────────────────────────────────────
+
+  Future<void> _pickAndUploadAvatar() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+    final ext = (file.extension ?? 'jpg').toLowerCase();
+    setState(() => _uploadingAvatar = true);
+    try {
+      await ref.read(supabaseServiceProvider).uploadAvatar(file.bytes!, ext);
+      ref.invalidate(_myProfileProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Errore upload avatar: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  Future<void> _pickAndUploadCover() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+    final ext = (file.extension ?? 'jpg').toLowerCase();
+    setState(() => _uploadingCover = true);
+    try {
+      await ref.read(supabaseServiceProvider).uploadCover(file.bytes!, ext);
+      ref.invalidate(_myProfileProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Errore upload copertina: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingCover = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +171,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       }
     });
 
-    final gp = _gpFor(gradKey);
+    final gp    = _gpFor(gradKey);
+    final uid   = svc.userId ?? '';
+    final stats = statsAsync.asData?.value ?? {};
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
@@ -133,6 +189,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               patternKey: patKey,
               onPalette: _openAppearanceSheet,
               onSettings: () => context.push('/account'),
+              onAvatarTap: _pickAndUploadAvatar,
+              onCoverTap: _pickAndUploadCover,
+              uploadingAvatar: _uploadingAvatar,
+              uploadingCover:  _uploadingCover,
             ),
           ),
 
@@ -142,6 +202,18 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               data: (s) => _StatsRow(
                 stats: s,
                 booksCount: booksAsync.asData?.value?.length ?? 0,
+                onFollowers: () => showProfileList(context,
+                    userId: uid,
+                    type: ProfileListType.followers,
+                    count: stats['followers'] ?? 0),
+                onFollowing: () => showProfileList(context,
+                    userId: uid,
+                    type: ProfileListType.following,
+                    count: stats['following'] ?? 0),
+                onBooks: () => showProfileList(context,
+                    userId: uid,
+                    type: ProfileListType.books,
+                    count: booksAsync.asData?.value?.length ?? 0),
               ),
               loading: () => const SizedBox(height: 80),
               error: (_, __) => const SizedBox(height: 80),
@@ -171,6 +243,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
             ),
+          ),
+
+          // ── Pinned highlights (In evidenza) ──────────────────────────────
+          SliverToBoxAdapter(
+            child: PinnedHighlightsSection(userId: uid),
           ),
 
           // ── Libreria header ───────────────────────────────────────────────
@@ -267,6 +344,10 @@ class _ProfileHeader extends StatelessWidget {
     required this.patternKey,
     required this.onPalette,
     required this.onSettings,
+    required this.onAvatarTap,
+    required this.onCoverTap,
+    required this.uploadingAvatar,
+    required this.uploadingCover,
   });
 
   final AsyncValue<Map<String, dynamic>?> profileAsync;
@@ -274,14 +355,20 @@ class _ProfileHeader extends StatelessWidget {
   final String patternKey;
   final VoidCallback onPalette;
   final VoidCallback onSettings;
+  final VoidCallback onAvatarTap;
+  final VoidCallback onCoverTap;
+  final bool uploadingAvatar;
+  final bool uploadingCover;
 
   @override
   Widget build(BuildContext context) {
-    final top  = MediaQuery.of(context).padding.top;
-    final p    = profileAsync.asData?.value;
-    final name = p?['display_name'] as String? ?? '';
-    final bio  = p?['bio'] as String?;
-    final initial    = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final top       = MediaQuery.of(context).padding.top;
+    final p         = profileAsync.asData?.value;
+    final name      = p?['display_name'] as String? ?? '';
+    final bio       = p?['bio'] as String?;
+    final avatarUrl = p?['avatar_url'] as String?;
+    final coverUrl  = p?['cover_url'] as String?;
+    final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final avatarTint = MarginaliaDecorations.bookCoverColor(name);
 
     return SizedBox(
@@ -289,28 +376,82 @@ class _ProfileHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Gradient
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gp.colors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+          // ── Background: cover photo OR gradient ───────────────────────────
+          GestureDetector(
+            onTap: onCoverTap,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (coverUrl != null && coverUrl.isNotEmpty)
+                  Image.network(coverUrl, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: gp.colors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ))
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: gp.colors,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  ),
+
+                // Pattern overlay
+                if (patternKey != 'none')
+                  CustomPaint(painter: _PatternPainter(patternKey)),
+
+                // Cover upload hint
+                if (uploadingCover)
+                  Container(
+                    color: Colors.black.withAlpha(80),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 1.5),
+                    ),
+                  )
+                else
+                  Positioned(
+                    bottom: 8, right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(60),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.camera_alt_outlined,
+                              size: 12, color: Colors.white.withAlpha(180)),
+                          const SizedBox(width: 4),
+                          Text('Copertina',
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white.withAlpha(180))),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 
-          // Pattern overlay
-          if (patternKey != 'none')
-            CustomPaint(painter: _PatternPainter(patternKey)),
-
           // Bottom fade
           Positioned(
-            left: 0, right: 0, bottom: 0, height: 80,
+            left: 0, right: 0, bottom: 0, height: 100,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.transparent, Colors.black.withAlpha(30)],
+                  colors: [Colors.transparent, Colors.black.withAlpha(55)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -324,35 +465,77 @@ class _ProfileHeader extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Avatar
-                Container(
-                  width: 78,
-                  height: 78,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [avatarTint, gp.b],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(39),
-                    border: Border.all(
-                        color: Colors.white.withAlpha(50), width: 2.5),
-                    boxShadow: const [
-                      BoxShadow(
-                          color: Color(0x35000000),
-                          blurRadius: 20,
-                          offset: Offset(0, 4)),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        color: Color(0xFFF1EEE7),
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
+                // ── Avatar with camera badge ────────────────────────────────
+                GestureDetector(
+                  onTap: onAvatarTap,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 78,
+                        height: 78,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [avatarTint, gp.b],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(39),
+                          border: Border.all(
+                              color: Colors.white.withAlpha(60), width: 2.5),
+                          boxShadow: const [
+                            BoxShadow(
+                                color: Color(0x45000000),
+                                blurRadius: 20,
+                                offset: Offset(0, 4)),
+                          ],
+                        ),
+                        child: uploadingAvatar
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 1.5))
+                            : avatarUrl != null && avatarUrl.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      avatarUrl,
+                                      fit: BoxFit.cover,
+                                      width: 78,
+                                      height: 78,
+                                      errorBuilder: (_, __, ___) => Center(
+                                        child: Text(initial,
+                                            style: const TextStyle(
+                                              color: Color(0xFFF1EEE7),
+                                              fontSize: 30,
+                                              fontWeight: FontWeight.w800,
+                                            )),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(initial,
+                                        style: const TextStyle(
+                                          color: Color(0xFFF1EEE7),
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.w800,
+                                        )),
+                                  ),
                       ),
-                    ),
+                      // Camera badge
+                      Positioned(
+                        bottom: 0, right: 0,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: MarginaliaColors.primary,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: Colors.white.withAlpha(200), width: 1.5),
+                          ),
+                          child: const Icon(Icons.camera_alt,
+                              size: 12, color: Color(0xFFF2F5EA)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -436,9 +619,18 @@ class _IconBtn extends StatelessWidget {
 // ─── Stats row ────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.stats, required this.booksCount});
+  const _StatsRow({
+    required this.stats,
+    required this.booksCount,
+    required this.onFollowers,
+    required this.onFollowing,
+    required this.onBooks,
+  });
   final Map<String, int> stats;
   final int booksCount;
+  final VoidCallback onFollowers;
+  final VoidCallback onFollowing;
+  final VoidCallback onBooks;
 
   @override
   Widget build(BuildContext context) {
@@ -448,13 +640,13 @@ class _StatsRow extends StatelessWidget {
       decoration: MarginaliaDecorations.card(),
       child: Row(
         children: [
-          _StatBox(label: 'Libri', value: booksCount),
+          _StatBox(label: 'Libri', value: booksCount, onTap: onBooks),
           _Div(),
           _StatBox(label: 'Highlight', value: stats['highlights'] ?? 0),
           _Div(),
-          _StatBox(label: 'Seguiti', value: stats['following'] ?? 0),
+          _StatBox(label: 'Seguiti', value: stats['following'] ?? 0, onTap: onFollowing),
           _Div(),
-          _StatBox(label: 'Follower', value: stats['followers'] ?? 0),
+          _StatBox(label: 'Follower', value: stats['followers'] ?? 0, onTap: onFollowers),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0, duration: 350.ms);
@@ -468,35 +660,44 @@ class _Div extends StatelessWidget {
 }
 
 class _StatBox extends StatelessWidget {
-  const _StatBox({required this.label, required this.value});
+  const _StatBox({required this.label, required this.value, this.onTap});
   final String label;
   final int value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            '$value',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: MarginaliaColors.ink,
-              letterSpacing: -0.5,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            Text(
+              '$value',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: onTap != null
+                    ? MarginaliaColors.sienna
+                    : MarginaliaColors.ink,
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: MarginaliaColors.inkFaint,
-              letterSpacing: 0.5,
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                color: onTap != null
+                    ? MarginaliaColors.siennaLight
+                    : MarginaliaColors.inkFaint,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

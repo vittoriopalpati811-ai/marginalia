@@ -593,6 +593,204 @@ class SupabaseService {
         .subscribe();
   }
 
+  // ─── Avatar + Cover photo upload ─────────────────────────────────────────
+
+  /// Uploads avatar image to Supabase Storage and returns the public URL.
+  Future<String> uploadAvatar(Uint8List bytes, String ext) async {
+    final path = '${userId!}/avatar.$ext';
+    await _client.storage.from('avatars').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true, contentType: 'image/$ext'),
+        );
+    final url = _client.storage.from('avatars').getPublicUrl(path);
+    await _client.from('profiles').update({'avatar_url': url}).eq('id', userId!);
+    return url;
+  }
+
+  /// Uploads cover photo to Supabase Storage and returns the public URL.
+  Future<String> uploadCover(Uint8List bytes, String ext) async {
+    final path = '${userId!}/cover.$ext';
+    await _client.storage.from('covers').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true, contentType: 'image/$ext'),
+        );
+    final url = _client.storage.from('covers').getPublicUrl(path);
+    await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
+    return url;
+  }
+
+  // ─── Pinned highlights ────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchPinnedHighlights(String targetUserId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('pinned_highlights')
+              .select('sort_order, highlight_id')
+              .eq('user_id', targetUserId)
+              .order('sort_order') as List,
+    );
+    if (rows.isEmpty) return [];
+    final ids = rows.map((r) => r['highlight_id'] as String).toList();
+    final highlights = List<Map<String, dynamic>>.from(
+      await _client
+              .from('highlights')
+              .select('id, content, color, books(title, author)')
+              .inFilter('id', ids) as List,
+    );
+    final hlById = {for (var h in highlights) h['id'] as String: h};
+    return [
+      for (var r in rows)
+        if (hlById.containsKey(r['highlight_id'] as String))
+          {...hlById[r['highlight_id'] as String]!, 'sort_order': r['sort_order']},
+    ];
+  }
+
+  /// Replaces the current user's pinned highlights (max 3).
+  Future<void> updatePinnedHighlights(List<String> highlightIds) async {
+    final uid = userId!;
+    await _client.from('pinned_highlights').delete().eq('user_id', uid);
+    if (highlightIds.isEmpty) return;
+    await _client.from('pinned_highlights').insert([
+      for (var i = 0; i < highlightIds.length && i < 3; i++)
+        {'user_id': uid, 'highlight_id': highlightIds[i], 'sort_order': i},
+    ]);
+  }
+
+  // ─── Posts ────────────────────────────────────────────────────────────────
+
+  Future<void> createPost({
+    String? body,
+    String? highlightSupabaseId,
+    String? jamId,
+  }) async {
+    await _client.from('posts').insert({
+      'user_id': userId,
+      if (body != null && body.trim().isNotEmpty) 'body': body.trim(),
+      if (highlightSupabaseId != null) 'highlight_id': highlightSupabaseId,
+      if (jamId != null) 'jam_id': jamId,
+    });
+  }
+
+  /// Fetch posts: from people I follow + my own, newest first.
+  Future<List<Map<String, dynamic>>> fetchPosts() async {
+    if (!isAuthenticated) return [];
+    final followingIds = await fetchFollowingIds();
+    final allIds = {...followingIds, userId!}.toList();
+
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('posts')
+              .select('''
+                *,
+                highlights(id, content, color, books(title, author))
+              ''')
+              .inFilter('user_id', allIds)
+              .order('created_at', ascending: false)
+              .limit(80) as List,
+    );
+    if (rows.isEmpty) return [];
+
+    // Fetch profiles in parallel
+    final userIds = rows.map((r) => r['user_id'] as String).toSet().toList();
+    final profiles = List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select('id, display_name, avatar_url')
+              .inFilter('id', userIds) as List,
+    );
+    final profileById = {for (var p in profiles) p['id'] as String: p};
+
+    // Fetch my likes for quick "isLiked" state
+    final postIds = rows.map((r) => r['id'] as String).toList();
+    final myLikes = List<Map<String, dynamic>>.from(
+      await _client
+              .from('post_likes')
+              .select('post_id')
+              .eq('user_id', userId!)
+              .inFilter('post_id', postIds) as List,
+    );
+    final likedIds = myLikes.map((l) => l['post_id'] as String).toSet();
+
+    return rows.map((r) {
+      return {
+        ...r,
+        'profile': profileById[r['user_id'] as String],
+        'is_liked': likedIds.contains(r['id'] as String),
+      };
+    }).toList();
+  }
+
+  Future<void> togglePostLike(String postId, bool currentlyLiked) async {
+    if (currentlyLiked) {
+      await _client
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', userId!);
+    } else {
+      await _client.from('post_likes').upsert({
+        'post_id': postId,
+        'user_id': userId,
+      });
+    }
+    // Recompute the denormalised count from the likes table.
+    final rows = List<Map<String, dynamic>>.from(
+      await _client.from('post_likes').select('post_id').eq('post_id', postId)
+          as List,
+    );
+    await _client
+        .from('posts')
+        .update({'likes_count': rows.length})
+        .eq('id', postId);
+  }
+
+  // ─── Followers/Following for any user (public profiles) ──────────────────
+
+  Future<List<Map<String, dynamic>>> fetchUserFollowers(String targetId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('follows')
+              .select('follower_id')
+              .eq('following_id', targetId) as List,
+    );
+    if (rows.isEmpty) return [];
+    final ids = rows.map((r) => r['follower_id'] as String).toList();
+    return List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select('id, display_name, avatar_url, currently_reading_title')
+              .inFilter('id', ids) as List,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserFollowing(String targetId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('follows')
+              .select('following_id')
+              .eq('follower_id', targetId) as List,
+    );
+    if (rows.isEmpty) return [];
+    final ids = rows.map((r) => r['following_id'] as String).toList();
+    return List<Map<String, dynamic>>.from(
+      await _client
+              .from('profiles')
+              .select('id, display_name, avatar_url, currently_reading_title')
+              .inFilter('id', ids) as List,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchUserBooks(String targetId) async {
+    final rows = await _client
+            .from('books')
+            .select('id, title, author')
+            .eq('user_id', targetId)
+            .order('title') as List;
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
   // ─── File upload (My Clippings.txt) ───────────────────────────────────────
 
   Future<String> uploadClippingsFile(Uint8List bytes, String filename) async {

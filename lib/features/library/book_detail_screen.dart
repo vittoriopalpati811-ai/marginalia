@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/books_provider.dart';
+import '../../core/services/export_service.dart';
 
 class BookDetailScreen extends ConsumerWidget {
   const BookDetailScreen({super.key, required this.bookId});
@@ -191,6 +192,46 @@ class BookDetailScreen extends ConsumerWidget {
                         color: Colors.white, size: 20),
                   ),
                   onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+
+              // ── Export button (top-right) ─────────────────────────────────
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8,
+                right: 8,
+                child: highlightsAsync.maybeWhen(
+                  data: (highlights) => highlights.isEmpty
+                      ? const SizedBox.shrink()
+                      : IconButton(
+                          tooltip: 'Esporta in Markdown',
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withAlpha(50),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.download_outlined,
+                                color: Colors.white, size: 20),
+                          ),
+                          onPressed: () async {
+                            try {
+                              await ExportService.exportBook(
+                                bookTitle: book.title,
+                                bookAuthor: book.author,
+                                highlights: highlights,
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Errore esportazione: $e')),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                  orElse: () => const SizedBox.shrink(),
                 ),
               ),
             ],

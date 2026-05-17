@@ -7,6 +7,8 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/highlights_provider.dart';
+import '../../core/services/export_service.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -357,6 +359,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => context.go('/'),
               ),
               _SettingsTile(
+                icon: Icons.download_outlined,
+                label: 'Esporta in Markdown',
+                subtitle: 'Scarica tutti i tuoi highlight come file .md',
+                onTap: () => _exportAllHighlights(context, ref),
+              ),
+              _SettingsTile(
                 icon: Icons.privacy_tip_outlined,
                 label: 'Privacy Policy',
                 onTap: () {},
@@ -396,6 +404,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  // ── Export all highlights ─────────────────────────────────────────────────
+
+  Future<void> _exportAllHighlights(
+      BuildContext context, WidgetRef ref) async {
+    // Show a loading snackbar while preparing the export
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              ),
+              SizedBox(width: 12),
+              Text('Preparando il file…'),
+            ],
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+
+    try {
+      // allHighlightsProvider is cross-platform (Isar on native, Supabase on
+      // web) and already loads book links so bookTitle / bookAuthor are set.
+      final highlights = await ref.read(allHighlightsProvider.future);
+
+      if (highlights.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text(
+                    'Nessun highlight da esportare. '
+                    'Importa prima My Clippings.txt.'),
+              ),
+            );
+        }
+        return;
+      }
+
+      await ExportService.exportAll(highlights);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(content: Text('Errore durante l\'esportazione: $e')),
+          );
+      }
+    }
   }
 
   // ── Edit profile sheet ────────────────────────────────────────────────────

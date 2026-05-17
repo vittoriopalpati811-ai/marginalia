@@ -28,7 +28,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final query = ref.watch(searchQueryProvider);
     final resultsAsync = ref.watch(searchResultsProvider);
-    final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
@@ -36,106 +35,112 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Gradient header with embedded search bar ──────────────────────
+          // SafeArea handles the status-bar inset; no manual padding.top needed.
           Container(
             decoration: MarginaliaDecorations.gradientHeader,
-            padding: EdgeInsets.fromLTRB(20, topPad + 16, 20, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title row
-                Row(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Cerca',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFFEDE5D5),
-                        letterSpacing: -0.8,
-                        height: 1,
-                      ),
-                    ),
-                    const Spacer(),
-                    // Hint badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(18),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'highlight · note',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.white.withAlpha(100),
-                          letterSpacing: 0.3,
-                          fontWeight: FontWeight.w500,
+                    // Title row
+                    Row(
+                      children: [
+                        const Text(
+                          'Cerca',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFF2F5EA),
+                            letterSpacing: -0.8,
+                            height: 1,
+                          ),
                         ),
+                        const Spacer(),
+                        // Hint badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(18),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'highlight · note',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white.withAlpha(100),
+                              letterSpacing: 0.3,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Search bar (translucent on dark bg)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(22),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: Colors.white.withAlpha(30), width: 0.5),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        autofocus: true,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFFF2F5EA),
+                          height: 1.4,
+                        ),
+                        cursorColor: const Color(0xFFF2F5EA),
+                        decoration: InputDecoration(
+                          hintText: 'Cerca nei tuoi highlight…',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withAlpha(70),
+                            fontSize: 15,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: Colors.white.withAlpha(80),
+                            size: 20,
+                          ),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear,
+                                    color: Colors.white.withAlpha(80),
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _controller.clear();
+                                    ref
+                                        .read(searchQueryProvider.notifier)
+                                        .state = '';
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 14,
+                          ),
+                        ),
+                        onChanged: (v) =>
+                            ref.read(searchQueryProvider.notifier).state = v,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Search bar (translucent on dark bg)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(22),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                        color: Colors.white.withAlpha(30), width: 0.5),
-                  ),
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    autofocus: true,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: Color(0xFFEDE5D5),
-                      height: 1.4,
-                    ),
-                    cursorColor: const Color(0xFFEDE5D5),
-                    decoration: InputDecoration(
-                      hintText: 'Cerca nei tuoi highlight…',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withAlpha(70),
-                        fontSize: 15,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Colors.white.withAlpha(80),
-                        size: 20,
-                      ),
-                      suffixIcon: query.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.clear,
-                                color: Colors.white.withAlpha(80),
-                                size: 18,
-                              ),
-                              onPressed: () {
-                                _controller.clear();
-                                ref
-                                    .read(searchQueryProvider.notifier)
-                                    .state = '';
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      filled: false,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 14,
-                      ),
-                    ),
-                    onChanged: (v) =>
-                        ref.read(searchQueryProvider.notifier).state = v,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
 
