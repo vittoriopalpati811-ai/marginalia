@@ -243,7 +243,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final allAsync = ref.watch(highlightsProvider);
+    final allAsync = ref.watch(allHighlightsProvider);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
