@@ -45,11 +45,8 @@ class FeedTab extends ConsumerWidget {
     final postsAsync = ref.watch(postsProvider);
     final feedAsync  = ref.watch(feedProvider);
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+    return CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
 
           // ── Post section header ───────────────────────────────────────────
@@ -148,50 +145,7 @@ class FeedTab extends ConsumerWidget {
                   ),
           ),
         ],
-          ),
-        ),
-
-      // ── Create post FAB (bottom-right, above nav bar) ───────────────────────
-      Positioned(
-        bottom: 24,
-        right: 16,
-        child: _CreatePostFab(
-          onTap: () async {
-            await showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => _CreatePostSheet(
-                onCreated: () => ref.invalidate(postsProvider),
-              ),
-            );
-          },
-        ),
-      ),
-    ]);
-  }
-}
-
-// ─── Create post FAB ──────────────────────────────────────────────────────────
-
-class _CreatePostFab extends StatelessWidget {
-  const _CreatePostFab({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
-      onPressed: onTap,
-      backgroundColor: MarginaliaColors.primary,
-      foregroundColor: const Color(0xFFF2F5EA),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      icon: const Icon(Icons.edit_outlined, size: 18),
-      label: const Text(
-        'Scrivi',
-        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-      ),
-    );
+      );
   }
 }
 

@@ -167,7 +167,7 @@ class _WebNotSupported extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
-              onPressed: () => context.go('/settings'),
+              onPressed: () => context.go('/profile'),
               icon: const Icon(Icons.upload_file_outlined),
               label: const Text('Vai a Import manuale'),
               style: FilledButton.styleFrom(

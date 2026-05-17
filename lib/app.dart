@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/theme.dart';
 import 'core/providers/onboarding_provider.dart';
+import 'features/social/home_tab.dart';
 import 'features/library/library_screen.dart';
 import 'features/library/book_detail_screen.dart';
 import 'features/reader/highlight_detail_screen.dart';
@@ -14,6 +15,7 @@ import 'features/social/social_screen.dart';
 import 'features/social/jam_detail_screen.dart';
 import 'features/profile/user_profile_screen.dart';
 import 'features/profile/my_profile_screen.dart';
+import 'features/profile/edit_profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
@@ -71,17 +73,18 @@ CustomTransitionPage<void> _modalPage(Widget child, GoRouterState state) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/',
+  initialLocation: '/home',
   routes: [
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) =>
           _ScaffoldWithNav(routePath: state.uri.path, child: child),
       routes: [
-        GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
-        GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
-        GoRoute(path: '/social', builder: (_, __) => const SocialScreen()),
-        GoRoute(path: '/settings', builder: (_, __) => const MyProfileScreen()),
+        GoRoute(path: '/home',    builder: (_, __) => const HomeTab()),
+        GoRoute(path: '/',        builder: (_, __) => const LibraryScreen()),
+        GoRoute(path: '/search',  builder: (_, __) => const SearchScreen()),
+        GoRoute(path: '/social',  builder: (_, __) => const SocialScreen()),
+        GoRoute(path: '/profile', builder: (_, __) => const MyProfileScreen()),
       ],
     ),
 
@@ -123,6 +126,22 @@ final router = GoRouter(
       path: '/account',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _modalPage(const SettingsScreen(), state),
+    ),
+    GoRoute(
+      path: '/edit-profile',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return _pushPage(
+          EditProfileScreen(
+            initialProfile:  extra?['profile']  as Map<String, dynamic>?,
+            initialGradient: extra?['gradient'] as String? ?? 'sepia',
+            initialPattern:  extra?['pattern']  as String? ?? 'none',
+            onSaved:         extra?['onSaved']  as VoidCallback? ?? () {},
+          ),
+          state,
+        );
+      },
     ),
 
     // Modal routes — fade + subtle slide up
@@ -181,10 +200,11 @@ class _ScaffoldWithNav extends StatelessWidget {
   final String routePath;
 
   static const _tabs = [
-    (path: '/', icon: Icons.library_books_outlined, activeIcon: Icons.library_books, label: 'Libreria'),
-    (path: '/search', icon: Icons.search_outlined, activeIcon: Icons.search, label: 'Cerca'),
-    (path: '/social', icon: Icons.group_outlined, activeIcon: Icons.group, label: 'Jam'),
-    (path: '/settings', icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profilo'),
+    (path: '/home',    icon: Icons.home_outlined,         activeIcon: Icons.home,          label: ''),
+    (path: '/',        icon: Icons.library_books_outlined, activeIcon: Icons.library_books, label: 'Libreria'),
+    (path: '/search',  icon: Icons.search_outlined,        activeIcon: Icons.search,        label: 'Cerca'),
+    (path: '/social',  icon: Icons.group_outlined,         activeIcon: Icons.group,         label: 'Jam'),
+    (path: '/profile', icon: Icons.person_outline,         activeIcon: Icons.person,        label: 'Profilo'),
   ];
 
   @override
@@ -311,20 +331,21 @@ class _FloatingNavBar extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 3),
-                              AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 200),
-                                style: TextStyle(
-                                  fontSize: active ? 9.5 : 9,
-                                  fontWeight: active
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: active
-                                      ? const Color(0xFFF1EEE7)
-                                      : const Color(0xFFF1EEE7).withAlpha(110),
-                                  letterSpacing: active ? 0.3 : 0.1,
+                              if (tab.label.isNotEmpty)
+                                AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 200),
+                                  style: TextStyle(
+                                    fontSize: active ? 9.5 : 9,
+                                    fontWeight: active
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    color: active
+                                        ? const Color(0xFFF1EEE7)
+                                        : const Color(0xFFF1EEE7).withAlpha(110),
+                                    letterSpacing: active ? 0.3 : 0.1,
+                                  ),
+                                  child: Text(tab.label),
                                 ),
-                                child: Text(tab.label),
-                              ),
                             ],
                           ),
                         ),

@@ -442,6 +442,23 @@ class SupabaseService {
         .update({'display_name': displayName}).eq('id', userId!);
   }
 
+  /// Update multiple profile fields at once.
+  Future<void> updateProfileInfo({
+    String? displayName,
+    String? bio,
+    String? currentlyReadingTitle,
+    String? currentlyReadingAuthor,
+  }) async {
+    if (!isAuthenticated || userId == null) return;
+    final data = <String, dynamic>{};
+    if (displayName != null) data['display_name'] = displayName;
+    if (bio != null) data['bio'] = bio;
+    if (currentlyReadingTitle != null) data['currently_reading_title'] = currentlyReadingTitle;
+    if (currentlyReadingAuthor != null) data['currently_reading_author'] = currentlyReadingAuthor;
+    if (data.isEmpty) return;
+    await _client.from('profiles').update(data).eq('id', userId!);
+  }
+
   /// Aggregate counts for the current user's profile stats row.
   Future<Map<String, int>> fetchMyStats() async {
     final uid = userId!;
@@ -618,6 +635,20 @@ class SupabaseService {
         );
     final url = _client.storage.from('covers').getPublicUrl(path);
     await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
+    return url;
+  }
+
+  /// Uploads a Jam cover photo and updates the jam's cover_url column.
+  Future<String> uploadJamCover(
+      String jamId, Uint8List bytes, String ext) async {
+    final path = '$jamId/cover.$ext';
+    await _client.storage.from('jam-covers').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
+        );
+    final url = _client.storage.from('jam-covers').getPublicUrl(path);
+    await _client.from('jams').update({'cover_url': url}).eq('id', jamId);
     return url;
   }
 

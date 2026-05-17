@@ -1,12 +1,11 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -94,55 +93,31 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   bool _appearanceInit = false;
-  bool _uploadingAvatar = false;
-  bool _uploadingCover  = false;
 
-  // ── Photo upload ──────────────────────────────────────────────────────────
+  // ── Navigate to edit profile page ─────────────────────────────────────────
 
-  Future<void> _pickAndUploadAvatar() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.bytes == null) return;
-    final ext = (file.extension ?? 'jpg').toLowerCase();
-    setState(() => _uploadingAvatar = true);
-    try {
-      await ref.read(supabaseServiceProvider).uploadAvatar(file.bytes!, ext);
-      ref.invalidate(_myProfileProvider);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore upload avatar: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _uploadingAvatar = false);
-    }
+  void _openEditProfile(Map<String, dynamic>? profile, String gradKey, String patKey) {
+    context.push('/edit-profile', extra: {
+      'profile':  profile,
+      'gradient': gradKey,
+      'pattern':  patKey,
+      'onSaved':  () {
+        _appearanceInit = false; // allow re-init from refreshed profile
+        ref.invalidate(_myProfileProvider);
+        ref.invalidate(_myBooksProvider);
+      },
+    });
   }
 
-  Future<void> _pickAndUploadCover() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true,
+  // ── Share profile ─────────────────────────────────────────────────────────
+
+  void _shareProfile(Map<String, dynamic>? profile) {
+    final name = profile?['display_name'] as String? ?? 'Marginalia';
+    final uid  = ref.read(supabaseServiceProvider).userId ?? '';
+    Share.share(
+      '📚 Segui $name su Marginalia!\n\nhttps://marginalia.app/user/$uid',
+      subject: 'Profilo Marginalia – $name',
     );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.bytes == null) return;
-    final ext = (file.extension ?? 'jpg').toLowerCase();
-    setState(() => _uploadingCover = true);
-    try {
-      await ref.read(supabaseServiceProvider).uploadCover(file.bytes!, ext);
-      ref.invalidate(_myProfileProvider);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore upload copertina: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _uploadingCover = false);
-    }
   }
 
   @override
@@ -187,12 +162,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               profileAsync: profileAsync,
               gp: gp,
               patternKey: patKey,
-              onPalette: _openAppearanceSheet,
+              onEditProfile: () =>
+                  _openEditProfile(profileAsync.asData?.value, gradKey, patKey),
               onSettings: () => context.push('/account'),
-              onAvatarTap: _pickAndUploadAvatar,
-              onCoverTap: _pickAndUploadCover,
-              uploadingAvatar: _uploadingAvatar,
-              uploadingCover:  _uploadingCover,
+              onShare: () => _shareProfile(profileAsync.asData?.value),
             ),
           ),
 
@@ -307,32 +280,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     );
   }
 
-  // ── Appearance sheet ────────────────────────────────────────────────────────
-
-  void _openAppearanceSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AppearanceSheet(
-        initialGradient: ref.read(_gradientKeyProvider),
-        initialPattern:  ref.read(_patternKeyProvider),
-        onSave: (g, p) async {
-          ref.read(_gradientKeyProvider.notifier).state = g;
-          ref.read(_patternKeyProvider.notifier).state  = p;
-          try {
-            await ref.read(supabaseServiceProvider)
-                .updateProfileAppearance(g, p);
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text('Errore: $e')));
-            }
-          }
-        },
-      ),
-    );
-  }
 }
 
 // ─── Profile header ───────────────────────────────────────────────────────────
@@ -342,23 +289,17 @@ class _ProfileHeader extends StatelessWidget {
     required this.profileAsync,
     required this.gp,
     required this.patternKey,
-    required this.onPalette,
+    required this.onEditProfile,
     required this.onSettings,
-    required this.onAvatarTap,
-    required this.onCoverTap,
-    required this.uploadingAvatar,
-    required this.uploadingCover,
+    required this.onShare,
   });
 
   final AsyncValue<Map<String, dynamic>?> profileAsync;
   final _GP gp;
   final String patternKey;
-  final VoidCallback onPalette;
+  final VoidCallback onEditProfile;
   final VoidCallback onSettings;
-  final VoidCallback onAvatarTap;
-  final VoidCallback onCoverTap;
-  final bool uploadingAvatar;
-  final bool uploadingCover;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -515,37 +456,26 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
 
-          // Top-right buttons (palette · settings · avatar · copertina)
+          // Top-right buttons (modifica · share · settings)
           Positioned(
             top: top + 8,
             right: 14,
             child: Row(
               children: [
-                _IconBtn(icon: Icons.palette_outlined, onTap: onPalette),
+                _IconBtn(
+                    icon: Icons.edit_outlined,
+                    onTap: onEditProfile,
+                    tooltip: 'Modifica profilo'),
                 const SizedBox(width: 8),
-                _IconBtn(icon: Icons.settings_outlined, onTap: onSettings),
+                _IconBtn(
+                    icon: Icons.ios_share_outlined,
+                    onTap: onShare,
+                    tooltip: 'Condividi profilo'),
                 const SizedBox(width: 8),
-                uploadingAvatar
-                    ? const SizedBox(
-                        width: 36, height: 36,
-                        child: Center(child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 1.5)))
-                    : _IconBtn(
-                        icon: Icons.account_circle_outlined,
-                        onTap: onAvatarTap,
-                        tooltip: 'Foto profilo',
-                      ),
-                const SizedBox(width: 8),
-                uploadingCover
-                    ? const SizedBox(
-                        width: 36, height: 36,
-                        child: Center(child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 1.5)))
-                    : _IconBtn(
-                        icon: Icons.image_outlined,
-                        onTap: onCoverTap,
-                        tooltip: 'Foto copertina',
-                      ),
+                _IconBtn(
+                    icon: Icons.settings_outlined,
+                    onTap: onSettings,
+                    tooltip: 'Impostazioni'),
               ],
             ),
           ),
@@ -934,8 +864,8 @@ class _BookCell extends StatelessWidget {
   }
 }
 
-// ─── Appearance bottom sheet ──────────────────────────────────────────────────
-
+// ─── Appearance sheet (kept for reference — replaced by EditProfileScreen) ────
+// ignore: unused_element
 class _AppearanceSheet extends StatefulWidget {
   const _AppearanceSheet({
     required this.initialGradient,

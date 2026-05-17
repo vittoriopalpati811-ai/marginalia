@@ -9,7 +9,6 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'amici_tab.dart';
-import 'feed_tab.dart';
 
 final jamsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
   (ref) {
@@ -33,7 +32,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
     // Rebuild to show/hide FAB when switching tabs.
     _tabController.addListener(() => setState(() {}));
   }
@@ -52,8 +51,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      // FAB only visible on the Jam tab (index 1)
-      floatingActionButton: _tabController.index == 1
+      // FAB only visible on the Jam tab (index 0)
+      floatingActionButton: _tabController.index == 0
           ? _CreateJamFab(onTap: _showCreateJamSheet)
           : null,
       body: Column(
@@ -68,7 +67,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                const FeedTab(),
                 _JamTabContent(
                   onCreateJam: _showCreateJamSheet,
                   onJoinJam: _showJoinJamSheet,
@@ -203,7 +201,7 @@ class _SocialHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Sociale',
+                        'Jam',
                         style: TextStyle(
                           color: Color(0xFFF1EEE7),
                           fontSize: 26,
@@ -214,7 +212,7 @@ class _SocialHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Jam e amici lettori',
+                        'Cerchie e amici lettori',
                         style: TextStyle(
                           color: const Color(0xFFF1EEE7).withAlpha(160),
                           fontSize: 13,
@@ -264,7 +262,6 @@ class _SocialHeader extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             tabs: const [
-              Tab(text: 'Feed'),
               Tab(text: 'Jam'),
               Tab(text: 'Amici'),
             ],
@@ -775,14 +772,14 @@ class _UnauthenticatedState extends StatelessWidget {
                           size: 32, color: MarginaliaColors.sienna),
                     ),
                     const SizedBox(height: 24),
-                    const Text('Accedi per usare le Jam',
+                    const Text('Accedi per le Jam',
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.3)),
                     const SizedBox(height: 10),
                     const Text(
-                      'Le cerchie di lettura e la sezione\namici richiedono un account.',
+                      'Le cerchie di lettura e gli amici\nrichiedono un account Marginalia.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: MarginaliaColors.inkMuted,

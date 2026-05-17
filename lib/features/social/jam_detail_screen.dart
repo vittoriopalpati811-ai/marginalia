@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,6 +60,7 @@ class JamDetailScreen extends ConsumerStatefulWidget {
 
 class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   RealtimeChannel? _channel;
+  bool _uploadingCover = false;
 
   @override
   void initState() {
@@ -94,6 +98,38 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Codice copiato negli appunti!')),
     );
+  }
+
+  // ── Cover photo ──────────────────────────────────────────────────────────────
+
+  Future<void> _pickJamCover() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty || result.files.first.bytes == null) return;
+    final file = result.files.first;
+    setState(() => _uploadingCover = true);
+    try {
+      await ref.read(supabaseServiceProvider).uploadJamCover(
+            widget.jamId,
+            file.bytes!,
+            (file.extension ?? 'jpg').toLowerCase(),
+          );
+      ref.invalidate(jamDetailProvider(widget.jamId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Copertina Jam aggiornata!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Errore upload: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingCover = false);
+    }
   }
 
   // ── Share highlight picker ──────────────────────────────────────────────────
@@ -177,6 +213,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       data: (j) => j?['invite_code'] as String?,
       orElse: () => null,
     );
+    final jamCoverUrl = jamDetailAsync.maybeWhen(
+      data: (j) => j?['cover_url'] as String?,
+      orElse: () => null,
+    );
 
     final memberCount = membersAsync.maybeWhen(
       data: (m) => m.length,
@@ -198,6 +238,22 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             elevation: 0,
             scrolledUnderElevation: 0,
             actions: [
+              // Cover photo upload button
+              _uploadingCover
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 1.5),
+                      ),
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.image_outlined),
+                      tooltip: 'Cambia copertina Jam',
+                      onPressed: _pickJamCover,
+                    ),
               IconButton(
                 icon: const Icon(Icons.ios_share_outlined),
                 tooltip: 'Invita amici',
@@ -219,7 +275,28 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               ),
               titlePadding:
                   const EdgeInsetsDirectional.fromSTEB(56, 0, 56, 16),
-              background: Container(
+              background: jamCoverUrl != null && jamCoverUrl.isNotEmpty
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(jamCoverUrl, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Container(decoration: MarginaliaDecorations.gradientHeader)),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withAlpha(120),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Container(
                 decoration: MarginaliaDecorations.gradientHeader,
                 child: SafeArea(
                   child: Padding(
