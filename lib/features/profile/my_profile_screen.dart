@@ -150,9 +150,35 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final uid   = svc.userId ?? '';
     final stats = statsAsync.asData?.value ?? {};
 
+    // Blend the gradient colors very subtly into the cream background so the
+    // whole page feels cohesive while text on cards stays perfectly readable.
+    final bgTop    = Color.alphaBlend(gp.a.withAlpha(28), MarginaliaColors.background);
+    final bgBottom = Color.alphaBlend(gp.b.withAlpha(45), MarginaliaColors.background);
+
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      body: CustomScrollView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Subtle full-page gradient background ─────────────────────────
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [bgTop, bgBottom],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+
+          // ── Very faint pattern tint (only where no card is on top) ──────
+          if (patKey != 'none')
+            CustomPaint(
+              painter: _PatternPainter(patKey, color: gp.a.withAlpha(14)),
+            ),
+
+          // ── Scrollable content ───────────────────────────────────────────
+          CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
 
@@ -276,7 +302,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
         ],
-      ),
+      ), // CustomScrollView
+        ], // Stack children
+      ), // Stack
     );
   }
 

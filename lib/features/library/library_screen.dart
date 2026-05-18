@@ -401,10 +401,9 @@ class _EditorialHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The Scaffold.body is already laid out below the status bar — do NOT add
-    // MediaQuery.padding.top again or the logo ends up pushed too far down.
+    final top = MediaQuery.of(context).padding.top;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 20, 16, 8),
+      padding: EdgeInsets.fromLTRB(22, top + 8, 16, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

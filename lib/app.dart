@@ -324,14 +324,17 @@ class _FloatingNavBar extends StatelessWidget {
                                 child: Icon(
                                   active ? tab.activeIcon : tab.icon,
                                   key: ValueKey(active),
-                                  size: active ? 22 : 21,
+                                  // Icon-only tabs (no label) get a slightly larger icon
+                                  size: tab.label.isEmpty
+                                      ? (active ? 26 : 24)
+                                      : (active ? 22 : 21),
                                   color: active
                                       ? const Color(0xFFF1EEE7)
                                       : const Color(0xFFF1EEE7).withAlpha(110),
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              if (tab.label.isNotEmpty)
+                              if (tab.label.isNotEmpty) ...[
+                                const SizedBox(height: 3),
                                 AnimatedDefaultTextStyle(
                                   duration: const Duration(milliseconds: 200),
                                   style: TextStyle(
@@ -346,6 +349,7 @@ class _FloatingNavBar extends StatelessWidget {
                                   ),
                                   child: Text(tab.label),
                                 ),
+                              ],
                             ],
                           ),
                         ),

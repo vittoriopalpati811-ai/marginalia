@@ -612,8 +612,21 @@ class SupabaseService {
 
   // ─── Avatar + Cover photo upload ─────────────────────────────────────────
 
+  /// Ensures a storage bucket exists (creates it if missing, ignores errors if it already exists).
+  Future<void> _ensureBucket(String bucketId, {bool public = true}) async {
+    try {
+      await _client.storage.createBucket(
+        bucketId,
+        BucketOptions(public: public),
+      );
+    } catch (_) {
+      // Bucket likely already exists — ignore.
+    }
+  }
+
   /// Uploads avatar image to Supabase Storage and returns the public URL.
   Future<String> uploadAvatar(Uint8List bytes, String ext) async {
+    await _ensureBucket('avatars');
     final path = '${userId!}/avatar.$ext';
     await _client.storage.from('avatars').uploadBinary(
           path,
@@ -627,6 +640,7 @@ class SupabaseService {
 
   /// Uploads cover photo to Supabase Storage and returns the public URL.
   Future<String> uploadCover(Uint8List bytes, String ext) async {
+    await _ensureBucket('covers');
     final path = '${userId!}/cover.$ext';
     await _client.storage.from('covers').uploadBinary(
           path,
@@ -641,6 +655,7 @@ class SupabaseService {
   /// Uploads a Jam cover photo and updates the jam's cover_url column.
   Future<String> uploadJamCover(
       String jamId, Uint8List bytes, String ext) async {
+    await _ensureBucket('jam-covers');
     final path = '$jamId/cover.$ext';
     await _client.storage.from('jam-covers').uploadBinary(
           path,
