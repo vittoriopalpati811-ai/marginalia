@@ -4,7 +4,7 @@
 class WeeklyPrompt {
   static const _prompts = [
     'Condividi un highlight che ti ha cambiato idea questa settimana.',
-    'Una citazione che ti ha fatto ridere di recente — passala alla cerchia.',
+    'Una citazione che ti ha fatto ridere di recente — passala alla Jam.',
     'L\'idea più scomoda che hai sottolineato negli ultimi giorni.',
     'Un highlight su cui sei in disaccordo con l\'autore. Perché?',
     'La citazione che vorresti tatuarti, se non avessi paura.',

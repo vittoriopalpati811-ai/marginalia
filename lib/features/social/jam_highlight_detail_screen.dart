@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -56,11 +59,25 @@ class _JamHighlightDetailScreenState
     extends ConsumerState<JamHighlightDetailScreen> {
   final _commentController = TextEditingController();
   bool _posting = false;
+  Uint8List? _imageBytes;
+  String? _imageExt;
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickCommentImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty || result.files.first.bytes == null) return;
+    setState(() {
+      _imageBytes = result.files.first.bytes;
+      _imageExt   = (result.files.first.extension ?? 'jpg').toLowerCase();
+    });
   }
 
   Future<void> _toggleReaction(String emoji) async {
@@ -79,13 +96,21 @@ class _JamHighlightDetailScreenState
 
   Future<void> _postComment() async {
     final text = _commentController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _imageBytes == null) return;
     setState(() => _posting = true);
     try {
-      await ref
-          .read(supabaseServiceProvider)
-          .addComment(widget.jamHighlightId, text);
+      final svc = ref.read(supabaseServiceProvider);
+      String? imageUrl;
+      if (_imageBytes != null && _imageExt != null) {
+        imageUrl = await svc.uploadCommentImage(_imageBytes!, _imageExt!);
+      }
+      await svc.addComment(
+        widget.jamHighlightId,
+        text.isEmpty ? '📷' : text,
+        imageUrl: imageUrl,
+      );
       _commentController.clear();
+      setState(() { _imageBytes = null; _imageExt = null; });
       ref.invalidate(commentsProvider(widget.jamHighlightId));
     } catch (e) {
       if (mounted) {
@@ -247,9 +272,53 @@ class _JamHighlightDetailScreenState
               ),
             ),
             padding: EdgeInsets.fromLTRB(
-                16, 12, 16, MediaQuery.of(context).viewInsets.bottom + 12),
-            child: Row(
+                16, 10, 16, MediaQuery.of(context).viewInsets.bottom + 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // Image preview
+                if (_imageBytes != null) ...[
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(_imageBytes!,
+                            height: 80, width: double.infinity, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        top: 4, right: 4,
+                        child: GestureDetector(
+                          onTap: () => setState(() { _imageBytes = null; _imageExt = null; }),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withAlpha(160),
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(3),
+                            child: const Icon(Icons.close, size: 13, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                Row(
+              children: [
+                // Photo button
+                GestureDetector(
+                  onTap: _pickCommentImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.primaryFaint,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.image_outlined, size: 18,
+                        color: MarginaliaColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _commentController,
@@ -283,8 +352,10 @@ class _JamHighlightDetailScreenState
                   ),
                 ),
               ],
-            ),
-          ),
+            ),       // end Row
+              ],
+            ),       // end Column
+          ),         // end Container
         ],
       ),
     );
@@ -406,10 +477,12 @@ class _CommentBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = data['content'] as String? ?? '';
-    final profile = data['profiles'] as Map<String, dynamic>?;
-    final name = profile?['display_name'] as String? ?? 'Utente';
+    final content  = data['content'] as String? ?? '';
+    final imageUrl = data['image_url'] as String?;
+    final profile  = data['profiles'] as Map<String, dynamic>?;
+    final name     = profile?['display_name'] as String? ?? 'Utente';
     final createdAt = data['created_at'] as String?;
+    final showText = content.isNotEmpty && content != '📷';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -452,13 +525,27 @@ class _CommentBubble extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(content,
-              style: const TextStyle(
-                fontSize: 14,
-                color: MarginaliaColors.ink,
-                height: 1.45,
-              )),
+          if (showText) ...[
+            const SizedBox(height: 4),
+            Text(content,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: MarginaliaColors.ink,
+                  height: 1.45,
+                )),
+          ],
+          if (imageUrl != null && imageUrl.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
         ],
       ),
     )

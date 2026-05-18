@@ -74,7 +74,9 @@ class ImportService {
       String? bookId = bookTitleAuthorToId[bookKey];
 
       if (bookId == null) {
-        bookId = _stableUuid(clipping.bookTitle, clipping.bookAuthor);
+        // Include userId in the UUID seed so each user gets a unique row
+        // per book — prevents RLS conflicts when multiple users share titles.
+        bookId = _stableUuid('$_userId|${clipping.bookTitle}', clipping.bookAuthor);
         try {
           await svc.upsertRawBook(
             id: bookId,

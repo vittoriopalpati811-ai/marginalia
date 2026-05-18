@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'amici_tab.dart';
+import 'feed_tab.dart';
 
 final jamsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
   (ref) {
@@ -32,7 +33,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
     // Rebuild to show/hide FAB when switching tabs.
     _tabController.addListener(() => setState(() {}));
   }
@@ -51,10 +52,12 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      // FAB only visible on the Jam tab (index 0)
-      floatingActionButton: _tabController.index == 0
+      // FAB: Post on Feed (index 0), new Jam on Jam (index 1)
+      floatingActionButton: _tabController.index == 1
           ? _CreateJamFab(onTap: _showCreateJamSheet)
-          : null,
+          : _tabController.index == 0
+              ? _CreatePostFab(onTap: _showCreatePostSheet)
+              : null,
       body: Column(
         children: [
           // ── Gradient header with embedded TabBar ──────────────────────
@@ -67,6 +70,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
+                const FeedTab(),
                 _JamTabContent(
                   onCreateJam: _showCreateJamSheet,
                   onJoinJam: _showJoinJamSheet,
@@ -91,13 +95,27 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       return;
     }
     Share.share(
-      '📚 Unisciti alla mia cerchia di lettura "$name" su Marginalia!\n\n'
+      '📚 Unisciti alla mia Jam "$name" su Marginalia!\n\n'
       'Codice invito: $code',
       subject: 'Marginalia Jam – $name',
     );
   }
 
   // ── Sheets ────────────────────────────────────────────────────────────────
+
+  Future<void> _showCreatePostSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => CreatePostSheet(
+        onCreated: () => ref.invalidate(postsProvider),
+      ),
+    );
+  }
 
   Future<void> _showCreateJamSheet() async {
     final nameController = TextEditingController();
@@ -212,7 +230,7 @@ class _SocialHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Cerchie e amici lettori',
+                        'Feed, Jam e amici lettori',
                         style: TextStyle(
                           color: const Color(0xFFF1EEE7).withAlpha(160),
                           fontSize: 13,
@@ -262,6 +280,7 @@ class _SocialHeader extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             tabs: const [
+              Tab(text: 'Feed'),
               Tab(text: 'Jam'),
               Tab(text: 'Amici'),
             ],
@@ -526,6 +545,29 @@ class _CreateJamFab extends StatelessWidget {
   }
 }
 
+// ─── Post FAB ─────────────────────────────────────────────────────────────────
+
+class _CreatePostFab extends StatelessWidget {
+  const _CreatePostFab({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 96),
+      child: FloatingActionButton.extended(
+        onPressed: onTap,
+        backgroundColor: MarginaliaColors.primary,
+        foregroundColor: const Color(0xFFF1EEE7),
+        elevation: 6,
+        icon: const Icon(Icons.edit_outlined, size: 20),
+        label: const Text('Nuovo post',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      ),
+    );
+  }
+}
+
 // ─── Create Jam sheet ─────────────────────────────────────────────────────────
 
 class _CreateJamSheet extends StatelessWidget {
@@ -565,7 +607,7 @@ class _CreateJamSheet extends StatelessWidget {
                   Text('Nuova Jam',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  Text('Crea una cerchia di lettura',
+                  Text('Crea una nuova Jam',
                       style: TextStyle(
                           fontSize: 12, color: MarginaliaColors.inkMuted)),
                 ],
@@ -694,7 +736,7 @@ class _EmptyJams extends StatelessWidget {
                     letterSpacing: -0.3)),
             const SizedBox(height: 10),
             const Text(
-              'Crea una cerchia di lettura o\nunisciti a quella di un amico.',
+              'Crea una Jam o\nunisciti a quella di un amico.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: MarginaliaColors.inkMuted,
@@ -779,7 +821,7 @@ class _UnauthenticatedState extends StatelessWidget {
                             letterSpacing: -0.3)),
                     const SizedBox(height: 10),
                     const Text(
-                      'Le cerchie di lettura e gli amici\nrichiedono un account Marginalia.',
+                      'Le Jam e il feed sociale\nrichiedono un account Marginalia.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: MarginaliaColors.inkMuted,

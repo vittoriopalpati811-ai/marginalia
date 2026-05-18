@@ -724,6 +724,9 @@ class _PatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Clip to bounds so patterns don't bleed outside their container.
+    canvas.clipRect(Offset.zero & size);
+
     final paint = Paint()
       ..color = (color ?? Colors.white).withAlpha(color != null ? 255 : 20)
       ..strokeWidth = 0.6

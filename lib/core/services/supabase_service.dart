@@ -264,12 +264,27 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response as List);
   }
 
-  Future<void> addComment(String jamHighlightId, String content) async {
+  Future<void> addComment(String jamHighlightId, String content,
+      {String? imageUrl}) async {
     await _client.from('jam_highlight_comments').insert({
       'jam_highlight_id': jamHighlightId,
       'user_id': userId,
       'content': content,
+      if (imageUrl != null) 'image_url': imageUrl,
     });
+  }
+
+  /// Uploads an image for a comment and returns the public URL.
+  Future<String> uploadCommentImage(Uint8List bytes, String ext) async {
+    await _ensureBucket('comment-images');
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final path = '${userId!}/$ts.$ext';
+    await _client.storage.from('comment-images').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
+        );
+    return _client.storage.from('comment-images').getPublicUrl(path);
   }
 
   Future<void> deleteComment(String commentId) async {
@@ -710,13 +725,28 @@ class SupabaseService {
     String? body,
     String? highlightSupabaseId,
     String? jamId,
+    String? imageUrl,
   }) async {
     await _client.from('posts').insert({
       'user_id': userId,
       if (body != null && body.trim().isNotEmpty) 'body': body.trim(),
       if (highlightSupabaseId != null) 'highlight_id': highlightSupabaseId,
       if (jamId != null) 'jam_id': jamId,
+      if (imageUrl != null) 'image_url': imageUrl,
     });
+  }
+
+  /// Uploads an image for a post and returns the public URL.
+  Future<String> uploadPostImage(Uint8List bytes, String ext) async {
+    await _ensureBucket('post-images');
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final path = '${userId!}/$ts.$ext';
+    await _client.storage.from('post-images').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
+        );
+    return _client.storage.from('post-images').getPublicUrl(path);
   }
 
   /// Fetch posts: from people I follow + my own, newest first.

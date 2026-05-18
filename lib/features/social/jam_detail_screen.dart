@@ -86,7 +86,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   Future<void> _shareInviteCode(String? code) async {
     final inviteCode = code ?? widget.jamId.substring(0, 8).toUpperCase();
     await Share.share(
-      'Unisciti alla mia cerchia di lettura su Marginalia! 📚\n\n'
+      'Unisciti alla mia Jam su Marginalia! 📚\n\n'
       'Codice: $inviteCode\n\n'
       'Scarica l\'app: https://marginalia.app',
       subject: 'Unisciti alla Jam "${widget.jamName}"',
@@ -264,15 +264,19 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.parallax,
               stretchModes: const [StretchMode.blurBackground],
-              title: Text(
-                widget.jamName,
-                style: const TextStyle(
-                  color: Color(0xFFF1EEE7),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
-              ),
+              // Only use FlexibleSpaceBar.title when a cover photo is shown —
+              // the no-cover background already renders the name in large type.
+              title: (jamCoverUrl != null && jamCoverUrl.isNotEmpty)
+                  ? Text(
+                      widget.jamName,
+                      style: const TextStyle(
+                        color: Color(0xFFF1EEE7),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                    )
+                  : null,
               titlePadding:
                   const EdgeInsetsDirectional.fromSTEB(56, 0, 56, 16),
               background: jamCoverUrl != null && jamCoverUrl.isNotEmpty
@@ -314,7 +318,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Text(
-                            'CERCHIA DI LETTURA',
+                            'JAM',
                             style: TextStyle(
                               color: Color(0xCCF1EEE7),
                               fontSize: 9,
@@ -897,7 +901,7 @@ class _EmptyJamHighlights extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const Text(
-            'La cerchia è silenziosa',
+            'Il Jam è silenzioso',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,

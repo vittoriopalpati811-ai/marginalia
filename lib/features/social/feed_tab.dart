@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -151,17 +154,19 @@ class FeedTab extends ConsumerWidget {
 
 // ─── Create post sheet ────────────────────────────────────────────────────────
 
-class _CreatePostSheet extends ConsumerStatefulWidget {
-  const _CreatePostSheet({required this.onCreated});
+class CreatePostSheet extends ConsumerStatefulWidget {
+  const CreatePostSheet({required this.onCreated});
   final VoidCallback onCreated;
 
   @override
-  ConsumerState<_CreatePostSheet> createState() => _CreatePostSheetState();
+  ConsumerState<CreatePostSheet> createState() => CreatePostSheetState();
 }
 
-class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
+class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   final _controller = TextEditingController();
   bool _posting = false;
+  Uint8List? _imageBytes;
+  String? _imageExt;
 
   @override
   void dispose() {
@@ -169,12 +174,29 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty || result.files.first.bytes == null) return;
+    setState(() {
+      _imageBytes = result.files.first.bytes;
+      _imageExt   = (result.files.first.extension ?? 'jpg').toLowerCase();
+    });
+  }
+
   Future<void> _submit() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _imageBytes == null) return;
     setState(() => _posting = true);
     try {
-      await ref.read(supabaseServiceProvider).createPost(body: text);
+      final svc = ref.read(supabaseServiceProvider);
+      String? imageUrl;
+      if (_imageBytes != null && _imageExt != null) {
+        imageUrl = await svc.uploadPostImage(_imageBytes!, _imageExt!);
+      }
+      await svc.createPost(body: text.isEmpty ? null : text, imageUrl: imageUrl);
       widget.onCreated();
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -189,6 +211,8 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final canPost = !_posting &&
+        (_controller.text.trim().isNotEmpty || _imageBytes != null);
 
     return Container(
       decoration: const BoxDecoration(
@@ -225,9 +249,7 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
                 ),
               ),
               FilledButton(
-                onPressed: (_posting || _controller.text.trim().isEmpty)
-                    ? null
-                    : _submit,
+                onPressed: canPost ? _submit : null,
                 style: FilledButton.styleFrom(
                   backgroundColor: MarginaliaColors.primary,
                   foregroundColor: const Color(0xFFF2F5EA),
@@ -286,6 +308,69 @@ class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
               ),
               onChanged: (_) => setState(() {}),
             ),
+          ),
+
+          // Image preview (if picked)
+          if (_imageBytes != null) ...[
+            const SizedBox(height: 10),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    _imageBytes!,
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Positioned(
+                  top: 6, right: 6,
+                  child: GestureDetector(
+                    onTap: () => setState(() { _imageBytes = null; _imageExt = null; }),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(160),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: const Icon(Icons.close, size: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          // Toolbar: attach photo
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: MarginaliaColors.rule),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.image_outlined, size: 16,
+                          color: MarginaliaColors.inkMuted),
+                      SizedBox(width: 6),
+                      Text('Foto', style: TextStyle(
+                        fontSize: 12,
+                        color: MarginaliaColors.inkMuted,
+                        fontWeight: FontWeight.w500,
+                      )),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -364,6 +449,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final userId      = post['user_id'] as String?;
     final body        = post['body'] as String?;
     final createdAt   = post['created_at'] as String?;
+    final imageUrl    = post['image_url'] as String?;
     final highlight   = post['highlights'] as Map?;
     final hlContent   = highlight?['content'] as String?;
     final hlColor     = highlight?['color'] as String?;
@@ -472,6 +558,21 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   fontSize: 14.5,
                   color: MarginaliaColors.ink,
                   height: 1.6,
+                ),
+              ),
+            ),
+
+          // ── Post image ────────────────────────────────────────────────────
+          if (imageUrl != null && imageUrl.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  imageUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
             ),

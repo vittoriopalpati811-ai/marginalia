@@ -92,8 +92,6 @@ class MyProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
-  bool _appearanceInit = false;
-
   // ── Navigate to edit profile page ─────────────────────────────────────────
 
   void _openEditProfile(Map<String, dynamic>? profile, String gradKey, String patKey) {
@@ -102,7 +100,6 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
       'gradient': gradKey,
       'pattern':  patKey,
       'onSaved':  () {
-        _appearanceInit = false; // allow re-init from refreshed profile
         ref.invalidate(_myProfileProvider);
         ref.invalidate(_myBooksProvider);
       },
@@ -132,18 +129,22 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final gradKey      = ref.watch(_gradientKeyProvider);
     final patKey       = ref.watch(_patternKeyProvider);
 
-    // Initialise appearance from Supabase profile once
-    profileAsync.whenData((p) {
-      if (!_appearanceInit && p != null) {
-        _appearanceInit = true;
-        Future.microtask(() {
-          if (!mounted) return;
-          ref.read(_gradientKeyProvider.notifier).state =
-              p['gradient_preset'] as String? ?? 'sepia';
-          ref.read(_patternKeyProvider.notifier).state =
-              p['pattern_preset'] as String? ?? 'none';
-        });
-      }
+    // Sync appearance from Supabase profile whenever the profile data arrives.
+    // Using ref.listen so it fires on every load (initial + after invalidation),
+    // immediately updating the StateProviders without a microtask delay.
+    ref.listen<AsyncValue<Map<String, dynamic>?>>(_myProfileProvider,
+        (_, next) {
+      next.whenData((p) {
+        if (p == null || !mounted) return;
+        final newGrad = p['gradient_preset'] as String? ?? 'sepia';
+        final newPat  = p['pattern_preset']  as String? ?? 'none';
+        if (ref.read(_gradientKeyProvider) != newGrad) {
+          ref.read(_gradientKeyProvider.notifier).state = newGrad;
+        }
+        if (ref.read(_patternKeyProvider) != newPat) {
+          ref.read(_patternKeyProvider.notifier).state = newPat;
+        }
+      });
     });
 
     final gp    = _gpFor(gradKey);
@@ -1245,6 +1246,9 @@ class _PatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Clip to bounds so patterns don't bleed outside their container.
+    canvas.clipRect(Offset.zero & size);
+
     final paint = Paint()
       ..color = (color ?? Colors.white).withAlpha(color != null ? 255 : 20)
       ..strokeWidth = 0.6
