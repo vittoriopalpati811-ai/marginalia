@@ -188,8 +188,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           const SizedBox(height: 10),
                           Row(
                             children: [
-                              const Text('📖',
-                                  style: TextStyle(fontSize: 12)),
+                              const Icon(Icons.menu_book_outlined,
+                                  size: 14, color: Color(0xAAF1EEE7)),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(

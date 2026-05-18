@@ -200,11 +200,11 @@ class _ScaffoldWithNav extends StatelessWidget {
   final String routePath;
 
   static const _tabs = [
-    (path: '/home',    icon: Icons.home_outlined,         activeIcon: Icons.home,          label: ''),
-    (path: '/',        icon: Icons.library_books_outlined, activeIcon: Icons.library_books, label: 'Libreria'),
-    (path: '/search',  icon: Icons.search_outlined,        activeIcon: Icons.search,        label: 'Cerca'),
-    (path: '/social',  icon: Icons.group_outlined,         activeIcon: Icons.group,         label: 'Jam'),
-    (path: '/profile', icon: Icons.person_outline,         activeIcon: Icons.person,        label: 'Profilo'),
+    (path: '/home',    icon: Icons.home_outlined,          activeIcon: Icons.home_rounded,          label: ''),
+    (path: '/',        icon: Icons.auto_stories_outlined,  activeIcon: Icons.auto_stories,          label: ''),
+    (path: '/search',  icon: Icons.search_outlined,        activeIcon: Icons.search_rounded,        label: ''),
+    (path: '/social',  icon: Icons.people_outline,         activeIcon: Icons.people_rounded,        label: ''),
+    (path: '/profile', icon: Icons.person_outline,         activeIcon: Icons.person_rounded,        label: ''),
   ];
 
   @override
@@ -297,7 +297,7 @@ class _FloatingNavBar extends StatelessWidget {
                     width: tabWidth - 16,
                     height: 46,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1EEE7).withAlpha(22),
+                      color: const Color(0xFFF1EEE7).withAlpha(36),
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
@@ -324,32 +324,12 @@ class _FloatingNavBar extends StatelessWidget {
                                 child: Icon(
                                   active ? tab.activeIcon : tab.icon,
                                   key: ValueKey(active),
-                                  // Icon-only tabs (no label) get a slightly larger icon
-                                  size: tab.label.isEmpty
-                                      ? (active ? 26 : 24)
-                                      : (active ? 22 : 21),
+                                  size: active ? 26 : 24,
                                   color: active
                                       ? const Color(0xFFF1EEE7)
-                                      : const Color(0xFFF1EEE7).withAlpha(110),
+                                      : const Color(0xFFF1EEE7).withAlpha(100),
                                 ),
                               ),
-                              if (tab.label.isNotEmpty) ...[
-                                const SizedBox(height: 3),
-                                AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 200),
-                                  style: TextStyle(
-                                    fontSize: active ? 9.5 : 9,
-                                    fontWeight: active
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                    color: active
-                                        ? const Color(0xFFF1EEE7)
-                                        : const Color(0xFFF1EEE7).withAlpha(110),
-                                    letterSpacing: active ? 0.3 : 0.1,
-                                  ),
-                                  child: Text(tab.label),
-                                ),
-                              ],
                             ],
                           ),
                         ),

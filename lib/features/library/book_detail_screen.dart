@@ -386,9 +386,9 @@ class _StatRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           _StatBox(
-            value: '📖',
+            value: '',
             label: 'in lettura',
-            icon: null,
+            icon: Icons.menu_book_outlined,
           ),
         ],
       )

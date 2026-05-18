@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
@@ -218,22 +219,23 @@ class _SocialHeader extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Jam',
-                        style: TextStyle(
-                          color: Color(0xFFF1EEE7),
+                      Text(
+                        'Marginalia',
+                        style: GoogleFonts.lora(
+                          color: const Color(0xFFF1EEE7),
                           fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.6,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.5,
                           height: 1,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         'Feed, Jam e amici lettori',
                         style: TextStyle(
-                          color: const Color(0xFFF1EEE7).withAlpha(160),
-                          fontSize: 13,
+                          color: const Color(0xFFF1EEE7).withAlpha(140),
+                          fontSize: 12,
+                          letterSpacing: 0.1,
                         ),
                       ),
                     ],

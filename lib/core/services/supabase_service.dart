@@ -648,7 +648,11 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final url = _client.storage.from('avatars').getPublicUrl(path);
+    final baseUrl = _client.storage.from('avatars').getPublicUrl(path);
+    // Append a timestamp cache-buster so Flutter's image cache (and the HTTP
+    // cache) always fetches the freshly-uploaded file instead of serving the
+    // previous avatar from disk.
+    final url = '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}';
     await _client.from('profiles').update({'avatar_url': url}).eq('id', userId!);
     return url;
   }

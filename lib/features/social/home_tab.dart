@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
-import '../../core/providers/auth_provider.dart';
 import 'feed_tab.dart';
 
 // ─── HomeTab ──────────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ class HomeTab extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CreatePostSheet(
+      builder: (_) => CreatePostSheet(
         onCreated: () => ref.invalidate(postsProvider),
       ),
     );
@@ -63,22 +63,23 @@ class _HomeHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Marginalia',
-                    style: TextStyle(
-                      color: Color(0xFFF1EEE7),
+                    style: GoogleFonts.lora(
+                      color: const Color(0xFFF1EEE7),
                       fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.8,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
                       height: 1,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     'Il tuo feed di lettura',
                     style: TextStyle(
-                      color: const Color(0xFFF1EEE7).withAlpha(155),
-                      fontSize: 13,
+                      color: const Color(0xFFF1EEE7).withAlpha(140),
+                      fontSize: 12,
+                      letterSpacing: 0.1,
                     ),
                   ),
                 ],
@@ -121,148 +122,5 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-// ─── Create-post sheet (identical to the one in feed_tab.dart) ───────────────
-//
-// Duplicated here so HomeTab is self-contained. feed_tab.dart keeps its own
-// copy for when FeedTab is used standalone (e.g. inside SocialScreen).
-
-class _CreatePostSheet extends ConsumerStatefulWidget {
-  const _CreatePostSheet({required this.onCreated});
-  final VoidCallback onCreated;
-
-  @override
-  ConsumerState<_CreatePostSheet> createState() => _CreatePostSheetState();
-}
-
-class _CreatePostSheetState extends ConsumerState<_CreatePostSheet> {
-  final _controller = TextEditingController();
-  bool _posting = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _posting = true);
-    try {
-      await ref.read(supabaseServiceProvider).createPost(body: text);
-      widget.onCreated();
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore: $e')));
-        setState(() => _posting = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 16),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Header row
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Nuovo post',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: MarginaliaColors.ink,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-              ),
-              FilledButton(
-                onPressed: (_posting || _controller.text.trim().isEmpty)
-                    ? null
-                    : _submit,
-                style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primary,
-                  foregroundColor: const Color(0xFFF2F5EA),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _posting
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 1.5, color: Color(0xFFF2F5EA)),
-                      )
-                    : const Text('Pubblica',
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Text area
-          Container(
-            decoration: BoxDecoration(
-              color: MarginaliaColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: MarginaliaColors.rule, width: 1),
-            ),
-            child: TextField(
-              controller: _controller,
-              autofocus: true,
-              maxLines: 6,
-              minLines: 3,
-              maxLength: 1000,
-              style: const TextStyle(
-                fontSize: 15,
-                color: MarginaliaColors.ink,
-                height: 1.55,
-              ),
-              decoration: const InputDecoration(
-                hintText: 'Cosa stai leggendo? Condividi un pensiero…',
-                hintStyle: TextStyle(
-                  color: MarginaliaColors.inkFaint,
-                  fontSize: 15,
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.all(14),
-                counterStyle: TextStyle(
-                  fontSize: 10,
-                  color: MarginaliaColors.inkFaint,
-                ),
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// _CreatePostSheet removed — HomeTab now uses the public CreatePostSheet
+// from feed_tab.dart (which also supports image attachment).

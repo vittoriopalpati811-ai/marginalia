@@ -399,11 +399,18 @@ class _EditorialHeader extends StatelessWidget {
   final VoidCallback onImport;
   final VoidCallback onForceReimport;
 
+  static String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Buona mattina.';
+    if (h < 18) return 'Buon pomeriggio.';
+    return 'Buona lettura.';
+  }
+
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Padding(
-      padding: EdgeInsets.fromLTRB(22, top + 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(22, top + 10, 16, 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -415,15 +422,15 @@ class _EditorialHeader extends StatelessWidget {
                 Text(
                   'Marginalia',
                   style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                    fontSize: 26,
+                    fontSize: 27,
                     color: MarginaliaColors.primary,
                     letterSpacing: -0.8,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
-                  'Le tue annotazioni, in un posto solo.',
-                  style: TextStyle(
+                  _greeting(),
+                  style: const TextStyle(
                     fontSize: 12,
                     color: MarginaliaColors.inkMuted,
                     letterSpacing: 0.1,
@@ -469,9 +476,12 @@ class _DailyCard extends StatelessWidget {
   final String content;
   final VoidCallback onTap;
 
+  static const _days = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
+
   @override
   Widget build(BuildContext context) {
-    final text = content.length > 200 ? '${content.substring(0, 200)}…' : content;
+    final text = content.length > 220 ? '${content.substring(0, 220)}…' : content;
+    final dayLabel = _days[DateTime.now().weekday - 1];
 
     return GestureDetector(
       onTap: onTap,
@@ -480,14 +490,14 @@ class _DailyCard extends StatelessWidget {
         decoration: MarginaliaDecorations.heroCard,
         child: Stack(
           children: [
-            // Quote mark decorativo
+            // Decorative quote mark
             Positioned(
               top: -6,
               left: 14,
               child: Text('"', style: MarginaliaTextStyles.quoteDecor),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 44, 22, 22),
+              padding: const EdgeInsets.fromLTRB(22, 44, 22, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -495,24 +505,44 @@ class _DailyCard extends StatelessWidget {
                     text,
                     style: MarginaliaTextStyles.highlightBodySmall.copyWith(
                       color: Colors.white.withAlpha(230),
-                      height: 1.7,
+                      height: 1.72,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      // Day chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(18),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: Colors.white.withAlpha(30), width: 0.5),
+                        ),
+                        child: Text(
+                          dayLabel,
+                          style: MarginaliaTextStyles.label.copyWith(
+                            color: Colors.white.withAlpha(140),
+                            fontSize: 9,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       Text(
                         'HIGHLIGHT DEL GIORNO',
                         style: MarginaliaTextStyles.label.copyWith(
-                          color: Colors.white.withAlpha(120),
-                          letterSpacing: 1.8,
-                          fontSize: 10,
+                          color: Colors.white.withAlpha(100),
+                          letterSpacing: 1.6,
+                          fontSize: 9,
                         ),
                       ),
                       const Spacer(),
-                      Icon(Icons.arrow_forward,
-                          size: 15,
-                          color: Colors.white.withAlpha(150)),
+                      Icon(Icons.arrow_forward_ios_rounded,
+                          size: 12, color: Colors.white.withAlpha(130)),
                     ],
                   ),
                 ],
@@ -778,9 +808,9 @@ class _BookGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Cover block (60% of card height) ──────────────────────────
+            // ── Cover block (62% of card height) ──────────────────────────
             Expanded(
-              flex: 60,
+              flex: 62,
               child: Container(
                 decoration: BoxDecoration(
                   color: coverColor,
@@ -832,14 +862,14 @@ class _BookGridCard extends StatelessWidget {
               ),
             ),
 
-            // ── Info block (40%) ──────────────────────────────────────────
+            // ── Info block (38%) ──────────────────────────────────────────
             Expanded(
-              flex: 40,
+              flex: 38,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                padding: const EdgeInsets.fromLTRB(11, 11, 11, 11),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Title
                     Text(
@@ -851,6 +881,7 @@ class _BookGridCard extends StatelessWidget {
                         height: 1.25,
                       ),
                     ),
+                    const SizedBox(height: 5),
                     // Author
                     Text(
                       book.author.toUpperCase(),
@@ -858,27 +889,8 @@ class _BookGridCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: MarginaliaTextStyles.bookAuthor.copyWith(
                         fontSize: 9,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.6,
                       ),
-                    ),
-                    // Arrow
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          width: 26,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            color: coverColor.withAlpha(30),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            Icons.arrow_forward,
-                            size: 13,
-                            color: coverColor,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),

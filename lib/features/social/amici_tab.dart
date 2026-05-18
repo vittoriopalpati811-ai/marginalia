@@ -301,7 +301,8 @@ class _UserRow extends StatelessWidget {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        const Text('📖', style: TextStyle(fontSize: 11)),
+                        const Icon(Icons.menu_book_outlined,
+                            size: 13, color: MarginaliaColors.sienna),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(

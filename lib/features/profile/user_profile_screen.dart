@@ -172,8 +172,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('📖',
-                                  style: TextStyle(fontSize: 11)),
+                              const Icon(Icons.menu_book_outlined,
+                                  size: 13, color: Color(0xAAF1EEE7)),
                               const SizedBox(width: 4),
                               Text(
                                 readingTitle,

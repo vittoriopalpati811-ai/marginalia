@@ -655,7 +655,8 @@ class _CurrentlyReadingCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            const Text('📖', style: TextStyle(fontSize: 20)),
+            const Icon(Icons.menu_book_outlined,
+                size: 20, color: MarginaliaColors.sienna),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

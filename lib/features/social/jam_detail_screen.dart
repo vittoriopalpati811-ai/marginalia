@@ -828,10 +828,9 @@ class _MembersStrip extends StatelessWidget {
                                   ),
                                 ),
                                 child: const Center(
-                                  child: Text(
-                                    '📖',
-                                    style: TextStyle(fontSize: 8),
-                                  ),
+                                  child: Icon(Icons.auto_stories,
+                                      size: 8,
+                                      color: MarginaliaColors.primary),
                                 ),
                               ),
                             ),
