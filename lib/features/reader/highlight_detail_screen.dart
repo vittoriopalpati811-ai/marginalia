@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/highlights_provider.dart';
@@ -22,25 +23,36 @@ class HighlightDetailScreen extends ConsumerWidget {
         backgroundColor: MarginaliaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
+        // Back button usa il colore ink
+        iconTheme: const IconThemeData(color: MarginaliaColors.inkMuted),
         actions: [
           highlightAsync.when(
             data: (h) => h != null
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Bookmark
                       IconButton(
                         icon: Icon(
-                          h.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                          h.isFavorite
+                              ? Icons.bookmark_rounded
+                              : Icons.bookmark_outline_rounded,
                           color: h.isFavorite
                               ? MarginaliaColors.sienna
-                              : MarginaliaColors.inkMuted,
+                              : MarginaliaColors.inkFaint,
+                          size: 22,
                         ),
                         onPressed: () => ref
                             .read(highlightFavoriteNotifierProvider.notifier)
                             .toggleFavorite(highlightId),
                       ),
+                      // Share
                       IconButton(
-                        icon: const Icon(Icons.ios_share, color: MarginaliaColors.inkMuted),
+                        icon: const Icon(
+                          Icons.ios_share_rounded,
+                          color: MarginaliaColors.inkFaint,
+                          size: 20,
+                        ),
                         onPressed: () => ShareCardService.show(
                           context,
                           content: h.content,
@@ -49,6 +61,7 @@ class HighlightDetailScreen extends ConsumerWidget {
                           kindleColor: h.color,
                         ),
                       ),
+                      const SizedBox(width: 8),
                     ],
                   )
                 : const SizedBox.shrink(),
@@ -60,10 +73,11 @@ class HighlightDetailScreen extends ConsumerWidget {
       body: highlightAsync.when(
         data: (highlight) {
           if (highlight == null) {
-            return const Center(
+            return Center(
               child: Text(
                 'Highlight non trovato.',
-                style: TextStyle(color: MarginaliaColors.inkMuted),
+                style: MarginaliaTextStyles.label
+                    .copyWith(color: MarginaliaColors.inkFaint),
               ),
             );
           }
@@ -86,8 +100,6 @@ class _HighlightBody extends ConsumerWidget {
 
   final dynamic highlight;
 
-  // Resolve book title/author from the highlight itself (web: embedded from
-  // Supabase join) or from a provider lookup (native: Isar IsarLink).
   static (String?, String?) _embeddedBook(dynamic h) {
     try {
       final title = h.bookTitle as String?;
@@ -110,104 +122,131 @@ class _HighlightBody extends ConsumerWidget {
         ? ref.watch(bookByIdProvider(_bookId(highlight)))
         : null;
 
+    // Colore highlight per l'indicatore
+    final hlColor = _colorFor(highlight.color as String?);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 0, 28, 60),
+      physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Info libro ─────────────────────────────────────────────────────
+
+          // ── Intestazione libro ─────────────────────────────────────────────
           if (embTitle != null)
-            _BookHeader(title: embTitle, author: embAuthor ?? '')
+            _BookHeader(title: embTitle, author: embAuthor ?? '', accentColor: hlColor)
           else if (bookAsync != null)
             bookAsync.when(
               data: (book) => book != null
-                  ? _BookHeader(title: book.title, author: book.author)
+                  ? _BookHeader(title: book.title, author: book.author, accentColor: hlColor)
                   : const SizedBox(height: 16),
               loading: () => const SizedBox(height: 16),
               error: (_, __) => const SizedBox(height: 16),
             )
           else
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-          // ── Virgoletta decorativa ──────────────────────────────────────────
-          Text('"', style: MarginaliaTextStyles.quoteDecor),
-
-          const SizedBox(height: 4),
-
-          // ── Testo highlight ────────────────────────────────────────────────
-          Text(
-            highlight.content as String,
-            style: MarginaliaTextStyles.highlightBody,
-          )
-              .animate()
-              .fadeIn(duration: 600.ms, curve: Curves.easeOut)
-              .slideY(begin: 0.04, end: 0, duration: 600.ms, curve: Curves.easeOut),
-
-          const SizedBox(height: 40),
-
-          // ── Riga decorativa ────────────────────────────────────────────────
-          const Divider(color: MarginaliaColors.ruleFaint),
-
-          const SizedBox(height: 16),
-
-          // ── Nota ──────────────────────────────────────────────────────────
-          if ((highlight.note as String?) != null &&
-              (highlight.note as String).isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: MarginaliaColors.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: MarginaliaColors.ruleFaint),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.edit_outlined,
-                    size: 14,
-                    color: MarginaliaColors.inkFaint,
+          // ── Zona quote principale ──────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 0, 28, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Virgoletta ornamentale
+                Text(
+                  '“',
+                  style: MarginaliaTextStyles.quoteDecor.copyWith(
+                    fontSize: 80,
+                    height: 0.65,
+                    color: MarginaliaColors.siennaFaint,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      highlight.note as String,
-                      style: const TextStyle(
-                        color: MarginaliaColors.inkMuted,
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        height: 1.6,
-                      ),
+                ),
+                const SizedBox(height: 6),
+
+                // Testo highlight — EB Garamond italic grande, cuore dell'app
+                Text(
+                  highlight.content as String,
+                  style: MarginaliaTextStyles.highlightBody.copyWith(
+                    fontSize: 21,
+                    height: 1.85,
+                  ),
+                )
+                    .animate()
+                    .fadeIn(duration: 700.ms, curve: Curves.easeOut)
+                    .slideY(begin: 0.03, end: 0, duration: 700.ms, curve: Curves.easeOut),
+
+                const SizedBox(height: 40),
+
+                // ── Regola ornamentale ─────────────────────────────────────
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 0.8,
+                      color: hlColor.withAlpha(180),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
+                    Expanded(
+                      child: Container(height: 0.8, color: MarginaliaColors.ruleFaint),
+                    ),
+                  ],
+                ),
 
-          // ── Metadati ───────────────────────────────────────────────────────
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            children: [
-              if ((highlight.location as String?) != null)
-                _MetaChip(
-                  icon: Icons.place_outlined,
-                  label: 'Posizione ${highlight.location}',
+                const SizedBox(height: 24),
+
+                // ── Nota personale (se presente) ───────────────────────────
+                if ((highlight.note as String?) != null &&
+                    (highlight.note as String).isNotEmpty) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.edit_outlined,
+                        size: 13,
+                        color: MarginaliaColors.inkFaint,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          highlight.note as String,
+                          style: GoogleFonts.barlow(
+                            color: MarginaliaColors.inkMuted,
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            height: 1.65,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // ── Metadati ───────────────────────────────────────────────
+                Wrap(
+                  spacing: 20,
+                  runSpacing: 10,
+                  children: [
+                    if ((highlight.location as String?) != null)
+                      _MetaItem(
+                        icon: Icons.straighten_outlined,
+                        label: 'Pos. ${highlight.location}',
+                      ),
+                    if ((highlight.addedAt as DateTime?) != null)
+                      _MetaItem(
+                        icon: Icons.calendar_today_outlined,
+                        label: _formatDate(highlight.addedAt as DateTime),
+                      ),
+                    if ((highlight.color as String?) != null)
+                      _MetaItem(
+                        icon: Icons.circle,
+                        label: _colorName(highlight.color as String),
+                        iconColor: hlColor,
+                      ),
+                  ],
                 ),
-              if ((highlight.addedAt as DateTime?) != null)
-                _MetaChip(
-                  icon: Icons.calendar_today_outlined,
-                  label: _formatDate(highlight.addedAt as DateTime),
-                ),
-              if ((highlight.color as String?) != null)
-                _MetaChip(
-                  icon: Icons.circle,
-                  label: _colorName(highlight.color as String),
-                  iconColor: _colorFor(highlight.color as String),
-                ),
-            ],
+
+                const SizedBox(height: 120), // spazio per la nav bar
+              ],
+            ),
           ),
         ],
       ),
@@ -219,64 +258,98 @@ class _HighlightBody extends ConsumerWidget {
 
   String _monthName(int m) => const [
         '',
-        'gen',
-        'feb',
-        'mar',
-        'apr',
-        'mag',
-        'giu',
-        'lug',
-        'ago',
-        'set',
-        'ott',
-        'nov',
-        'dic'
+        'gen', 'feb', 'mar', 'apr', 'mag', 'giu',
+        'lug', 'ago', 'set', 'ott', 'nov', 'dic',
       ][m];
 
   String _colorName(String c) => switch (c) {
         'yellow' => 'Giallo',
-        'blue' => 'Blu',
-        'pink' => 'Rosa',
+        'blue'   => 'Blu',
+        'pink'   => 'Rosa',
         'orange' => 'Arancione',
-        _ => c,
+        _        => c,
       };
 
-  Color _colorFor(String c) => switch (c) {
+  Color _colorFor(String? c) => switch (c) {
         'yellow' => const Color(0xFFD4A017),
-        'blue' => const Color(0xFF4A90BF),
-        'pink' => const Color(0xFFBF4A72),
+        'blue'   => const Color(0xFF4A90BF),
+        'pink'   => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _ => MarginaliaColors.inkFaint,
+        _        => MarginaliaColors.siennaLight,
       };
 }
 
+// ─── Intestazione libro ───────────────────────────────────────────────────────
+
 class _BookHeader extends StatelessWidget {
-  const _BookHeader({required this.title, required this.author});
+  const _BookHeader({
+    required this.title,
+    required this.author,
+    required this.accentColor,
+  });
   final String title;
   final String author;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 32,
-          height: 2,
-          color: MarginaliaColors.siennaLight,
-          margin: const EdgeInsets.only(bottom: 14),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
+      decoration: BoxDecoration(
+        color: MarginaliaColors.surface,
+        border: const Border(
+          bottom: BorderSide(color: MarginaliaColors.ruleFaint, width: 0.8),
         ),
-        Text(title, style: MarginaliaTextStyles.bookTitle),
-        const SizedBox(height: 4),
-        Text(author.toUpperCase(), style: MarginaliaTextStyles.bookAuthor),
-        const SizedBox(height: 32),
-      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Indicatore colore highlight + label "DA"
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'DA',
+                style: MarginaliaTextStyles.sectionTitle.copyWith(
+                  fontSize: 9,
+                  letterSpacing: 2.5,
+                  color: MarginaliaColors.inkFaint,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: MarginaliaTextStyles.bookTitle.copyWith(fontSize: 16),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (author.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              author.toUpperCase(),
+              style: MarginaliaTextStyles.bookAuthor,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.icon, required this.label, this.iconColor});
+// ─── Metadato singolo ────────────────────────────────────────────────────────
+
+class _MetaItem extends StatelessWidget {
+  const _MetaItem({required this.icon, required this.label, this.iconColor});
 
   final IconData icon;
   final String label;
@@ -287,9 +360,15 @@ class _MetaChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: iconColor ?? MarginaliaColors.inkFaint),
+        Icon(icon, size: 11, color: iconColor ?? MarginaliaColors.inkFaint),
         const SizedBox(width: 5),
-        Text(label, style: MarginaliaTextStyles.label),
+        Text(
+          label,
+          style: MarginaliaTextStyles.label.copyWith(
+            fontSize: 11,
+            color: MarginaliaColors.inkFaint,
+          ),
+        ),
       ],
     );
   }

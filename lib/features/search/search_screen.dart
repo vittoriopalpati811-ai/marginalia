@@ -333,60 +333,54 @@ class _SearchResultCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: MarginaliaDecorations.card(),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Color accent strip
-              Container(width: 3, color: accent),
-
-              // Content
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Book title + author if available
-                      if (title != null && title.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: MarginaliaColors.sienna,
-                                  letterSpacing: 0.1,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (author != null && author.isNotEmpty)
-                              Text(
-                                ' · ${author.toUpperCase()}',
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  color: MarginaliaColors.inkFaint,
-                                  letterSpacing: 0.4,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      // Highlighted excerpt
-                      _HighlightedText(
-                        text: highlight.content as String,
-                        query: query,
+              // Book title + author if available
+              if (title != null && title.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: MarginaliaTextStyles.sectionTitle.copyWith(
+                          fontSize: 9,
+                          letterSpacing: 1.2,
+                          color: MarginaliaColors.inkMuted,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (author != null && author.isNotEmpty)
+                      Text(
+                        author.toUpperCase(),
+                        style: MarginaliaTextStyles.bookAuthor.copyWith(
+                          fontSize: 8.5,
+                          color: MarginaliaColors.inkFaint,
+                        ),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 6),
+                Container(height: 0.6, color: MarginaliaColors.ruleFaint),
+                const SizedBox(height: 8),
+              ],
+              // Highlighted excerpt
+              _HighlightedText(
+                text: highlight.content as String,
+                query: query,
               ),
             ],
           ),

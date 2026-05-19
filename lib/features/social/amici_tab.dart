@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -290,11 +291,11 @@ class _UserRow extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(
+                    style: GoogleFonts.barlow(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: MarginaliaColors.ink,
-                      letterSpacing: -0.2,
+                      letterSpacing: -0.1,
                     ),
                   ),
                   if (isReading) ...[
@@ -302,12 +303,12 @@ class _UserRow extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(Icons.menu_book_outlined,
-                            size: 13, color: MarginaliaColors.sienna),
+                            size: 12, color: MarginaliaColors.sienna),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             readingTitle!,
-                            style: const TextStyle(
+                            style: MarginaliaTextStyles.bookTitle.copyWith(
                               fontSize: 12,
                               color: MarginaliaColors.sienna,
                               fontWeight: FontWeight.w500,
@@ -327,9 +328,9 @@ class _UserRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                   ] else
-                    const Text(
+                    Text(
                       'Nessun libro in corso',
-                      style: TextStyle(
+                      style: GoogleFonts.barlow(
                         fontSize: 12,
                         color: MarginaliaColors.inkFaint,
                       ),
@@ -436,19 +437,20 @@ class _EmptyFriends extends StatelessWidget {
                   size: 32, color: MarginaliaColors.primary),
             ),
             const SizedBox(height: 20),
-            const Text(
+            Text(
               'Nessun amico ancora',
-              style: TextStyle(
+              style: GoogleFonts.barlow(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
+                color: MarginaliaColors.ink,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Unisciti a una Jam per trovare\naltri lettori da seguire.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
                 height: 1.65,

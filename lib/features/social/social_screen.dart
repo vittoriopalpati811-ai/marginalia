@@ -221,18 +221,12 @@ class _SocialHeader extends StatelessWidget {
                     children: [
                       Text(
                         'Marginalia',
-                        style: GoogleFonts.lora(
-                          color: const Color(0xFFF1EEE7),
-                          fontSize: 26,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.5,
-                          height: 1,
-                        ),
+                        style: MarginaliaTextStyles.wordmark,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Feed, Jam e amici lettori',
-                        style: TextStyle(
+                        style: GoogleFonts.barlow(
                           color: const Color(0xFFF1EEE7).withAlpha(140),
                           fontSize: 12,
                           letterSpacing: 0.1,
@@ -272,14 +266,15 @@ class _SocialHeader extends StatelessWidget {
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
-            labelStyle: const TextStyle(
-              fontSize: 14,
+            labelStyle: GoogleFonts.barlowCondensed(
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.1,
+              letterSpacing: 0.8,
             ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 14,
+            unselectedLabelStyle: GoogleFonts.barlowCondensed(
+              fontSize: 13,
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.8,
             ),
             tabs: const [
               Tab(text: 'Feed'),
@@ -436,11 +431,11 @@ class _JamGridCard extends StatelessWidget {
                         children: [
                           Text(
                             initial,
-                            style: const TextStyle(
-                              fontSize: 42,
-                              fontWeight: FontWeight.w800,
+                            style: MarginaliaTextStyles.bookTitleLarge.copyWith(
+                              fontSize: 46,
                               color: Colors.white,
                               height: 1,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -449,15 +444,14 @@ class _JamGridCard extends StatelessWidget {
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: Colors.white.withAlpha(25),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
+                            child: Text(
                               'JAM',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.8,
+                              style: MarginaliaTextStyles.sectionTitle.copyWith(
+                                color: Colors.white.withAlpha(200),
+                                fontSize: 8,
+                                letterSpacing: 2.0,
                               ),
                             ),
                           ),
@@ -490,10 +484,10 @@ class _JamGridCard extends StatelessWidget {
                           if (code.isNotEmpty)
                             Text(
                               '# $code',
-                              style: const TextStyle(
-                                fontSize: 10,
+                              style: MarginaliaTextStyles.label.copyWith(
+                                fontSize: 9.5,
                                 color: MarginaliaColors.inkFaint,
-                                letterSpacing: 0.5,
+                                letterSpacing: 0.8,
                               ),
                             ),
                         ],

@@ -401,74 +401,82 @@ class _EditorialHeader extends StatelessWidget {
 
   static String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Buona mattina.';
-    if (h < 18) return 'Buon pomeriggio.';
-    return 'Buona lettura.';
+    if (h < 12) return 'Buona mattina';
+    if (h < 18) return 'Buon pomeriggio';
+    return 'Buona lettura';
   }
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Padding(
-      padding: EdgeInsets.fromLTRB(22, top + 10, 16, 8),
-      child: Row(
+      padding: EdgeInsets.fromLTRB(24, top + 14, 16, 0),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Titolo editoriale
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Wordmark editoriale
+              Expanded(
+                child: Text(
                   'Marginalia',
                   style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                    fontSize: 27,
+                    fontSize: 30,
                     color: MarginaliaColors.primary,
                     letterSpacing: -0.8,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  _greeting(),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: MarginaliaColors.inkMuted,
-                    letterSpacing: 0.1,
+              ),
+              // Import button
+              if (isImporting)
+                const Padding(
+                  padding: EdgeInsets.only(top: 4, right: 8),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: MarginaliaColors.sienna,
+                    ),
+                  ),
+                )
+              else
+                GestureDetector(
+                  onLongPress: onForceReimport,
+                  child: IconButton(
+                    icon: const Icon(Icons.upload_file_outlined),
+                    color: MarginaliaColors.inkFaint,
+                    iconSize: 20,
+                    tooltip: 'Importa · Tieni premuto per reimportare da zero',
+                    onPressed: onImport,
                   ),
                 ),
-              ],
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _greeting(),
+            style: MarginaliaTextStyles.label.copyWith(
+              color: MarginaliaColors.inkFaint,
+              letterSpacing: 0.2,
+              fontSize: 12,
             ),
           ),
-          // Import button
-          if (isImporting)
-            const Padding(
-              padding: EdgeInsets.only(top: 6, right: 8),
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: MarginaliaColors.sienna,
-                ),
-              ),
-            )
-          else
-            GestureDetector(
-              onLongPress: onForceReimport,
-              child: IconButton(
-                icon: const Icon(Icons.upload_file_outlined),
-                color: MarginaliaColors.inkMuted,
-                tooltip: 'Importa · Tieni premuto per reimportare da zero',
-                onPressed: onImport,
-              ),
-            ),
+          const SizedBox(height: 16),
+          // Thin rule sotto l'header
+          Container(height: 0.8, color: MarginaliaColors.ruleFaint),
         ],
       ),
     );
   }
 }
 
-// ─── Hero card: highlight del giorno ─────────────────────────────────────────
+// ─── Hero pull-quote: highlight del giorno ───────────────────────────────────
+//
+// Stile editoriale aperto — come una pull-quote su una rivista letteraria.
+// Il testo è protagonista, nessun background scuro, nessuna card generica.
 
 class _DailyCard extends StatelessWidget {
   const _DailyCard({required this.content, required this.onTap});
@@ -480,74 +488,86 @@ class _DailyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = content.length > 220 ? '${content.substring(0, 220)}…' : content;
+    final text = content.length > 260 ? '${content.substring(0, 260)}…' : content;
     final dayLabel = _days[DateTime.now().weekday - 1];
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        decoration: MarginaliaDecorations.heroCard,
-        child: Stack(
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Decorative quote mark
-            Positioned(
-              top: -6,
-              left: 14,
-              child: Text('"', style: MarginaliaTextStyles.quoteDecor),
+            // ── Etichetta sezione ──────────────────────────────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'HIGHLIGHT DEL GIORNO',
+                  style: MarginaliaTextStyles.sectionTitle,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '·  $dayLabel',
+                  style: MarginaliaTextStyles.sectionTitle.copyWith(
+                    color: MarginaliaColors.inkFaint,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 44, 22, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    text,
-                    style: MarginaliaTextStyles.highlightBodySmall.copyWith(
-                      color: Colors.white.withAlpha(230),
-                      height: 1.72,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Day chip
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(18),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color: Colors.white.withAlpha(30), width: 0.5),
-                        ),
-                        child: Text(
-                          dayLabel,
-                          style: MarginaliaTextStyles.label.copyWith(
-                            color: Colors.white.withAlpha(140),
-                            fontSize: 9,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'HIGHLIGHT DEL GIORNO',
-                        style: MarginaliaTextStyles.label.copyWith(
-                          color: Colors.white.withAlpha(100),
-                          letterSpacing: 1.6,
-                          fontSize: 9,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.arrow_forward_ios_rounded,
-                          size: 12, color: Colors.white.withAlpha(130)),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 12),
+            // ── Rule sottile ───────────────────────────────────────────────
+            Container(height: 0.8, color: MarginaliaColors.rule),
+            const SizedBox(height: 20),
+
+            // ── Virgoletta decorativa ──────────────────────────────────────
+            Text(
+              '“',
+              style: MarginaliaTextStyles.quoteDecor.copyWith(
+                fontSize: 64,
+                height: 0.5,
+                color: MarginaliaColors.siennaFaint,
               ),
             ),
+            const SizedBox(height: 8),
+
+            // ── Testo highlight — EB Garamond italic grande ────────────────
+            Text(
+              text,
+              style: MarginaliaTextStyles.highlightBody.copyWith(
+                fontSize: 19,
+                height: 1.82,
+                color: MarginaliaColors.ink,
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            // ── Rule e tap indicator ───────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: Container(height: 0.8, color: MarginaliaColors.ruleFaint),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Leggi',
+                  style: MarginaliaTextStyles.label.copyWith(
+                    color: MarginaliaColors.sienna,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 10,
+                  color: MarginaliaColors.sienna,
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
           ],
         ),
       ),
@@ -612,42 +632,50 @@ class _RecentHighlightsStrip extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Row(
+                    child: Stack(
                       children: [
-                        // Accent strip
-                        Container(width: 3, color: accentColor),
-                        Expanded(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(12, 12, 12, 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Book title pill
-                                if ((h.bookTitle ?? '').isNotEmpty)
-                                  Text(
-                                    h.bookTitle!,
+                        // Accent dot in alto a sinistra (non stripe)
+                        Positioned(
+                          top: 10, left: 10,
+                          child: Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Book title (Barlow Condensed uppercase)
+                              if ((h.bookTitle ?? '').isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12),
+                                  child: Text(
+                                    h.bookTitle!.toUpperCase(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: MarginaliaColors.sienna,
-                                      letterSpacing: 0.2,
+                                    style: MarginaliaTextStyles.bookAuthor.copyWith(
+                                      fontSize: 9,
+                                      color: MarginaliaColors.inkFaint,
+                                      letterSpacing: 1.0,
                                     ),
                                   ),
-                                const SizedBox(height: 6),
-                                // Excerpt
-                                Expanded(
-                                  child: Text(
-                                    h.content,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFontsLora.small,
-                                  ),
                                 ),
-                              ],
-                            ),
+                              const SizedBox(height: 7),
+                              // Excerpt in EB Garamond italic
+                              Expanded(
+                                child: Text(
+                                  h.content,
+                                  maxLines: 4,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _QuoteStyle.strip,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -674,12 +702,11 @@ class _RecentHighlightsStrip extends StatelessWidget {
       };
 }
 
-// Helper: Lora piccolo (non possiamo usare MarginaliaTextStyles.highlightBody
-// qui perché GoogleFonts non è const)
-class GoogleFontsLora {
-  static final small = MarginaliaTextStyles.highlightBodySmall.copyWith(
-    fontSize: 12,
-    height: 1.55,
+// Helper: EB Garamond piccolo per le card della strip
+class _QuoteStyle {
+  static final strip = MarginaliaTextStyles.highlightBodySmall.copyWith(
+    fontSize: 13,
+    height: 1.6,
   );
 }
 
@@ -732,14 +759,16 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? MarginaliaColors.primary : MarginaliaColors.surface,
-          borderRadius: BorderRadius.circular(20),
+          color: active ? MarginaliaColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: active
                 ? MarginaliaColors.primary
                 : MarginaliaColors.rule,
+            width: 0.8,
           ),
         ),
         child: Row(
@@ -747,21 +776,20 @@ class _Chip extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 14,
+              size: 13,
               color: active
                   ? const Color(0xFFF1EEE7)
                   : MarginaliaColors.inkMuted,
             ),
             const SizedBox(width: 6),
             Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+              label.toUpperCase(),
+              style: MarginaliaTextStyles.sectionTitle.copyWith(
                 color: active
                     ? const Color(0xFFF1EEE7)
                     : MarginaliaColors.inkMuted,
-                letterSpacing: 0.2,
+                letterSpacing: 1.5,
+                fontSize: 9,
               ),
             ),
           ],
@@ -808,12 +836,11 @@ class _BookGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Cover block (62% of card height) ──────────────────────────
+            // ── Cover block (63%) ─────────────────────────────────────────
             Expanded(
-              flex: 62,
+              flex: 63,
               child: Container(
                 decoration: BoxDecoration(
-                  color: coverColor,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(15),
                     topRight: Radius.circular(15),
@@ -821,38 +848,40 @@ class _BookGridCard extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       coverColor,
-                      coverColor.withAlpha(200),
+                      Color.fromARGB(
+                        255,
+                        (coverColor.red * 0.60).round(),
+                        (coverColor.green * 0.60).round(),
+                        (coverColor.blue * 0.60).round(),
+                      ),
                     ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
                 child: Stack(
                   children: [
-                    // Texture: quote mark sfumato in basso
+                    // Virgoletta decorativa EB Garamond
                     Positioned(
-                      bottom: -14,
-                      right: 4,
+                      bottom: -18,
+                      right: 2,
                       child: Text(
                         '"',
-                        style: TextStyle(
-                          fontFamily: 'Georgia',
-                          fontSize: 88,
+                        style: MarginaliaTextStyles.quoteDecor.copyWith(
+                          fontSize: 100,
+                          color: Colors.white.withAlpha(18),
                           height: 1,
-                          color: Colors.white.withAlpha(28),
-                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                    // Initial letter
+                    // Initial letter in EB Garamond serif
                     Center(
                       child: Text(
                         initial,
-                        style: TextStyle(
-                          fontSize: 46,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white.withAlpha(220),
-                          fontFamily: 'Georgia',
+                        style: MarginaliaTextStyles.bookTitleLarge.copyWith(
+                          fontSize: 52,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withAlpha(210),
                           height: 1,
                         ),
                       ),

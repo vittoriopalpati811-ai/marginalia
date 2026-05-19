@@ -304,7 +304,7 @@ class _ShareCard extends StatelessWidget {
               left: 18,
               child: Text(
                 '❝',
-                style: GoogleFonts.lora(
+                style: GoogleFonts.ebGaramond(
                   fontSize: 130,
                   height: 0.8,
                   color: Colors.white.withAlpha(14),
@@ -338,7 +338,7 @@ class _ShareCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       _excerpt,
-                      style: GoogleFonts.lora(
+                      style: GoogleFonts.ebGaramond(
                         fontSize: 14.5,
                         height: 1.85,
                         color: const Color(0xFFEDE5D5),
@@ -371,7 +371,7 @@ class _ShareCard extends StatelessWidget {
                             if (bookTitle != null && bookTitle!.isNotEmpty)
                               Text(
                                 bookTitle!,
-                                style: GoogleFonts.lora(
+                                style: GoogleFonts.ebGaramond(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white.withAlpha(200),

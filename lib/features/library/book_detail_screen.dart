@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
@@ -284,22 +285,20 @@ class _BookHero extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Texture: quote mark decorativo
+          // Virgoletta decorativa — EB Garamond
           Positioned(
             bottom: 60,
             right: 16,
             child: Text(
               '"',
-              style: TextStyle(
-                fontFamily: 'Georgia',
+              style: MarginaliaTextStyles.quoteDecor.copyWith(
                 fontSize: 160,
                 height: 1,
-                color: Colors.white.withAlpha(18),
-                fontWeight: FontWeight.w700,
+                color: Colors.white.withAlpha(16),
               ),
             ),
           ),
-          // Initial letter centrata
+          // Initial letter — EB Garamond serif
           Positioned(
             top: 0,
             left: 0,
@@ -308,11 +307,10 @@ class _BookHero extends StatelessWidget {
             child: Center(
               child: Text(
                 initial,
-                style: TextStyle(
-                  fontSize: 80,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white.withAlpha(200),
-                  fontFamily: 'Georgia',
+                style: MarginaliaTextStyles.bookTitleLarge.copyWith(
+                  fontSize: 88,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withAlpha(195),
                   height: 1,
                 ),
               ),
@@ -370,21 +368,31 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _StatBox(
             value: '$highlightCount',
             label: highlightCount == 1 ? 'highlight' : 'highlights',
             icon: Icons.format_quote_outlined,
           ),
-          const SizedBox(width: 10),
+          // Sottile divisore verticale
+          Container(
+            width: 0.8, height: 32,
+            color: MarginaliaColors.ruleFaint,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+          ),
           _StatBox(
             value: author.split(' ').last,
             label: 'autore',
             icon: Icons.person_outline,
           ),
-          const SizedBox(width: 10),
+          Container(
+            width: 0.8, height: 32,
+            color: MarginaliaColors.ruleFaint,
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+          ),
           _StatBox(
             value: '',
             label: 'in lettura',
@@ -394,7 +402,7 @@ class _StatRow extends StatelessWidget {
       )
           .animate()
           .fadeIn(delay: 100.ms, duration: 350.ms)
-          .slideY(begin: 0.05, end: 0, delay: 100.ms, duration: 350.ms),
+          .slideY(begin: 0.04, end: 0, delay: 100.ms, duration: 350.ms),
     );
   }
 }
@@ -413,42 +421,32 @@ class _StatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: MarginaliaColors.rule),
-        ),
-        child: Column(
-          children: [
-            if (icon != null)
-              Icon(icon, size: 16, color: MarginaliaColors.sienna)
-            else
-              Text(value,
-                  style:
-                      const TextStyle(fontSize: 16, color: MarginaliaColors.sienna)),
-            const SizedBox(height: 4),
-            if (icon != null)
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.ink,
-                ),
-              ),
+      child: Column(
+        children: [
+          // Valore in EB Garamond
+          if (value.isNotEmpty)
             Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: MarginaliaColors.inkMuted,
-                letterSpacing: 0.3,
+              value,
+              style: MarginaliaTextStyles.bookTitle.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: MarginaliaColors.ink,
               ),
-              textAlign: TextAlign.center,
+            )
+          else if (icon != null)
+            Icon(icon, size: 18, color: MarginaliaColors.sienna),
+          const SizedBox(height: 3),
+          // Label in Barlow Condensed uppercase
+          Text(
+            label.toUpperCase(),
+            style: MarginaliaTextStyles.sectionTitle.copyWith(
+              fontSize: 8.5,
+              letterSpacing: 1.5,
+              color: MarginaliaColors.inkFaint,
             ),
-          ],
-        ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -476,112 +474,105 @@ class _HighlightCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: MarginaliaDecorations.card(),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // Bordo sinistro colorato
-              Container(
-                width: 3,
-                decoration: BoxDecoration(
-                  color: accentColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(14),
-                    bottomLeft: Radius.circular(14),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        margin: const EdgeInsets.only(bottom: 1),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 22, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header: numero + colore dot ──────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Numero progressivo
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${index + 1}.',
-                            style: MarginaliaTextStyles.indexNumber,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              highlight.content,
-                              style:
-                                  MarginaliaTextStyles.highlightBodySmall,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        '${(index + 1).toString().padLeft(2, '0')}',
+                        style: MarginaliaTextStyles.indexNumber.copyWith(
+                          color: MarginaliaColors.inkFaint,
+                          fontSize: 11,
+                        ),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 6, height: 6,
+                        decoration: BoxDecoration(
+                          color: accentColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (highlight.isFavorite)
+                        const Icon(
+                          Icons.bookmark_rounded,
+                          size: 14,
+                          color: MarginaliaColors.sienna,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
 
-                      // Nota marginale
-                      if (highlight.note != null &&
-                          highlight.note!.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding:
-                              const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                          decoration: BoxDecoration(
-                            color: MarginaliaColors.surface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.edit_outlined,
-                                  size: 12,
-                                  color: MarginaliaColors.inkFaint),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  highlight.note!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: MarginaliaColors.inkMuted,
-                                    fontStyle: FontStyle.italic,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ),
-                            ],
+                  // ── Testo in EB Garamond italic ────────────────────
+                  Text(
+                    highlight.content,
+                    style: MarginaliaTextStyles.highlightBodySmall.copyWith(
+                      fontSize: 15.5,
+                      height: 1.75,
+                    ),
+                  ),
+
+                  // ── Nota marginale ─────────────────────────────────
+                  if (highlight.note != null && highlight.note!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.edit_outlined,
+                            size: 11, color: MarginaliaColors.inkFaint),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            highlight.note!,
+                            style: GoogleFonts.barlow(
+                              fontSize: 12,
+                              color: MarginaliaColors.inkMuted,
+                              fontStyle: FontStyle.italic,
+                              height: 1.55,
+                            ),
                           ),
                         ),
                       ],
+                    ),
+                  ],
 
-                      // Footer
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          if (highlight.location != null)
-                            Text(
-                              'pos. ${highlight.location}',
-                              style: MarginaliaTextStyles.label,
-                            ),
-                          const Spacer(),
-                          if (highlight.isFavorite)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 10),
-                              child: Icon(Icons.bookmark,
-                                  size: 13,
-                                  color: MarginaliaColors.sienna),
-                            ),
-                          GestureDetector(
-                            onTap: () => Share.share(highlight.content),
-                            child: const Icon(Icons.ios_share,
-                                size: 15,
-                                color: MarginaliaColors.inkFaint),
+                  // ── Footer metadati ────────────────────────────────
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      if (highlight.location != null)
+                        Text(
+                          'pos. ${highlight.location}',
+                          style: MarginaliaTextStyles.label.copyWith(
+                            fontSize: 10,
+                            color: MarginaliaColors.inkFaint,
                           ),
-                        ],
+                        ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => Share.share(highlight.content),
+                        child: const Icon(Icons.ios_share_rounded,
+                            size: 14, color: MarginaliaColors.inkFaint),
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 18),
+                ],
               ),
-            ],
-          ),
+            ),
+            // Divider sottile tra highlight
+            Container(height: 0.8, color: MarginaliaColors.ruleFaint),
+          ],
         ),
       ),
     )

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -107,19 +108,20 @@ class FeedTab extends ConsumerWidget {
           ),
 
           // ── Divider between posts and shared highlights ────────────────────
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
               child: Row(
                 children: [
-                  Text('HIGHLIGHT CONDIVISI', style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: MarginaliaColors.inkFaint,
-                    letterSpacing: 0.8,
-                  )),
-                  SizedBox(width: 12),
-                  Expanded(child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+                  Text('HIGHLIGHT CONDIVISI',
+                    style: MarginaliaTextStyles.sectionTitle.copyWith(
+                      fontSize: 9,
+                      letterSpacing: 2.5,
+                      color: MarginaliaColors.inkFaint,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
                 ],
               ),
             ),
@@ -237,14 +239,14 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           // Header row
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Nuovo post',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                     color: MarginaliaColors.ink,
-                    letterSpacing: -0.4,
+                    letterSpacing: -0.3,
                   ),
                 ),
               ),
@@ -525,18 +527,18 @@ class _PostCardState extends ConsumerState<_PostCard> {
                             : null,
                         child: Text(
                           name,
-                          style: const TextStyle(
+                          style: GoogleFonts.barlow(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: MarginaliaColors.ink,
-                            letterSpacing: -0.2,
+                            letterSpacing: -0.1,
                           ),
                         ),
                       ),
                       if (timeAgo.isNotEmpty)
                         Text(
                           timeAgo,
-                          style: const TextStyle(
+                          style: GoogleFonts.barlow(
                             fontSize: 11,
                             color: MarginaliaColors.inkFaint,
                           ),
@@ -554,7 +556,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
               child: Text(
                 body,
-                style: const TextStyle(
+                style: GoogleFonts.barlow(
                   fontSize: 14.5,
                   color: MarginaliaColors.ink,
                   height: 1.6,
@@ -581,66 +583,71 @@ class _PostCardState extends ConsumerState<_PostCard> {
           if (hlContent != null && hlContent.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
+              child: Container(
+                decoration: BoxDecoration(
                   color: MarginaliaColors.surfaceElevated,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(width: 3, color: accent),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (hlBookTitle != null &&
-                                  hlBookTitle.isNotEmpty) ...[
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        hlBookTitle,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: MarginaliaColors.sienna,
-                                          letterSpacing: 0.1,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    if (hlAuthor != null && hlAuthor.isNotEmpty)
-                                      Text(
-                                        ' · ${hlAuthor.toUpperCase()}',
-                                        style: const TextStyle(
-                                          fontSize: 9,
-                                          color: MarginaliaColors.inkFaint,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-                              Text(
-                                hlContent.length > 240
-                                    ? '${hlContent.substring(0, 240)}…'
-                                    : hlContent,
-                                style: MarginaliaTextStyles.highlightBodySmall
-                                    .copyWith(
-                                        fontSize: 13.5, height: 1.75),
-                                maxLines: 5,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: MarginaliaColors.ruleFaint,
+                    width: 0.8,
                   ),
+                ),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Book attribution row
+                    if (hlBookTitle != null && hlBookTitle.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: accent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              hlBookTitle,
+                              style: MarginaliaTextStyles.sectionTitle.copyWith(
+                                fontSize: 9,
+                                letterSpacing: 1.2,
+                                color: MarginaliaColors.inkMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (hlAuthor != null && hlAuthor.isNotEmpty)
+                            Text(
+                              hlAuthor.toUpperCase(),
+                              style: MarginaliaTextStyles.bookAuthor.copyWith(
+                                fontSize: 8.5,
+                                color: MarginaliaColors.inkFaint,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Container(height: 0.6, color: MarginaliaColors.ruleFaint),
+                      const SizedBox(height: 8),
+                    ],
+                    // Quote text — EB Garamond italic
+                    Text(
+                      hlContent.length > 240
+                          ? '${hlContent.substring(0, 240)}…'
+                          : hlContent,
+                      style: MarginaliaTextStyles.highlightBodySmall.copyWith(
+                        fontSize: 13.5,
+                        height: 1.75,
+                      ),
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -677,7 +684,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                         const SizedBox(width: 5),
                         Text(
                           '$_likesCount',
-                          style: TextStyle(
+                          style: GoogleFonts.barlow(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: _liked
@@ -826,16 +833,16 @@ class _FeedCard extends StatelessWidget {
                             ? () => context.push('/user/$userId')
                             : null,
                         child: Text(name,
-                            style: const TextStyle(
+                            style: GoogleFonts.barlow(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: MarginaliaColors.ink,
-                              letterSpacing: -0.2,
+                              letterSpacing: -0.1,
                             )),
                       ),
                       if (timeAgo.isNotEmpty)
                         Text(timeAgo,
-                            style: const TextStyle(
+                            style: GoogleFonts.barlow(
                               fontSize: 11,
                               color: MarginaliaColors.inkFaint,
                             )),
@@ -862,10 +869,11 @@ class _FeedCard extends StatelessWidget {
                               size: 10, color: MarginaliaColors.primary),
                           const SizedBox(width: 4),
                           Text(jamTitle,
-                              style: const TextStyle(
+                              style: GoogleFonts.barlowCondensed(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                                 color: MarginaliaColors.primary,
+                                letterSpacing: 0.5,
                               )),
                         ],
                       ),
@@ -880,62 +888,69 @@ class _FeedCard extends StatelessWidget {
           // Highlight card
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
+            child: Container(
+              decoration: BoxDecoration(
                 color: MarginaliaColors.surfaceElevated,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(width: 3, color: accent),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (bookTitle != null && bookTitle.isNotEmpty) ...[
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(bookTitle,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: MarginaliaColors.sienna,
-                                          letterSpacing: 0.1,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
-                                  ),
-                                  if (bookAuthor != null &&
-                                      bookAuthor.isNotEmpty)
-                                    Text(
-                                        ' · ${bookAuthor.toUpperCase()}',
-                                        style: const TextStyle(
-                                          fontSize: 9,
-                                          color: MarginaliaColors.inkFaint,
-                                          letterSpacing: 0.3,
-                                        )),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            Text(
-                              content.length > 240
-                                  ? '${content.substring(0, 240)}…'
-                                  : content,
-                              style: MarginaliaTextStyles.highlightBodySmall
-                                  .copyWith(fontSize: 13.5, height: 1.75),
-                              maxLines: 6,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: MarginaliaColors.ruleFaint,
+                  width: 0.8,
                 ),
+              ),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (bookTitle != null && bookTitle.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            bookTitle,
+                            style: MarginaliaTextStyles.sectionTitle.copyWith(
+                              fontSize: 9,
+                              letterSpacing: 1.2,
+                              color: MarginaliaColors.inkMuted,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (bookAuthor != null && bookAuthor.isNotEmpty)
+                          Text(
+                            bookAuthor.toUpperCase(),
+                            style: MarginaliaTextStyles.bookAuthor.copyWith(
+                              fontSize: 8.5,
+                              color: MarginaliaColors.inkFaint,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Container(height: 0.6, color: MarginaliaColors.ruleFaint),
+                    const SizedBox(height: 8),
+                  ],
+                  Text(
+                    content.length > 240
+                        ? '${content.substring(0, 240)}…'
+                        : content,
+                    style: MarginaliaTextStyles.highlightBodySmall.copyWith(
+                      fontSize: 13.5,
+                      height: 1.75,
+                    ),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ),
@@ -970,9 +985,9 @@ class _EmptyFeed extends StatelessWidget {
                   size: 26, color: MarginaliaColors.primary),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Nessun highlight condiviso',
-              style: TextStyle(
+              style: GoogleFonts.barlow(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: MarginaliaColors.ink,
@@ -980,10 +995,10 @@ class _EmptyFeed extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Segui altri lettori dalla scheda Amici\nper vedere i loro highlight qui.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 13,
                 height: 1.65,

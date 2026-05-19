@@ -65,18 +65,12 @@ class _HomeHeader extends StatelessWidget {
                 children: [
                   Text(
                     'Marginalia',
-                    style: GoogleFonts.lora(
-                      color: const Color(0xFFF1EEE7),
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.5,
-                      height: 1,
-                    ),
+                    style: MarginaliaTextStyles.wordmark,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Il tuo feed di lettura',
-                    style: TextStyle(
+                    style: GoogleFonts.barlow(
                       color: const Color(0xFFF1EEE7).withAlpha(140),
                       fontSize: 12,
                       letterSpacing: 0.1,
