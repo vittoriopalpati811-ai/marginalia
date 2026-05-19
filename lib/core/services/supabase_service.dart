@@ -666,7 +666,9 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final url = _client.storage.from('covers').getPublicUrl(path);
+    final baseUrl = _client.storage.from('covers').getPublicUrl(path);
+    // Same cache-buster as uploadAvatar: prevents stale cover from being served.
+    final url = '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}';
     await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
     return url;
   }

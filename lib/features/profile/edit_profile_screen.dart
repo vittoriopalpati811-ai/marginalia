@@ -78,6 +78,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _uploadingCover  = false;
   bool _saving          = false;
 
+  // Local URL cache — updated immediately after a successful upload so the
+  // preview refreshes without waiting for the parent to invalidate the provider.
+  String? _localAvatarUrl;
+  String? _localCoverUrl;
+
   @override
   void initState() {
     super.initState();
@@ -107,10 +112,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final file = r.files.first;
     setState(() => _uploadingAvatar = true);
     try {
-      await ref.read(supabaseServiceProvider).uploadAvatar(
+      final url = await ref.read(supabaseServiceProvider).uploadAvatar(
             file.bytes!,
             (file.extension ?? 'jpg').toLowerCase(),
           );
+      // Update local cache so the preview refreshes immediately in this screen.
+      if (mounted) setState(() => _localAvatarUrl = url);
       widget.onSaved();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -133,10 +140,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final file = r.files.first;
     setState(() => _uploadingCover = true);
     try {
-      await ref.read(supabaseServiceProvider).uploadCover(
+      final url = await ref.read(supabaseServiceProvider).uploadCover(
             file.bytes!,
             (file.extension ?? 'jpg').toLowerCase(),
           );
+      // Update local cache so the cover preview refreshes immediately.
+      if (mounted) setState(() => _localCoverUrl = url);
       widget.onSaved();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -186,8 +195,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final top = MediaQuery.of(context).padding.top;
     final gp  = _gpFor(_gradKey);
     final p   = widget.initialProfile;
-    final avatarUrl = p?['avatar_url'] as String?;
-    final coverUrl  = p?['cover_url']  as String?;
+    // _local* takes priority: updated immediately after upload without waiting
+    // for the parent provider to re-fetch from Supabase.
+    final avatarUrl = _localAvatarUrl ?? p?['avatar_url'] as String?;
+    final coverUrl  = _localCoverUrl  ?? p?['cover_url']  as String?;
     final name      = _nameCtrl.text;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
