@@ -67,7 +67,7 @@ class MarginaliaTextStyles {
   // ── Highlight / quote text (il cuore dell'app) ────────────────────────────
 
   /// Testo principale di un highlight — EB Garamond italic grande.
-  /// Questo stile deve sembrare estratto da un libro, non da un database.
+  /// Solo per la schermata di dettaglio (hero moment, grande e ariosa).
   static TextStyle get highlightBody => GoogleFonts.ebGaramond(
         fontSize: 20,
         height: 1.88,
@@ -77,21 +77,21 @@ class MarginaliaTextStyles {
         letterSpacing: 0.1,
       );
 
-  /// Versione più piccola per card e strip.
+  /// Versione più piccola per card e strip — regular per leggibilità.
   static TextStyle get highlightBodySmall => GoogleFonts.ebGaramond(
         fontSize: 16,
-        height: 1.75,
+        height: 1.72,
         color: MarginaliaColors.ink,
-        fontStyle: FontStyle.italic,
-        letterSpacing: 0.1,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.05,
       );
 
-  /// Versione compatta per card molto piccole.
+  /// Versione compatta per card molto piccole — regular per leggibilità.
   static TextStyle get highlightBodyMicro => GoogleFonts.ebGaramond(
         fontSize: 13,
         height: 1.6,
         color: MarginaliaColors.ink,
-        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w400,
       );
 
   // ── Titoli libri ──────────────────────────────────────────────────────────

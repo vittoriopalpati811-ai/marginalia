@@ -180,7 +180,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.white.withAlpha(160),
-                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                             ],
@@ -487,11 +486,10 @@ class _SharedCell extends StatelessWidget {
                 Expanded(
                   child: Text(
                     excerpt,
-                    style: const TextStyle(
+                    style: MarginaliaTextStyles.highlightBodyMicro.copyWith(
                       fontSize: 11.5,
                       height: 1.65,
-                      color: Color(0xFFEDE5D5),
-                      fontStyle: FontStyle.italic,
+                      color: const Color(0xFFEDE5D5),
                     ),
                     overflow: TextOverflow.fade,
                   ),

@@ -199,7 +199,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     color: const Color(0xFFF1EEE7)
                                         .withAlpha(200),
                                     fontSize: 12,
-                                    fontStyle: FontStyle.italic,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -863,7 +862,6 @@ class _SharedHighlightCell extends StatelessWidget {
                       color: Color(0xEEF1EEE7),
                       fontSize: 11,
                       height: 1.5,
-                      fontStyle: FontStyle.italic,
                     ),
                     overflow: TextOverflow.fade,
                   ),

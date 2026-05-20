@@ -622,7 +622,6 @@ class _TrendingSection extends StatelessWidget {
                               color: Color(0xEEF1EEE7),
                               fontSize: 12,
                               height: 1.55,
-                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         ),

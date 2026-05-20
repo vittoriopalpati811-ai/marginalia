@@ -805,12 +805,10 @@ class _SpotlightCard extends StatelessWidget {
                       ],
                       Text(
                         excerpt,
-                        style: const TextStyle(
+                        style: MarginaliaTextStyles.highlightBodySmall.copyWith(
                           fontSize: 14,
                           height: 1.75,
-                          color: Color(0xFFEDE5D5),
-                          fontStyle: FontStyle.italic,
-                          fontFamily: 'Georgia',
+                          color: const Color(0xFFEDE5D5),
                         ),
                       ),
                     ],
