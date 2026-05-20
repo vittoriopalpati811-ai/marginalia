@@ -49,7 +49,7 @@ WidgetHighlight _mockHighlight() {
   const previews = [
     (
       text:
-          'Non si leggono i libri per finirli, ma per abitarli — per trovare in essi un'altra casa.',
+          "Non si leggono i libri per finirli, ma per abitarli — per trovare in essi un'altra casa.",
       book: 'Come un romanzo',
       author: 'Daniel Pennac',
     ),
