@@ -864,14 +864,35 @@ class SupabaseService {
 
   // ─── Post Comments ────────────────────────────────────────────────────────────
 
-  /// Fetch comments for a post, newest first is false — ascending order.
+  /// Fetch comments for a post in ascending order, with commenter profiles.
+  /// Profiles are fetched in a separate query to avoid PostgREST FK ambiguity
+  /// (post_comments.user_id → auth.users, not profiles directly).
   Future<List<Map<String, dynamic>>> fetchPostComments(String postId) async {
-    final rows = await _client
-        .from('post_comments')
-        .select('id, post_id, user_id, content, image_url, gif_url, created_at, profiles(display_name, avatar_url)')
-        .eq('post_id', postId)
-        .order('created_at', ascending: true);
-    return List<Map<String, dynamic>>.from(rows as List);
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('post_comments')
+          .select('id, post_id, user_id, content, image_url, gif_url, created_at')
+          .eq('post_id', postId)
+          .order('created_at', ascending: true) as List,
+    );
+    if (rows.isEmpty) return [];
+
+    // Fetch profiles for all commenters in one query.
+    final userIds = rows.map((r) => r['user_id'] as String).toSet().toList();
+    final profileRows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .inFilter('id', userIds) as List,
+    );
+    final profileMap = {
+      for (final p in profileRows) p['id'] as String: p,
+    };
+
+    return rows.map((r) {
+      final uid = r['user_id'] as String? ?? '';
+      return {...r, 'profiles': profileMap[uid]};
+    }).toList();
   }
 
   /// Add a comment to a post (text, image, or GIF — at least one required).

@@ -367,8 +367,9 @@ class _JamGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = (jam['title'] ?? jam['name']) as String? ?? '';
-    final code = jam['invite_code'] as String? ?? '';
+    final name     = (jam['title'] ?? jam['name']) as String? ?? '';
+    final code     = jam['invite_code'] as String? ?? '';
+    final coverUrl = jam['cover_url']   as String?;
 
     final colors = [
       [const Color(0xFF4C3B3A), const Color(0xFF261E1D)],
@@ -378,6 +379,70 @@ class _JamGridCard extends StatelessWidget {
     ];
     final palette = colors[name.hashCode.abs() % colors.length];
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'J';
+
+    // Reusable gradient fallback (no cover photo)
+    Widget gradientTop = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: palette,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(15),
+          topRight: Radius.circular(15),
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            bottom: -20,
+            right: -20,
+            child: Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withAlpha(12),
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  initial,
+                  style: MarginaliaTextStyles.bookTitleLarge.copyWith(
+                    fontSize: 46,
+                    color: Colors.white,
+                    height: 1,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'JAM',
+                    style: MarginaliaTextStyles.sectionTitle.copyWith(
+                      color: Colors.white.withAlpha(200),
+                      fontSize: 8,
+                      letterSpacing: 2.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
 
     return GestureDetector(
       onTap: onTap,
@@ -399,67 +464,57 @@ class _JamGridCard extends StatelessWidget {
           children: [
             Expanded(
               flex: 65,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: palette,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                  ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      bottom: -20,
-                      right: -20,
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withAlpha(12),
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                child: coverUrl != null && coverUrl.isNotEmpty
+                    ? Stack(
+                        fit: StackFit.expand,
                         children: [
-                          Text(
-                            initial,
-                            style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                              fontSize: 46,
-                              color: Colors.white,
-                              height: 1,
-                              fontWeight: FontWeight.w600,
+                          Image.network(
+                            coverUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => gradientTop,
+                          ),
+                          // Subtle dark scrim so the JAM badge stays readable
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.transparent, Color(0x66000000)],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'JAM',
-                              style: MarginaliaTextStyles.sectionTitle.copyWith(
-                                color: Colors.white.withAlpha(200),
-                                fontSize: 8,
-                                letterSpacing: 2.0,
+                          Positioned(
+                            bottom: 8,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withAlpha(60),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'JAM',
+                                  style: MarginaliaTextStyles.sectionTitle
+                                      .copyWith(
+                                    color: Colors.white.withAlpha(220),
+                                    fontSize: 8,
+                                    letterSpacing: 2.0,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-                ),
+                      )
+                    : gradientTop,
               ),
             ),
             Expanded(
