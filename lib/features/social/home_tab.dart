@@ -35,7 +35,13 @@ class HomeTab extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CreatePostSheet(
-        onCreated: () => ref.invalidate(postsProvider),
+        onCreated: () async {
+          // Small delay to ensure Postgres has committed the insert before
+          // re-fetching, which prevents the post from being missed.
+          await Future.delayed(const Duration(milliseconds: 400));
+          ref.invalidate(postsProvider);
+          ref.invalidate(feedProvider);
+        },
       ),
     );
   }
@@ -65,7 +71,7 @@ class _HomeHeader extends StatelessWidget {
                 children: [
                   Text(
                     'Marginalia',
-                    style: MarginaliaTextStyles.wordmark,
+                    style: MarginaliaTextStyles.wordmarkLight,
                   ),
                   const SizedBox(height: 4),
                   Text(

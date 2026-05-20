@@ -49,8 +49,23 @@ class FeedTab extends ConsumerWidget {
     final postsAsync = ref.watch(postsProvider);
     final feedAsync  = ref.watch(feedProvider);
 
-    return CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+    return RefreshIndicator(
+      color: MarginaliaColors.primary,
+      backgroundColor: MarginaliaColors.surface,
+      strokeWidth: 1.5,
+      onRefresh: () async {
+        ref.invalidate(postsProvider);
+        ref.invalidate(feedProvider);
+        // Wait for both to settle
+        await Future.wait([
+          ref.read(postsProvider.future).catchError((_) => <Map<String, dynamic>>[]),
+          ref.read(feedProvider.future).catchError((_) => <Map<String, dynamic>>[]),
+        ]);
+      },
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         slivers: [
 
           // ── Post section header ───────────────────────────────────────────
@@ -150,7 +165,8 @@ class FeedTab extends ConsumerWidget {
                   ),
           ),
         ],
-      );
+      ),
+    );
   }
 }
 

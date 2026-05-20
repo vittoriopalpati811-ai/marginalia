@@ -639,7 +639,11 @@ class SupabaseService {
     }
   }
 
-  /// Uploads avatar image to Supabase Storage and returns the public URL.
+  /// Uploads avatar image to Supabase Storage and returns a signed URL.
+  ///
+  /// Uses createSignedUrl (1-year expiry) instead of getPublicUrl so images
+  /// load correctly regardless of whether the bucket's public flag is set —
+  /// the signed URL is self-contained and works for any viewer who has it.
   Future<String> uploadAvatar(Uint8List bytes, String ext) async {
     await _ensureBucket('avatars');
     final path = '${userId!}/avatar.$ext';
@@ -648,16 +652,16 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final baseUrl = _client.storage.from('avatars').getPublicUrl(path);
-    // Append a timestamp cache-buster so Flutter's image cache (and the HTTP
-    // cache) always fetches the freshly-uploaded file instead of serving the
-    // previous avatar from disk.
-    final url = '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+    // Signed URL valid for 1 year (31 536 000 s). Works even if the bucket is
+    // private, and the token bakes in a timestamp so the cache is always fresh.
+    final url = await _client.storage
+        .from('avatars')
+        .createSignedUrl(path, 31536000);
     await _client.from('profiles').update({'avatar_url': url}).eq('id', userId!);
     return url;
   }
 
-  /// Uploads cover photo to Supabase Storage and returns the public URL.
+  /// Uploads cover photo to Supabase Storage and returns a signed URL.
   Future<String> uploadCover(Uint8List bytes, String ext) async {
     await _ensureBucket('covers');
     final path = '${userId!}/cover.$ext';
@@ -666,9 +670,9 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final baseUrl = _client.storage.from('covers').getPublicUrl(path);
-    // Same cache-buster as uploadAvatar: prevents stale cover from being served.
-    final url = '$baseUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+    final url = await _client.storage
+        .from('covers')
+        .createSignedUrl(path, 31536000);
     await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
     return url;
   }

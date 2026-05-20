@@ -221,7 +221,7 @@ class _SocialHeader extends StatelessWidget {
                     children: [
                       Text(
                         'Marginalia',
-                        style: MarginaliaTextStyles.wordmark,
+                        style: MarginaliaTextStyles.wordmarkLight,
                       ),
                       const SizedBox(height: 4),
                       Text(

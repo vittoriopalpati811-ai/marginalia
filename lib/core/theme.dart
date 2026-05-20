@@ -3,43 +3,45 @@ import 'package:google_fonts/google_fonts.dart';
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 //
-// Matcha — verde cerimonia giapponese. Sfondo pergamena con leggero tono verde,
-// testo verde-foresta profondo, accent matcha mid-tone.
+// Marginalia iOS Premium — bianco caldo con accent matcha.
 //
-// Matcha Parchment → Pale Matcha → Matcha Cream → Moss → Deep Matcha → Forest Night
+// Ispirazione: Apple Books, Kindle iOS, Reeder 5.
+// Palette: near-white background, pure-white cards, matcha green accent.
+// The greenish tint on backgrounds was too "Android material" — dropped.
+// Neutral surfaces let the literary typography and matcha accent breathe.
 
 class MarginaliaColors {
-  // Backgrounds — pergamena tintata matcha
-  static const background      = Color(0xFFF2F5EA); // Matcha Parchment
-  static const surface         = Color(0xFFE8EDDD); // Pale Matcha (leggermente più freddo)
-  static const surfaceElevated = Color(0xFFF8FAF3); // quasi bianco, tono verde
+  // Backgrounds — bianco caldo neutro (iOS standard)
+  static const background      = Color(0xFFFAFAF8); // near-white, warm tint
+  static const surface         = Color(0xFFFFFFFF); // pure white cards
+  static const surfaceElevated = Color(0xFFF5F5F3); // slightly recessed surface
 
-  // Text hierarchy — verde scuro foresta
-  static const ink      = Color(0xFF1A2614); // Forest Night (quasi nero-verde)
-  static const inkMuted = Color(0xFF4E5E3A); // Moss Muted (più caldo del precedente)
-  static const inkFaint = Color(0xFF8A9E72); // Light Moss
+  // Text hierarchy — near-black caldo
+  static const ink      = Color(0xFF1C1C1A); // near-black, warm
+  static const inkMuted = Color(0xFF5C5C58); // mid-gray, warm
+  static const inkFaint = Color(0xFF9C9C97); // light-gray, warm
 
-  // Accent — matcha family
-  static const sienna      = Color(0xFF5C7A40); // Matcha Mid (leggermente più scuro)
-  static const siennaLight = Color(0xFF7DA05A);
-  static const siennaFaint = Color(0xFFD6E8BC);
+  // Accent — matcha green (più saturo su bianco funziona meglio)
+  static const sienna      = Color(0xFF4A7A35); // matcha mid
+  static const siennaLight = Color(0xFF6A9E52); // matcha light
+  static const siennaFaint = Color(0xFFE0EDD4); // very light matcha tint
 
-  // Primary action — deep matcha (CTA, header gradient, nav bar)
-  static const primary      = Color(0xFF3A5C28); // Deep Matcha
-  static const primaryDark  = Color(0xFF1E3314); // Forest Night
-  static const primaryFaint = Color(0xFFCDE0AA); // very light matcha tint
+  // Primary action — deep matcha
+  static const primary      = Color(0xFF3A6624); // deep matcha CTA
+  static const primaryDark  = Color(0xFF254D16); // darker, for pressed states
+  static const primaryFaint = Color(0xFFEBF4E4); // chip backgrounds, badges
 
-  // Borders / dividers
-  static const rule      = Color(0xFFBECFA2); // Matcha Border
-  static const ruleFaint = Color(0xFFD6E5BF);
+  // Borders / dividers — neutral sottilissimi (iOS-style)
+  static const rule      = Color(0x17000000); // ~9% black — barely visible
+  static const ruleFaint = Color(0x0D000000); // ~5% black — structural only
 
-  // Kindle highlight tints — versioni matcha delle tinte Kindle
-  static const highlightAmber     = Color(0xFFF0E8A0);
-  static const highlightSky       = Color(0xFFC0D8C0);
-  static const highlightRose      = Color(0xFFEED4D8);
-  static const highlightTangerine = Color(0xFFEDD8A8);
+  // Kindle highlight tints — adattate a sfondo bianco (più trasparenti)
+  static const highlightAmber     = Color(0xFFFFF3C4);
+  static const highlightSky       = Color(0xFFD4EBF7);
+  static const highlightRose      = Color(0xFFFFE0E8);
+  static const highlightTangerine = Color(0xFFFFE8C8);
 
-  // Legacy aliases
+  // Legacy aliases — invariati per compatibilità
   static const accent       = primary;
   static const accentLight  = sienna;
   static const text         = ink;
@@ -137,15 +139,24 @@ class MarginaliaTextStyles {
   static TextStyle get sectionTitle => GoogleFonts.barlowCondensed(
         fontSize: 10,
         fontWeight: FontWeight.w700,
-        color: MarginaliaColors.inkMuted,
+        color: MarginaliaColors.inkFaint,
         letterSpacing: 3.0,
       );
 
-  /// Wordmark principale dell'app in intestazioni gradient.
+  /// Wordmark principale dell'app — scuro su sfondo chiaro (header non-gradient).
   static TextStyle get wordmark => GoogleFonts.ebGaramond(
         fontSize: 26,
         fontWeight: FontWeight.w500,
-        color: const Color(0xFFF1EEE7),
+        color: MarginaliaColors.ink,
+        letterSpacing: -0.3,
+        height: 1,
+      );
+
+  /// Wordmark per contesti scuri (header gradient, hero card).
+  static TextStyle get wordmarkLight => GoogleFonts.ebGaramond(
+        fontSize: 26,
+        fontWeight: FontWeight.w500,
+        color: const Color(0xFFF5F2EC),
         letterSpacing: -0.3,
         height: 1,
       );
@@ -172,70 +183,65 @@ class MarginaliaTextStyles {
 // ─── Decorazioni condivise ────────────────────────────────────────────────────
 
 class MarginaliaDecorations {
-  /// Card standard — superficie palegreen, bordo sottile, ombra paper-like.
-  static BoxDecoration card({Color? color, double radius = 16}) => BoxDecoration(
+  /// Card standard iOS-style — bianco puro, bordo quasi invisibile, ombra morbida.
+  static BoxDecoration card({Color? color, double radius = 14}) => BoxDecoration(
         color: color ?? MarginaliaColors.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: MarginaliaColors.rule, width: 0.8),
+        border: Border.all(color: MarginaliaColors.rule, width: 0.5),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0E1A2614),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-          BoxShadow(
-            color: Color(0x061A2614),
-            blurRadius: 3,
-            offset: Offset(0, 1),
+            color: Color(0x10000000),
+            blurRadius: 20,
+            offset: Offset(0, 2),
           ),
         ],
       );
 
-  /// Hero card — Deep Matcha → Forest Night
+  /// Hero card — Deep Matcha → Forest Night (invariato, usato per jam/hero)
   static const BoxDecoration heroCard = BoxDecoration(
     gradient: LinearGradient(
-      colors: [Color(0xFF3A5C28), Color(0xFF1A2614)],
+      colors: [Color(0xFF3A6624), Color(0xFF1C3A10)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
-    borderRadius: BorderRadius.all(Radius.circular(20)),
+    borderRadius: BorderRadius.all(Radius.circular(18)),
     boxShadow: [
       BoxShadow(
-        color: Color(0x2C1A2614),
-        blurRadius: 20,
+        color: Color(0x283A6624),
+        blurRadius: 24,
         offset: Offset(0, 6),
       ),
     ],
   );
 
-  /// Auth / header gradient — Forest Night → Deep Matcha → Matcha Mid
+  /// Header gradient — mantenuto per le schermate che lo usano ancora.
+  /// Più sottile e maturo rispetto alla versione verde brillante precedente.
   static const BoxDecoration gradientHeader = BoxDecoration(
     gradient: LinearGradient(
-      colors: [Color(0xFF1E3314), Color(0xFF3A5C28), Color(0xFF5C7A40)],
+      colors: [Color(0xFF254D16), Color(0xFF3A6624), Color(0xFF4A7A35)],
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
   );
 
-  /// Card stile "pagina aperta" — sfondo leggermente più caldo, bordi sottili,
-  /// zero ombra. Usato per le quote editoriali.
+  /// Card "pagina aperta" — sfondo leggermente recessed, senza ombra.
   static BoxDecoration pageCard({double radius = 12}) => BoxDecoration(
         color: MarginaliaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+        border: Border.all(color: MarginaliaColors.rule, width: 0.5),
       );
 
-  /// Cover libri — toni matcha variati per varietà
+  /// Cover libri — toni matcha variati, leggermente desaturati su bianco
   static Color bookCoverColor(String title) {
     const covers = [
-      Color(0xFF4A7035), // matcha medio
-      Color(0xFF3A5C28), // deep matcha
-      Color(0xFF4E5E3A), // moss
-      Color(0xFF1E3314), // forest night
-      Color(0xFF5C7A40), // matcha light
-      Color(0xFF2D4B1E), // mid-dark
-      Color(0xFF506040), // olive
-      Color(0xFF3D5C2A), // matcha warm
+      Color(0xFF4A7035),
+      Color(0xFF3A6624),
+      Color(0xFF4E5E3A),
+      Color(0xFF254D16),
+      Color(0xFF5C8040),
+      Color(0xFF2D4B1E),
+      Color(0xFF506040),
+      Color(0xFF3D5C2A),
     ];
     return covers[title.hashCode.abs() % covers.length];
   }
@@ -262,9 +268,9 @@ ThemeData buildMarginaliaTheme() {
     useMaterial3: true,
     colorScheme: const ColorScheme.light(
       surface: MarginaliaColors.background,
-      surfaceContainerHighest: MarginaliaColors.surface,
+      surfaceContainerHighest: MarginaliaColors.surfaceElevated,
       primary: MarginaliaColors.primary,
-      onPrimary: Color(0xFFF2F5EA),
+      onPrimary: Colors.white,
       secondary: MarginaliaColors.sienna,
       onSurface: MarginaliaColors.ink,
       outline: MarginaliaColors.rule,
@@ -275,7 +281,7 @@ ThemeData buildMarginaliaTheme() {
       foregroundColor: MarginaliaColors.ink,
       elevation: 0,
       scrolledUnderElevation: 0.5,
-      shadowColor: const Color(0x101A2614),
+      shadowColor: const Color(0x14000000),
       centerTitle: false,
       titleTextStyle: GoogleFonts.ebGaramond(
         fontSize: 20,
@@ -287,26 +293,26 @@ ThemeData buildMarginaliaTheme() {
     dividerTheme: const DividerThemeData(
       color: MarginaliaColors.rule,
       space: 1,
-      thickness: 0.8,
+      thickness: 0.5,
     ),
     cardTheme: CardTheme(
       color: MarginaliaColors.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: MarginaliaColors.rule, width: 0.8),
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: MarginaliaColors.rule, width: 0.5),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: MarginaliaColors.surface,
+      fillColor: MarginaliaColors.surfaceElevated,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: MarginaliaColors.rule, width: 0.8),
+        borderSide: const BorderSide(color: MarginaliaColors.rule, width: 0.5),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: MarginaliaColors.rule, width: 0.8),
+        borderSide: const BorderSide(color: MarginaliaColors.rule, width: 0.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -332,9 +338,9 @@ ThemeData buildMarginaliaTheme() {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: MarginaliaColors.primary,
-        foregroundColor: const Color(0xFFF2F5EA),
+        foregroundColor: Colors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         textStyle: GoogleFonts.barlow(
           fontSize: 14,
@@ -346,9 +352,9 @@ ThemeData buildMarginaliaTheme() {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: MarginaliaColors.primary,
-        foregroundColor: const Color(0xFFF2F5EA),
+        foregroundColor: Colors.white,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         textStyle: GoogleFonts.barlow(
           fontSize: 14,
@@ -370,10 +376,10 @@ ThemeData buildMarginaliaTheme() {
     snackBarTheme: SnackBarThemeData(
       backgroundColor: MarginaliaColors.ink,
       contentTextStyle: GoogleFonts.barlow(
-        color: const Color(0xFFF2F5EA),
+        color: const Color(0xFFF5F2EC),
         fontSize: 14,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       behavior: SnackBarBehavior.floating,
     ),
   );
