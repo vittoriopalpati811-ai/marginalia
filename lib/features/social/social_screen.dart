@@ -10,7 +10,6 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
 import 'amici_tab.dart';
-import 'feed_tab.dart';
 
 final jamsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
   (ref) {
@@ -34,7 +33,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: 1);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
     // Rebuild to show/hide FAB when switching tabs.
     _tabController.addListener(() => setState(() {}));
   }
@@ -53,12 +52,9 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      // FAB: Post on Feed (index 0), new Jam on Jam (index 1)
-      floatingActionButton: _tabController.index == 1
+      floatingActionButton: _tabController.index == 0
           ? _CreateJamFab(onTap: _showCreateJamSheet)
-          : _tabController.index == 0
-              ? _CreatePostFab(onTap: _showCreatePostSheet)
-              : null,
+          : null,
       body: Column(
         children: [
           // ── Gradient header with embedded TabBar ──────────────────────
@@ -71,7 +67,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                const FeedTab(),
                 _JamTabContent(
                   onCreateJam: _showCreateJamSheet,
                   onJoinJam: _showJoinJamSheet,
@@ -103,20 +98,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
   }
 
   // ── Sheets ────────────────────────────────────────────────────────────────
-
-  Future<void> _showCreatePostSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => CreatePostSheet(
-        onCreated: () => ref.invalidate(postsProvider),
-      ),
-    );
-  }
 
   Future<void> _showCreateJamSheet() async {
     final nameController = TextEditingController();
@@ -225,7 +206,7 @@ class _SocialHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Feed, Jam e amici lettori',
+                        'Jam e amici lettori',
                         style: GoogleFonts.barlow(
                           color: const Color(0xFFF1EEE7).withAlpha(140),
                           fontSize: 12,
@@ -266,18 +247,17 @@ class _SocialHeader extends StatelessWidget {
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
-            labelStyle: GoogleFonts.barlowCondensed(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
+            labelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.1,
             ),
-            unselectedLabelStyle: GoogleFonts.barlowCondensed(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.8,
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.1,
             ),
             tabs: const [
-              Tab(text: 'Feed'),
               Tab(text: 'Jam'),
               Tab(text: 'Amici'),
             ],
@@ -590,29 +570,6 @@ class _CreateJamFab extends StatelessWidget {
         elevation: 6,
         icon: const Icon(Icons.add, size: 20),
         label: const Text('Nuova Jam',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      ),
-    );
-  }
-}
-
-// ─── Post FAB ─────────────────────────────────────────────────────────────────
-
-class _CreatePostFab extends StatelessWidget {
-  const _CreatePostFab({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 96),
-      child: FloatingActionButton.extended(
-        onPressed: onTap,
-        backgroundColor: MarginaliaColors.primary,
-        foregroundColor: const Color(0xFFF1EEE7),
-        elevation: 6,
-        icon: const Icon(Icons.edit_outlined, size: 20),
-        label: const Text('Nuovo post',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
       ),
     );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -324,10 +325,8 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   void _showSuccessOverlay(BuildContext ctx) {
     late OverlayEntry entry;
     entry = OverlayEntry(
-      builder: (_) => _PostSuccessOverlay(
-        onDone: () {
-          entry.remove();
-        },
+      builder: (_) => _FlowerWordsOverlay(
+        onDone: () => entry.remove(),
       ),
     );
     Overlay.of(ctx).insert(entry);
@@ -528,117 +527,151 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   }
 }
 
-// ─── Post success overlay (full-screen matcha circle) ─────────────────────────
+// ─── Post success: multilingual word-flowers animation ────────────────────────
 
-class _PostSuccessOverlay extends StatefulWidget {
-  const _PostSuccessOverlay({required this.onDone});
+const _kPostWords = [
+  'Post pubblicato!',
+  'Publié!',
+  'Published!',
+  'Publicado!',
+  '投稿済み!',
+];
+
+class _FlowerWordsOverlay extends StatefulWidget {
+  const _FlowerWordsOverlay({required this.onDone});
   final VoidCallback onDone;
 
   @override
-  State<_PostSuccessOverlay> createState() => _PostSuccessOverlayState();
+  State<_FlowerWordsOverlay> createState() => _FlowerWordsOverlayState();
 }
 
-class _PostSuccessOverlayState extends State<_PostSuccessOverlay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-  late final Animation<double> _textFade;
-
-  // Matcha green — matches the app's literary/earthy identity
-  static const _matcha = Color(0xFF4A7A35);
+class _FlowerWordsOverlayState extends State<_FlowerWordsOverlay>
+    with TickerProviderStateMixin {
+  final List<_WordParticle> _particles = [];
+  late final AnimationController _master;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
+    _master = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1800),
     );
 
-    // Circle scale: 0 → 2.5 with elastic bounce
-    _scale = Tween<double>(begin: 0.0, end: 2.5).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.65, curve: Curves.elasticOut),
-      ),
-    );
+    // Generate 15 particles — the 5 words repeated/shuffled with varied params
+    final rng = math.Random(42);
+    final words = [..._kPostWords, ..._kPostWords, ..._kPostWords];
+    words.shuffle(rng);
+    for (int i = 0; i < 15; i++) {
+      _particles.add(_WordParticle(
+        word:       words[i % words.length],
+        startDelay: rng.nextDouble() * 0.35,          // 0–35% into animation
+        dx:         (rng.nextDouble() - 0.5) * 1.8,   // horizontal drift –0.9..+0.9 of screen width fraction
+        dy:         -(0.35 + rng.nextDouble() * 0.45), // rise 35–80% of screen height
+        rotation:   (rng.nextDouble() - 0.5) * 0.5,   // ±0.25 rad
+        fontSize:   11.0 + rng.nextDouble() * 5.0,    // 11–16px
+        color:      _kWordColors[i % _kWordColors.length],
+      ));
+    }
 
-    // "Postato!" fades in after circle expands
-    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.55, 0.80, curve: Curves.easeOut),
-      ),
-    );
-
-    _ctrl.forward().then((_) {
-      Future.delayed(const Duration(milliseconds: 300), widget.onDone);
+    _master.forward().then((_) {
+      Future.delayed(const Duration(milliseconds: 200), widget.onDone);
     });
   }
 
+  static const _kWordColors = [
+    Color(0xFF3A6624), // deep matcha
+    Color(0xFF4A7A35), // matcha
+    Color(0xFF6A9E52), // matcha light
+    Color(0xFF2D5A3D), // dark forest
+    Color(0xFF5C8C48), // mid matcha
+  ];
+
   @override
   void dispose() {
-    _ctrl.dispose();
+    _master.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    // Diagonal of screen → the circle must be at least this large to cover everything
-    final maxRadius = (size.longestSide * 1.05);
 
     return Positioned.fill(
       child: IgnorePointer(
         child: AnimatedBuilder(
-          animation: _ctrl,
+          animation: _master,
           builder: (_, __) {
-            final r = _scale.value * maxRadius / 2;
             return Stack(
-              alignment: Alignment.center,
-              children: [
-                // Expanding circle
-                Center(
-                  child: Container(
-                    width:  r * 2,
-                    height: r * 2,
-                    decoration: const BoxDecoration(
-                      color: _matcha,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                // "Postato!" text
-                Opacity(
-                  opacity: _textFade.value,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.white,
-                        size: 48,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Postato!',
-                        style: GoogleFonts.ebGaramond(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
+              children: _particles.map((p) {
+                // Normalize time within this particle's window
+                final start = p.startDelay;
+                final t = ((_master.value - start) / (1.0 - start)).clamp(0.0, 1.0);
+                if (t <= 0) return const SizedBox.shrink();
+
+                final rise   = Curves.easeOut.transform(t);
+                final fade   = t < 0.7 ? 1.0 : 1.0 - ((t - 0.7) / 0.3);
+                final scale  = 0.4 + 0.6 * Curves.elasticOut.transform(math.min(t * 2, 1.0));
+
+                // Start near center-bottom of screen
+                final baseX = size.width  * 0.5 + p.dx * size.width  * 0.5;
+                final baseY = size.height * 0.78 + p.dy * size.height * rise;
+
+                return Positioned(
+                  left: baseX,
+                  top:  baseY,
+                  child: Transform.rotate(
+                    angle: p.rotation * rise,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Opacity(
+                        opacity: fade.clamp(0.0, 1.0),
+                        child: Text(
+                          p.word,
+                          style: TextStyle(
+                            fontSize:   p.fontSize,
+                            fontWeight: FontWeight.w700,
+                            color:      p.color,
+                            letterSpacing: -0.2,
+                            shadows: const [
+                              Shadow(
+                                color:  Color(0x40000000),
+                                offset: Offset(0, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                );
+              }).toList(),
             );
           },
         ),
       ),
     );
   }
+}
+
+class _WordParticle {
+  const _WordParticle({
+    required this.word,
+    required this.startDelay,
+    required this.dx,
+    required this.dy,
+    required this.rotation,
+    required this.fontSize,
+    required this.color,
+  });
+  final String word;
+  final double startDelay;
+  final double dx;
+  final double dy;
+  final double rotation;
+  final double fontSize;
+  final Color color;
 }
 
 // ─── Hold-to-publish button ───────────────────────────────────────────────────

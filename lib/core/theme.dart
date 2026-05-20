@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class MarginaliaColors {
   // Backgrounds — bianco caldo neutro (iOS standard)
-  static const background      = Color(0xFFFAFAF8); // near-white, warm tint
+  static const background      = Color(0xFFFAFAFA); // near-white, pure neutral
   static const surface         = Color(0xFFFFFFFF); // pure white cards
   static const surfaceElevated = Color(0xFFF5F5F3); // slightly recessed surface
 
@@ -31,9 +31,9 @@ class MarginaliaColors {
   static const primaryDark  = Color(0xFF254D16); // darker, for pressed states
   static const primaryFaint = Color(0xFFEBF4E4); // chip backgrounds, badges
 
-  // Borders / dividers — neutral sottilissimi (iOS-style)
-  static const rule      = Color(0x17000000); // ~9% black — barely visible
-  static const ruleFaint = Color(0x0D000000); // ~5% black — structural only
+  // Borders / dividers — Instagram-style solid grays
+  static const rule      = Color(0xFFEBEBEB); // Instagram-style border gray
+  static const ruleFaint = Color(0xFFF0F0F0); // very subtle structural border
 
   // Kindle highlight tints — adattate a sfondo bianco (più trasparenti)
   static const highlightAmber     = Color(0xFFFFF3C4);
@@ -261,6 +261,28 @@ class MarginaliaSpacing {
   static const huge = 64.0;
 }
 
+/// Dark mode palette — OLED-friendly, iOS dark style.
+class MarginaliaColorsDark {
+  static const background      = Color(0xFF000000); // OLED true black
+  static const surface         = Color(0xFF1C1C1E); // iOS dark card
+  static const surfaceElevated = Color(0xFF2C2C2E); // slightly elevated
+
+  static const ink      = Color(0xFFFFFFFF);
+  static const inkMuted = Color(0xFFAEAEB2);
+  static const inkFaint = Color(0xFF636366);
+
+  static const sienna      = Color(0xFF6ABF4B); // lighter matcha on dark bg
+  static const siennaLight = Color(0xFF8BD468);
+  static const siennaFaint = Color(0xFF1A3A10);
+
+  static const primary      = Color(0xFF4A9A30);
+  static const primaryDark  = Color(0xFF3A7A22);
+  static const primaryFaint = Color(0xFF1A3A10);
+
+  static const rule      = Color(0xFF2C2C2E);
+  static const ruleFaint = Color(0xFF1C1C1E);
+}
+
 // ─── ThemeData ────────────────────────────────────────────────────────────────
 
 ThemeData buildMarginaliaTheme() {
@@ -377,6 +399,134 @@ ThemeData buildMarginaliaTheme() {
       backgroundColor: MarginaliaColors.ink,
       contentTextStyle: GoogleFonts.barlow(
         color: const Color(0xFFF5F2EC),
+        fontSize: 14,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
+
+ThemeData buildMarginaliaDarkTheme() {
+  const cs = ColorScheme.dark(
+    brightness: Brightness.dark,
+    primary:          MarginaliaColorsDark.primary,
+    onPrimary:        Colors.white,
+    primaryContainer: MarginaliaColorsDark.primaryFaint,
+    secondary:        MarginaliaColorsDark.sienna,
+    onSecondary:      Colors.white,
+    surface:          MarginaliaColorsDark.surface,
+    onSurface:        MarginaliaColorsDark.ink,
+    surfaceContainerHighest: MarginaliaColorsDark.surfaceElevated,
+    outline:          MarginaliaColorsDark.rule,
+    outlineVariant:   MarginaliaColorsDark.ruleFaint,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: cs,
+    scaffoldBackgroundColor: MarginaliaColorsDark.background,
+    appBarTheme: AppBarTheme(
+      backgroundColor: MarginaliaColorsDark.background,
+      foregroundColor: MarginaliaColorsDark.ink,
+      elevation: 0,
+      scrolledUnderElevation: 0.5,
+      shadowColor: const Color(0x28000000),
+      centerTitle: false,
+      titleTextStyle: GoogleFonts.ebGaramond(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: MarginaliaColorsDark.ink,
+        letterSpacing: -0.3,
+      ),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: MarginaliaColorsDark.rule,
+      space: 1,
+      thickness: 0.5,
+    ),
+    cardTheme: CardTheme(
+      color: MarginaliaColorsDark.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: MarginaliaColorsDark.rule, width: 0.5),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: MarginaliaColorsDark.surfaceElevated,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: MarginaliaColorsDark.rule, width: 0.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: MarginaliaColorsDark.rule, width: 0.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: MarginaliaColorsDark.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFCF6679), width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFCF6679), width: 1.5),
+      ),
+      hintStyle: GoogleFonts.barlow(
+        color: MarginaliaColorsDark.inkFaint,
+        fontSize: 15,
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: MarginaliaColorsDark.primary),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: MarginaliaColorsDark.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        textStyle: GoogleFonts.barlow(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: MarginaliaColorsDark.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        textStyle: GoogleFonts.barlow(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: MarginaliaColorsDark.primaryFaint,
+      labelStyle: GoogleFonts.barlow(
+        color: MarginaliaColorsDark.sienna,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+      ),
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: MarginaliaColorsDark.surfaceElevated,
+      contentTextStyle: GoogleFonts.barlow(
+        color: MarginaliaColorsDark.ink,
         fontSize: 14,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -76,7 +76,7 @@ CustomTransitionPage<void> _modalPage(Widget child, GoRouterState state) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/home',
+  initialLocation: '/',
   routes: [
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -200,6 +200,8 @@ class MarginaliaApp extends ConsumerWidget {
       return MaterialApp(
         title: 'Marginalia',
         theme: buildMarginaliaTheme(),
+        darkTheme: buildMarginaliaDarkTheme(),
+        themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
         home: const OnboardingScreen(),
       );
@@ -208,6 +210,8 @@ class MarginaliaApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Marginalia',
       theme: buildMarginaliaTheme(),
+      darkTheme: buildMarginaliaDarkTheme(),
+      themeMode: ThemeMode.system,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

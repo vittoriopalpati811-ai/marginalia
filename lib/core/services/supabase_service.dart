@@ -1040,25 +1040,14 @@ class SupabaseService {
     );
     if (convRows.isEmpty) return [];
 
-    // Fetch all members + last messages in parallel for each conversation
     final result = <Map<String, dynamic>>[];
     for (final conv in convRows) {
       final convId = conv['id'] as String;
 
-      final memberIdRows = List<Map<String, dynamic>>.from(
-        await _client
-            .from('conversation_members')
-            .select('user_id')
-            .eq('conversation_id', convId) as List,
-      );
-      final memberIds =
-          memberIdRows.map((r) => r['user_id'] as String).toList();
-
+      // Use SECURITY DEFINER RPC to get all members despite restricted RLS
       final profiles = List<Map<String, dynamic>>.from(
-        await _client
-            .from('profiles')
-            .select('id, display_name, avatar_url, username')
-            .inFilter('id', memberIds) as List,
+        await _client.rpc('get_conversation_member_profiles',
+            params: {'p_conversation_id': convId}) as List,
       );
 
       final lastMsgs = List<Map<String, dynamic>>.from(
