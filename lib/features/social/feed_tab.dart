@@ -12,7 +12,7 @@ import '../../core/providers/auth_provider.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
-/// Posts from people I follow + my own.
+/// Posts from people I follow + my own (newest first).
 final postsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final svc = ref.watch(supabaseServiceProvider);
@@ -24,13 +24,25 @@ final postsProvider =
   }
 });
 
-/// Shared highlights from people I follow (legacy feed).
+/// Legacy feed (jam shared highlights). Kept for compatibility.
 final feedProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final svc = ref.watch(supabaseServiceProvider);
   if (!svc.isAuthenticated) return [];
   try {
     return await svc.fetchFeed();
+  } catch (_) {
+    return [];
+  }
+});
+
+/// Profiles of users I follow — used for the stories row.
+final followingProfilesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated) return [];
+  try {
+    return await svc.fetchFollowing();
   } catch (_) {
     return [];
   }
@@ -44,23 +56,21 @@ class FeedTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final svc = ref.watch(supabaseServiceProvider);
-    if (!svc.isAuthenticated) return _NotLoggedIn();
+    if (!svc.isAuthenticated) return const _NotLoggedIn();
 
-    final postsAsync = ref.watch(postsProvider);
-    final feedAsync  = ref.watch(feedProvider);
+    final postsAsync    = ref.watch(postsProvider);
+    final followingAsync = ref.watch(followingProfilesProvider);
 
     return RefreshIndicator(
-      color: MarginaliaColors.primary,
+      color: MarginaliaColors.sienna,
       backgroundColor: MarginaliaColors.surface,
       strokeWidth: 1.5,
       onRefresh: () async {
         ref.invalidate(postsProvider);
-        ref.invalidate(feedProvider);
-        // Wait for both to settle
-        await Future.wait([
-          ref.read(postsProvider.future).catchError((_) => <Map<String, dynamic>>[]),
-          ref.read(feedProvider.future).catchError((_) => <Map<String, dynamic>>[]),
-        ]);
+        ref.invalidate(followingProfilesProvider);
+        await ref
+            .read(postsProvider.future)
+            .catchError((_) => <Map<String, dynamic>>[]);
       },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
@@ -68,106 +78,208 @@ class FeedTab extends ConsumerWidget {
         ),
         slivers: [
 
-          // ── Post section header ───────────────────────────────────────────
+          // ── Stories row ──────────────────────────────────────────────────
+          followingAsync.when(
+            loading: () => const SliverToBoxAdapter(child: SizedBox(height: 88)),
+            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            data: (following) => following.isEmpty
+                ? const SliverToBoxAdapter(child: SizedBox.shrink())
+                : SliverToBoxAdapter(child: _StoriesRow(following: following)),
+          ),
+
+          // ── Divider after stories ─────────────────────────────────────────
           const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Row(
-                children: [
-                  Text('POST', style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: MarginaliaColors.inkFaint,
-                    letterSpacing: 0.8,
-                  )),
-                  SizedBox(width: 12),
-                  Expanded(child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
-                ],
-              ),
+            child: Divider(
+              height: 0.5,
+              thickness: 0.5,
+              color: MarginaliaColors.ruleFaint,
             ),
           ),
 
-          // ── Posts list ────────────────────────────────────────────────────
+          // ── Posts ─────────────────────────────────────────────────────────
           postsAsync.when(
             loading: () => const SliverToBoxAdapter(
-              child: SizedBox(
-                height: 80,
-                child: Center(child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna, strokeWidth: 1.5)),
+              child: Padding(
+                padding: EdgeInsets.only(top: 80),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: MarginaliaColors.sienna,
+                    strokeWidth: 1.5,
+                  ),
+                ),
               ),
             ),
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             data: (posts) => posts.isEmpty
-                ? const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-                      child: Text(
-                        'Ancora nessun post. Sii il primo a scrivere qualcosa!',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: MarginaliaColors.inkMuted,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) => _PostCard(post: posts[i], index: i),
-                        childCount: posts.length,
-                      ),
-                    ),
-                  ),
-          ),
-
-          // ── Divider between posts and shared highlights ────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-              child: Row(
-                children: [
-                  Text('HIGHLIGHT CONDIVISI',
-                    style: MarginaliaTextStyles.sectionTitle.copyWith(
-                      fontSize: 9,
-                      letterSpacing: 2.5,
-                      color: MarginaliaColors.inkFaint,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Legacy shared-highlights feed ─────────────────────────────────
-          feedAsync.when(
-            loading: () => const SliverToBoxAdapter(
-              child: SizedBox(
-                height: 80,
-                child: Center(child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna, strokeWidth: 1.5)),
-              ),
-            ),
-            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-            data: (items) => items.isEmpty
                 ? SliverToBoxAdapter(child: _EmptyFeed())
-                : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) => _FeedCard(item: items[i], index: i),
-                        childCount: items.length,
-                      ),
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _PostCard(post: posts[i], index: i),
+                      childCount: posts.length,
                     ),
                   ),
           ),
+
+          // ── Bottom padding (above nav bar) ───────────────────────────────
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       ),
     );
   }
+}
+
+// ─── Stories row ──────────────────────────────────────────────────────────────
+
+class _StoriesRow extends StatelessWidget {
+  const _StoriesRow({required this.following});
+  final List<Map<String, dynamic>> following;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: MarginaliaColors.surface,
+      child: SizedBox(
+        height: 92,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          itemCount: following.length,
+          itemBuilder: (ctx, i) => _StoryCircle(user: following[i]),
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryCircle extends StatelessWidget {
+  const _StoryCircle({required this.user});
+  final Map<String, dynamic> user;
+
+  @override
+  Widget build(BuildContext context) {
+    final name      = user['display_name'] as String? ?? '?';
+    final avatarUrl = user['avatar_url']   as String?;
+    final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final tint      = MarginaliaDecorations.bookCoverColor(name);
+    final firstName = name.split(' ').first;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 14),
+      child: GestureDetector(
+        onTap: () {
+          final id = user['id'] as String?;
+          if (id != null) context.push('/user/$id');
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Gradient ring → white gap → avatar
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [MarginaliaColors.sienna, MarginaliaColors.primaryDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              padding: const EdgeInsets.all(2.5),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: MarginaliaColors.background,
+                ),
+                padding: const EdgeInsets.all(1.5),
+                child: _AvatarCircle(
+                  avatarUrl: avatarUrl,
+                  initial: initial,
+                  tint: tint,
+                  size: 48,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 58,
+              child: Text(
+                firstName,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: MarginaliaColors.inkMuted,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Shared avatar circle widget ─────────────────────────────────────────────
+
+class _AvatarCircle extends StatelessWidget {
+  const _AvatarCircle({
+    required this.avatarUrl,
+    required this.initial,
+    required this.tint,
+    required this.size,
+  });
+
+  final String?  avatarUrl;
+  final String   initial;
+  final Color    tint;
+  final double   size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width:  size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [tint, MarginaliaColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: avatarUrl != null && avatarUrl!.isNotEmpty
+          ? ClipOval(
+              child: Image.network(
+                avatarUrl!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _Initial(initial: initial, size: size),
+              ),
+            )
+          : _Initial(initial: initial, size: size),
+    );
+  }
+}
+
+class _Initial extends StatelessWidget {
+  const _Initial({required this.initial, required this.size});
+  final String initial;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: const Color(0xFFF1EEE7),
+            fontSize: size * 0.38,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
 }
 
 // ─── Create post sheet ────────────────────────────────────────────────────────
@@ -271,8 +383,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 style: FilledButton.styleFrom(
                   backgroundColor: MarginaliaColors.primary,
                   foregroundColor: const Color(0xFFF2F5EA),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
@@ -328,7 +439,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
             ),
           ),
 
-          // Image preview (if picked)
+          // Image preview
           if (_imageBytes != null) ...[
             const SizedBox(height: 10),
             Stack(
@@ -396,7 +507,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   }
 }
 
-// ─── Post card ────────────────────────────────────────────────────────────────
+// ─── Instagram-style post card ────────────────────────────────────────────────
 
 class _PostCard extends ConsumerStatefulWidget {
   const _PostCard({required this.post, required this.index});
@@ -414,8 +525,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
   @override
   void initState() {
     super.initState();
-    _liked      = widget.post['is_liked'] as bool? ?? false;
-    _likesCount = widget.post['likes_count'] as int? ?? 0;
+    _liked      = widget.post['is_liked']    as bool? ?? false;
+    _likesCount = widget.post['likes_count'] as int?  ?? 0;
   }
 
   Future<void> _toggleLike() async {
@@ -430,7 +541,6 @@ class _PostCardState extends ConsumerState<_PostCard> {
           .read(supabaseServiceProvider)
           .togglePostLike(widget.post['id'] as String, !newLiked);
     } catch (_) {
-      // Revert optimistic update on error
       setState(() {
         _liked      = !newLiked;
         _likesCount = widget.post['likes_count'] as int? ?? 0;
@@ -443,10 +553,10 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'adesso';
+    if (diff.inMinutes < 1)  return 'adesso';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
-    if (diff.inHours < 24) return '${diff.inHours}h fa';
-    if (diff.inDays < 7) return '${diff.inDays}g fa';
+    if (diff.inHours < 24)   return '${diff.inHours}h fa';
+    if (diff.inDays < 7)     return '${diff.inDays}g fa';
     return '${(diff.inDays / 7).round()}sett fa';
   }
 
@@ -461,94 +571,56 @@ class _PostCardState extends ConsumerState<_PostCard> {
   @override
   Widget build(BuildContext context) {
     final post        = widget.post;
-    final profile     = post['profile'] as Map?;
+    final profile     = post['profile']    as Map?;
     final name        = profile?['display_name'] as String? ?? 'Lettore';
-    final avatarUrl   = profile?['avatar_url'] as String?;
-    final userId      = post['user_id'] as String?;
-    final body        = post['body'] as String?;
+    final avatarUrl   = profile?['avatar_url']   as String?;
+    final userId      = post['user_id']    as String?;
+    final body        = post['body']       as String?;
     final createdAt   = post['created_at'] as String?;
-    final imageUrl    = post['image_url'] as String?;
+    final imageUrl    = post['image_url']  as String?;
     final highlight   = post['highlights'] as Map?;
-    final hlContent   = highlight?['content'] as String?;
-    final hlColor     = highlight?['color'] as String?;
-    final hlBook      = highlight?['books'] as Map?;
-    final hlBookTitle = hlBook?['title'] as String?;
+    final hlContent   = highlight?['content']       as String?;
+    final hlColor     = highlight?['color']         as String?;
+    final hlBook      = highlight?['books']         as Map?;
+    final hlBookTitle = hlBook?['title']  as String?;
     final hlAuthor    = hlBook?['author'] as String?;
     final initial     = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarTint  = MarginaliaDecorations.bookCoverColor(name);
+    final tint        = MarginaliaDecorations.bookCoverColor(name);
     final timeAgo     = _timeAgo(createdAt);
     final accent      = _accentFor(hlColor);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: MarginaliaDecorations.card(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── User header ────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-            child: Row(
-              children: [
-                // Avatar
-                GestureDetector(
-                  onTap: userId != null
-                      ? () => context.push('/user/$userId')
-                      : null,
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [avatarTint, MarginaliaColors.primaryDark],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(19),
-                    ),
-                    child: avatarUrl != null && avatarUrl.isNotEmpty
-                        ? ClipOval(
-                            child: Image.network(avatarUrl,
-                                fit: BoxFit.cover,
-                                width: 38,
-                                height: 38,
-                                errorBuilder: (_, __, ___) => Center(
-                                    child: Text(initial,
-                                        style: const TextStyle(
-                                          color: Color(0xFFF1EEE7),
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        )))),
-                          )
-                        : Center(
-                            child: Text(initial,
-                                style: const TextStyle(
-                                  color: Color(0xFFF1EEE7),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                )),
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
 
-                // Name + time
-                Expanded(
+        // ── User header ────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: userId != null ? () => context.push('/user/$userId') : null,
+                child: _AvatarCircle(
+                  avatarUrl: avatarUrl,
+                  initial: initial,
+                  tint: tint,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: userId != null ? () => context.push('/user/$userId') : null,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                        onTap: userId != null
-                            ? () => context.push('/user/$userId')
-                            : null,
-                        child: Text(
-                          name,
-                          style: GoogleFonts.barlow(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: MarginaliaColors.ink,
-                            letterSpacing: -0.1,
-                          ),
+                      Text(
+                        name,
+                        style: GoogleFonts.barlow(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: MarginaliaColors.ink,
+                          letterSpacing: -0.1,
                         ),
                       ),
                       if (timeAgo.isNotEmpty)
@@ -562,420 +634,186 @@ class _PostCardState extends ConsumerState<_PostCard> {
                     ],
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+
+        // ── Body text ──────────────────────────────────────────────────────
+        if (body != null && body.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            child: Text(
+              body,
+              style: GoogleFonts.barlow(
+                fontSize: 15,
+                color: MarginaliaColors.ink,
+                height: 1.65,
+              ),
             ),
           ),
 
-          // ── Post body ──────────────────────────────────────────────────────
-          if (body != null && body.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-              child: Text(
-                body,
-                style: GoogleFonts.barlow(
-                  fontSize: 14.5,
-                  color: MarginaliaColors.ink,
-                  height: 1.6,
-                ),
-              ),
-            ),
-
-          // ── Post image ────────────────────────────────────────────────────
-          if (imageUrl != null && imageUrl.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ),
-
-          // ── Attached highlight ─────────────────────────────────────────────
-          if (hlContent != null && hlContent.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: MarginaliaColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: MarginaliaColors.ruleFaint,
-                    width: 0.8,
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Book attribution row
-                    if (hlBookTitle != null && hlBookTitle.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: accent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              hlBookTitle,
-                              style: MarginaliaTextStyles.sectionTitle.copyWith(
-                                fontSize: 9,
-                                letterSpacing: 1.2,
-                                color: MarginaliaColors.inkMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (hlAuthor != null && hlAuthor.isNotEmpty)
-                            Text(
-                              hlAuthor.toUpperCase(),
-                              style: MarginaliaTextStyles.bookAuthor.copyWith(
-                                fontSize: 8.5,
-                                color: MarginaliaColors.inkFaint,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Container(height: 0.6, color: MarginaliaColors.ruleFaint),
-                      const SizedBox(height: 8),
-                    ],
-                    // Quote text — EB Garamond italic
-                    Text(
-                      hlContent.length > 240
-                          ? '${hlContent.substring(0, 240)}…'
-                          : hlContent,
-                      style: MarginaliaTextStyles.highlightBodySmall.copyWith(
-                        fontSize: 13.5,
-                        height: 1.75,
-                      ),
-                      maxLines: 5,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // ── Like button ────────────────────────────────────────────────────
+        // ── Post image (full-width, no horizontal padding) ─────────────────
+        if (imageUrl != null && imageUrl.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 14, 10),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _toggleLike,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _liked
-                          ? MarginaliaColors.primaryFaint
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _liked
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          size: 16,
+            padding: const EdgeInsets.only(top: 10),
+            child: Image.network(
+              imageUrl,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          ),
+
+        // ── Attached highlight quote ────────────────────────────────────────
+        if (hlContent != null && hlContent.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            child: _HighlightQuoteCard(
+              content: hlContent,
+              title: hlBookTitle,
+              author: hlAuthor,
+              accent: accent,
+            ),
+          ),
+
+        // ── Action bar ─────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 14, 12),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: _toggleLike,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: _liked
+                        ? MarginaliaColors.primaryFaint
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _liked ? Icons.favorite : Icons.favorite_border,
+                        size: 16,
+                        color: _liked
+                            ? MarginaliaColors.sienna
+                            : MarginaliaColors.inkFaint,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '$_likesCount',
+                        style: GoogleFonts.barlow(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                           color: _liked
                               ? MarginaliaColors.sienna
                               : MarginaliaColors.inkFaint,
                         ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '$_likesCount',
-                          style: GoogleFonts.barlow(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _liked
-                                ? MarginaliaColors.sienna
-                                : MarginaliaColors.inkFaint,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    )
-        .animate(delay: (widget.index * 40).ms)
-        .fadeIn(duration: 280.ms, curve: Curves.easeOut)
-        .slideY(begin: 0.03, end: 0, duration: 280.ms);
-  }
-}
-
-// ─── Legacy shared-highlight feed card ───────────────────────────────────────
-
-class _FeedCard extends StatelessWidget {
-  const _FeedCard({required this.item, required this.index});
-  final Map<String, dynamic> item;
-  final int index;
-
-  String? get _content {
-    try { return (item['highlights'] as Map?)?['content'] as String?; }
-    catch (_) { return null; }
-  }
-
-  String? get _bookTitle {
-    try { return ((item['highlights'] as Map?)?['books'] as Map?)?['title'] as String?; }
-    catch (_) { return null; }
-  }
-
-  String? get _bookAuthor {
-    try { return ((item['highlights'] as Map?)?['books'] as Map?)?['author'] as String?; }
-    catch (_) { return null; }
-  }
-
-  String? get _kindleColor {
-    try { return (item['highlights'] as Map?)?['color'] as String?; }
-    catch (_) { return null; }
-  }
-
-  String? get _sharedBy => item['shared_by'] as String?;
-
-  String? get _userName {
-    try { return (item['profile'] as Map?)?['display_name'] as String? ?? 'Utente'; }
-    catch (_) { return null; }
-  }
-
-  String? get _jamTitle {
-    try { return (item['jams'] as Map?)?['title'] as String?; }
-    catch (_) { return null; }
-  }
-
-  String? get _jamId {
-    try { return (item['jams'] as Map?)?['id'] as String?; }
-    catch (_) { return null; }
-  }
-
-  String? get _sharedAt => item['shared_at'] as String?;
-
-  String _timeAgo(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso);
-    if (dt == null) return '';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
-    if (diff.inHours < 24) return '${diff.inHours}h fa';
-    if (diff.inDays < 7) return '${diff.inDays}g fa';
-    return '${(diff.inDays / 7).round()}w fa';
-  }
-
-  Color _accentFor(String? c) => switch (c) {
-        'yellow' => const Color(0xFFD4A017),
-        'blue'   => const Color(0xFF4A90BF),
-        'pink'   => const Color(0xFFBF4A72),
-        'orange' => const Color(0xFFBF7A34),
-        _        => MarginaliaColors.siennaLight,
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    final name      = _userName ?? 'Utente';
-    final content   = _content ?? '';
-    final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarColor = MarginaliaDecorations.bookCoverColor(name);
-    final accent    = _accentFor(_kindleColor);
-    final timeAgo   = _timeAgo(_sharedAt);
-    final jamTitle  = _jamTitle;
-    final jamId     = _jamId;
-    final bookTitle = _bookTitle;
-    final bookAuthor = _bookAuthor;
-    final userId    = _sharedBy;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: MarginaliaDecorations.card(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // User header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: userId != null
-                      ? () => context.push('/user/$userId')
-                      : null,
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [avatarColor, MarginaliaColors.primaryDark],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(19),
-                    ),
-                    child: Center(
-                      child: Text(initial,
-                          style: const TextStyle(
-                            color: Color(0xFFF1EEE7),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          )),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: userId != null
-                            ? () => context.push('/user/$userId')
-                            : null,
-                        child: Text(name,
-                            style: GoogleFonts.barlow(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: MarginaliaColors.ink,
-                              letterSpacing: -0.1,
-                            )),
-                      ),
-                      if (timeAgo.isNotEmpty)
-                        Text(timeAgo,
-                            style: GoogleFonts.barlow(
-                              fontSize: 11,
-                              color: MarginaliaColors.inkFaint,
-                            )),
                     ],
                   ),
                 ),
-                if (jamTitle != null)
-                  GestureDetector(
-                    onTap: jamId != null
-                        ? () => context.push(
-                            '/jam/$jamId?name=${Uri.encodeComponent(jamTitle)}')
-                        : null,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: MarginaliaColors.primaryFaint,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.group_outlined,
-                              size: 10, color: MarginaliaColors.primary),
-                          const SizedBox(width: 4),
-                          Text(jamTitle,
-                              style: GoogleFonts.barlowCondensed(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: MarginaliaColors.primary,
-                                letterSpacing: 0.5,
-                              )),
-                        ],
-                      ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Bottom separator ───────────────────────────────────────────────
+        const Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: MarginaliaColors.ruleFaint,
+        ),
+      ],
+    )
+        .animate(delay: (widget.index * 40).ms)
+        .fadeIn(duration: 250.ms, curve: Curves.easeOut)
+        .slideY(begin: 0.02, end: 0, duration: 250.ms);
+  }
+}
+
+// ─── Highlight quote card (attached to post) ─────────────────────────────────
+
+class _HighlightQuoteCard extends StatelessWidget {
+  const _HighlightQuoteCard({
+    required this.content,
+    required this.accent,
+    this.title,
+    this.author,
+  });
+  final String  content;
+  final Color   accent;
+  final String? title;
+  final String? author;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: MarginaliaColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: MarginaliaColors.ruleFaint,
+          width: 0.8,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null && title!.isNotEmpty) ...[
+            Row(
+              children: [
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title!,
+                    style: MarginaliaTextStyles.sectionTitle.copyWith(
+                      fontSize: 9,
+                      letterSpacing: 1.2,
+                      color: MarginaliaColors.inkMuted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (author != null && author!.isNotEmpty)
+                  Text(
+                    author!.toUpperCase(),
+                    style: MarginaliaTextStyles.bookAuthor.copyWith(
+                      fontSize: 8.5,
+                      color: MarginaliaColors.inkFaint,
                     ),
                   ),
               ],
             ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // Highlight card
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: MarginaliaColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: MarginaliaColors.ruleFaint,
-                  width: 0.8,
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (bookTitle != null && bookTitle.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            bookTitle,
-                            style: MarginaliaTextStyles.sectionTitle.copyWith(
-                              fontSize: 9,
-                              letterSpacing: 1.2,
-                              color: MarginaliaColors.inkMuted,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (bookAuthor != null && bookAuthor.isNotEmpty)
-                          Text(
-                            bookAuthor.toUpperCase(),
-                            style: MarginaliaTextStyles.bookAuthor.copyWith(
-                              fontSize: 8.5,
-                              color: MarginaliaColors.inkFaint,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Container(height: 0.6, color: MarginaliaColors.ruleFaint),
-                    const SizedBox(height: 8),
-                  ],
-                  Text(
-                    content.length > 240
-                        ? '${content.substring(0, 240)}…'
-                        : content,
-                    style: MarginaliaTextStyles.highlightBodySmall.copyWith(
-                      fontSize: 13.5,
-                      height: 1.75,
-                    ),
-                    maxLines: 6,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+            const SizedBox(height: 6),
+            Container(height: 0.5, color: MarginaliaColors.ruleFaint),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            content.length > 240
+                ? '${content.substring(0, 240)}…'
+                : content,
+            style: MarginaliaTextStyles.highlightBodySmall.copyWith(
+              fontSize: 13.5,
+              height: 1.75,
             ),
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
-    )
-        .animate(delay: (index * 40).ms)
-        .fadeIn(duration: 280.ms, curve: Curves.easeOut)
-        .slideY(begin: 0.03, end: 0, duration: 280.ms);
+    );
   }
 }
 
@@ -984,52 +822,50 @@ class _FeedCard extends StatelessWidget {
 class _EmptyFeed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(40, 16, 40, 120),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.dynamic_feed_outlined,
-                  size: 26, color: MarginaliaColors.primary),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(40, 48, 40, 120),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '"',
+            style: GoogleFonts.ebGaramond(
+              fontSize: 64,
+              color: MarginaliaColors.ruleFaint,
+              height: 1,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Nessun highlight condiviso',
-              style: GoogleFonts.barlow(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: MarginaliaColors.ink,
-                letterSpacing: -0.3,
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Il feed è vuoto',
+            style: GoogleFonts.ebGaramond(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: MarginaliaColors.ink,
+              letterSpacing: -0.3,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Segui altri lettori dalla scheda Amici\nper vedere i loro highlight qui.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(
-                color: MarginaliaColors.inkMuted,
-                fontSize: 13,
-                height: 1.65,
-              ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Segui altri lettori dalla scheda Amici\nper vedere i loro post qui.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.barlow(
+              color: MarginaliaColors.inkMuted,
+              fontSize: 13,
+              height: 1.65,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ─── Not logged in state ──────────────────────────────────────────────────────
+// ─── Not logged in ────────────────────────────────────────────────────────────
 
 class _NotLoggedIn extends StatelessWidget {
+  const _NotLoggedIn();
+
   @override
   Widget build(BuildContext context) {
     return Center(

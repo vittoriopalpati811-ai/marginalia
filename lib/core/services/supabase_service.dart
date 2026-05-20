@@ -379,8 +379,9 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(
       await _client
               .from('profiles')
+              // avatar_url added so stories row can show profile photos.
               .select(
-                  'id, display_name, currently_reading_title, currently_reading_author')
+                  'id, display_name, avatar_url, currently_reading_title, currently_reading_author')
               .inFilter('id', ids) as List,
     );
   }
@@ -639,11 +640,11 @@ class SupabaseService {
     }
   }
 
-  /// Uploads avatar image to Supabase Storage and returns a signed URL.
+  /// Uploads avatar image to Supabase Storage and returns a public URL.
   ///
-  /// Uses createSignedUrl (1-year expiry) instead of getPublicUrl so images
-  /// load correctly regardless of whether the bucket's public flag is set —
-  /// the signed URL is self-contained and works for any viewer who has it.
+  /// Uses getPublicUrl (no expiry) — requires the 'avatars' bucket to be public,
+  /// which is enforced by migration 011/012. Previously used createSignedUrl,
+  /// which failed silently when bucket download policies were missing.
   Future<String> uploadAvatar(Uint8List bytes, String ext) async {
     await _ensureBucket('avatars');
     final path = '${userId!}/avatar.$ext';
@@ -652,16 +653,12 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    // Signed URL valid for 1 year (31 536 000 s). Works even if the bucket is
-    // private, and the token bakes in a timestamp so the cache is always fresh.
-    final url = await _client.storage
-        .from('avatars')
-        .createSignedUrl(path, 31536000);
+    final url = _client.storage.from('avatars').getPublicUrl(path);
     await _client.from('profiles').update({'avatar_url': url}).eq('id', userId!);
     return url;
   }
 
-  /// Uploads cover photo to Supabase Storage and returns a signed URL.
+  /// Uploads cover photo to Supabase Storage and returns a public URL.
   Future<String> uploadCover(Uint8List bytes, String ext) async {
     await _ensureBucket('covers');
     final path = '${userId!}/cover.$ext';
@@ -670,9 +667,7 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final url = await _client.storage
-        .from('covers')
-        .createSignedUrl(path, 31536000);
+    final url = _client.storage.from('covers').getPublicUrl(path);
     await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
     return url;
   }
