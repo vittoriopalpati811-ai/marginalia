@@ -41,6 +41,10 @@ dependencies:
   file_picker: ^8.1.2
   share_plus: ^10.0.1
 
+  # ─── Widget iOS / home screen ─────────────────────────────
+  home_widget: ^0.7.0          # bridge Flutter ↔ WidgetKit (iOS) / Glance (Android)
+  http: ^1.2.1                 # fetch weather from wttr.in (no API key required)
+
   # ─── Utility ──────────────────────────────────────────────
   intl: ^0.19.0
   crypto: ^3.0.3

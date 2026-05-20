@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/services/export_service.dart';
+import '../widget/widget_preview_screen.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -362,6 +363,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: 'Esporta in Markdown',
                 subtitle: 'Scarica tutti i tuoi highlight come file .md',
                 onTap: () => _exportAllHighlights(context, ref),
+              ),
+              _SettingsTile(
+                icon: Icons.widgets_outlined,
+                label: 'Widget iOS',
+                subtitle: 'Anteprima e aggiornamento del widget home screen',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const WidgetPreviewScreen(),
+                  ),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.primaryFaint,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'AI',
+                    style: TextStyle(
+                      color: MarginaliaColors.primary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
               ),
               _SettingsTile(
                 icon: Icons.privacy_tip_outlined,

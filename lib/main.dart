@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/services/widget_service.dart';
 import 'core/storage/app_startup.dart';
 
 const _supabaseUrl = 'https://ibucvloawkfwobaelwbr.supabase.co';
@@ -14,6 +15,9 @@ void main() async {
     url: _supabaseUrl,
     anonKey: _supabaseAnonKey,
   );
+
+  // Init home_widget bridge (no-op on non-iOS platforms)
+  await WidgetService.init();
 
   await launchApp();
 }
