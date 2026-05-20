@@ -295,45 +295,49 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   ),
           ),
 
-          // ── Libreria header ───────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: booksAsync.when(
-              data: (books) => books.isEmpty
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-                      child: Row(
-                        children: [
-                          Text('LIBRERIA', style: MarginaliaTextStyles.sectionTitle),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                              child: Divider(color: MarginaliaColors.ruleFaint)),
-                        ],
-                      ),
-                    ),
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-          ),
-
-          // ── Books grid ────────────────────────────────────────────────────
+          // ── Libreria header + books grid (single booksAsync.when to avoid
+          //    duplicate render when the provider rebuilds) ──────────────────
           booksAsync.when(
             data: (books) => books.isEmpty
                 ? const SliverToBoxAdapter(child: SizedBox.shrink())
-                : SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
-                    sliver: SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (ctx, i) => _BookCell(book: books[i], index: i),
-                        childCount: books.length,
-                      ),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                        childAspectRatio: 0.62,
-                      ),
+                : SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+                          child: Row(
+                            children: [
+                              Text('LIBRERIA',
+                                  style: MarginaliaTextStyles.sectionTitle),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                  child: Divider(
+                                      color: MarginaliaColors.ruleFaint)),
+                            ],
+                          ),
+                        ),
+                        // Grid (shrinkWrap inside SliverToBoxAdapter is fine for
+                        // the small number of books on a profile page)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                          child: GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.62,
+                            children: books
+                                .asMap()
+                                .entries
+                                .map((e) =>
+                                    _BookCell(book: e.value, index: e.key))
+                                .toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
             loading: () => const SliverToBoxAdapter(
@@ -345,7 +349,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 ),
               ),
             ),
-            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, __) =>
+                const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
         ],
       ), // CustomScrollView
