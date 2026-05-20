@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -68,6 +69,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _bioCtrl;
+  late final TextEditingController _usernameCtrl;
   late final TextEditingController _readingTitleCtrl;
   late final TextEditingController _readingAuthorCtrl;
 
@@ -77,6 +79,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _uploadingAvatar = false;
   bool _uploadingCover  = false;
   bool _saving          = false;
+
+  // Username availability
+  bool? _usernameAvailable;   // null = unchecked, true = ok, false = taken
+  bool  _checkingUsername = false;
+  Timer? _usernameDebounce;
 
   // Local URL cache — updated immediately after a successful upload so the
   // preview refreshes without waiting for the parent to invalidate the provider.
@@ -89,6 +96,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final p = widget.initialProfile;
     _nameCtrl          = TextEditingController(text: p?['display_name'] as String? ?? '');
     _bioCtrl           = TextEditingController(text: p?['bio'] as String? ?? '');
+    _usernameCtrl      = TextEditingController(text: p?['username'] as String? ?? '');
     _readingTitleCtrl  = TextEditingController(text: p?['currently_reading_title'] as String? ?? '');
     _readingAuthorCtrl = TextEditingController(text: p?['currently_reading_author'] as String? ?? '');
     _gradKey = widget.initialGradient;
@@ -97,11 +105,33 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   void dispose() {
+    _usernameDebounce?.cancel();
     _nameCtrl.dispose();
     _bioCtrl.dispose();
+    _usernameCtrl.dispose();
     _readingTitleCtrl.dispose();
     _readingAuthorCtrl.dispose();
     super.dispose();
+  }
+
+  void _onUsernameChanged(String value) {
+    _usernameDebounce?.cancel();
+    final cleaned = value.trim().toLowerCase();
+    if (cleaned.isEmpty) {
+      setState(() { _usernameAvailable = null; _checkingUsername = false; });
+      return;
+    }
+    setState(() { _checkingUsername = true; _usernameAvailable = null; });
+    _usernameDebounce = Timer(const Duration(milliseconds: 600), () async {
+      try {
+        final available = await ref
+            .read(supabaseServiceProvider)
+            .isUsernameAvailable(cleaned);
+        if (mounted) setState(() { _usernameAvailable = available; _checkingUsername = false; });
+      } catch (_) {
+        if (mounted) setState(() => _checkingUsername = false);
+      }
+    });
   }
 
   // ── Photo helpers ────────────────────────────────────────────────────────────
@@ -165,6 +195,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // ── Save ─────────────────────────────────────────────────────────────────────
 
   Future<void> _save() async {
+    // Block if username is being checked or is already taken
+    final username = _usernameCtrl.text.trim().toLowerCase();
+    if (username.isNotEmpty && _usernameAvailable == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username non disponibile, scegline un altro.')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final svc = ref.read(supabaseServiceProvider);
@@ -174,6 +212,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           bio: _bioCtrl.text.trim(),
           currentlyReadingTitle:  _readingTitleCtrl.text.trim(),
           currentlyReadingAuthor: _readingAuthorCtrl.text.trim(),
+          username: username.isEmpty ? null : username,
         ),
         svc.updateProfileAppearance(_gradKey, _patKey),
       ]);
@@ -325,6 +364,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     hint: 'es. Marco Rossi',
                     icon: Icons.person_outline,
                     onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Username field with live availability check
+                  _UsernameField(
+                    controller: _usernameCtrl,
+                    available: _usernameAvailable,
+                    checking: _checkingUsername,
+                    onChanged: _onUsernameChanged,
                   ),
                   const SizedBox(height: 12),
 
@@ -672,6 +720,111 @@ class _SectionLabel extends StatelessWidget {
           letterSpacing: 0.8,
         ),
       );
+}
+
+// ─── Username field with live availability feedback ───────────────────────────
+
+class _UsernameField extends StatelessWidget {
+  const _UsernameField({
+    required this.controller,
+    required this.available,
+    required this.checking,
+    required this.onChanged,
+  });
+  final TextEditingController controller;
+  final bool? available;   // null = not checked yet
+  final bool  checking;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget? suffix;
+    Color borderColor = MarginaliaColors.rule;
+
+    if (checking) {
+      suffix = const Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: SizedBox(
+          width: 16, height: 16,
+          child: CircularProgressIndicator(
+              strokeWidth: 1.5, color: MarginaliaColors.inkFaint),
+        ),
+      );
+    } else if (available == true) {
+      suffix = const Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: Icon(Icons.check_circle_outline,
+            size: 18, color: Color(0xFF4A7A35)),
+      );
+      borderColor = const Color(0xFF4A7A35);
+    } else if (available == false) {
+      suffix = const Padding(
+        padding: EdgeInsets.only(right: 12),
+        child: Icon(Icons.cancel_outlined, size: 18, color: Color(0xFFBF4A4A)),
+      );
+      borderColor = const Color(0xFFBF4A4A);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: MarginaliaColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor),
+          ),
+          child: TextField(
+            controller: controller,
+            onChanged: onChanged,
+            autocorrect: false,
+            enableSuggestions: false,
+            style: const TextStyle(
+              fontSize: 15,
+              color: MarginaliaColors.ink,
+              height: 1.4,
+            ),
+            decoration: InputDecoration(
+              labelText: 'Username',
+              hintText: 'es. marco_legge',
+              prefixIcon: const Icon(Icons.alternate_email,
+                  size: 18, color: MarginaliaColors.inkFaint),
+              suffixIcon: suffix,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.fromLTRB(0, 14, 14, 14),
+              labelStyle: const TextStyle(
+                  color: MarginaliaColors.inkMuted, fontSize: 13),
+            ),
+          ),
+        ),
+        if (available == false)
+          const Padding(
+            padding: EdgeInsets.only(left: 14, top: 4),
+            child: Text(
+              'Username già in uso, scegline un altro.',
+              style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFFBF4A4A),
+                  fontWeight: FontWeight.w500),
+            ),
+          ),
+        if (available == true)
+          const Padding(
+            padding: EdgeInsets.only(left: 14, top: 4),
+            child: Text(
+              'Username disponibile!',
+              style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF4A7A35),
+                  fontWeight: FontWeight.w500),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _Field extends StatelessWidget {

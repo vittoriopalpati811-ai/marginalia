@@ -21,6 +21,8 @@ import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
+import 'features/messages/messages_screen.dart';
+import 'features/messages/chat_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -91,12 +93,25 @@ final router = GoRouter(
             : child,
       ),
       routes: [
-        GoRoute(path: '/home',    builder: (_, __) => const HomeTab()),
-        GoRoute(path: '/',        builder: (_, __) => const LibraryScreen()),
-        GoRoute(path: '/search',  builder: (_, __) => const SearchScreen()),
-        GoRoute(path: '/social',  builder: (_, __) => const SocialScreen()),
-        GoRoute(path: '/profile', builder: (_, __) => const MyProfileScreen()),
+        GoRoute(path: '/home',     builder: (_, __) => const HomeTab()),
+        GoRoute(path: '/',         builder: (_, __) => const LibraryScreen()),
+        GoRoute(path: '/search',   builder: (_, __) => const SearchScreen()),
+        GoRoute(path: '/social',   builder: (_, __) => const SocialScreen()),
+        GoRoute(path: '/messages', builder: (_, __) => const MessagesScreen()),
+        GoRoute(path: '/profile',  builder: (_, __) => const MyProfileScreen()),
       ],
+    ),
+
+    // Chat screen (full-screen push)
+    GoRoute(
+      path: '/chat/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id   = state.pathParameters['id'] ?? '';
+        final name = state.uri.queryParameters['name'] ?? 'Messaggio';
+        return _pushPage(
+            ChatScreen(conversationId: id, conversationName: name), state);
+      },
     ),
 
     // Full-screen push routes — horizontal shared axis
@@ -218,11 +233,12 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav>
     with SingleTickerProviderStateMixin {
 
   static const _tabs = [
-    (path: '/home',    icon: Icons.home_outlined,          activeIcon: Icons.home_rounded,          label: ''),
-    (path: '/',        icon: Icons.auto_stories_outlined,  activeIcon: Icons.auto_stories,          label: ''),
-    (path: '/search',  icon: Icons.search_outlined,        activeIcon: Icons.search_rounded,        label: ''),
-    (path: '/social',  icon: Icons.people_outline,         activeIcon: Icons.people_rounded,        label: ''),
-    (path: '/profile', icon: Icons.person_outline,         activeIcon: Icons.person_rounded,        label: ''),
+    (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,          label: ''),
+    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,          label: ''),
+    (path: '/search',   icon: Icons.search_outlined,       activeIcon: Icons.search_rounded,        label: ''),
+    (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,        label: ''),
+    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,          label: ''),
+    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,        label: ''),
   ];
 
   late final AnimationController _navCtrl;

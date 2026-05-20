@@ -458,12 +458,13 @@ class SupabaseService {
         .update({'display_name': displayName}).eq('id', userId!);
   }
 
-  /// Update multiple profile fields at once.
+  /// Update multiple profile fields at once. [username] is stored lowercase.
   Future<void> updateProfileInfo({
     String? displayName,
     String? bio,
     String? currentlyReadingTitle,
     String? currentlyReadingAuthor,
+    String? username,
   }) async {
     if (!isAuthenticated || userId == null) return;
     final data = <String, dynamic>{};
@@ -471,6 +472,9 @@ class SupabaseService {
     if (bio != null) data['bio'] = bio;
     if (currentlyReadingTitle != null) data['currently_reading_title'] = currentlyReadingTitle;
     if (currentlyReadingAuthor != null) data['currently_reading_author'] = currentlyReadingAuthor;
+    if (username != null && username.trim().isNotEmpty) {
+      data['username'] = username.trim().toLowerCase();
+    }
     if (data.isEmpty) return;
     await _client.from('profiles').update(data).eq('id', userId!);
   }
@@ -975,5 +979,223 @@ class SupabaseService {
           fileOptions: const FileOptions(upsert: true),
         );
     return path;
+  }
+
+  // ─── User search ─────────────────────────────────────────────────────────────
+
+  /// Full-text search on display_name and username fields.
+  Future<List<Map<String, dynamic>>> searchUsers(String query) async {
+    if (query.trim().isEmpty) return [];
+    final q = query.trim();
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('profiles')
+          .select('id, display_name, username, avatar_url, bio')
+          .or('display_name.ilike.%$q%,username.ilike.%$q%')
+          .neq('id', userId ?? '')
+          .limit(30) as List,
+    );
+    return rows;
+  }
+
+  // ─── Username ─────────────────────────────────────────────────────────────────
+
+  /// Returns true if the username is not already taken by another user.
+  Future<bool> isUsernameAvailable(String username) async {
+    final q = username.toLowerCase().trim();
+    if (q.isEmpty) return false;
+    final rows = await _client
+        .from('profiles')
+        .select('id')
+        .eq('username', q)
+        .neq('id', userId ?? '')
+        .limit(1);
+    return (rows as List).isEmpty;
+  }
+
+  // ─── Messaging ───────────────────────────────────────────────────────────────
+
+  /// All conversations the current user is a member of, with last message and
+  /// member profiles pre-fetched. Sorted by most recently updated.
+  Future<List<Map<String, dynamic>>> fetchConversations() async {
+    final uid = userId!;
+
+    // Conversations I'm in
+    final memberRows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('conversation_members')
+          .select('conversation_id')
+          .eq('user_id', uid) as List,
+    );
+    if (memberRows.isEmpty) return [];
+    final convIds =
+        memberRows.map((r) => r['conversation_id'] as String).toList();
+
+    final convRows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('conversations')
+          .select()
+          .inFilter('id', convIds)
+          .order('updated_at', ascending: false) as List,
+    );
+    if (convRows.isEmpty) return [];
+
+    // Fetch all members + last messages in parallel for each conversation
+    final result = <Map<String, dynamic>>[];
+    for (final conv in convRows) {
+      final convId = conv['id'] as String;
+
+      final memberIdRows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('conversation_members')
+            .select('user_id')
+            .eq('conversation_id', convId) as List,
+      );
+      final memberIds =
+          memberIdRows.map((r) => r['user_id'] as String).toList();
+
+      final profiles = List<Map<String, dynamic>>.from(
+        await _client
+            .from('profiles')
+            .select('id, display_name, avatar_url, username')
+            .inFilter('id', memberIds) as List,
+      );
+
+      final lastMsgs = List<Map<String, dynamic>>.from(
+        await _client
+            .from('messages')
+            .select('id, content, sender_id, image_url, created_at')
+            .eq('conversation_id', convId)
+            .order('created_at', ascending: false)
+            .limit(1) as List,
+      );
+
+      result.add({
+        ...conv,
+        'members': profiles,
+        'last_message': lastMsgs.isEmpty ? null : lastMsgs.first,
+      });
+    }
+    return result;
+  }
+
+  /// Messages for a single conversation in chronological order, with sender
+  /// profiles pre-fetched.
+  Future<List<Map<String, dynamic>>> fetchMessages(
+      String conversationId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+          .from('messages')
+          .select('id, conversation_id, sender_id, content, image_url, created_at')
+          .eq('conversation_id', conversationId)
+          .order('created_at', ascending: true)
+          .limit(200) as List,
+    );
+    if (rows.isEmpty) return [];
+
+    final senderIds =
+        rows.map((r) => r['sender_id'] as String).toSet().toList();
+    final profiles = List<Map<String, dynamic>>.from(
+      await _client
+          .from('profiles')
+          .select('id, display_name, avatar_url')
+          .inFilter('id', senderIds) as List,
+    );
+    final profileMap = {
+      for (final p in profiles) p['id'] as String: p,
+    };
+    return rows.map((r) {
+      final sid = r['sender_id'] as String? ?? '';
+      return {...r, 'sender': profileMap[sid]};
+    }).toList();
+  }
+
+  /// Send a text or image message in a conversation.
+  Future<void> sendMessage(
+    String conversationId, {
+    String? content,
+    String? imageUrl,
+  }) async {
+    final now = DateTime.now().toIso8601String();
+    await _client.from('messages').insert({
+      'conversation_id': conversationId,
+      'sender_id': userId,
+      if (content != null && content.trim().isNotEmpty) 'content': content.trim(),
+      if (imageUrl != null) 'image_url': imageUrl,
+      'created_at': now,
+    });
+    await _client
+        .from('conversations')
+        .update({'updated_at': now})
+        .eq('id', conversationId);
+  }
+
+  /// Returns the conversation ID for a DM with [otherUserId].
+  /// Creates one if it doesn't exist yet.
+  Future<String> createOrFetchDirectConversation(String otherUserId) async {
+    final myId = userId!;
+
+    final myConvIds = List<Map<String, dynamic>>.from(
+      await _client
+          .from('conversation_members')
+          .select('conversation_id')
+          .eq('user_id', myId) as List,
+    ).map((r) => r['conversation_id'] as String).toList();
+
+    if (myConvIds.isNotEmpty) {
+      final shared = List<Map<String, dynamic>>.from(
+        await _client
+            .from('conversation_members')
+            .select('conversation_id')
+            .eq('user_id', otherUserId)
+            .inFilter('conversation_id', myConvIds) as List,
+      );
+      for (final s in shared) {
+        final cid = s['conversation_id'] as String;
+        final convs = List<Map<String, dynamic>>.from(
+          await _client
+              .from('conversations')
+              .select('id, is_group')
+              .eq('id', cid)
+              .eq('is_group', false) as List,
+        );
+        if (convs.isNotEmpty) return convs.first['id'] as String;
+      }
+    }
+
+    // Create new direct conversation
+    final conv = await _client.from('conversations').insert({
+      'is_group': false,
+      'created_by': myId,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).select().single();
+    final convId = conv['id'] as String;
+    await _client.from('conversation_members').insert([
+      {'conversation_id': convId, 'user_id': myId},
+      {'conversation_id': convId, 'user_id': otherUserId},
+    ]);
+    return convId;
+  }
+
+  /// Create a group conversation with [memberIds] (current user is auto-added).
+  Future<String> createGroupConversation(
+    List<String> memberIds, {
+    required String groupName,
+  }) async {
+    final myId = userId!;
+    final conv = await _client.from('conversations').insert({
+      'is_group': true,
+      'group_name': groupName.trim(),
+      'created_by': myId,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).select().single();
+    final convId = conv['id'] as String;
+    final allIds = {myId, ...memberIds}.toList();
+    await _client.from('conversation_members').insert(
+          allIds
+              .map((id) => {'conversation_id': convId, 'user_id': id})
+              .toList(),
+        );
+    return convId;
   }
 }
