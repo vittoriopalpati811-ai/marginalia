@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -6,9 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+
+// ── GIF Search (Tenor API v2 — get a free key at console.cloud.google.com) ──
+const _kTenorApiKey = 'AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCys'; // demo key
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -378,26 +383,19 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                   ),
                 ),
               ),
-              FilledButton(
-                onPressed: canPost ? _submit : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primary,
-                  foregroundColor: const Color(0xFFF2F5EA),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+              if (_posting)
+                const SizedBox(
+                  width: 44, height: 44,
+                  child: CircularProgressIndicator(
+                    color: MarginaliaColors.sienna,
+                    strokeWidth: 2,
+                  ),
+                )
+              else
+                _HoldToPublishButton(
+                  enabled: canPost,
+                  onComplete: _submit,
                 ),
-                child: _posting
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 1.5, color: Color(0xFFF2F5EA)),
-                      )
-                    : const Text('Pubblica',
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w700)),
-              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -507,6 +505,181 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   }
 }
 
+// ─── Hold-to-publish button ───────────────────────────────────────────────────
+//
+// Press and hold for 2 seconds to submit — a circular ring fills progressively.
+// Release early → ring resets. Like Yazio's hold-to-log mechanic.
+
+class _HoldToPublishButton extends StatefulWidget {
+  const _HoldToPublishButton({required this.enabled, required this.onComplete});
+  final bool     enabled;
+  final VoidCallback onComplete;
+
+  @override
+  State<_HoldToPublishButton> createState() => _HoldToPublishButtonState();
+}
+
+class _HoldToPublishButtonState extends State<_HoldToPublishButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  bool _holding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          widget.onComplete();
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onHoldStart() {
+    if (!widget.enabled) return;
+    setState(() => _holding = true);
+    _ctrl.forward(from: 0);
+  }
+
+  void _onHoldEnd() {
+    if (!_holding) return;
+    setState(() => _holding = false);
+    _ctrl
+      ..stop()
+      ..reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.enabled
+        ? MarginaliaColors.sienna
+        : MarginaliaColors.rule;
+
+    return GestureDetector(
+      onLongPressStart: (_) => _onHoldStart(),
+      onLongPressEnd:   (_) => _onHoldEnd(),
+      onLongPressCancel:    _onHoldEnd,
+      // Tap shows a hint that it requires hold
+      onTap: widget.enabled
+          ? () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tieni premuto per pubblicare'),
+                  duration: Duration(seconds: 1),
+                ),
+              )
+          : null,
+      child: SizedBox(
+        width: 68,
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Background pill
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: _holding ? 44 : 68,
+              height: 44,
+              decoration: BoxDecoration(
+                color: widget.enabled
+                    ? (_holding
+                        ? MarginaliaColors.sienna.withAlpha(18)
+                        : MarginaliaColors.sienna)
+                    : MarginaliaColors.rule,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: _holding
+                  ? const SizedBox.shrink()
+                  : Center(
+                      child: Text(
+                        'Pubblica',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: widget.enabled
+                              ? const Color(0xFFF2F5EA)
+                              : MarginaliaColors.inkFaint,
+                        ),
+                      ),
+                    ),
+            ),
+
+            // Circular progress ring (visible only while holding)
+            if (_holding)
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: AnimatedBuilder(
+                  animation: _ctrl,
+                  builder: (_, __) => CustomPaint(
+                    painter: _RingPainter(
+                      progress: _ctrl.value,
+                      color:    color,
+                    ),
+                  ),
+                ),
+              ),
+
+            // Arrow icon center (visible only while holding)
+            if (_holding)
+              Icon(
+                Icons.send_rounded,
+                size: 18,
+                color: color,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  const _RingPainter({required this.progress, required this.color});
+  final double progress;
+  final Color  color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width  / 2;
+    final cy = size.height / 2;
+    final r  = (size.shortestSide / 2) - 3;
+
+    // Track ring (faint)
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r,
+      Paint()
+        ..color = color.withAlpha(40)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+
+    // Progress arc (sweeps clockwise from top)
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset(cx, cy), radius: r),
+      -1.5707963, // -π/2 = 12 o'clock
+      progress * 6.2831853, // full circle = 2π
+      false,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+}
+
 // ─── Instagram-style post card ────────────────────────────────────────────────
 
 class _PostCard extends ConsumerStatefulWidget {
@@ -546,6 +719,17 @@ class _PostCardState extends ConsumerState<_PostCard> {
         _likesCount = widget.post['likes_count'] as int? ?? 0;
       });
     }
+  }
+
+  Future<void> _openComments(BuildContext context) async {
+    final postId = widget.post['id'] as String?;
+    if (postId == null) return;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CommentsSheet(postId: postId),
+    );
   }
 
   String _timeAgo(String? iso) {
@@ -682,6 +866,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
           padding: const EdgeInsets.fromLTRB(10, 8, 14, 12),
           child: Row(
             children: [
+              // Like button
               GestureDetector(
                 onTap: _toggleLike,
                 child: AnimatedContainer(
@@ -712,6 +897,37 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           color: _liked
                               ? MarginaliaColors.sienna
                               : MarginaliaColors.inkFaint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Comment button
+              GestureDetector(
+                onTap: () => _openComments(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.chat_bubble_outline,
+                        size: 16,
+                        color: MarginaliaColors.inkFaint,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Commenta',
+                        style: GoogleFonts.barlow(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: MarginaliaColors.inkFaint,
                         ),
                       ),
                     ],
@@ -810,6 +1026,662 @@ class _HighlightQuoteCard extends StatelessWidget {
             ),
             maxLines: 5,
             overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Comments sheet ───────────────────────────────────────────────────────────
+
+class _CommentsSheet extends ConsumerStatefulWidget {
+  const _CommentsSheet({required this.postId});
+  final String postId;
+
+  @override
+  ConsumerState<_CommentsSheet> createState() => _CommentsSheetState();
+}
+
+class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
+  final _ctrl        = TextEditingController();
+  final _scrollCtrl  = ScrollController();
+  bool _submitting   = false;
+  Uint8List? _imageBytes;
+  String?    _imageExt;
+  String?    _gifUrl;
+  List<Map<String, dynamic>> _comments = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final comments = await ref
+          .read(supabaseServiceProvider)
+          .fetchPostComments(widget.postId);
+      if (mounted) setState(() { _comments = comments; _loading = false; });
+      _scrollToBottom();
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollCtrl.hasClients) {
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+    if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
+    setState(() {
+      _imageBytes = r.files.first.bytes;
+      _imageExt   = (r.files.first.extension ?? 'jpg').toLowerCase();
+      _gifUrl     = null;
+    });
+  }
+
+  Future<void> _pickGif() async {
+    final url = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _GifPickerSheet(),
+    );
+    if (url != null && mounted) {
+      setState(() {
+        _gifUrl     = url;
+        _imageBytes = null;
+        _imageExt   = null;
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    final text = _ctrl.text.trim();
+    if (text.isEmpty && _imageBytes == null && _gifUrl == null) return;
+    setState(() => _submitting = true);
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      String? imageUrl;
+      if (_imageBytes != null && _imageExt != null) {
+        imageUrl = await svc.uploadCommentImage(_imageBytes!, _imageExt!);
+      }
+      await svc.addPostComment(
+        widget.postId,
+        content:  text.isEmpty ? null : text,
+        imageUrl: imageUrl,
+        gifUrl:   _gifUrl,
+      );
+      _ctrl.clear();
+      setState(() {
+        _imageBytes = null;
+        _imageExt   = null;
+        _gifUrl     = null;
+        _submitting  = false;
+      });
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Errore: $e')));
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  String _timeAgo(String? iso) {
+    if (iso == null) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1)  return 'adesso';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24)   return '${diff.inHours}h';
+    return '${diff.inDays}g';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final canSend = !_submitting &&
+        (_ctrl.text.trim().isNotEmpty || _imageBytes != null || _gifUrl != null);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 4),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.rule,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Commenti',
+                    style: GoogleFonts.ebGaramond(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
+                      color: MarginaliaColors.ink,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: const Icon(Icons.close,
+                      size: 20, color: MarginaliaColors.inkMuted),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 0.5, thickness: 0.5, color: MarginaliaColors.ruleFaint),
+
+          // Comments list
+          Flexible(
+            child: _loading
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: CircularProgressIndicator(
+                        color: MarginaliaColors.sienna,
+                        strokeWidth: 1.5,
+                      ),
+                    ),
+                  )
+                : _comments.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Text(
+                            'Nessun commento ancora.\nSii il primo!',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.barlow(
+                              fontSize: 14,
+                              color: MarginaliaColors.inkMuted,
+                              height: 1.6,
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollCtrl,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        itemCount: _comments.length,
+                        itemBuilder: (_, i) =>
+                            _CommentBubble(comment: _comments[i], timeAgo: _timeAgo(_comments[i]['created_at'] as String?)),
+                      ),
+          ),
+
+          const Divider(height: 0.5, thickness: 0.5, color: MarginaliaColors.ruleFaint),
+
+          // Attachment preview
+          if (_imageBytes != null || _gifUrl != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: _imageBytes != null
+                        ? Image.memory(_imageBytes!,
+                            height: 100,
+                            width: double.infinity,
+                            fit: BoxFit.cover)
+                        : Image.network(_gifUrl!,
+                            height: 100,
+                            width: double.infinity,
+                            fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: 4, right: 4,
+                    child: GestureDetector(
+                      onTap: () => setState(() {
+                        _imageBytes = null;
+                        _imageExt   = null;
+                        _gifUrl     = null;
+                      }),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(160),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        child: const Icon(Icons.close,
+                            size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Input row
+          Padding(
+            padding: EdgeInsets.fromLTRB(12, 10, 12, bottom + 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Photo button
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.surfaceElevated,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: MarginaliaColors.rule),
+                    ),
+                    child: const Icon(Icons.image_outlined,
+                        size: 18, color: MarginaliaColors.inkMuted),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // GIF button
+                GestureDetector(
+                  onTap: _pickGif,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.surfaceElevated,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: MarginaliaColors.rule),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'GIF',
+                        style: GoogleFonts.barlow(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: MarginaliaColors.inkMuted,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Text field
+                Expanded(
+                  child: Container(
+                    constraints: const BoxConstraints(maxHeight: 120),
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: MarginaliaColors.rule),
+                    ),
+                    child: TextField(
+                      controller: _ctrl,
+                      maxLines: null,
+                      style: GoogleFonts.barlow(
+                        fontSize: 14,
+                        color: MarginaliaColors.ink,
+                        height: 1.5,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Scrivi un commento…',
+                        hintStyle: TextStyle(
+                          color: MarginaliaColors.inkFaint,
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Send button
+                GestureDetector(
+                  onTap: canSend ? _submit : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: canSend
+                          ? MarginaliaColors.sienna
+                          : MarginaliaColors.rule,
+                      shape: BoxShape.circle,
+                    ),
+                    child: _submitting
+                        ? const Center(
+                            child: SizedBox(
+                              width: 16, height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 1.5, color: Colors.white),
+                            ),
+                          )
+                        : const Icon(Icons.send_rounded,
+                            size: 16, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Comment bubble ───────────────────────────────────────────────────────────
+
+class _CommentBubble extends StatelessWidget {
+  const _CommentBubble({required this.comment, required this.timeAgo});
+  final Map<String, dynamic> comment;
+  final String timeAgo;
+
+  @override
+  Widget build(BuildContext context) {
+    final profile   = comment['profiles'] as Map?;
+    final name      = profile?['display_name'] as String? ?? 'Lettore';
+    final avatarUrl = profile?['avatar_url']   as String?;
+    final content   = comment['content']   as String?;
+    final imageUrl  = comment['image_url'] as String?;
+    final gifUrl    = comment['gif_url']   as String?;
+    final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final tint      = MarginaliaDecorations.bookCoverColor(name);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _AvatarCircle(
+            avatarUrl: avatarUrl,
+            initial: initial,
+            tint: tint,
+            size: 32,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name + time
+                Row(
+                  children: [
+                    Text(
+                      name,
+                      style: GoogleFonts.barlow(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: MarginaliaColors.ink,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      timeAgo,
+                      style: GoogleFonts.barlow(
+                        fontSize: 11,
+                        color: MarginaliaColors.inkFaint,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                // Bubble with text and/or media
+                Container(
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.surfaceElevated,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(14),
+                      bottomLeft: Radius.circular(14),
+                      bottomRight: Radius.circular(14),
+                    ),
+                    border: Border.all(
+                        color: MarginaliaColors.ruleFaint, width: 0.8),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (content != null && content.isNotEmpty)
+                        Text(
+                          content,
+                          style: GoogleFonts.barlow(
+                            fontSize: 13.5,
+                            color: MarginaliaColors.ink,
+                            height: 1.55,
+                          ),
+                        ),
+                      if ((imageUrl != null || gifUrl != null) &&
+                          (content != null && content.isNotEmpty))
+                        const SizedBox(height: 6),
+                      if (imageUrl != null && imageUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            imageUrl,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      if (gifUrl != null && gifUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            gifUrl,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── GIF picker sheet ─────────────────────────────────────────────────────────
+
+class _GifPickerSheet extends StatefulWidget {
+  const _GifPickerSheet();
+
+  @override
+  State<_GifPickerSheet> createState() => _GifPickerSheetState();
+}
+
+class _GifPickerSheetState extends State<_GifPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  List<String> _gifUrls  = [];
+  bool _loading          = false;
+  String _lastQuery      = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _search('libro leggere');
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String query) async {
+    if (query.trim().isEmpty) return;
+    setState(() { _loading = true; _lastQuery = query.trim(); });
+    try {
+      final uri = Uri.https('tenor.googleapis.com', '/v2/search', {
+        'q':     query.trim(),
+        'key':   _kTenorApiKey,
+        'limit': '20',
+        'media_filter': 'gif',
+      });
+      final response = await http.get(uri).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final data    = json.decode(response.body) as Map<String, dynamic>;
+        final results = data['results'] as List? ?? [];
+        final urls = results
+            .map((r) {
+              final media = (r as Map)['media_formats'] as Map?;
+              return (media?['tinygif'] as Map?)?['url'] as String?
+                  ?? (media?['gif'] as Map?)?['url'] as String?;
+            })
+            .whereType<String>()
+            .toList();
+        if (mounted) setState(() { _gifUrls = urls; _loading = false; });
+      } else {
+        if (mounted) setState(() { _loading = false; });
+      }
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.75,
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 12),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.rule,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: MarginaliaColors.rule),
+                    ),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      style: GoogleFonts.barlow(
+                        fontSize: 14,
+                        color: MarginaliaColors.ink,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Cerca GIF…',
+                        hintStyle: TextStyle(
+                          color: MarginaliaColors.inkFaint,
+                          fontSize: 14,
+                        ),
+                        prefixIcon: Icon(Icons.search,
+                            size: 18, color: MarginaliaColors.inkMuted),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onSubmitted: _search,
+                      textInputAction: TextInputAction.search,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Grid
+          Expanded(
+            child: _loading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: MarginaliaColors.sienna,
+                      strokeWidth: 1.5,
+                    ),
+                  )
+                : _gifUrls.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Nessun risultato',
+                          style: GoogleFonts.barlow(
+                            color: MarginaliaColors.inkMuted,
+                            fontSize: 14,
+                          ),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: _gifUrls.length,
+                        itemBuilder: (_, i) => GestureDetector(
+                          onTap: () =>
+                              Navigator.of(context).pop(_gifUrls[i]),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.network(
+                              _gifUrls[i],
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  Container(color: MarginaliaColors.rule),
+                            ),
+                          ),
+                        ),
+                      ),
           ),
         ],
       ),

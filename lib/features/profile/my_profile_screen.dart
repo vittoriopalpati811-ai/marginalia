@@ -9,8 +9,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'followers_screen.dart';
-import 'pinned_highlights_section.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
@@ -82,6 +83,13 @@ final _mySpotlightProvider =
 final _gradientKeyProvider = StateProvider<String>((ref) => 'sepia');
 final _patternKeyProvider   = StateProvider<String>((ref) => 'none');
 
+final _myPostsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated || svc.userId == null) return [];
+  try { return await svc.fetchUserPosts(svc.userId!); } catch (_) { return []; }
+});
+
 // ─── MyProfileScreen ──────────────────────────────────────────────────────────
 
 class MyProfileScreen extends ConsumerStatefulWidget {
@@ -126,6 +134,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final statsAsync   = ref.watch(_myStatsProvider);
     final booksAsync   = ref.watch(_myBooksProvider);
     final spotAsync    = ref.watch(_mySpotlightProvider);
+    final postsAsync   = ref.watch(_myPostsProvider);
     final gradKey      = ref.watch(_gradientKeyProvider);
     final patKey       = ref.watch(_patternKeyProvider);
 
@@ -245,9 +254,45 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
           ),
 
-          // ── Pinned highlights (In evidenza) ──────────────────────────────
+          // ── I miei post (Twitter-style) ───────────────────────────────────
           SliverToBoxAdapter(
-            child: PinnedHighlightsSection(userId: uid),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+              child: Row(
+                children: [
+                  Text('POST', style: MarginaliaTextStyles.sectionTitle),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
+                ],
+              ),
+            ),
+          ),
+          postsAsync.when(
+            loading: () => const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: CircularProgressIndicator(
+                  color: MarginaliaColors.sienna, strokeWidth: 1.5)),
+              ),
+            ),
+            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            data: (posts) => posts.isEmpty
+                ? SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      child: Text(
+                        'Non hai ancora pubblicato nessun post.',
+                        style: GoogleFonts.barlow(
+                          color: MarginaliaColors.inkMuted, fontSize: 13),
+                      ),
+                    ),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => _ProfilePostCard(post: posts[i]),
+                      childCount: posts.length,
+                    ),
+                  ),
           ),
 
           // ── Libreria header ───────────────────────────────────────────────
@@ -1363,6 +1408,147 @@ class _NotLoggedIn extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Profile post card (compact, Twitter-style) ───────────────────────────────
+
+class _ProfilePostCard extends StatelessWidget {
+  const _ProfilePostCard({required this.post});
+  final Map<String, dynamic> post;
+
+  String _timeAgo(String? iso) {
+    if (iso == null) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1)  return 'adesso';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
+    if (diff.inHours < 24)   return '${diff.inHours}h fa';
+    if (diff.inDays < 7)     return '${diff.inDays}g fa';
+    return '${(diff.inDays / 7).round()}sett fa';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final body      = post['body']       as String?;
+    final imageUrl  = post['image_url']  as String?;
+    final createdAt = post['created_at'] as String?;
+    final likes     = post['likes_count'] as int? ?? 0;
+    final highlight = post['highlights'] as Map?;
+    final hlContent = highlight?['content'] as String?;
+    final hlBook    = highlight?['books']   as Map?;
+    final hlTitle   = hlBook?['title']  as String?;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Timestamp
+              if (createdAt != null)
+                Text(
+                  _timeAgo(createdAt),
+                  style: GoogleFonts.barlow(
+                    fontSize: 11,
+                    color: MarginaliaColors.inkFaint,
+                  ),
+                ),
+              // Body text
+              if (body != null && body.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: GoogleFonts.barlow(
+                    fontSize: 14.5,
+                    color: MarginaliaColors.ink,
+                    height: 1.6,
+                  ),
+                ),
+              ],
+              // Attached highlight
+              if (hlContent != null && hlContent.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: MarginaliaColors.ruleFaint, width: 0.8),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (hlTitle != null && hlTitle.isNotEmpty)
+                        Text(
+                          hlTitle.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: MarginaliaColors.inkMuted,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hlContent.length > 180
+                            ? '${hlContent.substring(0, 180)}…'
+                            : hlContent,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: MarginaliaColors.ink,
+                          fontStyle: FontStyle.italic,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        // Image full-width
+        if (imageUrl != null && imageUrl.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Image.network(
+            imageUrl,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        ],
+        // Like count
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Row(
+            children: [
+              const Icon(Icons.favorite_border,
+                  size: 14, color: MarginaliaColors.inkFaint),
+              const SizedBox(width: 4),
+              Text(
+                '$likes',
+                style: GoogleFonts.barlow(
+                  fontSize: 12,
+                  color: MarginaliaColors.inkFaint,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: MarginaliaColors.ruleFaint,
+        ),
+      ],
     );
   }
 }

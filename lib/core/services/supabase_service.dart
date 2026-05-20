@@ -653,7 +653,8 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final url = _client.storage.from('avatars').getPublicUrl(path);
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final url = '${_client.storage.from('avatars').getPublicUrl(path)}?v=$ts';
     await _client.from('profiles').update({'avatar_url': url}).eq('id', userId!);
     return url;
   }
@@ -667,7 +668,8 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final url = _client.storage.from('covers').getPublicUrl(path);
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final url = '${_client.storage.from('covers').getPublicUrl(path)}?v=$ts';
     await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
     return url;
   }
@@ -682,7 +684,8 @@ class SupabaseService {
           bytes,
           fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
         );
-    final url = _client.storage.from('jam-covers').getPublicUrl(path);
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final url = '${_client.storage.from('jam-covers').getPublicUrl(path)}?v=$ts';
     await _client.from('jams').update({'cover_url': url}).eq('id', jamId);
     return url;
   }
@@ -825,6 +828,75 @@ class SupabaseService {
         .from('posts')
         .update({'likes_count': rows.length})
         .eq('id', postId);
+  }
+
+  /// Fetch posts by a specific user (for profile views), newest first.
+  Future<List<Map<String, dynamic>>> fetchUserPosts(String targetUserId) async {
+    final rows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('posts')
+              .select('*, highlights(id, content, color, books(title, author))')
+              .eq('user_id', targetUserId)
+              .order('created_at', ascending: false)
+              .limit(50) as List,
+    );
+    if (rows.isEmpty) return [];
+
+    // Fetch my likes so we can show liked state
+    List<Map<String, dynamic>> myLikes = [];
+    if (isAuthenticated && userId != null) {
+      final postIds = rows.map((r) => r['id'] as String).toList();
+      myLikes = List<Map<String, dynamic>>.from(
+        await _client
+                .from('post_likes')
+                .select('post_id')
+                .eq('user_id', userId!)
+                .inFilter('post_id', postIds) as List,
+      );
+    }
+    final likedIds = myLikes.map((l) => l['post_id'] as String).toSet();
+
+    return rows.map((r) => {
+      ...r,
+      'is_liked': likedIds.contains(r['id'] as String),
+    }).toList();
+  }
+
+  // ─── Post Comments ────────────────────────────────────────────────────────────
+
+  /// Fetch comments for a post, newest first is false — ascending order.
+  Future<List<Map<String, dynamic>>> fetchPostComments(String postId) async {
+    final rows = await _client
+        .from('post_comments')
+        .select('id, post_id, user_id, content, image_url, gif_url, created_at, profiles(display_name, avatar_url)')
+        .eq('post_id', postId)
+        .order('created_at', ascending: true);
+    return List<Map<String, dynamic>>.from(rows as List);
+  }
+
+  /// Add a comment to a post (text, image, or GIF — at least one required).
+  Future<void> addPostComment(
+    String postId, {
+    String? content,
+    String? imageUrl,
+    String? gifUrl,
+  }) async {
+    await _client.from('post_comments').insert({
+      'post_id': postId,
+      'user_id': userId,
+      if (content != null && content.trim().isNotEmpty) 'content': content.trim(),
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (gifUrl != null) 'gif_url': gifUrl,
+    });
+  }
+
+  /// Delete own comment.
+  Future<void> deletePostComment(String commentId) async {
+    await _client
+        .from('post_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', userId!);
   }
 
   // ─── Followers/Following for any user (public profiles) ──────────────────

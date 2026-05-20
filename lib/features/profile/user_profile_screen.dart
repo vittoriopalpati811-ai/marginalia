@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -27,12 +28,12 @@ final _userStatsProvider =
   }
 });
 
-final _userSharedProvider =
+final _userPostsProvider =
     FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
         (ref, userId) async {
   final svc = ref.watch(supabaseServiceProvider);
   try {
-    return await svc.fetchUserSharedHighlights(userId);
+    return await svc.fetchUserPosts(userId);
   } catch (_) {
     return [];
   }
@@ -88,7 +89,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(_publicProfileProvider(widget.userId));
     final statsAsync = ref.watch(_userStatsProvider(widget.userId));
-    final sharedAsync = ref.watch(_userSharedProvider(widget.userId));
+    final postsAsync = ref.watch(_userPostsProvider(widget.userId));
     final isFollowingAsync = ref.watch(_isFollowingUserProvider(widget.userId));
     final me = ref.read(supabaseServiceProvider).userId;
     final isMe = me == widget.userId;
@@ -249,14 +250,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                 ),
 
-              // ── "Condivisi" section header ───────────────────────────────
+              // ── Post section header ───────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
                   child: Row(
                     children: [
-                      Text('CONDIVISI NEI JAM',
-                          style: MarginaliaTextStyles.sectionTitle),
+                      Text('POST', style: MarginaliaTextStyles.sectionTitle),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Divider(
@@ -267,38 +267,23 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
               ),
 
-              // ── Shared highlights grid ────────────────────────────────────
-              sharedAsync.when(
-                data: (items) => items.isEmpty
+              // ── Posts list (Twitter-style) ────────────────────────────────
+              postsAsync.when(
+                data: (posts) => posts.isEmpty
                     ? SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.all(40),
-                          child: Center(
-                            child: Text(
-                              'Nessun highlight condiviso ancora.',
-                              style: TextStyle(
-                                  color: MarginaliaColors.inkMuted,
-                                  fontSize: 14),
-                            ),
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
+                          child: Text(
+                            'Nessun post ancora.',
+                            style: GoogleFonts.barlow(
+                                color: MarginaliaColors.inkMuted, fontSize: 13),
                           ),
                         ),
                       )
-                    : SliverPadding(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 0, 16, 120),
-                        sliver: SliverGrid(
-                          delegate: SliverChildBuilderDelegate(
-                            (ctx, i) => _SharedCell(
-                                item: items[i], index: i),
-                            childCount: items.length,
-                          ),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 0.85,
-                          ),
+                    : SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (ctx, i) => _UserProfilePostCard(post: posts[i]),
+                          childCount: posts.length,
                         ),
                       ),
                 loading: () => const SliverToBoxAdapter(
@@ -312,6 +297,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
                 error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
               ),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           );
         },
@@ -401,128 +387,138 @@ class _StatBox extends StatelessWidget {
   }
 }
 
-// ─── Shared highlight cell (2-col grid) ───────────────────────────────────────
+// ─── User profile post card (compact Twitter-style) ───────────────────────────
 
-class _SharedCell extends StatelessWidget {
-  const _SharedCell({required this.item, required this.index});
-  final Map<String, dynamic> item;
-  final int index;
+class _UserProfilePostCard extends StatelessWidget {
+  const _UserProfilePostCard({required this.post});
+  final Map<String, dynamic> post;
 
-  String? get _content {
-    try {
-      return (item['highlights'] as Map?)?['content'] as String?;
-    } catch (_) { return null; }
-  }
-
-  String? get _kindleColor {
-    try {
-      return (item['highlights'] as Map?)?['color'] as String?;
-    } catch (_) { return null; }
-  }
-
-  String? get _bookTitle {
-    try {
-      return ((item['highlights'] as Map?)?['books'] as Map?)?['title'] as String?;
-    } catch (_) { return null; }
-  }
-
-  String? get _jamTitle {
-    try {
-      return (item['jams'] as Map?)?['title'] as String?;
-    } catch (_) { return null; }
-  }
-
-  Color _bgFor(String? color, String? title) {
-    return switch (color) {
-      'yellow' => const Color(0xFFD4A017),
-      'blue'   => const Color(0xFF4A90BF),
-      'pink'   => const Color(0xFFBF4A72),
-      'orange' => const Color(0xFFBF7A34),
-      _        => MarginaliaDecorations.bookCoverColor(title ?? ''),
-    };
+  String _timeAgo(String? iso) {
+    if (iso == null) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1)  return 'adesso';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
+    if (diff.inHours < 24)   return '${diff.inHours}h fa';
+    if (diff.inDays < 7)     return '${diff.inDays}g fa';
+    return '${(diff.inDays / 7).round()}sett fa';
   }
 
   @override
   Widget build(BuildContext context) {
-    final content = _content ?? '';
-    final bg = _bgFor(_kindleColor, _bookTitle);
-    final dark = Color.fromARGB(255, (bg.red * 0.65).round(),
-        (bg.green * 0.65).round(), (bg.blue * 0.65).round());
-    final excerpt =
-        content.length > 120 ? '${content.substring(0, 120)}…' : content;
-    final jamTitle = _jamTitle;
+    final body      = post['body']        as String?;
+    final imageUrl  = post['image_url']   as String?;
+    final createdAt = post['created_at']  as String?;
+    final likes     = post['likes_count'] as int? ?? 0;
+    final highlight = post['highlights']  as Map?;
+    final hlContent = highlight?['content'] as String?;
+    final hlBook    = highlight?['books']   as Map?;
+    final hlTitle   = hlBook?['title']  as String?;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [bg, dark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          // Decorative quote mark
-          Positioned(
-            top: -6,
-            left: 8,
-            child: Text(
-              '"',
-              style: TextStyle(
-                fontFamily: 'Georgia',
-                fontSize: 72,
-                height: 0.8,
-                color: Colors.white.withAlpha(18),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    excerpt,
-                    style: MarginaliaTextStyles.highlightBodyMicro.copyWith(
-                      fontSize: 11.5,
-                      height: 1.65,
-                      color: const Color(0xFFEDE5D5),
-                    ),
-                    overflow: TextOverflow.fade,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (createdAt != null)
+                Text(
+                  _timeAgo(createdAt),
+                  style: GoogleFonts.barlow(
+                    fontSize: 11,
+                    color: MarginaliaColors.inkFaint,
                   ),
                 ),
-                if (jamTitle != null) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(25),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      jamTitle,
-                      style: TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withAlpha(180),
-                        letterSpacing: 0.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              if (body != null && body.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: GoogleFonts.barlow(
+                    fontSize: 14.5,
+                    color: MarginaliaColors.ink,
+                    height: 1.6,
                   ),
-                ],
+                ),
               ],
-            ),
+              if (hlContent != null && hlContent.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: MarginaliaColors.ruleFaint, width: 0.8),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (hlTitle != null && hlTitle.isNotEmpty)
+                        Text(
+                          hlTitle.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: MarginaliaColors.inkMuted,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hlContent.length > 180
+                            ? '${hlContent.substring(0, 180)}…'
+                            : hlContent,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: MarginaliaColors.ink,
+                          fontStyle: FontStyle.italic,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (imageUrl != null && imageUrl.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Image.network(
+            imageUrl,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
           ),
         ],
-      ),
-    )
-        .animate(delay: (index * 40).ms)
-        .fadeIn(duration: 300.ms, curve: Curves.easeOut);
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+          child: Row(
+            children: [
+              const Icon(Icons.favorite_border,
+                  size: 14, color: MarginaliaColors.inkFaint),
+              const SizedBox(width: 4),
+              Text(
+                '$likes',
+                style: GoogleFonts.barlow(
+                  fontSize: 12,
+                  color: MarginaliaColors.inkFaint,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Divider(
+          height: 0.5,
+          thickness: 0.5,
+          color: MarginaliaColors.ruleFaint,
+        ),
+      ],
+    );
   }
 }
