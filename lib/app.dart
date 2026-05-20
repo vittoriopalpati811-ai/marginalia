@@ -1,4 +1,5 @@
 import 'package:animations/animations.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,8 +78,18 @@ final router = GoRouter(
   routes: [
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) =>
-          _ScaffoldWithNav(routePath: state.uri.path, child: child),
+      builder: (context, state, child) => _ScaffoldWithNav(
+        routePath: state.uri.path,
+        child: defaultTargetPlatform != TargetPlatform.iOS &&
+                defaultTargetPlatform != TargetPlatform.android
+            ? Column(
+                children: [
+                  const _DevStatusBar(),
+                  Expanded(child: child),
+                ],
+              )
+            : child,
+      ),
       routes: [
         GoRoute(path: '/home',    builder: (_, __) => const HomeTab()),
         GoRoute(path: '/',        builder: (_, __) => const LibraryScreen()),
@@ -235,6 +246,43 @@ class _ScaffoldWithNav extends StatelessWidget {
           HapticFeedback.lightImpact();
           context.go(_tabs[i].path);
         },
+      ),
+    );
+  }
+}
+
+// ─── Dev status bar (shows on Windows/web to simulate iOS status bar) ─────────
+
+class _DevStatusBar extends StatelessWidget {
+  const _DevStatusBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final now = TimeOfDay.now();
+    final h = now.hour.toString().padLeft(2, '0');
+    final m = now.minute.toString().padLeft(2, '0');
+    return Container(
+      height: 44,
+      color: MarginaliaColors.background,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Text(
+            '$h:$m',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: MarginaliaColors.ink,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const Spacer(),
+          const Icon(Icons.signal_cellular_alt, size: 14, color: MarginaliaColors.inkMuted),
+          const SizedBox(width: 4),
+          const Icon(Icons.wifi, size: 14, color: MarginaliaColors.inkMuted),
+          const SizedBox(width: 4),
+          const Icon(Icons.battery_full, size: 14, color: MarginaliaColors.inkMuted),
+        ],
       ),
     );
   }

@@ -850,11 +850,15 @@ class _SpotlightCard extends StatelessWidget {
                       ],
                       Text(
                         excerpt,
-                        style: MarginaliaTextStyles.highlightBodySmall.copyWith(
-                          fontSize: 14,
-                          height: 1.75,
+                        style: GoogleFonts.ebGaramond(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
                           color: const Color(0xFFEDE5D5),
+                          height: 1.75,
+                          letterSpacing: 0.1,
                         ),
+                        maxLines: 6,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -1441,114 +1445,126 @@ class _ProfilePostCard extends StatelessWidget {
     final hlBook    = highlight?['books']   as Map?;
     final hlTitle   = hlBook?['title']  as String?;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Timestamp
-              if (createdAt != null)
-                Text(
-                  _timeAgo(createdAt),
-                  style: GoogleFonts.barlow(
-                    fontSize: 11,
-                    color: MarginaliaColors.inkFaint,
-                  ),
-                ),
-              // Body text
-              if (body != null && body.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  body,
-                  style: GoogleFonts.barlow(
-                    fontSize: 14.5,
-                    color: MarginaliaColors.ink,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-              // Attached highlight
-              if (hlContent != null && hlContent.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: MarginaliaColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: MarginaliaColors.ruleFaint, width: 0.8),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (hlTitle != null && hlTitle.isNotEmpty)
-                        Text(
-                          hlTitle.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: MarginaliaColors.inkMuted,
-                            letterSpacing: 1.1,
-                          ),
-                        ),
-                      const SizedBox(height: 4),
-                      Text(
-                        hlContent.length > 180
-                            ? '${hlContent.substring(0, 180)}…'
-                            : hlContent,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: MarginaliaColors.ink,
-                          fontStyle: FontStyle.italic,
-                          height: 1.6,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
         ),
-        // Image full-width
-        if (imageUrl != null && imageUrl.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Image.network(
-            imageUrl,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-          ),
-        ],
-        // Like count
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: Row(
-            children: [
-              const Icon(Icons.favorite_border,
-                  size: 14, color: MarginaliaColors.inkFaint),
-              const SizedBox(width: 4),
-              Text(
-                '$likes',
-                style: GoogleFonts.barlow(
-                  fontSize: 12,
-                  color: MarginaliaColors.inkFaint,
-                  fontWeight: FontWeight.w600,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Timestamp
+                  if (createdAt != null)
+                    Text(
+                      _timeAgo(createdAt),
+                      style: GoogleFonts.barlow(
+                        fontSize: 11,
+                        color: MarginaliaColors.inkFaint,
+                      ),
+                    ),
+                  // Body text
+                  if (body != null && body.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: GoogleFonts.barlow(
+                        fontSize: 14.5,
+                        color: MarginaliaColors.ink,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
+                  // Attached highlight
+                  if (hlContent != null && hlContent.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: MarginaliaColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: MarginaliaColors.ruleFaint, width: 0.8),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (hlTitle != null && hlTitle.isNotEmpty)
+                            Text(
+                              hlTitle.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: MarginaliaColors.inkMuted,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                          const SizedBox(height: 4),
+                          Text(
+                            hlContent.length > 180
+                                ? '${hlContent.substring(0, 180)}…'
+                                : hlContent,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: MarginaliaColors.ink,
+                              fontStyle: FontStyle.italic,
+                              height: 1.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Image full-width (clipped to card's bottom corners)
+            if (hasImage) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(13),
+                  bottomRight: Radius.circular(13),
+                ),
+                child: Image.network(
+                  imageUrl!,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
             ],
-          ),
+            // Like count
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.favorite_border,
+                      size: 14, color: MarginaliaColors.inkFaint),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$likes',
+                    style: GoogleFonts.barlow(
+                      fontSize: 12,
+                      color: MarginaliaColors.inkFaint,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        const Divider(
-          height: 0.5,
-          thickness: 0.5,
-          color: MarginaliaColors.ruleFaint,
-        ),
-      ],
+      ),
     );
   }
 }

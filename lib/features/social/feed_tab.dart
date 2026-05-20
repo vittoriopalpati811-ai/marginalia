@@ -321,10 +321,34 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
     });
   }
 
+  void _showSuccessOverlay(BuildContext ctx) {
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => _PostSuccessOverlay(
+        onDone: () {
+          entry.remove();
+        },
+      ),
+    );
+    Overlay.of(ctx).insert(entry);
+  }
+
   Future<void> _submit() async {
     final text = _controller.text.trim();
     if (text.isEmpty && _imageBytes == null) return;
     setState(() => _posting = true);
+
+    // Capture context before async gap
+    final ctx = context;
+
+    // Show the success overlay immediately (optimistic)
+    _showSuccessOverlay(ctx);
+
+    // Close the sheet after the animation duration
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (mounted) Navigator.of(ctx).pop();
+    });
+
     try {
       final svc = ref.read(supabaseServiceProvider);
       String? imageUrl;
@@ -333,7 +357,6 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
       }
       await svc.createPost(body: text.isEmpty ? null : text, imageUrl: imageUrl);
       widget.onCreated();
-      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -345,7 +368,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final bottom = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
     final canPost = !_posting &&
         (_controller.text.trim().isNotEmpty || _imageBytes != null);
 
@@ -500,6 +523,119 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Post success overlay (full-screen matcha circle) ─────────────────────────
+
+class _PostSuccessOverlay extends StatefulWidget {
+  const _PostSuccessOverlay({required this.onDone});
+  final VoidCallback onDone;
+
+  @override
+  State<_PostSuccessOverlay> createState() => _PostSuccessOverlayState();
+}
+
+class _PostSuccessOverlayState extends State<_PostSuccessOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _textFade;
+
+  // Matcha green — matches the app's literary/earthy identity
+  static const _matcha = Color(0xFF4A7A35);
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+
+    // Circle scale: 0 → 2.5 with elastic bounce
+    _scale = Tween<double>(begin: 0.0, end: 2.5).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.0, 0.65, curve: Curves.elasticOut),
+      ),
+    );
+
+    // "Postato!" fades in after circle expands
+    _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.55, 0.80, curve: Curves.easeOut),
+      ),
+    );
+
+    _ctrl.forward().then((_) {
+      Future.delayed(const Duration(milliseconds: 300), widget.onDone);
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    // Diagonal of screen → the circle must be at least this large to cover everything
+    final maxRadius = (size.longestSide * 1.05);
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          builder: (_, __) {
+            final r = _scale.value * maxRadius / 2;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // Expanding circle
+                Center(
+                  child: Container(
+                    width:  r * 2,
+                    height: r * 2,
+                    decoration: const BoxDecoration(
+                      color: _matcha,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                // "Postato!" text
+                Opacity(
+                  opacity: _textFade.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.white,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Postato!',
+                        style: GoogleFonts.ebGaramond(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1162,7 +1298,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final bottom = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
     final canSend = !_submitting &&
         (_ctrl.text.trim().isNotEmpty || _imageBytes != null || _gifUrl != null);
 
@@ -1195,11 +1331,11 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                 Expanded(
                   child: Text(
                     'Commenti',
-                    style: GoogleFonts.ebGaramond(
-                      fontSize: 19,
+                    style: const TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: MarginaliaColors.ink,
-                      letterSpacing: -0.2,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
@@ -1467,12 +1603,10 @@ class _CommentBubble extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: MarginaliaColors.surfaceElevated,
                     borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(14),
-                      bottomLeft: Radius.circular(14),
-                      bottomRight: Radius.circular(14),
+                      topRight: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
                     ),
-                    border: Border.all(
-                        color: MarginaliaColors.ruleFaint, width: 0.8),
                   ),
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                   child: Column(
