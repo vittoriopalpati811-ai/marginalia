@@ -643,12 +643,12 @@ class _PostSuccessOverlayState extends State<_PostSuccessOverlay>
 
 // ─── Hold-to-publish button ───────────────────────────────────────────────────
 //
-// Press and hold for 2 seconds to submit — a circular ring fills progressively.
-// Release early → ring resets. Like Yazio's hold-to-log mechanic.
+// Tieni premuto 2s → cerchio matcha esplode dal centro schermo (elasticOut) →
+// "Postato!" → post inviato. Rilasci prima → cerchio si ritira.
 
 class _HoldToPublishButton extends StatefulWidget {
   const _HoldToPublishButton({required this.enabled, required this.onComplete});
-  final bool     enabled;
+  final bool         enabled;
   final VoidCallback onComplete;
 
   @override
@@ -658,52 +658,69 @@ class _HoldToPublishButton extends StatefulWidget {
 class _HoldToPublishButtonState extends State<_HoldToPublishButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
-  bool _holding = false;
+  OverlayEntry? _overlay;
+  bool _holding    = false;
+  bool _completed  = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          widget.onComplete();
-        }
-      });
+      duration: const Duration(milliseconds: 1800),
+    )..addStatusListener(_onAnimStatus);
   }
 
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  void _onAnimStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && !_completed) {
+      _completed = true;
+      // Trigger submit after a brief "Postato!" display
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        _removeOverlay();
+        widget.onComplete();
+      });
+    } else if (status == AnimationStatus.dismissed) {
+      _removeOverlay();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlay?.remove();
+    _overlay = null;
+    if (mounted) setState(() { _holding = false; _completed = false; });
   }
 
   void _onHoldStart() {
-    if (!widget.enabled) return;
+    if (!widget.enabled || _holding) return;
     setState(() => _holding = true);
+
+    _overlay = OverlayEntry(
+      builder: (_) => _HoldCircleOverlay(controller: _ctrl),
+    );
+    Overlay.of(context).insert(_overlay!);
     _ctrl.forward(from: 0);
   }
 
   void _onHoldEnd() {
-    if (!_holding) return;
-    setState(() => _holding = false);
-    _ctrl
-      ..stop()
-      ..reverse();
+    if (!_holding || _completed) return;
+    // Released too early → shrink back
+    _ctrl.reverse();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.removeStatusListener(_onAnimStatus);
+    _overlay?.remove();
+    _ctrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.enabled
-        ? MarginaliaColors.sienna
-        : MarginaliaColors.rule;
-
     return GestureDetector(
       onLongPressStart: (_) => _onHoldStart(),
       onLongPressEnd:   (_) => _onHoldEnd(),
       onLongPressCancel:    _onHoldEnd,
-      // Tap shows a hint that it requires hold
       onTap: widget.enabled
           ? () => ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -712,71 +729,113 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
                 ),
               )
           : null,
-      child: SizedBox(
-        width: 68,
-        height: 44,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Background pill
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: _holding ? 44 : 68,
-              height: 44,
-              decoration: BoxDecoration(
-                color: widget.enabled
-                    ? (_holding
-                        ? MarginaliaColors.sienna.withAlpha(18)
-                        : MarginaliaColors.sienna)
-                    : MarginaliaColors.rule,
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: _holding
-                  ? const SizedBox.shrink()
-                  : Center(
-                      child: Text(
-                        'Pubblica',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: widget.enabled
-                              ? const Color(0xFFF2F5EA)
-                              : MarginaliaColors.inkFaint,
-                        ),
-                      ),
-                    ),
-            ),
-
-            // Circular progress ring (visible only while holding)
-            if (_holding)
-              SizedBox(
-                width: 44,
-                height: 44,
-                child: AnimatedBuilder(
-                  animation: _ctrl,
-                  builder: (_, __) => CustomPaint(
-                    painter: _RingPainter(
-                      progress: _ctrl.value,
-                      color:    color,
-                    ),
-                  ),
-                ),
-              ),
-
-            // Arrow icon center (visible only while holding)
-            if (_holding)
-              Icon(
-                Icons.send_rounded,
-                size: 18,
-                color: color,
-              ),
-          ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: widget.enabled
+              ? (_holding
+                  ? MarginaliaColors.sienna.withAlpha(180)
+                  : MarginaliaColors.sienna)
+              : MarginaliaColors.rule,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          'Pubblica',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: widget.enabled
+                ? const Color(0xFFF2F5EA)
+                : MarginaliaColors.inkFaint,
+          ),
         ),
       ),
     );
   }
 }
 
+// ─── Full-screen hold circle overlay ─────────────────────────────────────────
+
+class _HoldCircleOverlay extends StatelessWidget {
+  const _HoldCircleOverlay({required this.controller});
+  final AnimationController controller;
+
+  static const _matcha = Color(0xFF4A7A35);
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    // Large enough to cover every corner from the center
+    final maxR = size.longestSide * 0.85;
+
+    return Material(
+      color: Colors.transparent,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (_, __) {
+            // Phase 1 (0→1): expand with elasticOut bounce
+            final expand = CurvedAnimation(
+              parent: controller,
+              curve: const Interval(0.0, 0.75, curve: ElasticOutCurve(0.65)),
+            );
+            // Phase 2 (0.72→0.92): "Postato!" + checkmark fade in
+            final textFade = CurvedAnimation(
+              parent: controller,
+              curve: const Interval(0.72, 0.92, curve: Curves.easeOut),
+            );
+
+            final r = expand.value * maxR;
+
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                // Expanding matcha circle from center
+                Center(
+                  child: Container(
+                    width:  r * 2,
+                    height: r * 2,
+                    decoration: const BoxDecoration(
+                      color: _matcha,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                // "Postato!" + checkmark
+                Opacity(
+                  opacity: textFade.value,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 56,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Postato!',
+                        style: GoogleFonts.ebGaramond(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ─── [LEGACY — kept for reference, no longer used] ────────────────────────────
 class _RingPainter extends CustomPainter {
   const _RingPainter({required this.progress, required this.color});
   final double progress;
@@ -787,18 +846,10 @@ class _RingPainter extends CustomPainter {
     final cx = size.width  / 2;
     final cy = size.height / 2;
     final r  = (size.shortestSide / 2) - 3;
-
-    // Track ring (faint)
     canvas.drawCircle(
-      Offset(cx, cy),
-      r,
-      Paint()
-        ..color = color.withAlpha(40)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3,
+      Offset(cx, cy), r,
+      Paint()..color = color.withAlpha(40)..style = PaintingStyle.stroke..strokeWidth = 3,
     );
-
-    // Progress arc (sweeps clockwise from top)
     canvas.drawArc(
       Rect.fromCircle(center: Offset(cx, cy), radius: r),
       -1.5707963, // -π/2 = 12 o'clock

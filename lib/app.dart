@@ -201,7 +201,7 @@ class MarginaliaApp extends ConsumerWidget {
 
 // ─── Shell scaffold with floating nav ────────────────────────────────────────
 
-class _ScaffoldWithNav extends StatelessWidget {
+class _ScaffoldWithNav extends StatefulWidget {
   const _ScaffoldWithNav({
     required this.child,
     required this.routePath,
@@ -209,6 +209,13 @@ class _ScaffoldWithNav extends StatelessWidget {
 
   final Widget child;
   final String routePath;
+
+  @override
+  State<_ScaffoldWithNav> createState() => _ScaffoldWithNavState();
+}
+
+class _ScaffoldWithNavState extends State<_ScaffoldWithNav>
+    with SingleTickerProviderStateMixin {
 
   static const _tabs = [
     (path: '/home',    icon: Icons.home_outlined,          activeIcon: Icons.home_rounded,          label: ''),
@@ -218,34 +225,102 @@ class _ScaffoldWithNav extends StatelessWidget {
     (path: '/profile', icon: Icons.person_outline,         activeIcon: Icons.person_rounded,        label: ''),
   ];
 
+  late final AnimationController _navCtrl;
+  late final Animation<Offset> _navSlide;
+  bool _navVisible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _navCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 240),
+    );
+    _navSlide = _navCtrl.drive(
+      Tween(begin: Offset.zero, end: const Offset(0, 2.5))
+          .chain(CurveTween(curve: Curves.easeInOutCubic)),
+    );
+  }
+
+  @override
+  void didUpdateWidget(_ScaffoldWithNav old) {
+    super.didUpdateWidget(old);
+    // Always show nav when switching tabs
+    if (old.routePath != widget.routePath) _showNav();
+  }
+
+  @override
+  void dispose() {
+    _navCtrl.dispose();
+    super.dispose();
+  }
+
+  void _showNav() {
+    if (!_navVisible) {
+      _navVisible = true;
+      _navCtrl.reverse();
+    }
+  }
+
+  void _hideNav() {
+    if (_navVisible) {
+      _navVisible = false;
+      _navCtrl.forward();
+    }
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification is ScrollUpdateNotification) {
+      final delta = notification.scrollDelta ?? 0;
+      final pixels = notification.metrics.pixels;
+      // Always reveal at the very top
+      if (pixels <= 0) {
+        _showNav();
+        return false;
+      }
+      if (delta > 5)       _hideNav();
+      else if (delta < -5) _showNav();
+    } else if (notification is ScrollEndNotification) {
+      // Snap: reveal if close to top after fling
+      if (notification.metrics.pixels <= 60) _showNav();
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex =
-        _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
+        _tabs.indexWhere((t) => t.path == widget.routePath).clamp(0, _tabs.length - 1);
 
     return Scaffold(
       extendBody: true,
       // Tab transitions: fade between screens
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
-        child: KeyedSubtree(
-          key: ValueKey(routePath),
-          child: child,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: child,
+          ),
+          child: KeyedSubtree(
+            key: ValueKey(widget.routePath),
+            child: widget.child,
+          ),
         ),
       ),
-      bottomNavigationBar: _FloatingNavBar(
-        selectedIndex: selectedIndex,
-        tabs: _tabs,
-        onTap: (i) {
-          HapticFeedback.lightImpact();
-          context.go(_tabs[i].path);
-        },
+      bottomNavigationBar: SlideTransition(
+        position: _navSlide,
+        child: _FloatingNavBar(
+          selectedIndex: selectedIndex,
+          tabs: _tabs,
+          onTap: (i) {
+            HapticFeedback.lightImpact();
+            context.go(_tabs[i].path);
+          },
+        ),
       ),
     );
   }
