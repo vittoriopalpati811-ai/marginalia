@@ -151,7 +151,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       setS(() => sending = true);
                       try {
                         await Supabase.instance.client.auth
-                            .resetPasswordForEmail(email);
+                            .resetPasswordForEmail(
+                          email,
+                          redirectTo: 'marginalia://reset-password',
+                        );
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
                           if (mounted) {

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme.dart';
 import 'core/providers/onboarding_provider.dart';
@@ -21,6 +24,7 @@ import 'features/settings/settings_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
+import 'features/auth/reset_password_screen.dart';
 import 'features/messages/messages_screen.dart';
 import 'features/messages/chat_screen.dart';
 
@@ -181,16 +185,48 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _modalPage(const AmazonLoginScreen(), state),
     ),
+    GoRoute(
+      path: '/reset-password',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) => _modalPage(const ResetPasswordScreen(), state),
+    ),
   ],
 );
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-class MarginaliaApp extends ConsumerWidget {
+class MarginaliaApp extends ConsumerStatefulWidget {
   const MarginaliaApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MarginaliaApp> createState() => _MarginaliaAppState();
+}
+
+class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
+  StreamSubscription<AuthState>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for passwordRecovery event (triggered when user opens the reset link).
+    // When fired, navigate to the reset-password screen as soon as the router is ready.
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.passwordRecovery) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          router.push('/reset-password');
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final onboardingComplete = ref.watch(onboardingCompleteProvider);
 
     // Before onboarding is done, show a standalone MaterialApp with the
