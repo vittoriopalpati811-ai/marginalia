@@ -107,6 +107,86 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     );
   }
 
+  Future<void> _showForgotPassword() async {
+    final emailCtrl = TextEditingController(text: _emailController.text.trim());
+    bool sending = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Reimposta password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Inserisci la tua email e ti mandiamo un link per reimpostare la password.',
+                style: TextStyle(fontSize: 13, color: MarginaliaColors.inkMuted),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  hintText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final email = emailCtrl.text.trim();
+                      if (email.isEmpty || !email.contains('@')) return;
+                      setS(() => sending = true);
+                      try {
+                        await Supabase.instance.client.auth
+                            .resetPasswordForEmail(email);
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Link inviato a $email — controlla la posta.',
+                                ),
+                                backgroundColor: MarginaliaColors.primary,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (_) {
+                        setS(() => sending = false);
+                      }
+                    },
+              child: sending
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Invia link'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String _mapError(String msg) {
     if (msg.contains('Invalid login')) return 'Email o password errati.';
     if (msg.contains('Email not confirmed')) return 'Conferma la tua email prima di accedere.';
@@ -191,6 +271,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         return null;
                       },
                     ),
+
+                    // "Forgot password" — solo nel tab login
+                    if (_tab.index == 0)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _showForgotPassword,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                            foregroundColor: MarginaliaColors.sienna,
+                          ),
+                          child: const Text(
+                            'Hai dimenticato la password?',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ),
 
                     if (_error != null) ...[
                       const SizedBox(height: 16),
