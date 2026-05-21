@@ -23,6 +23,33 @@
 
 ## Sessioni
 
+### Sessione 10 — 2026-05-21
+**Durata**: ~3h
+**Branch**: main
+**Commit**: `1d52522`
+
+**Fix critici**:
+- ✅ **Errore RLS conversations (42501)**: fix chicken-and-egg tra conversations e conversation_members. Creato SECURITY DEFINER RPC `create_direct_conversation` e `create_group_conversation` — il Dart ora chiama l'RPC invece di inserire direttamente.
+- ✅ **Security hardening completo**: migration 016 con RLS granulari per TUTTI i tavoli (highlights, books, posts, post_comments, post_likes, follows, profiles, conversation_members). Author-only UPDATE/DELETE su posts a livello DB.
+- ✅ **Indici DB**: aggiunto indexes su posts, likes, comments, follows, highlights per ridurre query plan cost.
+
+**Nuove feature**:
+- ✅ **Post 3-dot menu**: autore vede "Modifica" + "Elimina" (con conferma dialog), altri vedono "Segnala". Edit funziona inline via dialog.
+- ✅ **Reading status sui post**: accanto al nome utente nei post appare "· [icona libro] [titolo libro]" se l'utente ha impostato `currently_reading_title`.
+- ✅ **Email Marginalia-branded**: template HTML personalizzati per reset password e conferma signup (niente riferimenti a Supabase). File in `supabase/email_templates/`.
+- ✅ **Reset onboarding (DEV)**: opzione nascosta nelle settings, visibile solo in `kDebugMode`, che cancella il marker file e ripresenta l'onboarding.
+
+**Stress test**:
+- ✅ Script Python asyncio in `stress_test/stress_test.py`: simula 500 utenti reali in 10 minuti (signup, profilo, post, follow, like, commenti, DM). MAX_CONCURRENCY=80, stagger distribuito. Cleanup opzionale via service role key.
+
+**Da fare prima del prossimo sprint**:
+1. **Applicare migration 016** nel Supabase Dashboard → SQL Editor (incolla `supabase/migrations/016_security_hardening.sql`)
+2. **Email templates**: Dashboard → Authentication → Email Templates → incolla HTML da `supabase/email_templates/`
+3. **Test chat**: dopo migration 016, aprire una nuova conversazione deve funzionare senza errori
+4. **Stress test**: `pip install httpx && python stress_test/stress_test.py`
+
+---
+
 ### Sessione 9 — 2026-05-17
 **Durata**: ~1.5h
 **Branch**: main
