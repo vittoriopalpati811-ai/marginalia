@@ -18,6 +18,9 @@ class SupabaseService {
   String? get userId => _client.auth.currentUser?.id;
   bool get isAuthenticated => _client.auth.currentUser != null;
 
+  /// Exposed for Realtime channel subscriptions.
+  SupabaseClient get client => _client;
+
   // ─── Auth ─────────────────────────────────────────────────────────────────
 
   Future<AuthResponse> signInWithEmail(String email, String password) =>

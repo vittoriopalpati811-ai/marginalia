@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -37,9 +38,66 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final List<Map<String, dynamic>> _localMessages = [];
   bool _initialScrollDone = false;
   bool _sending = false;
+  RealtimeChannel? _realtimeChannel;
+
+  @override
+  void initState() {
+    super.initState();
+    // Small delay so the widget tree is ready before subscribing
+    WidgetsBinding.instance.addPostFrameCallback((_) => _subscribeRealtime());
+  }
+
+  void _subscribeRealtime() {
+    final svc = ref.read(supabaseServiceProvider);
+    final myId = svc.userId ?? '';
+
+    _realtimeChannel = svc.client
+        .channel('messages:${widget.conversationId}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'conversation_id',
+            value: widget.conversationId,
+          ),
+          callback: (payload) async {
+            final row = payload.newRecord;
+            // Skip messages we sent ourselves (already in _localMessages as
+            // optimistic, then replaced by the server refresh in _send)
+            if ((row['sender_id'] as String?) == myId) return;
+
+            // Fetch sender profile to display name/avatar
+            Map<String, dynamic>? senderProfile;
+            try {
+              final profiles = await svc.client
+                  .from('profiles')
+                  .select('id, display_name, avatar_url')
+                  .eq('id', row['sender_id'] as String)
+                  .limit(1);
+              if ((profiles as List).isNotEmpty) {
+                senderProfile = Map<String, dynamic>.from(profiles.first as Map);
+              }
+            } catch (_) {}
+
+            final incoming = {
+              ...row,
+              'sender': senderProfile,
+            };
+
+            if (mounted) {
+              setState(() => _localMessages.add(incoming));
+              _scrollToBottom();
+            }
+          },
+        )
+        .subscribe();
+  }
 
   @override
   void dispose() {
+    _realtimeChannel?.unsubscribe();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -94,6 +152,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     try {
       await svc.sendMessage(widget.conversationId, content: text);
+      // Remove optimistic message now that the real one is saved
+      setState(() {
+        _localMessages.removeWhere((m) => m['id'] == optimistic['id']);
+      });
       // Refresh messages from server to get confirmed data
       ref.invalidate(_messagesProvider(widget.conversationId));
     } catch (e) {
@@ -130,6 +192,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // ── Messages list ──────────────────────────────────────────────
           Expanded(
             child: messagesAsync.when(
+              skipLoadingOnRefresh: true,
               data: (serverMessages) {
                 // Merge server messages with local optimistic messages,
                 // deduplicate by id (optimistic ones have unique temp ids)
