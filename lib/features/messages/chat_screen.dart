@@ -215,7 +215,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   // ── Pick GIF via GIPHY ─────────────────────────────────────────────────────
 
   Future<void> _pickGif() async {
-    final url = await showGiphyPicker(context);
+    final url = await showGifPicker(context);
     if (url == null || url.isEmpty) return;
 
     setState(() => _uploadingMedia = true);

@@ -5,32 +5,37 @@ import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 
-// ─── GIPHY API Key ────────────────────────────────────────────────────────────
-// Get your free key at https://developers.giphy.com/
-// Replace this with your own key before shipping to production.
-const _kGiphyApiKey = 'dc6zaTOxFJmzC'; // public beta key
+// ─── GIF Picker (Reddit JSON API — no key required) ───────────────────────────
+//
+// Uses Reddit's public JSON endpoints on r/gifs and r/reactiongifs.
+// No API key, no registration. Rate limit: ~60 req/min per IP (plenty for a
+// native app). Requires User-Agent header so Reddit doesn't treat us as a bot.
 
-// ─── GiphyPicker ─────────────────────────────────────────────────────────────
+const _kUserAgent = 'Marginalia-App/1.0 (native; contact: app@marginalia.app)';
 
-/// Shows a bottom sheet for searching and selecting a GIF from GIPHY.
-/// Returns the selected GIF URL (original mp4 or gif url), or null if dismissed.
-Future<String?> showGiphyPicker(BuildContext context) {
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/// Shows a bottom sheet for searching and selecting a GIF via Reddit.
+/// Returns the selected GIF URL or null if dismissed.
+Future<String?> showGifPicker(BuildContext context) {
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => const _GiphyPickerSheet(),
+    builder: (_) => const _GifPickerSheet(),
   );
 }
 
-class _GiphyPickerSheet extends StatefulWidget {
-  const _GiphyPickerSheet();
+// ─── Sheet ────────────────────────────────────────────────────────────────────
+
+class _GifPickerSheet extends StatefulWidget {
+  const _GifPickerSheet();
 
   @override
-  State<_GiphyPickerSheet> createState() => _GiphyPickerSheetState();
+  State<_GifPickerSheet> createState() => _GifPickerSheetState();
 }
 
-class _GiphyPickerSheetState extends State<_GiphyPickerSheet> {
+class _GifPickerSheetState extends State<_GifPickerSheet> {
   final _searchController = TextEditingController();
   List<_GifItem> _gifs = [];
   bool _loading = false;
@@ -48,21 +53,25 @@ class _GiphyPickerSheetState extends State<_GiphyPickerSheet> {
     super.dispose();
   }
 
+  // ── Trending (hot posts from r/gifs) ──────────────────────────────────────
+
   Future<void> _fetchTrending() async {
     setState(() => _loading = true);
     try {
       final uri = Uri.parse(
-        'https://api.giphy.com/v1/gifs/trending'
-        '?api_key=$_kGiphyApiKey&limit=24&rating=g',
+        'https://www.reddit.com/r/gifs/hot.json?limit=50&raw_json=1',
       );
-      final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      final res = await http
+          .get(uri, headers: {'User-Agent': _kUserAgent})
+          .timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
-        final data = json.decode(res.body) as Map<String, dynamic>;
-        _setGifs(data);
+        _parseAndSetGifs(json.decode(res.body) as Map<String, dynamic>);
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
+
+  // ── Search across r/gifs + r/reactiongifs ─────────────────────────────────
 
   Future<void> _search(String query) async {
     if (query.trim().isEmpty) {
@@ -75,33 +84,68 @@ class _GiphyPickerSheetState extends State<_GiphyPickerSheet> {
     });
     try {
       final uri = Uri.parse(
-        'https://api.giphy.com/v1/gifs/search'
-        '?api_key=$_kGiphyApiKey'
-        '&q=${Uri.encodeComponent(query.trim())}'
-        '&limit=24&rating=g',
+        'https://www.reddit.com/r/gifs+reactiongifs/search.json'
+        '?q=${Uri.encodeComponent(query.trim())}'
+        '&limit=50&sort=top&t=all&raw_json=1',
       );
-      final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      final res = await http
+          .get(uri, headers: {'User-Agent': _kUserAgent})
+          .timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
-        final data = json.decode(res.body) as Map<String, dynamic>;
-        _setGifs(data);
+        _parseAndSetGifs(json.decode(res.body) as Map<String, dynamic>);
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
-  void _setGifs(Map<String, dynamic> data) {
-    final items = (data['data'] as List? ?? []).map((g) {
-      final images = g['images'] as Map<String, dynamic>? ?? {};
-      final fixed = images['fixed_height'] as Map<String, dynamic>? ?? {};
-      final orig = images['original'] as Map<String, dynamic>? ?? {};
-      return _GifItem(
-        previewUrl: fixed['url'] as String? ?? '',
-        fullUrl: orig['url'] as String? ?? fixed['url'] as String? ?? '',
-      );
-    }).where((g) => g.previewUrl.isNotEmpty).toList();
+  // ── Parser ────────────────────────────────────────────────────────────────
+  //
+  // Reddit posts in r/gifs include a `preview` block with an animated GIF
+  // variant at preview.images[0].variants.gif. We use that URL as both
+  // the thumbnail (smaller) and the full GIF to send.
+
+  void _parseAndSetGifs(Map<String, dynamic> data) {
+    final children = (data['data']?['children'] as List? ?? []);
+    final items = <_GifItem>[];
+
+    for (final child in children) {
+      final post = child['data'] as Map<String, dynamic>? ?? {};
+
+      // Skip removed / deleted posts
+      if (post['removed_by_category'] != null) continue;
+      if (post['selftext'] == '[removed]') continue;
+
+      final preview = post['preview'] as Map<String, dynamic>?;
+      if (preview == null) continue;
+
+      final images = preview['images'] as List?;
+      if (images == null || images.isEmpty) continue;
+
+      final firstImage = images.first as Map<String, dynamic>? ?? {};
+      final variants = firstImage['variants'] as Map<String, dynamic>? ?? {};
+      final gifVariant = variants['gif'] as Map<String, dynamic>?;
+      final gifSource = gifVariant?['source'] as Map<String, dynamic>?;
+      final fullGifUrl = gifSource?['url'] as String?;
+
+      // Static JPEG preview for the grid thumbnail (faster to load)
+      final sourceMap = firstImage['source'] as Map<String, dynamic>? ?? {};
+      final previewUrl = sourceMap['url'] as String? ?? '';
+
+      // Fallback: if Reddit didn't generate a gif variant but the post URL
+      // itself is a direct .gif (e.g. i.redd.it/*.gif), use that.
+      final postUrl = post['url'] as String? ?? '';
+      final resolvedFull =
+          fullGifUrl ?? (postUrl.toLowerCase().endsWith('.gif') ? postUrl : null);
+
+      if (previewUrl.isNotEmpty && resolvedFull != null) {
+        items.add(_GifItem(previewUrl: previewUrl, fullUrl: resolvedFull));
+      }
+    }
 
     if (mounted) setState(() => _gifs = items);
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -185,28 +229,14 @@ class _GiphyPickerSheetState extends State<_GiphyPickerSheet> {
           ),
           const SizedBox(height: 8),
 
-          // GIPHY branding (required by their ToS)
-          Padding(
-            padding: const EdgeInsets.only(right: 16, bottom: 4),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'Powered by GIPHY',
-                style: GoogleFonts.barlow(
-                  fontSize: 10,
-                  color: MarginaliaColors.inkFaint,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
-          ),
-
           // GIF grid
           Expanded(
             child: _gifs.isEmpty && !_loading
                 ? Center(
                     child: Text(
-                      _hasSearched ? 'Nessun risultato' : 'In caricamento…',
+                      _hasSearched
+                          ? 'Nessun risultato'
+                          : 'In caricamento…',
                       style: GoogleFonts.barlow(
                         color: MarginaliaColors.inkFaint,
                         fontSize: 14,
@@ -250,8 +280,10 @@ class _GiphyPickerSheetState extends State<_GiphyPickerSheet> {
   }
 }
 
+// ─── Model ────────────────────────────────────────────────────────────────────
+
 class _GifItem {
   const _GifItem({required this.previewUrl, required this.fullUrl});
-  final String previewUrl;
-  final String fullUrl;
+  final String previewUrl; // static JPEG thumbnail for the picker grid
+  final String fullUrl;    // animated GIF to send
 }

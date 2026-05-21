@@ -1527,7 +1527,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   }
 
   Future<void> _pickGif() async {
-    final url = await showGiphyPicker(context);
+    final url = await showGifPicker(context);
     if (url != null && mounted) {
       setState(() {
         _gifUrl     = url;
