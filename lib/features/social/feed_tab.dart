@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -8,13 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
-
-// ── GIF Search (Tenor API v2 — get a free key at console.cloud.google.com) ──
-const _kTenorApiKey = 'AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCys'; // demo key
+import '../messages/giphy_picker.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -1531,12 +1527,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   }
 
   Future<void> _pickGif() async {
-    final url = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _GifPickerSheet(),
-    );
+    final url = await showGiphyPicker(context);
     if (url != null && mounted) {
       setState(() {
         _gifUrl     = url;
@@ -1943,173 +1934,6 @@ class _CommentBubble extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── GIF picker sheet ─────────────────────────────────────────────────────────
-
-class _GifPickerSheet extends StatefulWidget {
-  const _GifPickerSheet();
-
-  @override
-  State<_GifPickerSheet> createState() => _GifPickerSheetState();
-}
-
-class _GifPickerSheetState extends State<_GifPickerSheet> {
-  final _searchCtrl = TextEditingController();
-  List<String> _gifUrls  = [];
-  bool _loading          = false;
-  String _lastQuery      = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _search('libro leggere');
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _search(String query) async {
-    if (query.trim().isEmpty) return;
-    setState(() { _loading = true; _lastQuery = query.trim(); });
-    try {
-      final uri = Uri.https('tenor.googleapis.com', '/v2/search', {
-        'q':     query.trim(),
-        'key':   _kTenorApiKey,
-        'limit': '20',
-        'media_filter': 'gif',
-      });
-      final response = await http.get(uri).timeout(const Duration(seconds: 6));
-      if (response.statusCode == 200) {
-        final data    = json.decode(response.body) as Map<String, dynamic>;
-        final results = data['results'] as List? ?? [];
-        final urls = results
-            .map((r) {
-              final media = (r as Map)['media_formats'] as Map?;
-              return (media?['tinygif'] as Map?)?['url'] as String?
-                  ?? (media?['gif'] as Map?)?['url'] as String?;
-            })
-            .whereType<String>()
-            .toList();
-        if (mounted) setState(() { _gifUrls = urls; _loading = false; });
-      } else {
-        if (mounted) setState(() { _loading = false; });
-      }
-    } catch (_) {
-      if (mounted) setState(() { _loading = false; });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.75,
-      ),
-      child: Column(
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 12),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: MarginaliaColors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: MarginaliaColors.rule),
-                    ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      style: GoogleFonts.barlow(
-                        fontSize: 14,
-                        color: MarginaliaColors.ink,
-                      ),
-                      decoration: const InputDecoration(
-                        hintText: 'Cerca GIF…',
-                        hintStyle: TextStyle(
-                          color: MarginaliaColors.inkFaint,
-                          fontSize: 14,
-                        ),
-                        prefixIcon: Icon(Icons.search,
-                            size: 18, color: MarginaliaColors.inkMuted),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      onSubmitted: _search,
-                      textInputAction: TextInputAction.search,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Grid
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: MarginaliaColors.sienna,
-                      strokeWidth: 1.5,
-                    ),
-                  )
-                : _gifUrls.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Nessun risultato',
-                          style: GoogleFonts.barlow(
-                            color: MarginaliaColors.inkMuted,
-                            fontSize: 14,
-                          ),
-                        ),
-                      )
-                    : GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: _gifUrls.length,
-                        itemBuilder: (_, i) => GestureDetector(
-                          onTap: () =>
-                              Navigator.of(context).pop(_gifUrls[i]),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.network(
-                              _gifUrls[i],
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  Container(color: MarginaliaColors.rule),
-                            ),
-                          ),
-                        ),
-                      ),
           ),
         ],
       ),

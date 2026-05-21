@@ -1,11 +1,14 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import 'giphy_picker.dart';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
@@ -38,13 +41,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final List<Map<String, dynamic>> _localMessages = [];
   bool _initialScrollDone = false;
   bool _sending = false;
+  bool _uploadingMedia = false;
   RealtimeChannel? _realtimeChannel;
 
   @override
   void initState() {
     super.initState();
-    // Small delay so the widget tree is ready before subscribing
-    WidgetsBinding.instance.addPostFrameCallback((_) => _subscribeRealtime());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _subscribeRealtime();
+      // Mark messages as read when the chat opens
+      ref.read(supabaseServiceProvider).markConversationRead(widget.conversationId);
+    });
   }
 
   void _subscribeRealtime() {
@@ -176,6 +183,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  // ── Pick image from gallery ────────────────────────────────────────────────
+
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    setState(() => _uploadingMedia = true);
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      final ext = file.extension ?? 'jpg';
+      final url = await svc.uploadMessageImage('img.$ext', file.bytes!);
+      await svc.sendMessage(widget.conversationId, imageUrl: url);
+      ref.invalidate(_messagesProvider(widget.conversationId));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore upload: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingMedia = false);
+    }
+  }
+
+  // ── Pick GIF via GIPHY ─────────────────────────────────────────────────────
+
+  Future<void> _pickGif() async {
+    final url = await showGiphyPicker(context);
+    if (url == null || url.isEmpty) return;
+
+    setState(() => _uploadingMedia = true);
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      await svc.sendMessage(widget.conversationId, imageUrl: url);
+      ref.invalidate(_messagesProvider(widget.conversationId));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Errore invio GIF: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingMedia = false);
+    }
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────────
 
   @override
@@ -194,15 +252,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: messagesAsync.when(
               skipLoadingOnRefresh: true,
               data: (serverMessages) {
-                // Merge server messages with local optimistic messages,
-                // deduplicate by id (optimistic ones have unique temp ids)
-                final optimisticIds =
-                    serverMessages.map((m) => m['id']).toSet();
-                final merged = [
-                  ...serverMessages,
-                  ..._localMessages.where(
-                      (m) => !optimisticIds.contains(m['id'])),
-                ];
+                // Server IDs (real UUIDs)
+                final serverIds = serverMessages.map((m) => m['id']).toSet();
+                // Keep only truly pending local messages not yet confirmed by server:
+                // - optimistic messages (id starts with 'optimistic_') still in flight
+                // - realtime-received messages NOT yet in server snapshot are already
+                //   filtered out because they'll appear in the next server fetch
+                final pendingLocal = _localMessages
+                    .where((m) =>
+                        (m['id'] as String).startsWith('optimistic_') &&
+                        !serverIds.contains(m['id']))
+                    .toList();
+                final merged = [...serverMessages, ...pendingLocal];
 
                 if (!_initialScrollDone && merged.isNotEmpty) {
                   _initialScrollDone = true;
@@ -302,7 +363,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           _MessageInputBar(
             controller: _textController,
             sending: _sending,
+            uploadingMedia: _uploadingMedia,
             onSend: _send,
+            onPickImage: _pickImage,
+            onPickGif: _pickGif,
           ),
         ],
       ),
@@ -728,34 +792,53 @@ class _MessageInputBar extends StatelessWidget {
   const _MessageInputBar({
     required this.controller,
     required this.sending,
+    required this.uploadingMedia,
     required this.onSend,
+    required this.onPickImage,
+    required this.onPickGif,
   });
 
   final TextEditingController controller;
   final bool sending;
+  final bool uploadingMedia;
   final VoidCallback onSend;
+  final VoidCallback onPickImage;
+  final VoidCallback onPickGif;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final busy = sending || uploadingMedia;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: MarginaliaColors.surface,
-        border: const Border(
+        border: Border(
           top: BorderSide(color: MarginaliaColors.rule, width: 0.5),
         ),
       ),
       padding: EdgeInsets.fromLTRB(
-        16,
-        10,
-        16,
-        bottomInset > 0 ? bottomInset + 10 : bottomPadding + 10,
+        8,
+        8,
+        8,
+        bottomInset > 0 ? bottomInset + 8 : bottomPadding + 8,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // Image picker
+          _MediaButton(
+            icon: Icons.image_outlined,
+            onTap: busy ? null : onPickImage,
+          ),
+          // GIF picker
+          _MediaButton(
+            icon: Icons.gif_box_outlined,
+            onTap: busy ? null : onPickGif,
+          ),
+          const SizedBox(width: 4),
+
           // Text field
           Expanded(
             child: TextField(
@@ -769,7 +852,9 @@ class _MessageInputBar extends StatelessWidget {
                 height: 1.4,
               ),
               decoration: InputDecoration(
-                hintText: 'Scrivi un messaggio…',
+                hintText: uploadingMedia
+                    ? 'Caricamento…'
+                    : 'Scrivi un messaggio…',
                 hintStyle: GoogleFonts.barlow(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
@@ -801,18 +886,18 @@ class _MessageInputBar extends StatelessWidget {
 
           // Send button
           GestureDetector(
-            onTap: onSend,
+            onTap: busy ? null : onSend,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: sending
-                    ? MarginaliaColors.primary.withAlpha(150)
+                color: busy
+                    ? MarginaliaColors.primary.withAlpha(130)
                     : MarginaliaColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: sending
+              child: busy
                   ? const Padding(
                       padding: EdgeInsets.all(12),
                       child: CircularProgressIndicator(
@@ -828,6 +913,29 @@ class _MessageInputBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MediaButton extends StatelessWidget {
+  const _MediaButton({required this.icon, this.onTap});
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Icon(
+          icon,
+          size: 24,
+          color: onTap != null
+              ? MarginaliaColors.inkMuted
+              : MarginaliaColors.inkFaint,
+        ),
       ),
     );
   }

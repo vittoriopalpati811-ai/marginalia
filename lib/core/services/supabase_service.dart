@@ -1023,16 +1023,20 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> fetchConversations() async {
     final uid = userId!;
 
-    // Conversations I'm in
+    // Conversations I'm in — also fetch last_read_at for unread badge
     final memberRows = List<Map<String, dynamic>>.from(
       await _client
           .from('conversation_members')
-          .select('conversation_id')
+          .select('conversation_id, last_read_at')
           .eq('user_id', uid) as List,
     );
     if (memberRows.isEmpty) return [];
-    final convIds =
-        memberRows.map((r) => r['conversation_id'] as String).toList();
+
+    final lastReadMap = {
+      for (final r in memberRows)
+        r['conversation_id'] as String: r['last_read_at'] as String?,
+    };
+    final convIds = lastReadMap.keys.toList();
 
     final convRows = List<Map<String, dynamic>>.from(
       await _client
@@ -1064,11 +1068,34 @@ class SupabaseService {
 
       result.add({
         ...conv,
-        'members': profiles,
+        'members': profiles.where((p) => p['id'] != uid).toList(),
         'last_message': lastMsgs.isEmpty ? null : lastMsgs.first,
+        'my_last_read_at': lastReadMap[convId],
+        'current_user_id': uid,
       });
     }
     return result;
+  }
+
+  /// Mark all messages in [conversationId] as read for the current user.
+  Future<void> markConversationRead(String conversationId) async {
+    try {
+      await _client
+          .from('conversation_members')
+          .update({'last_read_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('conversation_id', conversationId)
+          .eq('user_id', userId!);
+    } catch (_) {}
+  }
+
+  /// Upload an image to the message-images bucket and return its public URL.
+  Future<String> uploadMessageImage(
+      String fileName, List<int> bytes) async {
+    final path = '${userId!}/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    await _client.storage
+        .from('message-images')
+        .uploadBinary(path, bytes as dynamic);
+    return _client.storage.from('message-images').getPublicUrl(path);
   }
 
   /// Messages for a single conversation in chronological order, with sender

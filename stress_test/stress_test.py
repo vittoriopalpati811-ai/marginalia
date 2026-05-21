@@ -53,7 +53,7 @@ SUPABASE_SERVICE_ROLE_KEY = ""   # leave empty to skip cleanup
 
 TOTAL_USERS       = 500          # number of virtual users to simulate
 SPAWN_OVER_SECS   = 540          # spawn all users within 9 minutes (leave 1 min for wrap-up)
-MAX_CONCURRENCY   = 80           # max simultaneous HTTP connections
+MAX_CONCURRENCY   = 15           # max simultaneous HTTP connections (free tier safe)
 TEST_EMAIL_DOMAIN = "@stresstest.marginalia.dev"
 
 # Sample content for realism
@@ -181,34 +181,51 @@ async def run_user(
     sem: asyncio.Semaphore,
 ):
     async with sem:
-        # ── 1. Sign up ────────────────────────────────────────────────────────
-        try:
-            r = await client.post(
-                _auth_url("signup"),
-                headers=_anon_headers(),
-                json={"email": user.email, "password": user.password},
-                timeout=15,
-            )
-            if r.status_code in (200, 201):
-                data = r.json()
-                user.token = data.get("access_token", "")
-                user.uid = data.get("user", {}).get("id", "")
-                stats.signups_ok += 1
-                user.completed_steps.append("signup")
-            else:
-                stats.signups_fail += 1
-                user.error = f"signup {r.status_code}: {r.text[:120]}"
-                stats.errors.append(user.error)
-                return
-        except Exception as e:
-            stats.signups_fail += 1
-            user.error = f"signup exc: {e}"
-            stats.errors.append(user.error)
-            return
+        # ── 1. Sign up (with retry on 429) ───────────────────────────────────
+        for attempt in range(3):
+            try:
+                r = await client.post(
+                    _auth_url("signup"),
+                    headers=_anon_headers(),
+                    json={"email": user.email, "password": user.password},
+                    timeout=20,
+                )
+                if r.status_code == 429:
+                    retry_after = int(r.headers.get("retry-after", 5))
+                    print(f"   [rate limit] user {user.user_id} throttled, waiting {retry_after}s...")
+                    await asyncio.sleep(retry_after + random.uniform(1, 3))
+                    continue
+                if r.status_code in (200, 201):
+                    data = r.json()
+                    user.token = data.get("access_token", "")
+                    user.uid = data.get("user", {}).get("id", "")
+                    if user.token:
+                        stats.signups_ok += 1
+                        user.completed_steps.append("signup")
+                    else:
+                        # No token = email confirmation still required
+                        stats.signups_fail += 1
+                        user.error = "signup: no token (email confirm required?)"
+                        stats.errors.append(user.error)
+                        print(f"   [warn] user {user.user_id}: {user.error}")
+                        return
+                else:
+                    stats.signups_fail += 1
+                    user.error = f"signup {r.status_code}: {r.text[:120]}"
+                    stats.errors.append(user.error)
+                    print(f"   [err] user {user.user_id}: {user.error}")
+                    return
+                break
+            except Exception as e:
+                if attempt == 2:
+                    stats.signups_fail += 1
+                    user.error = f"signup exc: {e}"
+                    stats.errors.append(user.error)
+                    print(f"   [exc] user {user.user_id}: {user.error}")
+                    return
+                await asyncio.sleep(2 ** attempt)
 
         if not user.token:
-            # Email confirmation required — can't continue without a session
-            stats.signups_fail += 1
             return
 
         h = _auth_headers(user.token)

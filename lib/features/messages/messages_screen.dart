@@ -216,6 +216,8 @@ class _ConversationCard extends StatelessWidget {
     final members =
         (conversation['members'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
     final lastMessage = conversation['last_message'] as Map<String, dynamic>?;
+    final myLastReadAt = conversation['my_last_read_at'] as String?;
+    final currentUserId = conversation['current_user_id'] as String? ?? '';
 
     // Derive display name and avatar
     String displayName;
@@ -225,10 +227,27 @@ class _ConversationCard extends StatelessWidget {
       displayName = conversation['group_name'] as String? ?? 'Gruppo';
       avatarUrl = conversation['group_avatar_url'] as String?;
     } else {
-      // Find the other person (not current user)
       final otherMember = members.isNotEmpty ? members.first : null;
       displayName = otherMember?['display_name'] as String? ?? 'Utente';
       avatarUrl = otherMember?['avatar_url'] as String?;
+    }
+
+    // Unread = last message exists, NOT sent by me, newer than my last_read_at
+    bool hasUnread = false;
+    if (lastMessage != null) {
+      final senderId = lastMessage['sender_id'] as String? ?? '';
+      if (senderId != currentUserId) {
+        if (myLastReadAt == null) {
+          hasUnread = true;
+        } else {
+          final lastMsgTime =
+              DateTime.tryParse(lastMessage['created_at'] as String? ?? '');
+          final lastRead = DateTime.tryParse(myLastReadAt);
+          if (lastMsgTime != null && lastRead != null) {
+            hasUnread = lastMsgTime.isAfter(lastRead);
+          }
+        }
+      }
     }
 
     // Last message preview
@@ -324,17 +343,22 @@ class _ConversationCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.barlow(
                               fontSize: 13,
-                              color: MarginaliaColors.inkMuted,
+                              color: hasUnread
+                                  ? MarginaliaColors.ink
+                                  : MarginaliaColors.inkMuted,
+                              fontWeight: hasUnread
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                               height: 1.4,
                             ),
                           ),
                         ),
-                        if (lastMessage != null) ...[
+                        if (hasUnread) ...[
                           const SizedBox(width: 8),
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               color: MarginaliaColors.sienna,
                               shape: BoxShape.circle,
                             ),
