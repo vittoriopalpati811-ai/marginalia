@@ -27,4 +27,14 @@ class OnboardingService {
       // next launch, which is the safer fallback.
     }
   }
+
+  /// Delete the marker file so the onboarding is shown again.
+  /// Useful during development/testing.
+  static Future<void> resetComplete() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/$_kMarkerName');
+      if (file.existsSync()) await file.delete();
+    } catch (_) {}
+  }
 }

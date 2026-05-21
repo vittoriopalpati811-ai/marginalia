@@ -914,12 +914,164 @@ class _PostCard extends ConsumerStatefulWidget {
 class _PostCardState extends ConsumerState<_PostCard> {
   late bool _liked;
   late int  _likesCount;
+  bool _deleted = false;
 
   @override
   void initState() {
     super.initState();
     _liked      = widget.post['is_liked']    as bool? ?? false;
     _likesCount = widget.post['likes_count'] as int?  ?? 0;
+  }
+
+  Future<void> _showPostMenu(BuildContext context) async {
+    final svc = ref.read(supabaseServiceProvider);
+    final postId = widget.post['id'] as String?;
+    final postUserId = widget.post['user_id'] as String?;
+    final isOwner = svc.userId != null && svc.userId == postUserId;
+    final body = widget.post['body'] as String? ?? '';
+
+    if (!isOwner) {
+      // Non-owner: only "Report" option (placeholder)
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _PostMenuSheet(
+          items: [
+            _MenuAction(
+              icon: Icons.flag_outlined,
+              label: 'Segnala post',
+              color: MarginaliaColors.inkMuted,
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Post segnalato. Grazie!')),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Owner: edit + delete
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _PostMenuSheet(
+        items: [
+          _MenuAction(
+            icon: Icons.edit_outlined,
+            label: 'Modifica post',
+            color: MarginaliaColors.ink,
+            onTap: () async {
+              Navigator.pop(ctx);
+              if (postId == null) return;
+              await _showEditDialog(context, postId, body);
+            },
+          ),
+          _MenuAction(
+            icon: Icons.delete_outline,
+            label: 'Elimina post',
+            color: const Color(0xFFDC2626),
+            onTap: () async {
+              Navigator.pop(ctx);
+              if (postId == null) return;
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('Elimina post'),
+                  content: const Text('Vuoi davvero eliminare questo post? L\'azione non è reversibile.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Annulla'),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Elimina'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true && mounted) {
+                try {
+                  await svc.deletePost(postId);
+                  if (mounted) {
+                    setState(() => _deleted = true);
+                    ref.invalidate(postsProvider);
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text('Errore: $e')));
+                  }
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showEditDialog(BuildContext context, String postId, String currentBody) async {
+    final ctrl = TextEditingController(text: currentBody);
+    bool saving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Modifica post'),
+          content: TextField(
+            controller: ctrl,
+            maxLines: 6,
+            maxLength: 1000,
+            decoration: const InputDecoration(
+              hintText: 'Scrivi qualcosa…',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      final newBody = ctrl.text.trim();
+                      if (newBody.isEmpty) return;
+                      setS(() => saving = true);
+                      try {
+                        await ref.read(supabaseServiceProvider).updatePost(postId, newBody);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        ref.invalidate(postsProvider);
+                      } catch (e) {
+                        setS(() => saving = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(content: Text('Errore: $e')));
+                        }
+                      }
+                    },
+              child: saving
+                  ? const SizedBox(
+                      width: 16, height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Salva'),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
   }
 
   Future<void> _toggleLike() async {
@@ -974,24 +1126,31 @@ class _PostCardState extends ConsumerState<_PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    final post        = widget.post;
-    final profile     = post['profile']    as Map?;
-    final name        = profile?['display_name'] as String? ?? 'Lettore';
-    final avatarUrl   = profile?['avatar_url']   as String?;
-    final userId      = post['user_id']    as String?;
-    final body        = post['body']       as String?;
-    final createdAt   = post['created_at'] as String?;
-    final imageUrl    = post['image_url']  as String?;
-    final highlight   = post['highlights'] as Map?;
-    final hlContent   = highlight?['content']       as String?;
-    final hlColor     = highlight?['color']         as String?;
-    final hlBook      = highlight?['books']         as Map?;
-    final hlBookTitle = hlBook?['title']  as String?;
-    final hlAuthor    = hlBook?['author'] as String?;
-    final initial     = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final tint        = MarginaliaDecorations.bookCoverColor(name);
-    final timeAgo     = _timeAgo(createdAt);
-    final accent      = _accentFor(hlColor);
+    if (_deleted) return const SizedBox.shrink();
+
+    final post          = widget.post;
+    final profile       = post['profile']    as Map?;
+    final name          = profile?['display_name']         as String? ?? 'Lettore';
+    final avatarUrl     = profile?['avatar_url']           as String?;
+    final readingTitle  = profile?['currently_reading_title'] as String?;
+    final userId        = post['user_id']    as String?;
+    final body          = post['body']       as String?;
+    final createdAt     = post['created_at'] as String?;
+    final imageUrl      = post['image_url']  as String?;
+    final highlight     = post['highlights'] as Map?;
+    final hlContent     = highlight?['content']       as String?;
+    final hlColor       = highlight?['color']         as String?;
+    final hlBook        = highlight?['books']         as Map?;
+    final hlBookTitle   = hlBook?['title']  as String?;
+    final hlAuthor      = hlBook?['author'] as String?;
+    final initial       = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final tint          = MarginaliaDecorations.bookCoverColor(name);
+    final timeAgo       = _timeAgo(createdAt);
+    final accent        = _accentFor(hlColor);
+
+    // Current user check for menu
+    final currentUserId = ref.read(supabaseServiceProvider).userId;
+    final isOwner = currentUserId != null && currentUserId == userId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -999,8 +1158,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
 
         // ── User header ────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+          padding: const EdgeInsets.fromLTRB(14, 12, 6, 0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
                 onTap: userId != null ? () => context.push('/user/$userId') : null,
@@ -1018,14 +1178,50 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: GoogleFonts.barlow(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.ink,
-                          letterSpacing: -0.1,
-                        ),
+                      // Name row: username + "· leggendo X"
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: GoogleFonts.barlow(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: MarginaliaColors.ink,
+                                letterSpacing: -0.1,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (readingTitle != null && readingTitle.isNotEmpty) ...[
+                            Text(
+                              ' · ',
+                              style: GoogleFonts.barlow(
+                                fontSize: 11,
+                                color: MarginaliaColors.inkFaint,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.menu_book_rounded,
+                              size: 10,
+                              color: MarginaliaColors.siennaLight,
+                            ),
+                            const SizedBox(width: 3),
+                            Flexible(
+                              child: Text(
+                                readingTitle,
+                                style: GoogleFonts.barlow(
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                  color: MarginaliaColors.siennaLight,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (timeAgo.isNotEmpty)
                         Text(
@@ -1036,6 +1232,20 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           ),
                         ),
                     ],
+                  ),
+                ),
+              ),
+              // 3-dot menu
+              GestureDetector(
+                onTap: () => _showPostMenu(context),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
+                  child: Icon(
+                    Icons.more_horiz,
+                    size: 20,
+                    color: isOwner
+                        ? MarginaliaColors.inkMuted
+                        : MarginaliaColors.inkFaint,
                   ),
                 ),
               ),
@@ -1900,6 +2110,75 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                           ),
                         ),
                       ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Post menu sheet ─────────────────────────────────────────────────────────
+
+class _MenuAction {
+  const _MenuAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+}
+
+class _PostMenuSheet extends StatelessWidget {
+  const _PostMenuSheet({required this.items});
+  final List<_MenuAction> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: EdgeInsets.fromLTRB(0, 8, 0, bottom + 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.rule,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          ...items.map(
+            (a) => InkWell(
+              onTap: a.onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  children: [
+                    Icon(a.icon, size: 20, color: a.color ?? MarginaliaColors.ink),
+                    const SizedBox(width: 14),
+                    Text(
+                      a.label,
+                      style: GoogleFonts.barlow(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: a.color ?? MarginaliaColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -780,12 +780,12 @@ class SupabaseService {
     );
     if (rows.isEmpty) return [];
 
-    // Fetch profiles in parallel
+    // Fetch profiles in parallel (include currently_reading for "reading X" display)
     final userIds = rows.map((r) => r['user_id'] as String).toSet().toList();
     final profiles = List<Map<String, dynamic>>.from(
       await _client
               .from('profiles')
-              .select('id, display_name, avatar_url')
+              .select('id, display_name, avatar_url, currently_reading_title')
               .inFilter('id', userIds) as List,
     );
     final profileById = {for (var p in profiles) p['id'] as String: p};
@@ -1120,50 +1120,13 @@ class SupabaseService {
   }
 
   /// Returns the conversation ID for a DM with [otherUserId].
-  /// Creates one if it doesn't exist yet.
+  /// Uses a SECURITY DEFINER RPC function to avoid RLS chicken-and-egg.
   Future<String> createOrFetchDirectConversation(String otherUserId) async {
-    final myId = userId!;
-
-    final myConvIds = List<Map<String, dynamic>>.from(
-      await _client
-          .from('conversation_members')
-          .select('conversation_id')
-          .eq('user_id', myId) as List,
-    ).map((r) => r['conversation_id'] as String).toList();
-
-    if (myConvIds.isNotEmpty) {
-      final shared = List<Map<String, dynamic>>.from(
-        await _client
-            .from('conversation_members')
-            .select('conversation_id')
-            .eq('user_id', otherUserId)
-            .inFilter('conversation_id', myConvIds) as List,
-      );
-      for (final s in shared) {
-        final cid = s['conversation_id'] as String;
-        final convs = List<Map<String, dynamic>>.from(
-          await _client
-              .from('conversations')
-              .select('id, is_group')
-              .eq('id', cid)
-              .eq('is_group', false) as List,
-        );
-        if (convs.isNotEmpty) return convs.first['id'] as String;
-      }
-    }
-
-    // Create new direct conversation
-    final conv = await _client.from('conversations').insert({
-      'is_group': false,
-      'created_by': myId,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).select().single();
-    final convId = conv['id'] as String;
-    await _client.from('conversation_members').insert([
-      {'conversation_id': convId, 'user_id': myId},
-      {'conversation_id': convId, 'user_id': otherUserId},
-    ]);
-    return convId;
+    final result = await _client.rpc(
+      'create_direct_conversation',
+      params: {'p_other_user_id': otherUserId},
+    );
+    return result as String;
   }
 
   /// Create a group conversation with [memberIds] (current user is auto-added).
@@ -1171,20 +1134,29 @@ class SupabaseService {
     List<String> memberIds, {
     required String groupName,
   }) async {
-    final myId = userId!;
-    final conv = await _client.from('conversations').insert({
-      'is_group': true,
-      'group_name': groupName.trim(),
-      'created_by': myId,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).select().single();
-    final convId = conv['id'] as String;
-    final allIds = {myId, ...memberIds}.toList();
-    await _client.from('conversation_members').insert(
-          allIds
-              .map((id) => {'conversation_id': convId, 'user_id': id})
-              .toList(),
-        );
-    return convId;
+    final result = await _client.rpc(
+      'create_group_conversation',
+      params: {
+        'p_member_ids': memberIds,
+        'p_group_name': groupName.trim(),
+      },
+    );
+    return result as String;
+  }
+
+  // ─── Post CRUD (author only) ──────────────────────────────────────────────
+
+  /// Delete a post by ID. Only succeeds if current user is the author (RLS).
+  Future<void> deletePost(String postId) async {
+    await _client.from('posts').delete().eq('id', postId).eq('user_id', userId!);
+  }
+
+  /// Edit the body of an existing post. Only succeeds if current user is author.
+  Future<void> updatePost(String postId, String newBody) async {
+    await _client
+        .from('posts')
+        .update({'body': newBody.trim()})
+        .eq('id', postId)
+        .eq('user_id', userId!);
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
+import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/export_service.dart';
+import '../../core/services/onboarding_service.dart';
 import '../widget/widget_preview_screen.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -675,6 +678,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 await ref.read(supabaseServiceProvider).signOut();
               },
             ),
+            // ── Debug only: reset onboarding so devs can test the flow ────
+            if (kDebugMode) ...[
+              const Divider(indent: 16, endIndent: 16),
+              ListTile(
+                leading: const Icon(Icons.restart_alt_outlined,
+                    color: MarginaliaColors.inkMuted),
+                title: const Text('[DEV] Reset onboarding',
+                    style: TextStyle(color: MarginaliaColors.inkMuted, fontSize: 13)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await OnboardingService.resetComplete();
+                  if (context.mounted) {
+                    ref.read(onboardingCompleteProvider.notifier).state = false;
+                  }
+                },
+              ),
+            ],
           ],
         ),
       ),

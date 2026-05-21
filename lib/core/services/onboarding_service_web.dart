@@ -3,4 +3,5 @@
 class OnboardingService {
   static Future<bool> isComplete() async => true;
   static Future<void> markComplete() async {}
+  static Future<void> resetComplete() async {} // no-op on web
 }
