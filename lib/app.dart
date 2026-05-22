@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme.dart';
+import 'core/providers/locale_provider.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'core/providers/onboarding_provider.dart';
 import 'features/social/home_tab.dart';
@@ -235,6 +236,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
   @override
   Widget build(BuildContext context) {
     final onboardingComplete = ref.watch(onboardingCompleteProvider);
+    final locale = ref.watch(localeProvider);
 
     // Before onboarding is done, show a standalone MaterialApp with the
     // onboarding screen. Once the user completes it the provider flips to true
@@ -246,6 +248,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         darkTheme: buildMarginaliaDarkTheme(),
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
+        locale: locale,
         localizationsDelegates: _localizationsDelegates,
         supportedLocales: _supportedLocales,
         home: const OnboardingScreen(),
@@ -259,6 +262,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
       themeMode: ThemeMode.system,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      locale: locale,
       localizationsDelegates: _localizationsDelegates,
       supportedLocales: _supportedLocales,
     );
@@ -538,18 +542,17 @@ class _FloatingNavBar extends StatelessWidget {
 
 // ─── Localization config ──────────────────────────────────────────────────────
 //
-// To activate full i18n:
-//   1. flutter pub get
-//   2. flutter gen-l10n
-//   3. Uncomment the AppLocalizations lines below
+// ACTIVATION (one-time, run from project root):
+//   flutter pub get && flutter gen-l10n
+// Then uncomment the two lines marked ★ below.
 //
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // step 3a
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ★ uncomment
 
 const _localizationsDelegates = [
   GlobalMaterialLocalizations.delegate,
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,
-  // AppLocalizations.delegate, // step 3b — uncomment after flutter gen-l10n
+  // AppLocalizations.delegate, // ★ uncomment after flutter gen-l10n
 ];
 
 const _supportedLocales = [

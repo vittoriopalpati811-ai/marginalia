@@ -10,7 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
+import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/theme.dart';
 
@@ -30,6 +32,10 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _step = 0;
+
+  // Language selection is the very first thing shown — before the PageView.
+  // Once chosen it persists and the onboarding slides appear.
+  bool _languageChosen = false;
 
   // Login mode flag (toggled from "Hai già un account? Accedi")
   bool _loginMode = false;
@@ -70,6 +76,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _nameCtrl.dispose();
     _usernameDebounce?.cancel();
     super.dispose();
+  }
+
+  // ── Language selection ───────────────────────────────────────────────────────
+
+  Future<void> _onLanguageChosen(Locale locale) async {
+    // Persist and apply immediately — the whole app re-renders in the chosen language.
+    await LocaleService.setLocale(locale);
+    if (mounted) {
+      ref.read(localeProvider.notifier).state = locale;
+      setState(() => _languageChosen = true);
+    }
   }
 
   // ── Navigation ──────────────────────────────────────────────────────────────
@@ -280,17 +297,42 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Scaffold(
       backgroundColor: MarginaliaColors.surface,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Progress dots
-            if (_step > 0) _ProgressDots(current: _step, total: _kTotalSteps),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.04),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                )),
+                child: child,
+              ),
+            );
+          },
+          child: !_languageChosen
+              ? _LanguageStep(
+                  key: const ValueKey('language'),
+                  onChosen: _onLanguageChosen,
+                )
+              : Column(
+                  key: const ValueKey('onboarding'),
+                  children: [
+                    // Progress dots
+                    if (_step > 0) _ProgressDots(current: _step, total: _kTotalSteps),
 
-            // Pages
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
+                    // Pages
+                    Expanded(
+                      child: PageView(
+                        controller: _pageController,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
                   _WelcomeStep(
                     onStart: _next,
                     onLogin: () {
@@ -344,8 +386,248 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ],
         ),
+        ),
       ),
     );
+  }
+}
+
+// ─── Step −1: Language selection (pre-step) ──────────────────────────────────
+//
+// Shown BEFORE the onboarding PageView.
+// Both languages are displayed in their own script — no translation needed.
+// Cards use a soft press + scale animation; the whole screen fades out once
+// a language is chosen.
+
+class _LanguageStep extends StatefulWidget {
+  const _LanguageStep({super.key, required this.onChosen});
+  final Future<void> Function(Locale) onChosen;
+
+  @override
+  State<_LanguageStep> createState() => _LanguageStepState();
+}
+
+class _LanguageStepState extends State<_LanguageStep> {
+  String? _choosing; // language code being animated, null = idle
+
+  Future<void> _choose(String code) async {
+    if (_choosing != null) return;
+    setState(() => _choosing = code);
+    HapticFeedback.lightImpact();
+    // Small pause so the press-state is visible before transition.
+    await Future<void>.delayed(const Duration(milliseconds: 160));
+    await widget.onChosen(Locale(code));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        children: [
+          const Spacer(flex: 2),
+
+          // ── Wordmark ──────────────────────────────────────────────────────
+          Text(
+            'Marginalia',
+            style: GoogleFonts.ebGaramond(
+              fontSize: 44,
+              fontWeight: FontWeight.w600,
+              color: MarginaliaColors.ink,
+              letterSpacing: -1.0,
+              height: 1,
+            ),
+          )
+              .animate()
+              .fadeIn(duration: 600.ms, curve: Curves.easeOut)
+              .slideY(begin: -0.06, end: 0, duration: 600.ms, curve: Curves.easeOut),
+
+          const SizedBox(height: 8),
+
+          // ── Thin rule ─────────────────────────────────────────────────────
+          Container(
+            height: 0.8,
+            width: 160,
+            color: MarginaliaColors.ruleFaint,
+          )
+              .animate()
+              .fadeIn(delay: 150.ms, duration: 500.ms),
+
+          const SizedBox(height: 36),
+
+          // ── Prompt ────────────────────────────────────────────────────────
+          Text(
+            'Choose your language',
+            style: GoogleFonts.barlow(
+              fontSize: 13,
+              color: MarginaliaColors.inkFaint,
+              letterSpacing: 1.8,
+              fontWeight: FontWeight.w500,
+            ),
+          )
+              .animate()
+              .fadeIn(delay: 220.ms, duration: 500.ms),
+
+          const Spacer(flex: 1),
+
+          // ── Language cards ────────────────────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: _LangCard(
+                  code: 'it',
+                  label: 'Italiano',
+                  sublabel: 'Italian',
+                  emoji: '🇮🇹',
+                  delay: 340.ms,
+                  isSelected: _choosing == 'it',
+                  isDisabled: _choosing != null && _choosing != 'it',
+                  onTap: () => _choose('it'),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _LangCard(
+                  code: 'en',
+                  label: 'English',
+                  sublabel: 'Inglese',
+                  emoji: '🇬🇧',
+                  delay: 440.ms,
+                  isSelected: _choosing == 'en',
+                  isDisabled: _choosing != null && _choosing != 'en',
+                  onTap: () => _choose('en'),
+                ),
+              ),
+            ],
+          ),
+
+          const Spacer(flex: 3),
+
+          // ── Footnote ─────────────────────────────────────────────────────
+          Text(
+            'You can change this later in Settings',
+            style: GoogleFonts.barlow(
+              fontSize: 12,
+              color: MarginaliaColors.inkFaint,
+            ),
+            textAlign: TextAlign.center,
+          )
+              .animate()
+              .fadeIn(delay: 600.ms, duration: 500.ms),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _LangCard extends StatelessWidget {
+  const _LangCard({
+    required this.code,
+    required this.label,
+    required this.sublabel,
+    required this.emoji,
+    required this.delay,
+    required this.isSelected,
+    required this.isDisabled,
+    required this.onTap,
+  });
+
+  final String code;
+  final String label;
+  final String sublabel;
+  final String emoji;
+  final Duration delay;
+  final bool isSelected;
+  final bool isDisabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isDisabled ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.identity()
+          ..scale(isSelected ? 1.04 : (isDisabled ? 0.96 : 1.0)),
+        transformAlignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? MarginaliaColors.primaryFaint
+              : MarginaliaColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? MarginaliaColors.primary
+                : MarginaliaColors.rule,
+            width: isSelected ? 1.5 : 0.8,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: MarginaliaColors.primary.withAlpha(30),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  const BoxShadow(
+                    color: Color(0x0A261E1D),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+        ),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isDisabled ? 0.35 : 1.0,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+            child: Column(
+              children: [
+                // Flag emoji
+                Text(emoji, style: const TextStyle(fontSize: 36)),
+                const SizedBox(height: 14),
+                // Language name in its own language
+                Text(
+                  label,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? MarginaliaColors.primary
+                        : MarginaliaColors.ink,
+                    letterSpacing: -0.3,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Subtitle in the OTHER language
+                Text(
+                  sublabel,
+                  style: GoogleFonts.barlow(
+                    fontSize: 12,
+                    color: MarginaliaColors.inkFaint,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(delay: delay, duration: 500.ms, curve: Curves.easeOut)
+        .slideY(
+          begin: 0.12,
+          end: 0,
+          delay: delay,
+          duration: 500.ms,
+          curve: Curves.easeOutCubic,
+        );
   }
 }
 
