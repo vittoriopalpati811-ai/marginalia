@@ -7,11 +7,11 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter MVP — i18n cablata negli screen + RevenueCat infra + Amazon JS remoto
-**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n completata
+**Fase**: Flutter MVP — onboarding lingua + i18n cablata + RevenueCat infra + Amazon JS remoto
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Language selection
 **Prossima azione founder**:
   1. Applicare migration 018 e 019 in Supabase SQL Editor (se non già fatto)
-  2. Eseguire `flutter pub get && flutter gen-l10n` → poi decommentare `AppLocalizations.delegate` in `lib/app.dart` (e relativo import) → app compila con i18n completa
+  2. Eseguire `flutter pub get && flutter gen-l10n` → poi decommentare le due righe ★ in `lib/app.dart` (import AppLocalizations + delegate) → app compila con i18n completa
   3. Creare account RevenueCat → inserire API key in `subscription_service.dart`
   4. Creare prodotto "marginalia_premium_yearly" in App Store Connect
 **Branch attivo**: master
@@ -30,6 +30,47 @@
 ---
 
 ## Sessioni
+
+### Sessione 13 — 2026-05-23
+**Durata**: ~1h
+**Branch**: master
+**Commit**: `fd3f91e`
+
+#### Fatto
+
+**Language selection pre-step in onboarding (✅)**
+- Nuova schermata mostrata PRIMA del PageView a 7 step — l'utente sceglie la lingua al primo avvio.
+- `_LanguageStep`: wordmark EB Garamond 44px, riga sottile, prompt Barlow "Choose your language" — tutto con `flutter_animate` fadeIn + slideY staggerato (100–600ms delay).
+- `_LangCard`: carte animate con `AnimatedContainer` scale (1.04 selected, 0.96 disabled, 1.0 idle) + `AnimatedOpacity` (0.35 disabilitato). Flag emoji 36px + nome nella propria lingua + sottotitolo nell'altra.
+- `AnimatedSwitcher` con `FadeTransition` + `SlideTransition(Offset(0, 0.04))` per transizione morbida lingua → onboarding.
+- `HapticFeedback.lightImpact()` al tap + 160ms delay per rendere visibile la press-state prima del cambio.
+
+**Locale infrastructure (✅)**
+- `lib/core/services/locale_service.dart`: persiste il codice lingua in `.marginalia_locale` nella app documents directory (dart:io, stesso pattern di OnboardingService).
+- `lib/core/providers/locale_provider.dart`: `StateProvider<Locale>` inizializzato via `ProviderScope.overrides` al launch.
+- `lib/core/storage/app_startup_native.dart`: aggiunto `LocaleService.getLocale()` al `Future.wait` parallelo (zero overhead — gira in parallelo con Isar open + onboarding check).
+- `lib/app.dart`: watch `localeProvider` → `locale:` passato a entrambi i `MaterialApp`.
+
+#### Prompt per sessioni future (da usare come base per i prossimi Claude)
+
+**Prompt 1 — Paywall gates** (nota: `subscription_service.dart`, `subscription_provider.dart`, `paywall_screen.dart` esistono già — solo i gate mancano):
+- Gate ImportService: se `highlightCount >= 200` e non premium → push PaywallScreen
+- Gate JamCreationScreen: se non premium → show paywall prima del form
+- Gate Jam messaging/post creation: se non premium → show paywall
+
+**Prompt 2 — Jam 2.0** (⚠️ migration deve iniziare da `020_jam_book_club.sql` — `019` già usato):
+- Feature 1: Book of the month voting
+- Feature 2: Reading Challenge
+- Feature 3: Weekly highlight poll
+- Feature 4: Member profile sheet
+- Feature 5: In-app notifications
+
+#### Azioni da fare (founder)
+1. `flutter pub get && flutter gen-l10n`
+2. In `lib/app.dart` decommentare le due righe ★ (import + delegate AppLocalizations)
+3. `flutter run -d windows` per smoke test
+
+---
 
 ### Sessione 12 — 2026-05-23
 **Durata**: ~2h
