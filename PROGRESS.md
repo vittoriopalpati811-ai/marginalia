@@ -7,10 +7,10 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter MVP completo — feed post, pinned highlights, foto profilo, stats cliccabili
-**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX completata
-**Prossima azione founder**: iscriversi all'Apple Developer Program (€99/anno) — vedi QUESTIONS.md
-**Branch attivo**: main
+**Fase**: Flutter MVP — chat + social completi con like commenti, risposte, GIF, foto
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social completata
+**Prossima azione founder**: applicare migration 018 in Supabase SQL Editor
+**Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
 **Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)
 
@@ -19,9 +19,74 @@
 - Codemagic: ✅ app creata, repo connesso, tipo Flutter impostato
 - App Store Connect API key: 🔴 manca (richiede Developer Program)
 
+**Migrations da applicare**:
+- ⚠️ `017_realtime_messages.sql` — abilita Realtime su messages + conversations
+- ⚠️ `018_comment_likes_replies.sql` — like commenti, risposte threading, fix bucket comment-images
+
 ---
 
 ## Sessioni
+
+### Sessione 11 — 2026-05-22
+**Durata**: ~3h
+**Branch**: master
+**Commits**: `dfadf5b` → `e52287d` (6 commit)
+
+#### Fatto
+
+**Fix messaggi duplicati in chat (✅)**
+- Root cause: messaggi ottimistici in `_localMessages` non venivano rimossi dopo invio con successo
+- Fix: `_localMessages.removeWhere(...)` nel path di successo; dedup filtra solo messaggi con prefisso `optimistic_` non ancora confermati dal server
+- Realtime Supabase aggiunto: canale Postgres sul tavolo `messages` per la conversazione corrente — i messaggi in arrivo appaiono istantaneamente senza refresh manuale
+
+**Fix badge non letti (✅)**
+- Il pallino era visibile per tutte le conversazioni con messaggi; ora compare solo se `last_message.created_at > my_last_read_at` e il mittente non è l'utente corrente
+- Testo anteprima in grassetto + colore più scuro per conversazioni non lette
+- `markConversationRead()` chiamato all'apertura della chat via `addPostFrameCallback`
+- `fetchConversations()` arricchito con `my_last_read_at` e `current_user_id`
+
+**Invio foto in chat (✅)**
+- `FilePicker` seleziona immagine dalla galleria → `uploadMessageImage()` carica su bucket `message-images` → URL inviato come `imageUrl` nel messaggio
+- `uploadMessageImage()` aggiunto a `SupabaseService`
+
+**GIF picker (✅ — 3 iterazioni)**
+- v1: GIPHY con public beta key → v2: Reddit JSON API (fallito: Reddit converte GIF in MP4/APNG non animabili da Flutter) → v3: **Tenor v2 con `LIVDSRZULELA`** (chiave pubblica documentata da Tenor, nessuna registrazione)
+- `giphy_picker.dart` (rinominata funzione pubblica `showGifPicker`): trending alla apertura, ricerca su `tenor.googleapis.com/v2/search`, `tinygif` per thumbnail animate nella griglia, `gif` full-res da inviare
+- Picker condiviso tra chat e commenti post
+- Sostituzione Tenor vecchio in `feed_tab.dart` (rimossa classe `_GifPickerSheet` + `_kTenorApiKey`)
+
+**Migration 017 — Realtime (✅)**
+- `ALTER PUBLICATION supabase_realtime ADD TABLE messages` + `conversations`
+- Resa idempotente con DO $$ block che controlla `pg_publication_tables`
+
+**Like ai commenti (✅)**
+- `comment_likes` table con RLS (SELECT autenticati, INSERT/DELETE proprio utente)
+- `_CommentBubble` → `ConsumerStatefulWidget` con toggle ottimistico cuore + contatore
+- `likeComment()` / `unlikeComment()` in `SupabaseService`
+- `fetchPostComments()` restituisce `like_count` e `has_liked` per ogni commento (parallel fetch likes + profiles)
+
+**Risposte ai commenti (✅)**
+- `parent_comment_id` aggiunto a `post_comments` (FK self-referential)
+- UI: commenti top-level + risposte indentate 40px sotto il padre
+- Banner "Rispondendo a [nome] ×" sopra l'input con hint dinamico nel campo testo
+- `addPostComment()` accetta `parentCommentId` opzionale
+
+**Fix immagini commenti non caricavano (✅)**
+- `errorBuilder` sostituisce `SizedBox.shrink()` con icona broken-image visibile
+- `loadingBuilder` mostra spinner durante caricamento
+- Migration 018 re-imposta bucket `comment-images` come pubblico con policy SELECT esplicita (era la causa principale)
+
+**Migration 018 — Comment likes + reply threading (✅)**
+- `parent_comment_id` su `post_comments`
+- Tabella `comment_likes` con RLS
+- Re-assert policy storage `comment-images` (idempotente)
+
+#### Azioni da fare (founder)
+1. **SQL Editor Supabase** → esegui `supabase/migrations/017_realtime_messages.sql`
+2. **SQL Editor Supabase** → esegui `supabase/migrations/018_comment_likes_replies.sql`
+3. `flutter run -d windows` per smoke test
+
+---
 
 ### Sessione 10 — 2026-05-21
 **Durata**: ~3h
