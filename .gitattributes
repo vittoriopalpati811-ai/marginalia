@@ -6,6 +6,7 @@
 *.sql text eol=lf
 *.py text eol=lf
 *.json text eol=lf
+*.arb  text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf
 *.rb text eol=lf
