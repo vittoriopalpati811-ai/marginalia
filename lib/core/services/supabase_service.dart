@@ -414,7 +414,7 @@ class SupabaseService {
       await _client
               .from('profiles')
               .select(
-                  'id, display_name, currently_reading_title, currently_reading_author')
+                  'id, display_name, avatar_url, currently_reading_title, currently_reading_author')
               .inFilter('id', ids) as List,
     );
   }
@@ -448,7 +448,7 @@ class SupabaseService {
       await _client
               .from('profiles')
               .select(
-                  'id, display_name, currently_reading_title, currently_reading_author')
+                  'id, display_name, avatar_url, currently_reading_title, currently_reading_author')
               .inFilter('id', suggestionIds) as List,
     );
   }

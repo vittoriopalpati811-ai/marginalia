@@ -246,6 +246,7 @@ class _UserRow extends StatelessWidget {
     final readingTitle = user['currently_reading_title'] as String?;
     final readingAuthor = user['currently_reading_author'] as String?;
     final uid = user['id'] as String?;
+    final avatarUrl = user['avatar_url'] as String?;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final avatarColor = MarginaliaDecorations.bookCoverColor(name);
     final isReading = readingTitle != null && readingTitle.isNotEmpty;
@@ -260,27 +261,11 @@ class _UserRow extends StatelessWidget {
           child: Row(
           children: [
             // ── Avatar ─────────────────────────────────────────────────
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [avatarColor, MarginaliaColors.primaryDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Color(0xFFF1EEE7),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+            _AvatarWidget(
+              avatarUrl: avatarUrl,
+              initial: initial,
+              color: avatarColor,
+              size: 48,
             ),
             const SizedBox(width: 12),
 
@@ -393,6 +378,83 @@ class _UserRow extends StatelessWidget {
         .animate(delay: (index * 40).ms)
         .fadeIn(duration: 260.ms, curve: Curves.easeOut)
         .slideY(begin: 0.03, end: 0, duration: 260.ms);
+  }
+}
+
+// ─── Avatar widget (photo if available, gradient + initial otherwise) ─────────
+
+class _AvatarWidget extends StatelessWidget {
+  const _AvatarWidget({
+    required this.avatarUrl,
+    required this.initial,
+    required this.color,
+    required this.size,
+  });
+
+  final String? avatarUrl;
+  final String initial;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = size / 2;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: avatarUrl != null && avatarUrl!.isNotEmpty
+            ? Image.network(
+                avatarUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _Fallback(
+                  initial: initial,
+                  color: color,
+                  fontSize: size * 0.4,
+                ),
+              )
+            : _Fallback(
+                initial: initial,
+                color: color,
+                fontSize: size * 0.4,
+              ),
+      ),
+    );
+  }
+}
+
+class _Fallback extends StatelessWidget {
+  const _Fallback({
+    required this.initial,
+    required this.color,
+    required this.fontSize,
+  });
+  final String initial;
+  final Color color;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, MarginaliaColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: TextStyle(
+            color: const Color(0xFFF1EEE7),
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
   }
 }
 

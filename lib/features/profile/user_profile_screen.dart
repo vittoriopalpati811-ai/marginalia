@@ -104,6 +104,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           final name = profile['display_name'] as String? ?? 'Utente';
           final readingTitle = profile['currently_reading_title'] as String?;
           final readingAuthor = profile['currently_reading_author'] as String?;
+          final avatarUrl = profile['avatar_url'] as String?;
+          final coverUrl  = profile['cover_url']  as String?;
           final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
           final avatarColor = MarginaliaDecorations.bookCoverColor(name);
 
@@ -119,76 +121,99 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 elevation: 0,
                 scrolledUnderElevation: 0,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: MarginaliaDecorations.gradientHeader,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Avatar
-                        Container(
-                          width: 86,
-                          height: 86,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [avatarColor, MarginaliaColors.primaryDark],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(43),
-                            border: Border.all(
-                                color: Colors.white.withAlpha(40), width: 2),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x30000000),
-                                blurRadius: 16,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
+                  collapseMode: CollapseMode.parallax,
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Cover photo or gradient
+                      if (coverUrl != null && coverUrl.isNotEmpty)
+                        Image.network(
+                          coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            decoration: MarginaliaDecorations.gradientHeader,
                           ),
-                          child: Center(
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                color: Color(0xFFF1EEE7),
-                                fontSize: 36,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Name
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFEDE5D5),
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                        // Currently reading
-                        if (readingTitle != null && readingTitle.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.menu_book_outlined,
-                                  size: 13, color: Color(0xAAF1EEE7)),
-                              const SizedBox(width: 4),
-                              Text(
-                                readingTitle,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withAlpha(160),
+                        )
+                      else
+                        Container(decoration: MarginaliaDecorations.gradientHeader),
+                      // Dark scrim so text stays readable over photos
+                      Container(color: const Color(0x55000000)),
+                      // Content column: avatar + name + reading status
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 86,
+                            height: 86,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(43),
+                              border: Border.all(
+                                  color: Colors.white.withAlpha(60), width: 2),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x40000000),
+                                  blurRadius: 16,
+                                  offset: Offset(0, 4),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(43),
+                              child: avatarUrl != null && avatarUrl.isNotEmpty
+                                  ? Image.network(
+                                      avatarUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          _AvatarFallback(
+                                        initial: initial,
+                                        color: avatarColor,
+                                      ),
+                                    )
+                                  : _AvatarFallback(
+                                      initial: initial,
+                                      color: avatarColor,
+                                    ),
+                            ),
                           ),
+                          const SizedBox(height: 12),
+                          // Name
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFEDE5D5),
+                              letterSpacing: -0.4,
+                            ),
+                          ),
+                          // Currently reading
+                          if (readingTitle != null && readingTitle.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.menu_book_outlined,
+                                    size: 13, color: Color(0xAAF1EEE7)),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    readingTitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withAlpha(160),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const SizedBox(height: 24),
                         ],
-                        const SizedBox(height: 24),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -382,6 +407,37 @@ class _StatBox extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Avatar fallback (gradient + initial) ────────────────────────────────────
+
+class _AvatarFallback extends StatelessWidget {
+  const _AvatarFallback({required this.initial, required this.color});
+  final String initial;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, MarginaliaColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Color(0xFFF1EEE7),
+            fontSize: 34,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
