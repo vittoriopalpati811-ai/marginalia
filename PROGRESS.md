@@ -11,7 +11,7 @@
 **Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Language selection
 **Prossima azione founder**:
   1. Applicare migration 018 e 019 in Supabase SQL Editor (se non già fatto)
-  2. Eseguire `flutter pub get && flutter gen-l10n` → poi decommentare le due righe ★ in `lib/app.dart` (import AppLocalizations + delegate) → app compila con i18n completa
+  2. Eseguire `flutter pub get && flutter gen-l10n` (l'import e il delegate sono già decommentati)
   3. Creare account RevenueCat → inserire API key in `subscription_service.dart`
   4. Creare prodotto "marginalia_premium_yearly" in App Store Connect
 **Branch attivo**: master
