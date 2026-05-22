@@ -36,7 +36,7 @@
   "searchHint": "Search by name or @username…",
   "searchEmpty": "Find other readers",
   "searchEmptyBody": "Type a name or @username\nto find readers on Marginalia.",
-  "searchNoResults": "No readers found for "{query}"",
+  "searchNoResults": "No readers found for \"{query}\"",
 
   "feedComments": "Comments",
   "feedCommentHint": "Write a comment…",
