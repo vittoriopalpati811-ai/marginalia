@@ -111,7 +111,7 @@
   "searchEmptyBody": "Digita un nome o @username\nper trovare lettori su Marginalia.",
   "@searchEmptyBody": {},
 
-  “searchNoResults”: “Nessun lettore trovato per \”{query}\””,
+  “searchNoResults”: “Nessun lettore trovato per {query}”,
   "@searchNoResults": {
     "placeholders": { "query": { "type": "String" } }
   },
