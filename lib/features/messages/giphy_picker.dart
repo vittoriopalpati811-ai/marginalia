@@ -5,17 +5,19 @@ import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 
-// ─── GIF Picker (Reddit JSON API — no key required) ───────────────────────────
+// ─── Tenor v2 — public demo key, no registration required ─────────────────────
 //
-// Uses Reddit's public JSON endpoints on r/gifs and r/reactiongifs.
-// No API key, no registration. Rate limit: ~60 req/min per IP (plenty for a
-// native app). Requires User-Agent header so Reddit doesn't treat us as a bot.
+// LIVDSRZULELA is Tenor's official public key, documented in their quickstart:
+// https://developers.google.com/tenor/guides/quickstart
+// "For your first API call, use LIVDSRZULELA as your API key."
+// No account needed. Replace with a registered key before shipping at scale.
 
-const _kUserAgent = 'Marginalia-App/1.0 (native; contact: app@marginalia.app)';
+const _kTenorKey       = 'LIVDSRZULELA';
+const _kTenorClientKey = 'marginalia_app';
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-/// Shows a bottom sheet for searching and selecting a GIF via Reddit.
+/// Shows a bottom sheet for searching and selecting a GIF via Tenor.
 /// Returns the selected GIF URL or null if dismissed.
 Future<String?> showGifPicker(BuildContext context) {
   return showModalBottomSheet<String>(
@@ -44,7 +46,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
   @override
   void initState() {
     super.initState();
-    _fetchTrending();
+    _fetchFeatured();
   }
 
   @override
@@ -53,29 +55,31 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
     super.dispose();
   }
 
-  // ── Trending (hot posts from r/gifs) ──────────────────────────────────────
+  // ── Featured / trending ───────────────────────────────────────────────────
 
-  Future<void> _fetchTrending() async {
+  Future<void> _fetchFeatured() async {
     setState(() => _loading = true);
     try {
       final uri = Uri.parse(
-        'https://www.reddit.com/r/gifs/hot.json?limit=50&raw_json=1',
+        'https://tenor.googleapis.com/v2/featured'
+        '?key=$_kTenorKey'
+        '&client_key=$_kTenorClientKey'
+        '&limit=30'
+        '&media_filter=tinygif,gif',
       );
-      final res = await http
-          .get(uri, headers: {'User-Agent': _kUserAgent})
-          .timeout(const Duration(seconds: 10));
+      final res = await http.get(uri).timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
-        _parseAndSetGifs(json.decode(res.body) as Map<String, dynamic>);
+        _parseAndSet(json.decode(res.body) as Map<String, dynamic>);
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
 
-  // ── Search across r/gifs + r/reactiongifs ─────────────────────────────────
+  // ── Search ────────────────────────────────────────────────────────────────
 
   Future<void> _search(String query) async {
     if (query.trim().isEmpty) {
-      _fetchTrending();
+      _fetchFeatured();
       return;
     }
     setState(() {
@@ -84,15 +88,16 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
     });
     try {
       final uri = Uri.parse(
-        'https://www.reddit.com/r/gifs+reactiongifs/search.json'
-        '?q=${Uri.encodeComponent(query.trim())}'
-        '&limit=50&sort=top&t=all&raw_json=1',
+        'https://tenor.googleapis.com/v2/search'
+        '?key=$_kTenorKey'
+        '&client_key=$_kTenorClientKey'
+        '&q=${Uri.encodeComponent(query.trim())}'
+        '&limit=30'
+        '&media_filter=tinygif,gif',
       );
-      final res = await http
-          .get(uri, headers: {'User-Agent': _kUserAgent})
-          .timeout(const Duration(seconds: 10));
+      final res = await http.get(uri).timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
-        _parseAndSetGifs(json.decode(res.body) as Map<String, dynamic>);
+        _parseAndSet(json.decode(res.body) as Map<String, dynamic>);
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
@@ -100,50 +105,22 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
 
   // ── Parser ────────────────────────────────────────────────────────────────
   //
-  // Reddit posts in r/gifs include a `preview` block with an animated GIF
-  // variant at preview.images[0].variants.gif. We use that URL as both
-  // the thumbnail (smaller) and the full GIF to send.
+  // Tenor v2 response: results[].media_formats.{tinygif,gif}.url
+  // tinygif  ≈ 220 px wide animated GIF  → use as picker thumbnail
+  // gif      ≈ full-res animated GIF     → send to chat / comment
 
-  void _parseAndSetGifs(Map<String, dynamic> data) {
-    final children = (data['data']?['children'] as List? ?? []);
+  void _parseAndSet(Map<String, dynamic> data) {
+    final results = data['results'] as List? ?? [];
     final items = <_GifItem>[];
 
-    for (final child in children) {
-      final post = child['data'] as Map<String, dynamic>? ?? {};
-
-      // Skip removed / deleted posts
-      if (post['removed_by_category'] != null) continue;
-      if (post['selftext'] == '[removed]') continue;
-
-      final preview = post['preview'] as Map<String, dynamic>?;
-      if (preview == null) continue;
-
-      final images = preview['images'] as List?;
-      if (images == null || images.isEmpty) continue;
-
-      final firstImage = images.first as Map<String, dynamic>? ?? {};
-      final variants = firstImage['variants'] as Map<String, dynamic>? ?? {};
-      final gifVariant = variants['gif'] as Map<String, dynamic>?;
-      final gifSource = gifVariant?['source'] as Map<String, dynamic>?;
-      final fullGifUrl = gifSource?['url'] as String?;
-
-      // Fallback: if Reddit didn't generate a gif variant but the post URL
-      // itself is a direct .gif (e.g. i.redd.it/*.gif), use that.
-      final postUrl = post['url'] as String? ?? '';
-      final resolvedFull =
-          fullGifUrl ?? (postUrl.toLowerCase().endsWith('.gif') ? postUrl : null);
-
-      if (resolvedFull == null) continue;
-
-      // Animated thumbnail: use the smallest resolution gif variant so the
-      // picker grid shows animated previews without loading full-size files.
-      final gifResolutions = gifVariant?['resolutions'] as List?;
-      final thumbUrl = gifResolutions != null && gifResolutions.isNotEmpty
-          ? (gifResolutions.first as Map<String, dynamic>?)?['url'] as String?
-          : resolvedFull;
-
-      if (thumbUrl != null && thumbUrl.isNotEmpty) {
-        items.add(_GifItem(previewUrl: thumbUrl, fullUrl: resolvedFull));
+    for (final r in results) {
+      final formats = (r as Map<String, dynamic>)['media_formats']
+          as Map<String, dynamic>? ?? {};
+      final tiny = (formats['tinygif'] as Map<String, dynamic>?)?['url'] as String?;
+      final full = (formats['gif']     as Map<String, dynamic>?)?['url'] as String?
+                ?? tiny; // fallback to tinygif if full gif not returned
+      if (tiny != null && full != null) {
+        items.add(_GifItem(previewUrl: tiny, fullUrl: full));
       }
     }
 
@@ -232,16 +209,30 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
+
+          // Tenor attribution (required by Tenor ToS)
+          Padding(
+            padding: const EdgeInsets.only(right: 16, bottom: 4),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'Via Tenor',
+                style: GoogleFonts.barlow(
+                  fontSize: 10,
+                  color: MarginaliaColors.inkFaint,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ),
 
           // GIF grid
           Expanded(
             child: _gifs.isEmpty && !_loading
                 ? Center(
                     child: Text(
-                      _hasSearched
-                          ? 'Nessun risultato'
-                          : 'In caricamento…',
+                      _hasSearched ? 'Nessun risultato' : 'Caricamento…',
                       style: GoogleFonts.barlow(
                         color: MarginaliaColors.inkFaint,
                         fontSize: 14,
@@ -258,8 +249,8 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                       childAspectRatio: 1.0,
                     ),
                     itemCount: _gifs.length,
-                    itemBuilder: (context, index) {
-                      final gif = _gifs[index];
+                    itemBuilder: (context, i) {
+                      final gif = _gifs[i];
                       return GestureDetector(
                         onTap: () => Navigator.of(context).pop(gif.fullUrl),
                         child: ClipRRect(
@@ -289,6 +280,6 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
 
 class _GifItem {
   const _GifItem({required this.previewUrl, required this.fullUrl});
-  final String previewUrl; // smallest animated GIF resolution for the picker grid
-  final String fullUrl;    // full-res animated GIF to send
+  final String previewUrl; // tinygif (~220 px) for the picker grid
+  final String fullUrl;    // full-res gif to send
 }
