@@ -7,14 +7,13 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter MVP — RevenueCat paywall infra + i18n setup + remote Amazon JS
-**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione completata
+**Fase**: Flutter MVP — i18n cablata negli screen + RevenueCat infra + Amazon JS remoto
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n completata
 **Prossima azione founder**:
   1. Applicare migration 018 e 019 in Supabase SQL Editor (se non già fatto)
-  2. Creare account RevenueCat → inserire API key in `subscription_service.dart`
-  3. Creare prodotto "marginalia_premium_yearly" in App Store Connect
-  4. Eseguire `flutter pub get && flutter gen-l10n` per generare AppLocalizations
-  5. Decommentare `AppLocalizations.delegate` in `app.dart`
+  2. Eseguire `flutter pub get && flutter gen-l10n` → poi decommentare `AppLocalizations.delegate` in `lib/app.dart` (e relativo import) → app compila con i18n completa
+  3. Creare account RevenueCat → inserire API key in `subscription_service.dart`
+  4. Creare prodotto "marginalia_premium_yearly" in App Store Connect
 **Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
 **Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)
@@ -31,6 +30,38 @@
 ---
 
 ## Sessioni
+
+### Sessione 12 — 2026-05-23
+**Durata**: ~2h
+**Branch**: master
+**Commit**: `8b874a5`
+
+#### Fatto
+
+**i18n — sostituzione stringhe hardcoded (✅)**
+- Creato `lib/core/l10n/l10n_extension.dart`: extension `BuildContext.l10n` che espone `AppLocalizations.of(context)!` come `context.l10n`
+- Aggiunti 4 nuovi ARB key a IT + EN: `libraryNoFavorites`, `libraryNoFavoritesBody`, `libraryImportClippings`, `libraryTryDemo`
+- Screen aggiornate con `context.l10n.*`:
+  - **`search_screen.dart`**: titolo "Persone", sottotitolo "lettori · autori", hint barra, empty state, no-results
+  - **`amici_tab.dart`**: sezioni "SEGUITI"/"SUGGERITI", bottoni "Segui"/"Smetti", empty state "Nessun amico ancora"
+  - **`library_screen.dart`**: header sezione, empty state libro + preferiti, CTA import + demo
+  - **`settings_screen.dart`**: "Modifica profilo", "Esci dall'account", schermata non-autenticata
+  - **`feed_tab.dart`**: schermata non-autenticata, "Nessun commento ancora"
+  - **`messages_screen.dart`**: titolo header, "Nessuna conversazione"
+  - **`social_screen.dart`**: "Nessuna Jam ancora", schermata non-autenticata
+  - **`my_profile_screen.dart`**: schermata non-autenticata
+- `lib/app.dart`: commento aggiornato con istruzioni in 3 step per attivare `AppLocalizations.delegate`
+
+**Stato i18n**: infrastruttura completa (ARB 80+ chiavi IT+EN, extension, delegate pronto).
+Rimane da fare (1 comando): `flutter pub get && flutter gen-l10n` + decommentare delegate + import in `app.dart`.
+Stringhe NON ancora localizzate: `paywall_screen.dart` (hardcoded per ora — le chiavi ARB esistono), `jam_detail_screen.dart`, `book_detail_screen.dart`, `highlight_detail_screen.dart`, `user_profile_screen.dart` (follow/unfollow button), `auth_screen.dart`.
+
+#### Azioni da fare (founder)
+1. `flutter pub get && flutter gen-l10n`
+2. In `lib/app.dart`, aggiungere import `package:flutter_gen/gen_l10n/app_localizations.dart` e decommentare `AppLocalizations.delegate`
+3. `flutter run -d windows` per verificare compilazione
+
+---
 
 ### Sessione 11 — 2026-05-22
 **Durata**: ~3h
