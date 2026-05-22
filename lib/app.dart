@@ -542,17 +542,16 @@ class _FloatingNavBar extends StatelessWidget {
 
 // ─── Localization config ──────────────────────────────────────────────────────
 //
-// ACTIVATION (one-time, run from project root):
+// If the build fails with "Target of URI doesn't exist":
 //   flutter pub get && flutter gen-l10n
-// Then uncomment the two lines marked ★ below.
 //
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // ★ uncomment
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 const _localizationsDelegates = [
   GlobalMaterialLocalizations.delegate,
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,
-  // AppLocalizations.delegate, // ★ uncomment after flutter gen-l10n
+  AppLocalizations.delegate,
 ];
 
 const _supportedLocales = [
