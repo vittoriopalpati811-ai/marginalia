@@ -878,36 +878,62 @@ class SupabaseService {
     final rows = List<Map<String, dynamic>>.from(
       await _client
           .from('post_comments')
-          .select('id, post_id, user_id, content, image_url, gif_url, created_at')
+          .select(
+              'id, post_id, user_id, content, image_url, gif_url, '
+              'created_at, parent_comment_id')
           .eq('post_id', postId)
           .order('created_at', ascending: true) as List,
     );
     if (rows.isEmpty) return [];
 
-    // Fetch profiles for all commenters in one query.
+    final commentIds = rows.map((r) => r['id'] as String).toList();
+
+    // Fetch profiles + likes in parallel.
     final userIds = rows.map((r) => r['user_id'] as String).toSet().toList();
-    final profileRows = List<Map<String, dynamic>>.from(
-      await _client
+    final results = await Future.wait([
+      _client
           .from('profiles')
           .select('id, display_name, avatar_url')
-          .inFilter('id', userIds) as List,
-    );
+          .inFilter('id', userIds),
+      _client
+          .from('comment_likes')
+          .select('comment_id, user_id')
+          .inFilter('comment_id', commentIds),
+    ]);
+
     final profileMap = {
-      for (final p in profileRows) p['id'] as String: p,
+      for (final p in List<Map<String, dynamic>>.from(results[0] as List))
+        p['id'] as String: p,
     };
+
+    // Build like counts and has_liked flags.
+    final likeMap = <String, List<String>>{};
+    for (final like in List<Map<String, dynamic>>.from(results[1] as List)) {
+      final cid = like['comment_id'] as String;
+      likeMap.putIfAbsent(cid, () => []).add(like['user_id'] as String);
+    }
 
     return rows.map((r) {
       final uid = r['user_id'] as String? ?? '';
-      return {...r, 'profiles': profileMap[uid]};
+      final cid = r['id'] as String;
+      final likers = likeMap[cid] ?? [];
+      return {
+        ...r,
+        'profiles': profileMap[uid],
+        'like_count': likers.length,
+        'has_liked': likers.contains(userId),
+      };
     }).toList();
   }
 
   /// Add a comment to a post (text, image, or GIF — at least one required).
+  /// Pass [parentCommentId] to create a reply to an existing top-level comment.
   Future<void> addPostComment(
     String postId, {
     String? content,
     String? imageUrl,
     String? gifUrl,
+    String? parentCommentId,
   }) async {
     await _client.from('post_comments').insert({
       'post_id': postId,
@@ -915,7 +941,25 @@ class SupabaseService {
       if (content != null && content.trim().isNotEmpty) 'content': content.trim(),
       if (imageUrl != null) 'image_url': imageUrl,
       if (gifUrl != null) 'gif_url': gifUrl,
+      if (parentCommentId != null) 'parent_comment_id': parentCommentId,
     });
+  }
+
+  /// Like a comment (idempotent — server has UNIQUE constraint).
+  Future<void> likeComment(String commentId) async {
+    await _client.from('comment_likes').insert({
+      'comment_id': commentId,
+      'user_id': userId,
+    });
+  }
+
+  /// Remove like from a comment.
+  Future<void> unlikeComment(String commentId) async {
+    await _client
+        .from('comment_likes')
+        .delete()
+        .eq('comment_id', commentId)
+        .eq('user_id', userId!);
   }
 
   /// Delete own comment.

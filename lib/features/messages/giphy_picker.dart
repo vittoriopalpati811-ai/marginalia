@@ -127,18 +127,23 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
       final gifSource = gifVariant?['source'] as Map<String, dynamic>?;
       final fullGifUrl = gifSource?['url'] as String?;
 
-      // Static JPEG preview for the grid thumbnail (faster to load)
-      final sourceMap = firstImage['source'] as Map<String, dynamic>? ?? {};
-      final previewUrl = sourceMap['url'] as String? ?? '';
-
       // Fallback: if Reddit didn't generate a gif variant but the post URL
       // itself is a direct .gif (e.g. i.redd.it/*.gif), use that.
       final postUrl = post['url'] as String? ?? '';
       final resolvedFull =
           fullGifUrl ?? (postUrl.toLowerCase().endsWith('.gif') ? postUrl : null);
 
-      if (previewUrl.isNotEmpty && resolvedFull != null) {
-        items.add(_GifItem(previewUrl: previewUrl, fullUrl: resolvedFull));
+      if (resolvedFull == null) continue;
+
+      // Animated thumbnail: use the smallest resolution gif variant so the
+      // picker grid shows animated previews without loading full-size files.
+      final gifResolutions = gifVariant?['resolutions'] as List?;
+      final thumbUrl = gifResolutions != null && gifResolutions.isNotEmpty
+          ? (gifResolutions.first as Map<String, dynamic>?)?['url'] as String?
+          : resolvedFull;
+
+      if (thumbUrl != null && thumbUrl.isNotEmpty) {
+        items.add(_GifItem(previewUrl: thumbUrl, fullUrl: resolvedFull));
       }
     }
 
@@ -284,6 +289,6 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
 
 class _GifItem {
   const _GifItem({required this.previewUrl, required this.fullUrl});
-  final String previewUrl; // static JPEG thumbnail for the picker grid
-  final String fullUrl;    // animated GIF to send
+  final String previewUrl; // smallest animated GIF resolution for the picker grid
+  final String fullUrl;    // full-res animated GIF to send
 }

@@ -1472,12 +1472,18 @@ class _CommentsSheet extends ConsumerStatefulWidget {
 class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   final _ctrl        = TextEditingController();
   final _scrollCtrl  = ScrollController();
+  final _inputFocus  = FocusNode();
   bool _submitting   = false;
   Uint8List? _imageBytes;
   String?    _imageExt;
   String?    _gifUrl;
-  List<Map<String, dynamic>> _comments = [];
+  List<Map<String, dynamic>> _topLevelComments = [];
+  Map<String, List<Map<String, dynamic>>> _repliesByParent = {};
   bool _loading = true;
+
+  // Reply mode
+  String? _replyingToId;
+  String? _replyingToName;
 
   @override
   void initState() {
@@ -1489,6 +1495,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   void dispose() {
     _ctrl.dispose();
     _scrollCtrl.dispose();
+    _inputFocus.dispose();
     super.dispose();
   }
 
@@ -1497,12 +1504,39 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
       final comments = await ref
           .read(supabaseServiceProvider)
           .fetchPostComments(widget.postId);
-      if (mounted) setState(() { _comments = comments; _loading = false; });
-      _scrollToBottom();
+      if (mounted) {
+        final topLevel = comments
+            .where((c) => c['parent_comment_id'] == null)
+            .toList();
+        final byParent = <String, List<Map<String, dynamic>>>{};
+        for (final c in comments) {
+          final pid = c['parent_comment_id'] as String?;
+          if (pid != null) byParent.putIfAbsent(pid, () => []).add(c);
+        }
+        setState(() {
+          _topLevelComments = topLevel;
+          _repliesByParent  = byParent;
+          _loading          = false;
+        });
+        _scrollToBottom();
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  void _startReply(String commentId, String commenterName) {
+    setState(() {
+      _replyingToId   = commentId;
+      _replyingToName = commenterName;
+    });
+    _inputFocus.requestFocus();
+  }
+
+  void _cancelReply() => setState(() {
+        _replyingToId   = null;
+        _replyingToName = null;
+      });
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1549,16 +1583,19 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
       }
       await svc.addPostComment(
         widget.postId,
-        content:  text.isEmpty ? null : text,
-        imageUrl: imageUrl,
-        gifUrl:   _gifUrl,
+        content:         text.isEmpty ? null : text,
+        imageUrl:        imageUrl,
+        gifUrl:          _gifUrl,
+        parentCommentId: _replyingToId,
       );
       _ctrl.clear();
       setState(() {
-        _imageBytes = null;
-        _imageExt   = null;
-        _gifUrl     = null;
-        _submitting  = false;
+        _imageBytes     = null;
+        _imageExt       = null;
+        _gifUrl         = null;
+        _submitting     = false;
+        _replyingToId   = null;
+        _replyingToName = null;
       });
       await _load();
     } catch (e) {
@@ -1583,9 +1620,10 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
+    final bottom  = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
     final canSend = !_submitting &&
         (_ctrl.text.trim().isNotEmpty || _imageBytes != null || _gifUrl != null);
+    final isReplying = _replyingToId != null;
 
     return Container(
       decoration: const BoxDecoration(
@@ -1646,7 +1684,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       ),
                     ),
                   )
-                : _comments.isEmpty
+                : _topLevelComments.isEmpty && _repliesByParent.isEmpty
                     ? Center(
                         child: Padding(
                           padding: const EdgeInsets.all(40),
@@ -1661,17 +1699,74 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                           ),
                         ),
                       )
-                    : ListView.builder(
+                    : ListView(
                         controller: _scrollCtrl,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
-                        itemCount: _comments.length,
-                        itemBuilder: (_, i) =>
-                            _CommentBubble(comment: _comments[i], timeAgo: _timeAgo(_comments[i]['created_at'] as String?)),
+                        children: [
+                          for (final c in _topLevelComments) ...[
+                            _CommentBubble(
+                              comment: c,
+                              timeAgo: _timeAgo(c['created_at'] as String?),
+                              onReply: () => _startReply(
+                                c['id'] as String,
+                                (c['profiles'] as Map?)?['display_name']
+                                        as String? ??
+                                    'Lettore',
+                              ),
+                            ),
+                            for (final reply
+                                in _repliesByParent[c['id']] ?? [])
+                              Padding(
+                                padding: const EdgeInsets.only(left: 40),
+                                child: _CommentBubble(
+                                  comment: reply,
+                                  timeAgo:
+                                      _timeAgo(reply['created_at'] as String?),
+                                  onReply: () => _startReply(
+                                    c['id'] as String,
+                                    (reply['profiles'] as Map?)?[
+                                                'display_name'] as String? ??
+                                        'Lettore',
+                                  ),
+                                  isReply: true,
+                                ),
+                              ),
+                          ],
+                        ],
                       ),
           ),
 
           const Divider(height: 0.5, thickness: 0.5, color: MarginaliaColors.ruleFaint),
+
+          // "Rispondendo a…" banner
+          if (isReplying)
+            Container(
+              color: MarginaliaColors.surfaceElevated,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              child: Row(
+                children: [
+                  const Icon(Icons.reply_rounded,
+                      size: 14, color: MarginaliaColors.inkMuted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Rispondendo a $_replyingToName',
+                      style: GoogleFonts.barlow(
+                        fontSize: 12.5,
+                        color: MarginaliaColors.inkMuted,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _cancelReply,
+                    child: const Icon(Icons.close,
+                        size: 16, color: MarginaliaColors.inkMuted),
+                  ),
+                ],
+              ),
+            ),
 
           // Attachment preview
           if (_imageBytes != null || _gifUrl != null)
@@ -1772,14 +1867,17 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     ),
                     child: TextField(
                       controller: _ctrl,
+                      focusNode: _inputFocus,
                       maxLines: null,
                       style: GoogleFonts.barlow(
                         fontSize: 14,
                         color: MarginaliaColors.ink,
                         height: 1.5,
                       ),
-                      decoration: const InputDecoration(
-                        hintText: 'Scrivi un commento…',
+                      decoration: InputDecoration(
+                        hintText: isReplying
+                            ? 'Rispondi a $_replyingToName…'
+                            : 'Scrivi un commento…',
                         hintStyle: TextStyle(
                           color: MarginaliaColors.inkFaint,
                           fontSize: 14,
@@ -1829,24 +1927,70 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
 
 // ─── Comment bubble ───────────────────────────────────────────────────────────
 
-class _CommentBubble extends StatelessWidget {
-  const _CommentBubble({required this.comment, required this.timeAgo});
+class _CommentBubble extends ConsumerStatefulWidget {
+  const _CommentBubble({
+    required this.comment,
+    required this.timeAgo,
+    required this.onReply,
+    this.isReply = false,
+  });
   final Map<String, dynamic> comment;
   final String timeAgo;
+  final VoidCallback onReply;
+  final bool isReply;
+
+  @override
+  ConsumerState<_CommentBubble> createState() => _CommentBubbleState();
+}
+
+class _CommentBubbleState extends ConsumerState<_CommentBubble> {
+  late bool _liked;
+  late int  _likeCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _liked     = widget.comment['has_liked']  as bool? ?? false;
+    _likeCount = widget.comment['like_count'] as int?  ?? 0;
+  }
+
+  Future<void> _toggleLike() async {
+    final svc      = ref.read(supabaseServiceProvider);
+    final wasLiked = _liked;
+    setState(() {
+      _liked     = !_liked;
+      _likeCount += _liked ? 1 : -1;
+    });
+    try {
+      if (!wasLiked) {
+        await svc.likeComment(widget.comment['id'] as String);
+      } else {
+        await svc.unlikeComment(widget.comment['id'] as String);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _liked     = wasLiked;
+          _likeCount += wasLiked ? 1 : -1;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final profile   = comment['profiles'] as Map?;
+    final profile   = widget.comment['profiles'] as Map?;
     final name      = profile?['display_name'] as String? ?? 'Lettore';
     final avatarUrl = profile?['avatar_url']   as String?;
-    final content   = comment['content']   as String?;
-    final imageUrl  = comment['image_url'] as String?;
-    final gifUrl    = comment['gif_url']   as String?;
+    final content   = widget.comment['content']   as String?;
+    final imageUrl  = widget.comment['image_url'] as String?;
+    final gifUrl    = widget.comment['gif_url']   as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final tint      = MarginaliaDecorations.bookCoverColor(name);
+    final avatarSize = widget.isReply ? 26.0 : 32.0;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1854,9 +1998,9 @@ class _CommentBubble extends StatelessWidget {
             avatarUrl: avatarUrl,
             initial: initial,
             tint: tint,
-            size: 32,
+            size: avatarSize,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1867,14 +2011,14 @@ class _CommentBubble extends StatelessWidget {
                     Text(
                       name,
                       style: GoogleFonts.barlow(
-                        fontSize: 12.5,
+                        fontSize: widget.isReply ? 12.0 : 12.5,
                         fontWeight: FontWeight.w700,
                         color: MarginaliaColors.ink,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      timeAgo,
+                      widget.timeAgo,
                       style: GoogleFonts.barlow(
                         fontSize: 11,
                         color: MarginaliaColors.inkFaint,
@@ -1916,7 +2060,31 @@ class _CommentBubble extends StatelessWidget {
                             imageUrl,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            loadingBuilder: (_, child, progress) =>
+                                progress == null
+                                    ? child
+                                    : Container(
+                                        height: 120,
+                                        color: MarginaliaColors.ruleFaint,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            color: MarginaliaColors.sienna,
+                                          ),
+                                        ),
+                                      ),
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: MarginaliaColors.ruleFaint,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.broken_image_outlined,
+                                    size: 20,
+                                    color: MarginaliaColors.inkFaint),
+                              ),
+                            ),
                           ),
                         ),
                       if (gifUrl != null && gifUrl.isNotEmpty)
@@ -1926,11 +2094,79 @@ class _CommentBubble extends StatelessWidget {
                             gifUrl,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: MarginaliaColors.ruleFaint,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.gif,
+                                    size: 24,
+                                    color: MarginaliaColors.inkFaint),
+                              ),
+                            ),
                           ),
                         ),
                     ],
                   ),
+                ),
+                // Like + reply actions
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _toggleLike,
+                      behavior: HitTestBehavior.opaque,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _liked
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 14,
+                              color: _liked
+                                  ? MarginaliaColors.sienna
+                                  : MarginaliaColors.inkFaint,
+                            ),
+                            if (_likeCount > 0) ...[
+                              const SizedBox(width: 3),
+                              Text(
+                                '$_likeCount',
+                                style: GoogleFonts.barlow(
+                                  fontSize: 11.5,
+                                  color: _liked
+                                      ? MarginaliaColors.sienna
+                                      : MarginaliaColors.inkFaint,
+                                  fontWeight: _liked
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (!widget.isReply)
+                      GestureDetector(
+                        onTap: widget.onReply,
+                        behavior: HitTestBehavior.opaque,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
+                          child: Text(
+                            'Rispondi',
+                            style: GoogleFonts.barlow(
+                              fontSize: 11.5,
+                              color: MarginaliaColors.inkFaint,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
