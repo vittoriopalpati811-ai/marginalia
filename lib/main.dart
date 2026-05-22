@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/services/widget_service.dart';
+import 'core/services/subscription_service.dart';
 import 'core/storage/app_startup.dart';
 
 const _supabaseUrl = 'https://ibucvloawkfwobaelwbr.supabase.co';
@@ -15,6 +16,11 @@ void main() async {
     url: _supabaseUrl,
     anonKey: _supabaseAnonKey,
   );
+
+  // RevenueCat — no-op on Windows/web, active on iOS/Android.
+  // Replace REVENUECAT_PUBLIC_KEY_HERE in subscription_service.dart
+  // before submitting to App Store.
+  await SubscriptionService.configure();
 
   // Init home_widget bridge (no-op on non-iOS platforms)
   await WidgetService.init();

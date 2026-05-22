@@ -1,21 +1,36 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+// ─── AmazonSyncService ────────────────────────────────────────────────────────
+//
 // Extracts highlights from read.amazon.com/kp/notebook via DOM injection.
-// This is the same approach used by Readwise, Obsidian, and all Kindle
-// sync tools — the user logs into their own Amazon page, we never see credentials.
-class AmazonSyncService {
-  static const String notebookUrl =
-      'https://read.amazon.com/kp/notebook';
+// Same approach used by Readwise, Obsidian, and all Kindle sync tools —
+// the user logs into their own Amazon page; we never see credentials.
+//
+// HOT-FIX MECHANISM:
+// The JS extractor is fetched from Supabase at runtime (table: amazon_sync_scripts).
+// If the fetch fails the compiled-in _fallbackExtractorJs is used.
+// To fix a broken Amazon sync without an App Store release:
+//   UPDATE amazon_sync_scripts SET script = '<new JS>', updated_at = now()
+//   WHERE is_active = true;
 
-  // Injected into the page after login to extract all highlights.
-  // Returns JSON: List<{bookTitle, bookAuthor, content, location, color}>
-  static const String _extractorJs = r"""
+class AmazonSyncService {
+  static const String notebookUrl = 'https://read.amazon.com/kp/notebook';
+
+  // Cache keys stored in a simple in-memory map (cleared on app restart).
+  // For persistence across launches use shared_preferences — add the package
+  // and replace this map with prefs.getString / prefs.setString calls.
+  static String? _cachedScript;
+  static int?    _cachedVersion;
+
+  // ── Compiled-in fallback (always works offline) ───────────────────────────
+
+  static const String _fallbackExtractorJs = r"""
 (function() {
   const results = [];
 
-  // Each book section in the notebook
   const sections = document.querySelectorAll('#kp-notebook-annotations .a-section');
 
   sections.forEach(function(section) {
@@ -31,10 +46,10 @@ class AmazonSyncService {
     highlightBlocks.forEach(function(hlBlock) {
       const contentEl = hlBlock.querySelector('.kp-notebook-highlight');
       const locationEl = hlBlock.querySelector('.kp-notebook-highlight-location, .kp-notebook-metadata');
-      const colorAttr = hlBlock.getAttribute('data-highlight-color') || hlBlock.className.match(/kp-notebook-highlight-(\w+)/)?.[1];
+      const colorMatch = hlBlock.className.match(/kp-notebook-highlight-(\w+)/);
+      const colorAttr = hlBlock.getAttribute('data-highlight-color') || (colorMatch ? colorMatch[1] : null);
 
       if (!contentEl) return;
-
       const content = (contentEl.innerText || '').trim();
       if (!content) return;
 
@@ -51,25 +66,85 @@ class AmazonSyncService {
     });
   });
 
+  if (results.length === 0 && sections.length > 0) {
+    throw new Error('SELECTOR_MISMATCH: ' + sections.length + ' sections, 0 highlights. Amazon DOM may have changed.');
+  }
+
   return JSON.stringify(results);
 })();
 """;
 
-  // Checks whether the WebView is currently on the notebook page (post-login)
+  // ── Script fetching ───────────────────────────────────────────────────────
+
+  /// Returns the active extractor JS.
+  /// Tries Supabase first; falls back to the compiled-in script on any error.
+  static Future<String> _fetchScript() async {
+    // Return in-memory cache if available.
+    if (_cachedScript != null) return _cachedScript!;
+
+    try {
+      final row = await Supabase.instance.client
+          .from('amazon_sync_scripts')
+          .select('version, script')
+          .eq('is_active', true)
+          .order('version', ascending: false)
+          .limit(1)
+          .single();
+
+      final version = row['version'] as int?;
+      final script  = row['script']  as String?;
+
+      if (script != null && script.isNotEmpty) {
+        _cachedVersion = version;
+        _cachedScript  = script;
+        if (kDebugMode) {
+          debugPrint('[AmazonSync] Using remote JS v$version from Supabase');
+        }
+        return script;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AmazonSync] Remote JS fetch failed: $e — using fallback');
+      }
+    }
+
+    return _fallbackExtractorJs;
+  }
+
+  /// Clears the in-memory cache so the next sync re-fetches from Supabase.
+  /// Call this if you want to force a script refresh.
+  static void invalidateScriptCache() {
+    _cachedScript  = null;
+    _cachedVersion = null;
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
+  /// Checks whether the WebView is currently on the notebook page (post-login).
   static bool isOnNotebookPage(String currentUrl) {
     return currentUrl.contains('read.amazon.com/kp/notebook');
   }
 
-  // Run the extractor on the given WebViewController and return parsed highlights.
-  // Throws if the page is not the notebook page or if extraction fails.
+  /// Runs the extractor on the given WebViewController and returns parsed highlights.
+  /// Throws a descriptive error if extraction fails (SELECTOR_MISMATCH, JSON parse error, etc.).
   static Future<List<AmazonHighlight>> extractHighlights(
       WebViewController controller) async {
-    final rawResult = await controller.runJavaScriptReturningResult(_extractorJs);
+    final script = await _fetchScript();
 
-    // runJavaScriptReturningResult wraps strings in quotes on some platforms
+    final rawResult = await controller.runJavaScriptReturningResult(script);
+
+    // runJavaScriptReturningResult wraps strings in double quotes on some platforms.
     String jsonStr = rawResult.toString();
     if (jsonStr.startsWith('"') && jsonStr.endsWith('"')) {
       jsonStr = jsonDecode(jsonStr) as String;
+    }
+
+    if (jsonStr.contains('SELECTOR_MISMATCH')) {
+      // Amazon changed their DOM — invalidate cache so next attempt re-fetches
+      // the latest script from Supabase.
+      invalidateScriptCache();
+      throw Exception('Amazon ha aggiornato il suo sito. Riprova tra qualche minuto — '
+          'stiamo già lavorando al fix.');
     }
 
     final List<dynamic> parsed = jsonDecode(jsonStr) as List<dynamic>;
@@ -78,6 +153,8 @@ class AmazonSyncService {
         .toList();
   }
 }
+
+// ─── AmazonHighlight model ────────────────────────────────────────────────────
 
 class AmazonHighlight {
   const AmazonHighlight({
@@ -96,16 +173,16 @@ class AmazonHighlight {
 
   factory AmazonHighlight.fromJson(Map<String, dynamic> json) {
     return AmazonHighlight(
-      bookTitle: json['bookTitle'] as String? ?? '',
+      bookTitle:  json['bookTitle']  as String? ?? '',
       bookAuthor: json['bookAuthor'] as String? ?? '',
-      content: json['content'] as String? ?? '',
-      location: json['location'] as String?,
-      color: json['color'] as String?,
+      content:    json['content']    as String? ?? '',
+      location:   json['location']   as String?,
+      color:      json['color']      as String?,
     );
   }
 
-  // Convert to the raw text format that MyClippingsParser can handle,
-  // so we can reuse the same import pipeline.
+  /// Converts to My Clippings.txt format so ImportService can process it
+  /// without duplicating parsing logic.
   String toClippingEntry() {
     final dateLine =
         '- Your Highlight on location ${location ?? '0'} | Added on ${DateTime.now()}';
@@ -113,8 +190,8 @@ class AmazonHighlight {
   }
 }
 
-// Converts a list of AmazonHighlights into My Clippings.txt format
-// so ImportService can process them without duplication of logic.
+/// Converts a list of AmazonHighlights into My Clippings.txt text
+/// so ImportService can process them without duplication of logic.
 String amazonHighlightsToClippingsText(List<AmazonHighlight> highlights) {
   return highlights.map((h) => h.toClippingEntry()).join('\n==========\n');
 }

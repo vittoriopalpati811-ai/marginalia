@@ -1,0 +1,380 @@
+{
+  "@@locale": "it",
+
+  "appTitle": "Marginalia",
+  "@appTitle": { "description": "App name" },
+
+  "cancel": "Annulla",
+  "@cancel": {},
+
+  "save": "Salva",
+  "@save": {},
+
+  "delete": "Elimina",
+  "@delete": {},
+
+  "confirm": "Conferma",
+  "@confirm": {},
+
+  "close": "Chiudi",
+  "@close": {},
+
+  "retry": "Riprova",
+  "@retry": {},
+
+  "loading": "Caricamento…",
+  "@loading": {},
+
+  "errorPrefix": "Errore: {message}",
+  "@errorPrefix": {
+    "placeholders": { "message": { "type": "String" } }
+  },
+
+  "timeNow": "adesso",
+  "@timeNow": {},
+
+  "timeMinutesAgo": "{count}m fa",
+  "@timeMinutesAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "timeHoursAgo": "{count}h fa",
+  "@timeHoursAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "timeDaysAgo": "{count}g fa",
+  "@timeDaysAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "timeWeeksAgo": "{count}sett fa",
+  "@timeWeeksAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "libraryTitle": "La tua libreria",
+  "@libraryTitle": {},
+
+  "libraryBooks": "Libri",
+  "@libraryBooks": {},
+
+  "libraryHighlights": "Highlight",
+  "@libraryHighlights": {},
+
+  "librarySearchHint": "Cerca nei tuoi highlight…",
+  "@librarySearchHint": {},
+
+  "libraryNoBooks": "Nessun libro ancora",
+  "@libraryNoBooks": {},
+
+  "libraryNoBooksBody": "Importa i tuoi highlight da Kindle\nper iniziare.",
+  "@libraryNoBooksBody": {},
+
+  "libraryImportKindle": "Importa da Kindle",
+  "@libraryImportKindle": {},
+
+  "libraryHighlightCount": "{count, plural, =0{nessun highlight} =1{1 highlight} other{{count} highlight}}",
+  "@libraryHighlightCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "libraryBookCount": "{count, plural, =0{nessun libro} =1{1 libro} other{{count} libri}}",
+  "@libraryBookCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "searchTitle": "Persone",
+  "@searchTitle": {},
+
+  "searchSubtitle": "lettori · autori",
+  "@searchSubtitle": {},
+
+  "searchHint": "Cerca per nome o @username…",
+  "@searchHint": {},
+
+  "searchEmpty": "Cerca altri lettori",
+  "@searchEmpty": {},
+
+  "searchEmptyBody": "Digita un nome o @username\nper trovare lettori su Marginalia.",
+  "@searchEmptyBody": {},
+
+  "searchNoResults": "Nessun lettore trovato per “{query}”",
+  "@searchNoResults": {
+    "placeholders": { "query": { "type": "String" } }
+  },
+
+  "feedComments": "Commenti",
+  "@feedComments": {},
+
+  "feedCommentHint": "Scrivi un commento…",
+  "@feedCommentHint": {},
+
+  "feedReplyHint": "Rispondi a {name}…",
+  "@feedReplyHint": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "feedNoComments": "Nessun commento ancora.\nSii il primo!",
+  "@feedNoComments": {},
+
+  "feedReplyingTo": "Rispondendo a {name}",
+  "@feedReplyingTo": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "feedPostPublished": "Post pubblicato!",
+  "@feedPostPublished": {},
+
+  "feedWritePost": "Scrivi qualcosa…",
+  "@feedWritePost": {},
+
+  "feedPublish": "Pubblica",
+  "@feedPublish": {},
+
+  "feedHoldToPublish": "Tieni premuto per pubblicare",
+  "@feedHoldToPublish": {},
+
+  "feedNoPostsYet": "Nessun post ancora.",
+  "@feedNoPostsYet": {},
+
+  "feedEmptyFeed": "Non hai ancora seguito nessuno.\nVai nella tab Amici per iniziare!",
+  "@feedEmptyFeed": {},
+
+  "feedMyPostsNoPostsYet": "Non hai ancora pubblicato nessun post.",
+  "@feedMyPostsNoPostsYet": {},
+
+  "feedReport": "Segnala post",
+  "@feedReport": {},
+
+  "feedReported": "Post segnalato. Grazie!",
+  "@feedReported": {},
+
+  "feedEdit": "Modifica post",
+  "@feedEdit": {},
+
+  "feedDeletePost": "Elimina post",
+  "@feedDeletePost": {},
+
+  "feedDeleteConfirmTitle": "Elimina post",
+  "@feedDeleteConfirmTitle": {},
+
+  "feedDeleteConfirmBody": "Vuoi davvero eliminare questo post? L'azione non è reversibile.",
+  "@feedDeleteConfirmBody": {},
+
+  "amiciFollowingSection": "SEGUITI",
+  "@amiciFollowingSection": {},
+
+  "amiciSuggestedSection": "SUGGERITI",
+  "@amiciSuggestedSection": {},
+
+  "amiciSuggestedSubtitle": "Dai tuoi Jam",
+  "@amiciSuggestedSubtitle": {},
+
+  "amiciNoFriends": "Nessun amico ancora",
+  "@amiciNoFriends": {},
+
+  "amiciNoFriendsBody": "Unisciti a una Jam per trovare\naltri lettori da seguire.",
+  "@amiciNoFriendsBody": {},
+
+  "amiciFollow": "Segui",
+  "@amiciFollow": {},
+
+  "amiciUnfollow": "Smetti",
+  "@amiciUnfollow": {},
+
+  "amiciNotReading": "Nessun libro in corso",
+  "@amiciNotReading": {},
+
+  "profileCurrentlyReading": "IN LETTURA",
+  "@profileCurrentlyReading": {},
+
+  "profileSpotlight": "HIGHLIGHT IN EVIDENZA",
+  "@profileSpotlight": {},
+
+  "profilePostsSection": "POST",
+  "@profilePostsSection": {},
+
+  "profileLibrarySection": "LIBRERIA",
+  "@profileLibrarySection": {},
+
+  "profileFollowers": "Follower",
+  "@profileFollowers": {},
+
+  "profileFollowing": "Seguiti",
+  "@profileFollowing": {},
+
+  "profileHighlightsStat": "Highlight",
+  "@profileHighlightsStat": {},
+
+  "profileBooksStat": "Libri",
+  "@profileBooksStat": {},
+
+  "profileSharedStat": "Condivisi",
+  "@profileSharedStat": {},
+
+  "profileShareProfile": "Condividi profilo",
+  "@profileShareProfile": {},
+
+  "profileEditProfile": "Modifica profilo",
+  "@profileEditProfile": {},
+
+  "profileSettings": "Impostazioni",
+  "@profileSettings": {},
+
+  "profileLoginRequired": "Accedi per vedere il profilo",
+  "@profileLoginRequired": {},
+
+  "profileLoginBody": "Il profilo richiede un account Marginalia.",
+  "@profileLoginBody": {},
+
+  "profileLoginCta": "Accedi",
+  "@profileLoginCta": {},
+
+  "profileNotFound": "Profilo non trovato.",
+  "@profileNotFound": {},
+
+  "profileErrorLoading": "Errore caricamento profilo.",
+  "@profileErrorLoading": {},
+
+  "profileFollowingButton": "Stai seguendo",
+  "@profileFollowingButton": {},
+
+  "profileFollowButton": "Segui",
+  "@profileFollowButton": {},
+
+  "profileNoFollowers": "Nessun follower ancora",
+  "@profileNoFollowers": {},
+
+  "profileNoFollowing": "Non segui ancora nessuno",
+  "@profileNoFollowing": {},
+
+  "profileNoBooksImported": "Nessun libro importato",
+  "@profileNoBooksImported": {},
+
+  "followersTitle": "Follower",
+  "@followersTitle": {},
+
+  "followingTitle": "Seguiti",
+  "@followingTitle": {},
+
+  "booksTitle": "Libri letti",
+  "@booksTitle": {},
+
+  "settingsTitle": "Account",
+  "@settingsTitle": {},
+
+  "settingsSignOut": "Disconnetti",
+  "@settingsSignOut": {},
+
+  "settingsKindleSync": "Sync Kindle",
+  "@settingsKindleSync": {},
+
+  "settingsExport": "Esporta highlight",
+  "@settingsExport": {},
+
+  "settingsWidget": "Anteprima Widget",
+  "@settingsWidget": {},
+
+  "messagesTitle": "Messaggi",
+  "@messagesTitle": {},
+
+  "messagesSearchHint": "Cerca una conversazione…",
+  "@messagesSearchHint": {},
+
+  "messagesInputHint": "Scrivi un messaggio…",
+  "@messagesInputHint": {},
+
+  "messagesNoConversations": "Nessuna conversazione ancora",
+  "@messagesNoConversations": {},
+
+  "authSignIn": "Accedi",
+  "@authSignIn": {},
+
+  "authSignUp": "Registrati",
+  "@authSignUp": {},
+
+  "authEmail": "Email",
+  "@authEmail": {},
+
+  "authPassword": "Password",
+  "@authPassword": {},
+
+  "authName": "Il tuo nome",
+  "@authName": {},
+
+  "authForgotPassword": "Password dimenticata?",
+  "@authForgotPassword": {},
+
+  "authCheckEmail": "Controlla la tua email",
+  "@authCheckEmail": {},
+
+  "authConfirmEmailBody": "Ti abbiamo inviato un link di conferma.\nControlla la tua email per completare la registrazione.",
+  "@authConfirmEmailBody": {},
+
+  "jamTitle": "Jam",
+  "@jamTitle": {},
+
+  "jamCreate": "Crea Jam",
+  "@jamCreate": {},
+
+  "jamNoJams": "Nessuna Jam ancora",
+  "@jamNoJams": {},
+
+  "jamJoinCode": "Codice di accesso",
+  "@jamJoinCode": {},
+
+  "jamMembers": "Membri",
+  "@jamMembers": {},
+
+  "jamHighlights": "Highlight condivisi",
+  "@jamHighlights": {},
+
+  "paywallTitle": "Marginalia Premium",
+  "@paywallTitle": {},
+
+  "paywallSubtitle": "Sblocca il pieno potenziale\ndella tua lettura",
+  "@paywallSubtitle": {},
+
+  "paywallPrice": "€19,99/anno",
+  "@paywallPrice": {},
+
+  "paywallPriceSub": "Meno di un caffè al mese",
+  "@paywallPriceSub": {},
+
+  "paywallPurchaseCta": "Sblocca Marginalia Premium",
+  "@paywallPurchaseCta": {},
+
+  "paywallRestore": "Ripristina acquisto",
+  "@paywallRestore": {},
+
+  "paywallFeatureHighlights": "Highlight illimitati da Kindle",
+  "@paywallFeatureHighlights": {},
+
+  "paywallFeatureJams": "Crea e partecipa a Jam illimitate",
+  "@paywallFeatureJams": {},
+
+  "paywallFeatureWidget": "Widget iOS attivi",
+  "@paywallFeatureWidget": {},
+
+  "paywallFreeTierHighlights": "Fino a 100 highlight (piano free)",
+  "@paywallFreeTierHighlights": {},
+
+  "paywallFreeTierJams": "Solo visualizzazione Jam (piano free)",
+  "@paywallFreeTierJams": {},
+
+  "paywallFreeTierWidget": "Widget non disponibile (piano free)",
+  "@paywallFreeTierWidget": {},
+
+  "paywallTerms": "Rinnovo automatico annuale. Cancella in qualsiasi momento da Impostazioni → Abbonamenti.",
+  "@paywallTerms": {},
+
+  "paywallPurchaseError": "Acquisto non riuscito. Riprova.",
+  "@paywallPurchaseError": {},
+
+  "paywallRestoreSuccess": "Acquisto ripristinato!",
+  "@paywallRestoreSuccess": {},
+
+  "paywallRestoreNone": "Nessun acquisto da ripristinare.",
+  "@paywallRestoreNone": {}
+}

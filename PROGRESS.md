@@ -7,9 +7,14 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter MVP — chat + social completi con like commenti, risposte, GIF, foto
-**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social completata
-**Prossima azione founder**: applicare migration 018 in Supabase SQL Editor
+**Fase**: Flutter MVP — RevenueCat paywall infra + i18n setup + remote Amazon JS
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione completata
+**Prossima azione founder**:
+  1. Applicare migration 018 e 019 in Supabase SQL Editor (se non già fatto)
+  2. Creare account RevenueCat → inserire API key in `subscription_service.dart`
+  3. Creare prodotto "marginalia_premium_yearly" in App Store Connect
+  4. Eseguire `flutter pub get && flutter gen-l10n` per generare AppLocalizations
+  5. Decommentare `AppLocalizations.delegate` in `app.dart`
 **Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
 **Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)

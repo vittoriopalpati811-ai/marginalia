@@ -9,43 +9,47 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # ─── State management ─────────────────────────────────────
+  # State management
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
 
-  # ─── Local database ───────────────────────────────────────
-  # Isar: database embedded ultra-veloce, NoSQL, ottimo per highlights
+  # Local database
   isar: ^3.1.0+1
-  isar_flutter_libs: ^3.1.0+1   # include librerie native pre-compilate
+  isar_flutter_libs: ^3.1.0+1
   path_provider: ^2.1.3
 
-  # ─── Backend ──────────────────────────────────────────────
+  # Backend
   supabase_flutter: ^2.5.0
 
-  # ─── WebView (Amazon sync) ────────────────────────────────
+  # WebView (Amazon sync)
   webview_flutter: ^4.8.0
 
-  # ─── Navigation ───────────────────────────────────────────
+  # Navigation
   go_router: ^13.2.4
 
-  # ─── Animazioni ───────────────────────────────────────────
-  # flutter_animate: API dichiarativa per sequenze di animazione
+  # Animations
   flutter_animate: ^4.5.0
-  # animations: transizioni Material condivise (Hero, FadeThrough, ecc.)
   animations: ^2.0.11
 
-  # ─── Tipografia ───────────────────────────────────────────
-  google_fonts: ^6.2.1   # Lora (serif) + DM Sans (UI)
+  # Typography
+  google_fonts: ^6.2.1
 
-  # ─── File / condivisione ──────────────────────────────────
+  # File / condivisione
   file_picker: ^8.1.2
   share_plus: ^10.0.1
 
-  # ─── Widget iOS / home screen ─────────────────────────────
-  home_widget: ^0.7.0          # bridge Flutter ↔ WidgetKit (iOS) / Glance (Android)
-  http: ^1.2.1                 # fetch weather from wttr.in (no API key required)
+  # Widget iOS / home screen
+  home_widget: ^0.7.0
+  http: ^1.2.1
 
-  # ─── Utility ──────────────────────────────────────────────
+  # Payments / subscriptions
+  purchases_flutter: ^7.0.0
+
+  # Localizzazione
+  flutter_localizations:
+    sdk: flutter
+
+  # Utility
   intl: ^0.19.0
   crypto: ^3.0.3
   collection: ^1.18.0
@@ -60,6 +64,7 @@ dev_dependencies:
   isar_generator: ^3.1.0+1
 
 flutter:
+  generate: true
   uses-material-design: true
 
   assets:
