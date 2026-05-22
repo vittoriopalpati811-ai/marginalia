@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -110,7 +111,7 @@ class _AmiciTabState extends ConsumerState<AmiciTab> {
               : SliverList(
                   delegate: SliverChildListDelegate([
                     _SectionHeader(
-                      title: 'SEGUITI',
+                      title: context.l10n.amiciFollowingSection,
                       count: following.length,
                     ),
                     ...following.asMap().entries.map((entry) {
@@ -146,8 +147,8 @@ class _AmiciTabState extends ConsumerState<AmiciTab> {
               : SliverList(
                   delegate: SliverChildListDelegate([
                     _SectionHeader(
-                      title: 'SUGGERITI',
-                      subtitle: 'Dai tuoi Jam',
+                      title: context.l10n.amiciSuggestedSection,
+                      subtitle: context.l10n.amiciSuggestedSubtitle,
                     ),
                     ...suggestions.asMap().entries.map((entry) {
                       final i = entry.key;
@@ -314,7 +315,7 @@ class _UserRow extends StatelessWidget {
                       ),
                   ] else
                     Text(
-                      'Nessun libro in corso',
+                      context.l10n.amiciNotReading,
                       style: GoogleFonts.barlow(
                         fontSize: 12,
                         color: MarginaliaColors.inkFaint,
@@ -353,7 +354,7 @@ class _UserRow extends StatelessWidget {
                             textStyle: const TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w600),
                           ),
-                          child: const Text('Smetti'),
+                          child: Text(context.l10n.amiciUnfollow),
                         )
                       : FilledButton(
                           onPressed: onToggle,
@@ -367,7 +368,7 @@ class _UserRow extends StatelessWidget {
                             textStyle: const TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w600),
                           ),
-                          child: const Text('Segui'),
+                          child: Text(context.l10n.amiciFollow),
                         ),
             ),
           ],
@@ -500,7 +501,7 @@ class _EmptyFriends extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Nessun amico ancora',
+              context.l10n.amiciNoFriends,
               style: GoogleFonts.barlow(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -510,7 +511,7 @@ class _EmptyFriends extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Unisciti a una Jam per trovare\naltri lettori da seguire.',
+              context.l10n.amiciNoFriendsBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,

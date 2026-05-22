@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
@@ -162,7 +163,7 @@ class _MessagesHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Messaggi',
+                      context.l10n.messagesTitle,
                       style: MarginaliaTextStyles.wordmarkLight,
                     ),
                     const SizedBox(height: 4),
@@ -514,7 +515,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Nessuna conversazione',
+              context.l10n.messagesNoConversations,
               style: GoogleFonts.ebGaramond(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,

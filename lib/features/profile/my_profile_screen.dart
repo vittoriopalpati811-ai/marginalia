@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'followers_screen.dart';
@@ -1399,10 +1400,10 @@ class _NotLoggedIn extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Il profilo richiede un account Marginalia.',
+              Text(
+                context.l10n.profileLoginBody,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                     color: MarginaliaColors.inkMuted,
                     fontSize: 14,
                     height: 1.6),
@@ -1411,7 +1412,7 @@ class _NotLoggedIn extends StatelessWidget {
               FilledButton.icon(
                 onPressed: () => context.push('/auth'),
                 icon: const Icon(Icons.login, size: 16),
-                label: const Text('Accedi'),
+                label: Text(context.l10n.profileLoginCta),
               ),
             ],
           ),

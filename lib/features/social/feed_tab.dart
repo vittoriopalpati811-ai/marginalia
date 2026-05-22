@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../messages/giphy_picker.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -1689,7 +1690,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                         child: Padding(
                           padding: const EdgeInsets.all(40),
                           child: Text(
-                            'Nessun commento ancora.\nSii il primo!',
+                            context.l10n.feedNoComments,
                             textAlign: TextAlign.center,
                             style: GoogleFonts.barlow(
                               fontSize: 14,
@@ -2314,9 +2315,9 @@ class _NotLoggedIn extends StatelessWidget {
                   size: 32, color: MarginaliaColors.siennaLight),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Accedi per vedere il feed',
-              style: TextStyle(
+            Text(
+              context.l10n.profileLoginRequired,
+              style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: MarginaliaColors.ink,
@@ -2324,10 +2325,10 @@ class _NotLoggedIn extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Il feed sociale richiede un account Marginalia.',
+            Text(
+              context.l10n.profileLoginBody,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
                 height: 1.65,
@@ -2337,7 +2338,7 @@ class _NotLoggedIn extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => context.push('/auth'),
               icon: const Icon(Icons.login, size: 16),
-              label: const Text('Accedi'),
+              label: Text(context.l10n.authSignIn),
             ),
           ],
         ),

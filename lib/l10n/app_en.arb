@@ -22,8 +22,12 @@
   "libraryHighlights": "Highlights",
   "librarySearchHint": "Search your highlights…",
   "libraryNoBooks": "No books yet",
-  "libraryNoBooksBody": "Import your highlights from Kindle\nto get started.",
+  "libraryNoBooksBody": "Import your My Clippings.txt file\nfrom Kindle to get started.",
+  "libraryNoFavorites": "No favorites yet",
+  "libraryNoFavoritesBody": "Bookmark a highlight to see it here.",
   "libraryImportKindle": "Import from Kindle",
+  "libraryImportClippings": "Import Clippings",
+  "libraryTryDemo": "Try with demo data",
   "libraryHighlightCount": "{count, plural, =0{no highlights} =1{1 highlight} other{{count} highlights}}",
   "libraryBookCount": "{count, plural, =0{no books} =1{1 book} other{{count} books}}",
 

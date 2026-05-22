@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/export_service.dart';
@@ -235,7 +236,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onPressed: () =>
                           _showEditProfileSheet(context, ref, profile),
                       icon: const Icon(Icons.edit_outlined, size: 16),
-                      label: const Text('Modifica profilo'),
+                      label: Text(context.l10n.profileEditProfile),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: MarginaliaColors.primary,
                         side: const BorderSide(color: MarginaliaColors.rule),
@@ -418,7 +419,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     await ref.read(supabaseServiceProvider).signOut();
                   },
                   icon: const Icon(Icons.logout_outlined, size: 16),
-                  label: const Text('Esci dall\'account'),
+                  label: Text(context.l10n.settingsSignOut),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFB54848),
                     side: const BorderSide(color: Color(0xFFD4AAAA)),
@@ -1109,8 +1110,8 @@ class _UnauthenticatedProfile extends StatelessWidget {
                           size: 32, color: MarginaliaColors.primary),
                     ),
                     const SizedBox(height: 24),
-                    const Text('Accedi per vedere il profilo',
-                        style: TextStyle(
+                    Text(context.l10n.profileLoginRequired,
+                        style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.3)),
@@ -1126,7 +1127,7 @@ class _UnauthenticatedProfile extends StatelessWidget {
                     const SizedBox(height: 32),
                     FilledButton(
                       onPressed: () => context.push('/auth'),
-                      child: const Text('Accedi o Registrati'),
+                      child: Text(context.l10n.profileLoginCta),
                     ),
                   ],
                 ),

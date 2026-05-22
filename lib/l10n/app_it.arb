@@ -68,11 +68,23 @@
   "libraryNoBooks": "Nessun libro ancora",
   "@libraryNoBooks": {},
 
-  "libraryNoBooksBody": "Importa i tuoi highlight da Kindle\nper iniziare.",
+  "libraryNoBooksBody": "Importa il file My Clippings.txt\ndal tuo Kindle per cominciare.",
   "@libraryNoBooksBody": {},
+
+  "libraryNoFavorites": "Nessun preferito ancora",
+  "@libraryNoFavorites": {},
+
+  "libraryNoFavoritesBody": "Aggiungi un segnalibro a qualche highlight per vederlo qui.",
+  "@libraryNoFavoritesBody": {},
 
   "libraryImportKindle": "Importa da Kindle",
   "@libraryImportKindle": {},
+
+  "libraryImportClippings": "Importa Clippings",
+  "@libraryImportClippings": {},
+
+  "libraryTryDemo": "Prova con dati demo",
+  "@libraryTryDemo": {},
 
   "libraryHighlightCount": "{count, plural, =0{nessun highlight} =1{1 highlight} other{{count} highlight}}",
   "@libraryHighlightCount": {

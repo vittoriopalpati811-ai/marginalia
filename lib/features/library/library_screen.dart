@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/books_provider.dart';
@@ -118,7 +119,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('LA TUA LIBRERIA',
+                      Text(context.l10n.libraryTitle.toUpperCase(),
                           style: MarginaliaTextStyles.sectionTitle),
                       const SizedBox(width: 12),
                       const Expanded(
@@ -971,14 +972,14 @@ class _EmptyLibrary extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              isFiltered ? 'Nessun preferito ancora' : 'Nessun libro ancora',
+              isFiltered ? context.l10n.libraryNoFavorites : context.l10n.libraryNoBooks,
               style: MarginaliaTextStyles.bookTitle.copyWith(fontSize: 20),
             ),
             const SizedBox(height: 10),
             Text(
               isFiltered
-                  ? 'Aggiungi un segnalibro a qualche highlight per vederlo qui.'
-                  : 'Importa il file My Clippings.txt\ndal tuo Kindle per cominciare.',
+                  ? context.l10n.libraryNoFavoritesBody
+                  : context.l10n.libraryNoBooksBody,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: MarginaliaColors.inkMuted,
@@ -991,7 +992,7 @@ class _EmptyLibrary extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onImport,
                 icon: const Icon(Icons.upload_file_outlined, size: 18),
-                label: const Text('Importa Clippings'),
+                label: Text(context.l10n.libraryImportClippings),
               ),
               const SizedBox(height: 12),
               TextButton.icon(
@@ -999,9 +1000,9 @@ class _EmptyLibrary extends StatelessWidget {
                 icon: Icon(Icons.auto_awesome_outlined,
                     size: 16, color: MarginaliaColors.siennaLight),
                 label: Text(
-                  'Prova con dati demo',
+                  context.l10n.libraryTryDemo,
                   style:
-                      TextStyle(color: MarginaliaColors.siennaLight),
+                      const TextStyle(color: MarginaliaColors.siennaLight),
                 ),
               ),
             ],

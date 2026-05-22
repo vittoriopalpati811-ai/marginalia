@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/l10n/l10n_extension.dart';
 import 'amici_tab.dart';
 
 final jamsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
@@ -737,8 +738,8 @@ class _EmptyJams extends StatelessWidget {
                   size: 36, color: Colors.white),
             ),
             const SizedBox(height: 24),
-            const Text('Nessuna Jam ancora',
-                style: TextStyle(
+            Text(context.l10n.jamNoJams,
+                style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3)),
@@ -822,16 +823,16 @@ class _UnauthenticatedState extends StatelessWidget {
                           size: 32, color: MarginaliaColors.sienna),
                     ),
                     const SizedBox(height: 24),
-                    const Text('Accedi per le Jam',
-                        style: TextStyle(
+                    Text(context.l10n.profileLoginRequired,
+                        style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.3)),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Le Jam e il feed sociale\nrichiedono un account Marginalia.',
+                    Text(
+                      context.l10n.profileLoginBody,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                           color: MarginaliaColors.inkMuted,
                           height: 1.6,
                           fontSize: 14),
@@ -839,7 +840,7 @@ class _UnauthenticatedState extends StatelessWidget {
                     const SizedBox(height: 32),
                     FilledButton(
                       onPressed: () => context.push('/auth'),
-                      child: const Text('Accedi o Registrati'),
+                      child: Text(context.l10n.profileLoginCta),
                     ),
                   ],
                 ),

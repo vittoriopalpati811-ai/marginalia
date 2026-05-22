@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -60,9 +61,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'Persone',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.searchTitle,
+                          style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFFF2F5EA),
@@ -79,7 +80,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            'lettori · autori',
+                            context.l10n.searchSubtitle,
                             style: TextStyle(
                               fontSize: 10,
                               color: Colors.white.withAlpha(100),
@@ -111,7 +112,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         cursorColor: const Color(0xFFF2F5EA),
                         decoration: InputDecoration(
-                          hintText: 'Cerca per nome o @username…',
+                          hintText: context.l10n.searchHint,
                           hintStyle: TextStyle(
                             color: Colors.white.withAlpha(70),
                             fontSize: 15,
@@ -322,9 +323,9 @@ class _EmptySearch extends StatelessWidget {
                 size: 28, color: MarginaliaColors.siennaLight),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Cerca altri lettori',
-            style: TextStyle(
+          Text(
+            context.l10n.searchEmpty,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: MarginaliaColors.ink,
@@ -332,10 +333,10 @@ class _EmptySearch extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Digita un nome o @username\nper trovare lettori su Marginalia.',
+          Text(
+            context.l10n.searchEmptyBody,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: MarginaliaColors.inkMuted,
               height: 1.65,
               fontSize: 14,
@@ -361,7 +362,7 @@ class _NoResults extends StatelessWidget {
               size: 40, color: MarginaliaColors.inkFaint),
           const SizedBox(height: 12),
           Text(
-            'Nessun lettore trovato per "$query"',
+            context.l10n.searchNoResults(query),
             style: const TextStyle(
                 color: MarginaliaColors.inkMuted, fontSize: 14),
           ),
