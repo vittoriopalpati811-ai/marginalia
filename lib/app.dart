@@ -4,6 +4,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -541,11 +542,6 @@ class _FloatingNavBar extends StatelessWidget {
 }
 
 // ─── Localization config ──────────────────────────────────────────────────────
-//
-// If the build fails with "Target of URI doesn't exist":
-//   flutter pub get && flutter gen-l10n
-//
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 const _localizationsDelegates = [
   GlobalMaterialLocalizations.delegate,
