@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/locale_service.dart';
@@ -143,48 +144,41 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         _goTo(2);
       }
     } on AuthException catch (e) {
-      setState(() => _authError = _mapAuthError(e.message));
+      setState(() => _authError = _mapAuthError(e.message, context));
     } catch (e) {
-      setState(() => _authError = 'Errore imprevisto. Riprova.');
+      setState(() => _authError = context.l10n.authErrGeneric);
     } finally {
       if (mounted) setState(() => _authLoading = false);
     }
   }
 
   void _showConfirmEmailDialog() {
+    final l = context.l10n;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Controlla la tua email'),
-        content: Text(
-          'Abbiamo inviato un link di conferma a ${_emailCtrl.text.trim()}.\n'
-          'Clicca il link e poi torna ad accedere.',
-        ),
+        title: Text(l.onboardingCheckEmailTitle),
+        content: Text(l.onboardingCheckEmailBody(_emailCtrl.text.trim())),
         actions: [
           FilledButton(
             onPressed: () {
               Navigator.pop(context);
               setState(() => _loginMode = true);
             },
-            child: const Text('Ok, vado ad accedere'),
+            child: Text(l.onboardingCheckEmailCta),
           ),
         ],
       ),
     );
   }
 
-  String _mapAuthError(String msg) {
-    if (msg.contains('Invalid login')) return 'Email o password errati.';
-    if (msg.contains('Email not confirmed')) {
-      return 'Conferma la tua email prima di accedere.';
-    }
-    if (msg.contains('already registered')) {
-      return 'Questa email è già registrata. Prova ad accedere.';
-    }
-    if (msg.contains('Password should be')) {
-      return 'La password deve essere di almeno 6 caratteri.';
-    }
+  String _mapAuthError(String msg, BuildContext ctx) {
+    final l = ctx.l10n;
+    if (msg.contains('Invalid login')) return l.authErrInvalidLogin;
+    if (msg.contains('Email not confirmed')) return l.authErrNotConfirmed;
+    if (msg.contains('already registered')) return l.authErrAlreadyRegistered;
+    if (msg.contains('Password should be')) return l.authErrWeakPassword;
     return msg;
   }
 
@@ -721,7 +715,7 @@ class _WelcomeStep extends StatelessWidget {
 
           // Subtitle
           Text(
-            'Riscopri quello che hai letto.',
+            context.l10n.onboardingWelcomeSubtitle,
             style: GoogleFonts.barlow(
               fontSize: 15,
               color: MarginaliaColors.inkMuted,
@@ -740,7 +734,7 @@ class _WelcomeStep extends StatelessWidget {
             child: FilledButton(
               onPressed: onStart,
               child: Text(
-                'Inizia →',
+                context.l10n.onboardingStart,
                 style: GoogleFonts.barlow(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -758,7 +752,7 @@ class _WelcomeStep extends StatelessWidget {
           TextButton(
             onPressed: onLogin,
             child: Text(
-              'Hai già un account? Accedi',
+              context.l10n.onboardingHaveAccount,
               style: GoogleFonts.barlow(
                 fontSize: 14,
                 color: MarginaliaColors.inkMuted,
@@ -807,7 +801,7 @@ class _AuthStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            loginMode ? 'Accedi' : 'Crea il tuo account',
+            loginMode ? context.l10n.onboardingAuthLoginTitle : context.l10n.onboardingAuthCreateTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 30,
               fontWeight: FontWeight.w600,
@@ -820,8 +814,8 @@ class _AuthStep extends StatelessWidget {
 
           Text(
             loginMode
-                ? 'Bentornato in Marginalia.'
-                : 'Il tuo profilo letterario ti aspetta.',
+                ? context.l10n.onboardingAuthLoginSubtitle
+                : context.l10n.onboardingAuthCreateSubtitle,
             style: GoogleFonts.barlow(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
@@ -836,9 +830,9 @@ class _AuthStep extends StatelessWidget {
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              hintText: 'Email',
-              prefixIcon: Icon(Icons.email_outlined),
+            decoration: InputDecoration(
+              hintText: context.l10n.authEmail,
+              prefixIcon: const Icon(Icons.email_outlined),
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
 
@@ -851,7 +845,7 @@ class _AuthStep extends StatelessWidget {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => onSubmit(),
             decoration: InputDecoration(
-              hintText: 'Password',
+              hintText: context.l10n.authPassword,
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -887,7 +881,7 @@ class _AuthStep extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      'Continua →',
+                      context.l10n.onboardingContinue,
                       style: GoogleFonts.barlow(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -953,7 +947,7 @@ class _UsernameStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            'Scegli il tuo @username',
+            context.l10n.onboardingUsernameTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -964,7 +958,7 @@ class _UsernameStep extends StatelessWidget {
 
           const SizedBox(height: 6),
           Text(
-            'Gli altri ti troveranno con questo nome.',
+            context.l10n.onboardingUsernameSubtitle,
             style: GoogleFonts.barlow(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
@@ -992,7 +986,7 @@ class _UsernameStep extends StatelessWidget {
           if (available == false) ...[
             const SizedBox(height: 8),
             Text(
-              'Username già in uso. Prova un altro.',
+              context.l10n.onboardingUsernameTaken,
               style: GoogleFonts.barlow(
                 fontSize: 12,
                 color: const Color(0xFFDC2626),
@@ -1007,7 +1001,7 @@ class _UsernameStep extends StatelessWidget {
             child: FilledButton(
               onPressed: _canContinue ? onContinue : null,
               child: Text(
-                'Continua →',
+                context.l10n.onboardingContinue,
                 style: GoogleFonts.barlow(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -1021,7 +1015,7 @@ class _UsernameStep extends StatelessWidget {
           TextButton(
             onPressed: onSkip,
             child: Text(
-              'Salta',
+              context.l10n.onboardingSkip,
               style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
@@ -1059,7 +1053,7 @@ class _NameStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            'Come ti chiami?',
+            context.l10n.onboardingNameTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -1070,7 +1064,7 @@ class _NameStep extends StatelessWidget {
 
           const SizedBox(height: 6),
           Text(
-            'Questo nome apparirà sul tuo profilo.',
+            context.l10n.onboardingNameSubtitle,
             style: GoogleFonts.barlow(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
@@ -1084,9 +1078,9 @@ class _NameStep extends StatelessWidget {
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => onContinue(),
-            decoration: const InputDecoration(
-              hintText: 'Il tuo nome',
-              prefixIcon: Icon(Icons.person_outline),
+            decoration: InputDecoration(
+              hintText: context.l10n.authName,
+              prefixIcon: const Icon(Icons.person_outline),
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
 
@@ -1097,7 +1091,7 @@ class _NameStep extends StatelessWidget {
             child: FilledButton(
               onPressed: onContinue,
               child: Text(
-                'Continua →',
+                context.l10n.onboardingContinue,
                 style: GoogleFonts.barlow(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -1111,7 +1105,7 @@ class _NameStep extends StatelessWidget {
           TextButton(
             onPressed: onSkip,
             child: Text(
-              'Salta',
+              context.l10n.onboardingSkip,
               style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
@@ -1151,7 +1145,7 @@ class _AvatarStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            'Aggiungi una foto profilo',
+            context.l10n.onboardingAvatarTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -1162,7 +1156,7 @@ class _AvatarStep extends StatelessWidget {
 
           const SizedBox(height: 6),
           Text(
-            'Facoltativa, puoi aggiungerla in seguito.',
+            context.l10n.onboardingAvatarSubtitle,
             style: GoogleFonts.barlow(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
@@ -1216,7 +1210,7 @@ class _AvatarStep extends StatelessWidget {
               onPressed: onPickAvatar,
               icon: const Icon(Icons.photo_library_outlined, size: 18),
               label: Text(
-                'Scegli foto',
+                context.l10n.onboardingAvatarPick,
                 style: GoogleFonts.barlow(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
@@ -1238,7 +1232,7 @@ class _AvatarStep extends StatelessWidget {
             child: FilledButton(
               onPressed: onContinue,
               child: Text(
-                'Continua →',
+                context.l10n.onboardingContinue,
                 style: GoogleFonts.barlow(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -1252,7 +1246,7 @@ class _AvatarStep extends StatelessWidget {
           TextButton(
             onPressed: onSkip,
             child: Text(
-              'Salta',
+              context.l10n.onboardingSkip,
               style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
@@ -1292,7 +1286,7 @@ class _CoverStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            'Aggiungi una foto copertina',
+            context.l10n.onboardingCoverTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
@@ -1303,7 +1297,7 @@ class _CoverStep extends StatelessWidget {
 
           const SizedBox(height: 6),
           Text(
-            'Appare in cima al tuo profilo.',
+            context.l10n.onboardingCoverSubtitle,
             style: GoogleFonts.barlow(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
@@ -1344,7 +1338,7 @@ class _CoverStep extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Foto copertina',
+                              context.l10n.onboardingCoverPlaceholder,
                               style: GoogleFonts.barlow(
                                 fontSize: 13,
                                 color: MarginaliaColors.primary.withAlpha(160),
@@ -1365,7 +1359,7 @@ class _CoverStep extends StatelessWidget {
               onPressed: onPickCover,
               icon: const Icon(Icons.photo_library_outlined, size: 18),
               label: Text(
-                'Scegli immagine',
+                context.l10n.onboardingCoverPick,
                 style: GoogleFonts.barlow(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
@@ -1387,7 +1381,7 @@ class _CoverStep extends StatelessWidget {
             child: FilledButton(
               onPressed: onContinue,
               child: Text(
-                'Continua →',
+                context.l10n.onboardingContinue,
                 style: GoogleFonts.barlow(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -1401,7 +1395,7 @@ class _CoverStep extends StatelessWidget {
           TextButton(
             onPressed: onSkip,
             child: Text(
-              'Salta',
+              context.l10n.onboardingSkip,
               style: GoogleFonts.barlow(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
@@ -1499,7 +1493,7 @@ class _CompleteStepState extends State<_CompleteStep>
           const SizedBox(height: 32),
 
           Text(
-            'Tutto pronto! 🎉',
+            context.l10n.onboardingCompleteTitle,
             textAlign: TextAlign.center,
             style: GoogleFonts.ebGaramond(
               fontSize: 32,
@@ -1513,8 +1507,8 @@ class _CompleteStepState extends State<_CompleteStep>
 
           Text(
             displayUsername.isNotEmpty
-                ? 'Benvenuto in Marginalia, $displayUsername'
-                : 'Benvenuto in Marginalia',
+                ? context.l10n.onboardingCompleteBody(displayUsername)
+                : context.l10n.onboardingCompleteBodyAnon,
             textAlign: TextAlign.center,
             style: GoogleFonts.barlow(
               fontSize: 15,
@@ -1538,7 +1532,7 @@ class _CompleteStepState extends State<_CompleteStep>
                       ),
                     )
                   : Text(
-                      'Entra nella tua libreria →',
+                      context.l10n.onboardingEnter,
                       style: GoogleFonts.barlow(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

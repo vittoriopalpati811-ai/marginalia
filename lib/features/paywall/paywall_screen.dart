@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/subscription_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 // ─── PaywallScreen ────────────────────────────────────────────────────────────
 //
@@ -43,11 +44,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       final ok = await ref.read(subscriptionProvider.notifier).purchase();
       if (!mounted) return;
       if (ok) {
-        _showSuccess('Benvenuto in Marginalia Premium! 🎉');
+        _showSuccess(context.l10n.paywallPurchaseSuccess);
         if (widget.modal) Navigator.of(context).pop(true);
         else context.pop(true);
       } else {
-        _showError('Acquisto non riuscito. Riprova.');
+        _showError(context.l10n.paywallPurchaseError);
       }
     } catch (_) {
       if (mounted) _showError('Acquisto non riuscito. Riprova.');
@@ -62,14 +63,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       final ok = await ref.read(subscriptionProvider.notifier).restore();
       if (!mounted) return;
       if (ok) {
-        _showSuccess('Acquisto ripristinato!');
+        _showSuccess(context.l10n.paywallRestoreSuccess);
         if (widget.modal) Navigator.of(context).pop(true);
         else context.pop(true);
       } else {
-        _showError('Nessun acquisto da ripristinare.');
+        _showError(context.l10n.paywallRestoreNone);
       }
     } catch (_) {
-      if (mounted) _showError('Ripristino non riuscito. Riprova.');
+      if (mounted) _showError(context.l10n.paywallPurchaseError);
     } finally {
       if (mounted) setState(() => _restoring = false);
     }
@@ -222,7 +223,7 @@ class _PaywallBody extends StatelessWidget {
                             .slideY(begin: 0.05, end: 0, duration: 400.ms),
                         const SizedBox(height: 8),
                         Text(
-                          'Sblocca il pieno potenziale della tua lettura',
+                          context.l10n.paywallSubtitle,
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.white.withAlpha(160),
@@ -267,22 +268,22 @@ class _PaywallBody extends StatelessWidget {
               children: [
                 _FeatureRow(
                   icon: Icons.all_inclusive_rounded,
-                  title: 'Highlight illimitati da Kindle',
-                  subtitle: 'Fino a 100 highlight nel piano free',
+                  title: context.l10n.paywallFeatureHighlights,
+                  subtitle: context.l10n.paywallFreeTierHighlights,
                   premium: true,
                   index: 0,
                 ),
                 _FeatureRow(
                   icon: Icons.groups_rounded,
-                  title: 'Crea e partecipa a Jam illimitate',
-                  subtitle: 'Solo visualizzazione nel piano free',
+                  title: context.l10n.paywallFeatureJams,
+                  subtitle: context.l10n.paywallFreeTierJams,
                   premium: true,
                   index: 1,
                 ),
                 _FeatureRow(
                   icon: Icons.widgets_rounded,
-                  title: 'Widget iOS attivi',
-                  subtitle: 'Non disponibile nel piano free',
+                  title: context.l10n.paywallFeatureWidget,
+                  subtitle: context.l10n.paywallFreeTierWidget,
                   premium: true,
                   index: 2,
                 ),
@@ -310,7 +311,7 @@ class _PaywallBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '€19,99/anno',
+                          context.l10n.paywallPrice,
                           style: GoogleFonts.playfairDisplay(
                             fontSize: 26,
                             fontWeight: FontWeight.w700,
@@ -320,7 +321,7 @@ class _PaywallBody extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Meno di un caffè al mese',
+                          context.l10n.paywallPriceSub,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.white.withAlpha(150),
@@ -377,7 +378,7 @@ class _PaywallBody extends StatelessWidget {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Sblocca Marginalia Premium'),
+                    : Text(context.l10n.paywallPurchaseCta),
               ),
             ),
           ).animate(delay: 260.ms).fadeIn(duration: 350.ms),
@@ -399,9 +400,9 @@ class _PaywallBody extends StatelessWidget {
                   )
                 : TextButton(
                     onPressed: purchasing || restoring ? null : onRestore,
-                    child: const Text(
-                      'Ripristina acquisto',
-                      style: TextStyle(
+                    child: Text(
+                      context.l10n.paywallRestore,
+                      style: const TextStyle(
                         fontSize: 13,
                         color: MarginaliaColors.inkMuted,
                       ),
@@ -413,7 +414,7 @@ class _PaywallBody extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(32, 8, 32, bottom + 24),
             child: Text(
-              'Rinnovo automatico annuale. Cancella in qualsiasi momento da Impostazioni → Abbonamenti.',
+              context.l10n.paywallTerms,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,

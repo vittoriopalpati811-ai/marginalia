@@ -7,6 +7,7 @@ import '../../core/theme.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/services/share_card_service.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 class HighlightDetailScreen extends ConsumerWidget {
   const HighlightDetailScreen({super.key, required this.highlightId});
@@ -75,7 +76,7 @@ class HighlightDetailScreen extends ConsumerWidget {
           if (highlight == null) {
             return Center(
               child: Text(
-                'Highlight non trovato.',
+                context.l10n.highlightNotFound,
                 style: MarginaliaTextStyles.label
                     .copyWith(color: MarginaliaColors.inkFaint),
               ),

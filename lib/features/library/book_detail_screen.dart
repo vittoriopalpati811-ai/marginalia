@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/books_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 class BookDetailScreen extends ConsumerWidget {
   const BookDetailScreen({super.key, required this.bookId});
@@ -25,8 +26,8 @@ class BookDetailScreen extends ConsumerWidget {
           return Scaffold(
             appBar: AppBar(),
             body: const Center(
-              child: Text('Libro non trovato.',
-                  style: TextStyle(color: MarginaliaColors.inkMuted)),
+              child: Text(context.l10n.bookNotFound,
+                  style: const TextStyle(color: MarginaliaColors.inkMuted)),
             ),
           );
         }
@@ -137,8 +138,8 @@ class BookDetailScreen extends ConsumerWidget {
                                 ? SliverFillRemaining(
                                     child: Center(
                                       child: Text(
-                                        'Nessun highlight per questo libro.',
-                                        style: TextStyle(
+                                        context.l10n.bookNoHighlights,
+                                        style: const TextStyle(
                                             color:
                                                 MarginaliaColors.inkMuted),
                                       ),

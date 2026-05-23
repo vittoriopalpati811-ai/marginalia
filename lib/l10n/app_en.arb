@@ -138,5 +138,84 @@
   "paywallTerms": "Annual auto-renewal. Cancel anytime from Settings → Subscriptions.",
   "paywallPurchaseError": "Purchase failed. Please try again.",
   "paywallRestoreSuccess": "Purchase restored!",
-  "paywallRestoreNone": "No purchases to restore."
+  "paywallRestoreNone": "No purchases to restore.",
+
+  "onboardingWelcomeSubtitle": "Rediscover what you've read.",
+  "onboardingStart": "Start →",
+  "onboardingHaveAccount": "Already have an account? Sign in",
+  "onboardingAuthCreateTitle": "Create your account",
+  "onboardingAuthLoginTitle": "Sign in",
+  "onboardingAuthCreateSubtitle": "Your literary profile awaits.",
+  "onboardingAuthLoginSubtitle": "Welcome back to Marginalia.",
+  "onboardingContinue": "Continue →",
+  "onboardingSkip": "Skip",
+  "onboardingUsernameTitle": "Choose your @username",
+  "onboardingUsernameSubtitle": "Others will find you by this name.",
+  "onboardingUsernameTaken": "Username already taken. Try another.",
+  "onboardingNameTitle": "What's your name?",
+  "onboardingNameSubtitle": "This name will appear on your profile.",
+  "onboardingAvatarTitle": "Add a profile photo",
+  "onboardingAvatarSubtitle": "Optional, you can add it later.",
+  "onboardingAvatarPick": "Choose photo",
+  "onboardingCoverTitle": "Add a cover photo",
+  "onboardingCoverSubtitle": "Appears at the top of your profile.",
+  "onboardingCoverPlaceholder": "Cover photo",
+  "onboardingCoverPick": "Choose image",
+  "onboardingCompleteTitle": "All set! 🎉",
+  "onboardingCompleteBody": "Welcome to Marginalia, {username}",
+  "@onboardingCompleteBody": {
+    "placeholders": { "username": { "type": "String" } }
+  },
+  "onboardingCompleteBodyAnon": "Welcome to Marginalia",
+  "onboardingEnter": "Enter your library →",
+  "onboardingCheckEmailTitle": "Check your email",
+  "onboardingCheckEmailBody": "We sent a confirmation link to {email}.\nClick the link and then come back to sign in.",
+  "@onboardingCheckEmailBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "onboardingCheckEmailCta": "Ok, go to sign in",
+
+  "authSubtitle": "Your Kindle highlights, reinvented.",
+  "authContinueWithoutAccount": "Continue without account",
+  "authForgotPasswordTitle": "Reset password",
+  "authForgotPasswordBody": "Enter your email and we'll send you a link to reset your password.",
+  "authForgotPasswordSend": "Send link",
+  "authForgotPasswordSent": "Link sent to {email} — check your inbox.",
+  "@authForgotPasswordSent": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "authNameRequired": "Enter your name",
+  "authEmailRequired": "Enter your email",
+  "authEmailInvalid": "Invalid email",
+  "authPasswordRequired": "Enter your password",
+  "authPasswordTooShort": "At least 6 characters",
+  "authCreateAccount": "Create account",
+  "authErrInvalidLogin": "Wrong email or password.",
+  "authErrNotConfirmed": "Confirm your email before signing in.",
+  "authErrAlreadyRegistered": "This email is already registered. Try signing in.",
+  "authErrWeakPassword": "Password must be at least 6 characters.",
+  "authErrGeneric": "Unexpected error. Please try again.",
+
+  "share": "Share",
+  "copy": "Copy",
+
+  "paywallPurchaseSuccess": "Welcome to Marginalia Premium! 🎉",
+
+  "highlightNotFound": "Highlight not found.",
+  "bookNotFound": "Book not found.",
+  "bookNoHighlights": "No highlights for this book.",
+
+  "jamCopiedToClipboard": "Code copied to clipboard!",
+  "jamCoverUpdated": "Jam cover updated!",
+  "jamHighlightShared": "Highlight shared in the Jam!",
+  "jamNoHighlightsAvailable": "No highlights available. Import a Kindle file first.",
+  "jamShareHighlightCta": "Share a highlight",
+  "jamShareCode": "Share this code with your friends",
+  "jamPickHighlight": "Choose a highlight",
+  "jamNoHighlightsFound": "No highlights found",
+  "jamSearchHint": "Search by text or book…",
+  "jamMemberCount": "{count, plural, =1{member} other{members}}",
+  "@jamMemberCount": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

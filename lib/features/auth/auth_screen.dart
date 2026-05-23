@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -79,7 +80,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     } on AuthException catch (e) {
       setState(() => _error = _mapError(e.message));
     } catch (e) {
-      setState(() => _error = 'Errore imprevisto. Riprova.');
+      setState(() => _error = context.l10n.authErrGeneric);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -90,9 +91,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Controlla la tua email'),
+        title: Text(context.l10n.onboardingCheckEmailTitle),
         content: Text(
-          'Abbiamo inviato un link di conferma a ${_emailController.text.trim()}.\nClicca il link e poi torna ad accedere.',
+          context.l10n.onboardingCheckEmailBody(_emailController.text.trim()),
         ),
         actions: [
           FilledButton(
@@ -100,7 +101,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
               Navigator.pop(context);
               _tab.animateTo(0);
             },
-            child: const Text('Ok, vado ad accedere'),
+            child: Text(context.l10n.onboardingCheckEmailCta),
           ),
         ],
       ),
@@ -116,13 +117,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Reimposta password'),
+          title: Text(context.l10n.authForgotPasswordTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Inserisci la tua email e ti mandiamo un link per reimpostare la password.',
+                context.l10n.authForgotPasswordBody,
                 style: TextStyle(fontSize: 13, color: MarginaliaColors.inkMuted),
               ),
               const SizedBox(height: 16),
@@ -130,9 +131,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
-                decoration: const InputDecoration(
-                  hintText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  hintText: context.l10n.authEmail,
+                  prefixIcon: const Icon(Icons.email_outlined),
                 ),
               ),
             ],
@@ -140,7 +141,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annulla'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: sending
@@ -161,7 +162,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Link inviato a $email — controlla la posta.',
+                                  context.l10n.authForgotPasswordSent(email),
                                 ),
                                 backgroundColor: MarginaliaColors.primary,
                                 behavior: SnackBarBehavior.floating,
@@ -182,7 +183,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Invia link'),
+                  : Text(context.l10n.authForgotPasswordSend),
             ),
           ],
         ),
@@ -191,10 +192,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   String _mapError(String msg) {
-    if (msg.contains('Invalid login')) return 'Email o password errati.';
-    if (msg.contains('Email not confirmed')) return 'Conferma la tua email prima di accedere.';
-    if (msg.contains('already registered')) return 'Questa email è già registrata. Prova ad accedere.';
-    if (msg.contains('Password should be')) return 'La password deve essere di almeno 6 caratteri.';
+    final l = context.l10n;
+    if (msg.contains('Invalid login')) return l.authErrInvalidLogin;
+    if (msg.contains('Email not confirmed')) return l.authErrNotConfirmed;
+    if (msg.contains('already registered')) return l.authErrAlreadyRegistered;
+    if (msg.contains('Password should be')) return l.authErrWeakPassword;
     return msg;
   }
 
@@ -226,12 +228,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 TextFormField(
                                   controller: _nameController,
                                   textCapitalization: TextCapitalization.words,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Il tuo nome',
-                                    prefixIcon: Icon(Icons.person_outline),
+                                  decoration: InputDecoration(
+                                    hintText: context.l10n.authName,
+                                    prefixIcon: const Icon(Icons.person_outline),
                                   ),
                                   validator: (v) => _tab.index == 1 && (v == null || v.trim().isEmpty)
-                                      ? 'Inserisci il tuo nome'
+                                      ? context.l10n.authNameRequired
                                       : null,
                                 ),
                                 const SizedBox(height: 14),
@@ -244,13 +246,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
-                      decoration: const InputDecoration(
-                        hintText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
+                      decoration: InputDecoration(
+                        hintText: context.l10n.authEmail,
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Inserisci la tua email';
-                        if (!v.contains('@')) return 'Email non valida';
+                        if (v == null || v.trim().isEmpty) return context.l10n.authEmailRequired;
+                        if (!v.contains('@')) return context.l10n.authEmailInvalid;
                         return null;
                       },
                     ),
@@ -261,7 +263,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       controller: _passwordController,
                       obscureText: _obscure,
                       decoration: InputDecoration(
-                        hintText: 'Password',
+                        hintText: context.l10n.authPassword,
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
@@ -269,8 +271,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Inserisci la password';
-                        if (_tab.index == 1 && v.length < 6) return 'Almeno 6 caratteri';
+                        if (v == null || v.isEmpty) return context.l10n.authPasswordRequired;
+                        if (_tab.index == 1 && v.length < 6) return context.l10n.authPasswordTooShort;
                         return null;
                       },
                     ),
@@ -285,9 +287,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                             foregroundColor: MarginaliaColors.sienna,
                           ),
-                          child: const Text(
-                            'Hai dimenticato la password?',
-                            style: TextStyle(fontSize: 13),
+                          child: Text(
+                            context.l10n.authForgotPassword,
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                       ),
@@ -334,7 +336,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                   color: Colors.white,
                                 ),
                               )
-                            : Text(_tab.index == 0 ? 'Accedi' : 'Crea account'),
+                            : Text(_tab.index == 0 ? context.l10n.authSignIn : context.l10n.authCreateAccount),
                       ),
                     ),
 
@@ -342,7 +344,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: const Text('Continua senza account'),
+                      child: Text(context.l10n.authContinueWithoutAccount),
                     ),
                   ],
                 ),
@@ -392,7 +394,7 @@ class _AuthHeader extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'I tuoi highlight Kindle, reinventati.',
+              context.l10n.authSubtitle,
               style: TextStyle(
                 color: Colors.white.withAlpha(180),
                 fontSize: 13,
@@ -419,9 +421,9 @@ class _AuthHeader extends StatelessWidget {
                 unselectedLabelColor: Colors.white.withAlpha(200),
                 labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                tabs: const [
-                  Tab(text: 'Accedi'),
-                  Tab(text: 'Registrati'),
+                tabs: [
+                  Tab(text: context.l10n.authSignIn),
+                  Tab(text: context.l10n.authSignUp),
                 ],
               ),
             ),

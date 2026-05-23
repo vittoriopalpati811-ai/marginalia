@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
+import '../../core/l10n/l10n_extension.dart';
 import 'jam_highlight_detail_screen.dart'
     show reactionsProvider, commentsProvider, JamHighlightDetailScreen;
 import 'weekly_prompt.dart';
@@ -96,7 +97,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   void _copyInviteCode(String code) {
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Codice copiato negli appunti!')),
+      SnackBar(content: Text(context.l10n.jamCopiedToClipboard)),
     );
   }
 
@@ -119,7 +120,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       ref.invalidate(jamDetailProvider(widget.jamId));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Copertina Jam aggiornata!')),
+          SnackBar(content: Text(context.l10n.jamCoverUpdated)),
         );
       }
     } catch (e) {
@@ -140,9 +141,8 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     if (!mounted) return;
     if (list.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Nessun highlight disponibile. Importa prima un file Kindle.'),
+        SnackBar(
+          content: Text(context.l10n.jamNoHighlightsAvailable),
         ),
       );
       return;
@@ -169,7 +169,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             ref.invalidate(jamHighlightsProvider(widget.jamId));
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Highlight condiviso nella Jam!')),
+                SnackBar(content: Text(context.l10n.jamHighlightShared)),
               );
             }
           } catch (e) {
@@ -342,8 +342,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                         const SizedBox(height: 5),
                         if (memberCount > 0)
                           Text(
-                            '$memberCount '
-                            '${memberCount == 1 ? "membro" : "membri"}',
+                            '$memberCount ${context.l10n.jamMemberCount(memberCount)}',
                             style: TextStyle(
                               color:
                                   const Color(0xFFF1EEE7).withAlpha(160),
@@ -503,9 +502,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
         foregroundColor: const Color(0xFFF1EEE7),
         elevation: 4,
         icon: const Icon(Icons.add_comment_outlined),
-        label: const Text(
-          'Condividi',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        label: Text(
+          context.l10n.share,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -920,7 +919,7 @@ class _EmptyJamHighlights extends StatelessWidget {
           FilledButton.icon(
             onPressed: onShare,
             icon: const Icon(Icons.add_comment_outlined, size: 18),
-            label: const Text('Condividi un highlight'),
+            label: Text(context.l10n.jamShareHighlightCta),
           ),
           if (inviteCode != null) ...[
             const SizedBox(height: 20),
@@ -955,9 +954,9 @@ class _EmptyJamHighlights extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Condividi questo codice con i tuoi amici',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.jamShareCode,
+                    style: const TextStyle(
                       fontSize: 12,
                       color: MarginaliaColors.inkFaint,
                     ),
@@ -969,7 +968,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onCopy,
                           icon: const Icon(Icons.copy_outlined, size: 16),
-                          label: const Text('Copia'),
+                          label: Text(context.l10n.copy),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: MarginaliaColors.primary,
                             side: const BorderSide(
@@ -983,7 +982,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                           onPressed: onInvite,
                           icon: const Icon(Icons.ios_share_outlined,
                               size: 16),
-                          label: const Text('Condividi'),
+                          label: Text(context.l10n.share),
                         ),
                       ),
                     ],
@@ -1096,9 +1095,9 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Scegli un highlight',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.jamPickHighlight,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.4,
@@ -1126,7 +1125,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                 controller: _searchController,
                 autofocus: widget.filterByBookTitle == null,
                 decoration: InputDecoration(
-                  hintText: 'Cerca per testo o libro…',
+                  hintText: context.l10n.jamSearchHint,
                   prefixIcon: const Icon(
                     Icons.search,
                     size: 20,
@@ -1148,10 +1147,10 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
             // ── List ───────────────────────────────────────────────────
             Expanded(
               child: flatItems.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'Nessun highlight trovato',
-                        style: TextStyle(color: MarginaliaColors.inkMuted),
+                        context.l10n.jamNoHighlightsFound,
+                        style: const TextStyle(color: MarginaliaColors.inkMuted),
                       ),
                     )
                   : ListView.builder(

@@ -388,5 +388,196 @@
   "@paywallRestoreSuccess": {},
 
   "paywallRestoreNone": "Nessun acquisto da ripristinare.",
-  "@paywallRestoreNone": {}
+  "@paywallRestoreNone": {},
+
+  "onboardingWelcomeSubtitle": "Riscopri quello che hai letto.",
+  "@onboardingWelcomeSubtitle": {},
+
+  "onboardingStart": "Inizia →",
+  "@onboardingStart": {},
+
+  "onboardingHaveAccount": "Hai già un account? Accedi",
+  "@onboardingHaveAccount": {},
+
+  "onboardingAuthCreateTitle": "Crea il tuo account",
+  "@onboardingAuthCreateTitle": {},
+
+  "onboardingAuthLoginTitle": "Accedi",
+  "@onboardingAuthLoginTitle": {},
+
+  "onboardingAuthCreateSubtitle": "Il tuo profilo letterario ti aspetta.",
+  "@onboardingAuthCreateSubtitle": {},
+
+  "onboardingAuthLoginSubtitle": "Bentornato in Marginalia.",
+  "@onboardingAuthLoginSubtitle": {},
+
+  "onboardingContinue": "Continua →",
+  "@onboardingContinue": {},
+
+  "onboardingSkip": "Salta",
+  "@onboardingSkip": {},
+
+  "onboardingUsernameTitle": "Scegli il tuo @username",
+  "@onboardingUsernameTitle": {},
+
+  "onboardingUsernameSubtitle": "Gli altri ti troveranno con questo nome.",
+  "@onboardingUsernameSubtitle": {},
+
+  "onboardingUsernameTaken": "Username già in uso. Prova un altro.",
+  "@onboardingUsernameTaken": {},
+
+  "onboardingNameTitle": "Come ti chiami?",
+  "@onboardingNameTitle": {},
+
+  "onboardingNameSubtitle": "Questo nome apparirà sul tuo profilo.",
+  "@onboardingNameSubtitle": {},
+
+  "onboardingAvatarTitle": "Aggiungi una foto profilo",
+  "@onboardingAvatarTitle": {},
+
+  "onboardingAvatarSubtitle": "Facoltativa, puoi aggiungerla in seguito.",
+  "@onboardingAvatarSubtitle": {},
+
+  "onboardingAvatarPick": "Scegli foto",
+  "@onboardingAvatarPick": {},
+
+  "onboardingCoverTitle": "Aggiungi una foto copertina",
+  "@onboardingCoverTitle": {},
+
+  "onboardingCoverSubtitle": "Appare in cima al tuo profilo.",
+  "@onboardingCoverSubtitle": {},
+
+  "onboardingCoverPlaceholder": "Foto copertina",
+  "@onboardingCoverPlaceholder": {},
+
+  "onboardingCoverPick": "Scegli immagine",
+  "@onboardingCoverPick": {},
+
+  "onboardingCompleteTitle": "Tutto pronto! 🎉",
+  "@onboardingCompleteTitle": {},
+
+  "onboardingCompleteBody": "Benvenuto in Marginalia, {username}",
+  "@onboardingCompleteBody": {
+    "placeholders": { "username": { "type": "String" } }
+  },
+
+  "onboardingCompleteBodyAnon": "Benvenuto in Marginalia",
+  "@onboardingCompleteBodyAnon": {},
+
+  "onboardingEnter": "Entra nella tua libreria →",
+  "@onboardingEnter": {},
+
+  "onboardingCheckEmailTitle": "Controlla la tua email",
+  "@onboardingCheckEmailTitle": {},
+
+  "onboardingCheckEmailBody": "Abbiamo inviato un link di conferma a {email}.\nClicca il link e poi torna ad accedere.",
+  "@onboardingCheckEmailBody": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+
+  "onboardingCheckEmailCta": "Ok, vado ad accedere",
+  "@onboardingCheckEmailCta": {},
+
+  "authSubtitle": "I tuoi highlight Kindle, reinventati.",
+  "@authSubtitle": {},
+
+  "authContinueWithoutAccount": "Continua senza account",
+  "@authContinueWithoutAccount": {},
+
+  "authForgotPasswordTitle": "Reimposta password",
+  "@authForgotPasswordTitle": {},
+
+  "authForgotPasswordBody": "Inserisci la tua email e ti mandiamo un link per reimpostare la password.",
+  "@authForgotPasswordBody": {},
+
+  "authForgotPasswordSend": "Invia link",
+  "@authForgotPasswordSend": {},
+
+  "authForgotPasswordSent": "Link inviato a {email} — controlla la posta.",
+  "@authForgotPasswordSent": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+
+  "authNameRequired": "Inserisci il tuo nome",
+  "@authNameRequired": {},
+
+  "authEmailRequired": "Inserisci la tua email",
+  "@authEmailRequired": {},
+
+  "authEmailInvalid": "Email non valida",
+  "@authEmailInvalid": {},
+
+  "authPasswordRequired": "Inserisci la password",
+  "@authPasswordRequired": {},
+
+  "authPasswordTooShort": "Almeno 6 caratteri",
+  "@authPasswordTooShort": {},
+
+  "authCreateAccount": "Crea account",
+  "@authCreateAccount": {},
+
+  "authErrInvalidLogin": "Email o password errati.",
+  "@authErrInvalidLogin": {},
+
+  "authErrNotConfirmed": "Conferma la tua email prima di accedere.",
+  "@authErrNotConfirmed": {},
+
+  "authErrAlreadyRegistered": "Questa email è già registrata. Prova ad accedere.",
+  "@authErrAlreadyRegistered": {},
+
+  "authErrWeakPassword": "La password deve essere di almeno 6 caratteri.",
+  "@authErrWeakPassword": {},
+
+  "authErrGeneric": "Errore imprevisto. Riprova.",
+  "@authErrGeneric": {},
+
+  "share": "Condividi",
+  "@share": {},
+
+  "copy": "Copia",
+  "@copy": {},
+
+  "paywallPurchaseSuccess": "Benvenuto in Marginalia Premium! 🎉",
+  "@paywallPurchaseSuccess": {},
+
+  "highlightNotFound": "Highlight non trovato.",
+  "@highlightNotFound": {},
+
+  "bookNotFound": "Libro non trovato.",
+  "@bookNotFound": {},
+
+  "bookNoHighlights": "Nessun highlight per questo libro.",
+  "@bookNoHighlights": {},
+
+  "jamCopiedToClipboard": "Codice copiato negli appunti!",
+  "@jamCopiedToClipboard": {},
+
+  "jamCoverUpdated": "Copertina Jam aggiornata!",
+  "@jamCoverUpdated": {},
+
+  "jamHighlightShared": "Highlight condiviso nella Jam!",
+  "@jamHighlightShared": {},
+
+  "jamNoHighlightsAvailable": "Nessun highlight disponibile. Importa prima un file Kindle.",
+  "@jamNoHighlightsAvailable": {},
+
+  "jamShareHighlightCta": "Condividi un highlight",
+  "@jamShareHighlightCta": {},
+
+  "jamShareCode": "Condividi questo codice con i tuoi amici",
+  "@jamShareCode": {},
+
+  "jamPickHighlight": "Scegli un highlight",
+  "@jamPickHighlight": {},
+
+  "jamNoHighlightsFound": "Nessun highlight trovato",
+  "@jamNoHighlightsFound": {},
+
+  "jamSearchHint": "Cerca per testo o libro…",
+  "@jamSearchHint": {},
+
+  "jamMemberCount": "{count, plural, =1{membro} other{membri}}",
+  "@jamMemberCount": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }
