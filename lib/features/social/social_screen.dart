@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -62,6 +64,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
           _SocialHeader(
             tabController: _tabController,
             onJoin: _showJoinJamSheet,
+            onSearch: () => context.push('/search'),
           ),
           // ── Tab content ───────────────────────────────────────────────
           Expanded(
@@ -179,9 +182,16 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
 // ─── Gradient header with Jam/Amici TabBar ────────────────────────────────────
 
 class _SocialHeader extends StatelessWidget {
-  const _SocialHeader({required this.tabController, required this.onJoin});
+  const _SocialHeader({
+    required this.tabController,
+    required this.onJoin,
+    required this.onSearch,
+  });
   final TabController tabController;
   final VoidCallback onJoin;
+  final VoidCallback onSearch;
+
+  static const _cream = Color(0xFFF1EEE7);
 
   @override
   Widget build(BuildContext context) {
@@ -191,47 +201,44 @@ class _SocialHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Top row: title + join button ──────────────────────────────
+          // ── Top row: search icon · title · book-add icon ─────────────
           Padding(
-            padding: EdgeInsets.fromLTRB(20, topPadding + 16, 16, 12),
+            padding: EdgeInsets.fromLTRB(8, topPadding + 10, 8, 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // ── Left: search-person icon ────────────────────────────
+                _GlassIconButton(
+                  onTap: onSearch,
+                  child: CustomPaint(
+                    size: const Size(26, 26),
+                    painter: _SearchPersonPainter(color: _cream),
+                  ),
+                ),
+
+                // ── Center: wordmark ────────────────────────────────────
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Marginalia',
-                        style: MarginaliaTextStyles.wordmarkLight,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Jam e amici lettori',
+                        'Jam',
                         style: GoogleFonts.manrope(
-                          color: const Color(0xFFF1EEE7).withAlpha(140),
-                          fontSize: 12,
-                          letterSpacing: 0.1,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.6,
+                          color: _cream,
                         ),
                       ),
                     ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: onJoin,
-                  icon: const Icon(Icons.link_outlined,
-                      size: 15, color: Color(0xFFF1EEE7)),
-                  label: const Text(
-                    'Unisciti',
-                    style: TextStyle(color: Color(0xFFF1EEE7), fontSize: 13),
-                  ),
-                  style: TextButton.styleFrom(
-                    backgroundColor:
-                        const Color(0xFFF1EEE7).withAlpha(25),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
+
+                // ── Right: book-add icon ────────────────────────────────
+                _GlassIconButton(
+                  onTap: onJoin,
+                  child: CustomPaint(
+                    size: const Size(26, 26),
+                    painter: _BookAddPainter(color: _cream),
                   ),
                 ),
               ],
@@ -241,19 +248,18 @@ class _SocialHeader extends StatelessWidget {
           // ── TabBar ────────────────────────────────────────────────────
           TabBar(
             controller: tabController,
-            labelColor: const Color(0xFFF1EEE7),
-            unselectedLabelColor:
-                const Color(0xFFF1EEE7).withAlpha(110),
-            indicatorColor: const Color(0xFFF1EEE7),
+            labelColor: _cream,
+            unselectedLabelColor: _cream.withAlpha(110),
+            indicatorColor: _cream,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
-            labelStyle: const TextStyle(
+            labelStyle: GoogleFonts.manrope(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.1,
             ),
-            unselectedLabelStyle: const TextStyle(
+            unselectedLabelStyle: GoogleFonts.manrope(
               fontSize: 14,
               fontWeight: FontWeight.w400,
               letterSpacing: 0.1,
@@ -267,6 +273,161 @@ class _SocialHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Glass icon button ─────────────────────────────────────────────────────────
+
+class _GlassIconButton extends StatelessWidget {
+  const _GlassIconButton({required this.child, required this.onTap});
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        width: 44,
+        height: 44,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1EEE7).withAlpha(22),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: const Color(0xFFF1EEE7).withAlpha(35),
+            width: 1,
+          ),
+        ),
+        child: Center(child: child),
+      ),
+    );
+  }
+}
+
+// ─── Custom icon: magnifying glass with person silhouette ────────────────────
+
+class _SearchPersonPainter extends CustomPainter {
+  const _SearchPersonPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1.7
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final cx = size.width * 0.41;
+    final cy = size.height * 0.41;
+    final lensR = size.width * 0.295; // outer lens radius
+
+    // ── Magnifying glass circle ────────────────────────────────────────
+    canvas.drawCircle(Offset(cx, cy), lensR, p);
+
+    // ── Handle ────────────────────────────────────────────────────────
+    final handleAngle = math.pi * 0.77; // ~139°
+    final hx0 = cx + lensR * math.cos(handleAngle);
+    final hy0 = cy + lensR * math.sin(handleAngle);
+    canvas.drawLine(
+      Offset(hx0, hy0),
+      Offset(size.width * 0.88, size.height * 0.88),
+      p..strokeWidth = 1.9,
+    );
+
+    // ── Person: head circle ────────────────────────────────────────────
+    p..strokeWidth = 1.5;
+    final headR = lensR * 0.30;
+    final headCy = cy - lensR * 0.14;
+    canvas.drawCircle(Offset(cx, headCy), headR, p);
+
+    // ── Person: shoulder arc (clipped inside lens) ─────────────────────
+    final shoulderRect = Rect.fromCenter(
+      center: Offset(cx, headCy + headR + lensR * 0.32),
+      width: lensR * 1.10,
+      height: lensR * 0.76,
+    );
+    canvas.save();
+    canvas.clipRect(Rect.fromCircle(center: Offset(cx, cy), radius: lensR - 0.5));
+    canvas.drawArc(shoulderRect, math.pi, math.pi, false, p);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_SearchPersonPainter old) => old.color != color;
+}
+
+// ─── Custom icon: open book with + badge ─────────────────────────────────────
+
+class _BookAddPainter extends CustomPainter {
+  const _BookAddPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1.6
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final w = size.width;
+    final h = size.height;
+
+    // ── Left page ─────────────────────────────────────────────────────
+    final leftPage = Path()
+      ..moveTo(w * 0.50, h * 0.16)
+      ..cubicTo(
+        w * 0.38, h * 0.14,
+        w * 0.16, h * 0.20,
+        w * 0.12, h * 0.26,
+      )
+      ..lineTo(w * 0.12, h * 0.84)
+      ..cubicTo(
+        w * 0.16, h * 0.78,
+        w * 0.36, h * 0.74,
+        w * 0.50, h * 0.76,
+      )
+      ..close();
+    canvas.drawPath(leftPage, p);
+
+    // ── Right page ────────────────────────────────────────────────────
+    final rightPage = Path()
+      ..moveTo(w * 0.50, h * 0.16)
+      ..cubicTo(
+        w * 0.62, h * 0.14,
+        w * 0.84, h * 0.20,
+        w * 0.88, h * 0.26,
+      )
+      ..lineTo(w * 0.88, h * 0.84)
+      ..cubicTo(
+        w * 0.84, h * 0.78,
+        w * 0.64, h * 0.74,
+        w * 0.50, h * 0.76,
+      )
+      ..close();
+    canvas.drawPath(rightPage, p);
+
+    // ── Spine line ────────────────────────────────────────────────────
+    canvas.drawLine(Offset(w * 0.50, h * 0.16), Offset(w * 0.50, h * 0.76),
+        p..strokeWidth = 1.3);
+
+    // ── + badge (top-right area, inside right page) ───────────────────
+    final px = w * 0.72;
+    final py = h * 0.42;
+    final arm = w * 0.11;
+    p..strokeWidth = 1.7..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(px - arm, py), Offset(px + arm, py), p); // horizontal
+    canvas.drawLine(Offset(px, py - arm), Offset(px, py + arm), p); // vertical
+  }
+
+  @override
+  bool shouldRepaint(_BookAddPainter old) => old.color != color;
 }
 
 // ─── Jam tab content ──────────────────────────────────────────────────────────

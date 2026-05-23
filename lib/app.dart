@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
@@ -108,11 +109,17 @@ final router = GoRouter(
       routes: [
         GoRoute(path: '/home',     builder: (_, __) => const HomeTab()),
         GoRoute(path: '/',         builder: (_, __) => const LibraryScreen()),
-        GoRoute(path: '/search',   builder: (_, __) => const SearchScreen()),
         GoRoute(path: '/social',   builder: (_, __) => const SocialScreen()),
         GoRoute(path: '/messages', builder: (_, __) => const MessagesScreen()),
         GoRoute(path: '/profile',  builder: (_, __) => const MyProfileScreen()),
       ],
+    ),
+
+    // Search — full-screen push (no nav bar; accessed from Jam header)
+    GoRoute(
+      path: '/search',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) => _pushPage(const SearchScreen(), state),
     ),
 
     // Chat screen (full-screen push)
@@ -327,12 +334,11 @@ class _ScaffoldWithNav extends StatelessWidget {
   final String routePath;
 
   static const _tabs = [
-    (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,          label: 'Home'),
-    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,          label: 'Libreria'),
-    (path: '/search',   icon: Icons.search_outlined,       activeIcon: Icons.search_rounded,        label: 'Cerca'),
-    (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,        label: 'Jam'),
-    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,          label: 'Messaggi'),
-    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,        label: 'Profilo'),
+    (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,     label: 'Home'),
+    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,     label: 'Libreria'),
+    (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,   label: 'Jam'),
+    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,     label: 'Messaggi'),
+    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,   label: 'Profilo'),
   ];
 
   @override
@@ -355,7 +361,7 @@ class _ScaffoldWithNav extends StatelessWidget {
           child: child,
         ),
       ),
-      bottomNavigationBar: _AirbnbNavBar(
+      bottomNavigationBar: _LiquidGlassNavBar(
         selectedIndex: selectedIndex,
         tabs: _tabs,
         onTap: (i) {
@@ -404,12 +410,12 @@ class _DevStatusBar extends StatelessWidget {
   }
 }
 
-// ─── Airbnb-style flat nav bar ────────────────────────────────────────────────
+// ─── Liquid glass nav bar ─────────────────────────────────────────────────────
 
 typedef _Tab = ({String path, IconData icon, IconData activeIcon, String label});
 
-class _AirbnbNavBar extends StatelessWidget {
-  const _AirbnbNavBar({
+class _LiquidGlassNavBar extends StatelessWidget {
+  const _LiquidGlassNavBar({
     required this.selectedIndex,
     required this.tabs,
     required this.onTap,
@@ -421,74 +427,127 @@ class _AirbnbNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
-        border: Border(
-          top: BorderSide(color: MarginaliaColors.rule, width: 0.5),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 52,
-          child: Row(
-            children: List.generate(tabs.length, (i) {
-              final active = i == selectedIndex;
-              final tab = tabs[i];
-              return Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onTap(i),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Icon with animated scale switch
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        transitionBuilder: (child, anim) {
-                          final scale = Tween<double>(begin: 0.82, end: 1.0)
-                              .animate(CurvedAnimation(
-                            parent: anim,
-                            curve: Curves.easeOutCubic,
-                          ));
-                          return ScaleTransition(
-                            scale: scale,
-                            child: FadeTransition(opacity: anim, child: child),
-                          );
-                        },
-                        child: Icon(
-                          active ? tab.activeIcon : tab.icon,
-                          key: ValueKey('${tab.path}_$active'),
-                          size: 24,
-                          color: active
-                              ? MarginaliaColors.primary
-                              : MarginaliaColors.inkFaint,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      // Label with animated color
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        style: GoogleFonts.manrope(
-                          fontSize: 9,
-                          fontWeight:
-                              active ? FontWeight.w700 : FontWeight.w500,
-                          letterSpacing: active ? 0.1 : 0.0,
-                          color: active
-                              ? MarginaliaColors.primary
-                              : MarginaliaColors.inkFaint,
-                        ),
-                        child: Text(tab.label),
-                      ),
-                    ],
-                  ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottom = MediaQuery.of(context).padding.bottom;
+
+    final glassColor = isDark
+        ? const Color(0xFF1C1C1E).withAlpha(210)
+        : Colors.white.withAlpha(215);
+    final borderColor = isDark
+        ? Colors.white.withAlpha(28)
+        : Colors.white.withAlpha(200);
+    final activeColor = MarginaliaColors.primary;
+    final inactiveColor = isDark
+        ? const Color(0xFF8E8E93)
+        : MarginaliaColors.inkFaint;
+    final indicatorColor = isDark
+        ? Colors.white.withAlpha(22)
+        : MarginaliaColors.primaryFaint;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 14),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(38),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          child: Container(
+            height: 66,
+            decoration: BoxDecoration(
+              color: glassColor,
+              borderRadius: BorderRadius.circular(38),
+              border: Border.all(color: borderColor, width: 1.0),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withAlpha(90)
+                      : const Color(0xFF1C221C).withAlpha(28),
+                  blurRadius: 32,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 10),
                 ),
-              );
-            }),
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withAlpha(45)
+                      : const Color(0xFF1C221C).withAlpha(10),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            // ── Specular top-edge gloss ─────────────────────────────────
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(38),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: const [0.0, 0.08],
+                colors: [
+                  Colors.white.withAlpha(isDark ? 18 : 40),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: Row(
+              children: List.generate(tabs.length, (i) {
+                final active = i == selectedIndex;
+                final tab = tabs[i];
+
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onTap(i),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Pill indicator + icon
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 260),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: active ? indicatorColor : Colors.transparent,
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, anim) => ScaleTransition(
+                              scale: Tween<double>(begin: 0.80, end: 1.0)
+                                  .animate(CurvedAnimation(
+                                      parent: anim,
+                                      curve: Curves.easeOutCubic)),
+                              child: FadeTransition(opacity: anim, child: child),
+                            ),
+                            child: Icon(
+                              active ? tab.activeIcon : tab.icon,
+                              key: ValueKey('${tab.path}_$active'),
+                              size: 22,
+                              color: active ? activeColor : inactiveColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        // Label
+                        AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          style: GoogleFonts.manrope(
+                            fontSize: 9,
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w500,
+                            color: active ? activeColor : inactiveColor,
+                          ),
+                          child: Text(tab.label),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ),
