@@ -7,13 +7,13 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter MVP — onboarding lingua + i18n cablata + RevenueCat infra + Amazon JS remoto
-**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Language selection
+**Fase**: Flutter MVP — Jam 2.0 completo + i18n completa + notifiche infrastruttura
+**Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Jam 2.0
 **Prossima azione founder**:
-  1. Applicare migration 018 e 019 in Supabase SQL Editor (se non già fatto)
-  2. Eseguire `flutter pub get && flutter gen-l10n` (l'import e il delegate sono già decommentati)
-  3. Creare account RevenueCat → inserire API key in `subscription_service.dart`
-  4. Creare prodotto "marginalia_premium_yearly" in App Store Connect
+  1. Applicare migrations **020–023** in Supabase SQL Editor (in ordine)
+  2. Eseguire `flutter pub get && flutter gen-l10n`
+  3. (Opzionale) Deploy push notifications: `supabase secrets set APNS_*` + `supabase functions deploy send-push-notification`
+  4. Creare account RevenueCat → inserire API key in `subscription_service.dart`
 **Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
 **Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)
@@ -23,13 +23,64 @@
 - Codemagic: ✅ app creata, repo connesso, tipo Flutter impostato
 - App Store Connect API key: 🔴 manca (richiede Developer Program)
 
-**Migrations da applicare**:
+**Migrations da applicare (in ordine)**:
 - ⚠️ `017_realtime_messages.sql` — abilita Realtime su messages + conversations
 - ⚠️ `018_comment_likes_replies.sql` — like commenti, risposte threading, fix bucket comment-images
+- ⚠️ `019_*` — (se presente)
+- ⚠️ `020_jam_book_voting.sql` — tabelle book proposals + votes + `is_jam_member()` helper
+- ⚠️ `021_jam_challenges.sql` — tabelle challenges + progress
+- ⚠️ `022_jam_highlight_polls.sql` — tabelle polls + candidates + votes
+- ⚠️ `023_notifications.sql` — tabelle notifications + device_tokens
 
 ---
 
 ## Sessioni
+
+### Sessione 14 — 2026-05-23
+**Durata**: ~2h
+**Branch**: master
+**Commit**: `cbe5613`
+
+#### Fatto
+
+**Jam 2.0 — Feature 4: Member profile sheet (✅)**
+- Tap avatar in `_MembersStrip` → `DraggableScrollableSheet` con profilo membro
+- Mostra avatar (gradiente + iniziale), owner badge dorato, display name, @username
+- Card "In lettura" con titolo + autore (se disponibili)
+- Bottone "Visualizza profilo" → push `/user/:id` con Navigator.pop + context.push
+- Callback `onTapMember` aggiunto a `_MembersStrip` (breaking change interno, solo uso locale)
+
+**Jam 2.0 — Feature 5: Notifiche (✅)**
+- `notifications_screen.dart`: lista notifiche con dot non-letti, mark-as-read al tap, "Segna tutto come letto" in AppBar
+- Bell icon + dot rosso unread nel SliverAppBar di `JamDetailScreen` → push `/notifications`
+- `unreadNotificationCountProvider` watchato nel build per badge live
+- TODO documentato in `app.dart` per device token registration (richiede plugin nativo APNs)
+
+**Jam 2.0 — Integrazione feature cards (✅)**
+- Row "ATTIVITÀ" con 3 card animate (fadeIn + slideX staggerato) in `JamDetailScreen`
+- Card: 📖 Libro del mese → `/jam/:id/voting`, 🏆 Sfide → `/jam/:id/challenges`, 🗳 Sondaggi → `/jam/:id/polls`
+- Navigazione via `context.push()` (go_router)
+
+**Router (✅)**
+- 5 nuove route in `app.dart`: `/jam/:id/voting`, `/jam/:id/challenges`, `/jam/:id/polls`, `/notifications`
+- Tutti usano `_pushPage` (shared axis horizontal transition)
+
+**i18n (✅)**
+- 13 nuove chiavi ARB in IT + EN: `jamFeature*` (6 chiavi), `jamMemberCurrentlyReading`, `notifications*` (4 chiavi)
+- Total ARB keys: ~120 per locale
+
+#### Note tecniche
+- `is_jam_member()` SQL function creata in migration 020, riutilizzata in 021 + 022 — applicare in ordine
+- APNs push via Edge Function Deno con ECDSA P-256 JWT — documentato in `supabase/functions/send-push-notification/index.ts`
+- RevenueCat non integrato (skip su richiesta founder — darà errori se non si ha la API key)
+
+#### Azioni da fare (founder)
+1. `flutter gen-l10n` (13 nuove chiavi)
+2. Applicare migrations 020–023 in Supabase SQL Editor in ordine
+3. Opzionale: `supabase secrets set APNS_TEAM_ID=… APNS_KEY_ID=… APNS_PRIVATE_KEY=… APNS_BUNDLE_ID=…`
+4. Opzionale: `supabase functions deploy send-push-notification`
+
+---
 
 ### Sessione 13 — 2026-05-23
 **Durata**: ~1h
