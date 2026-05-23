@@ -25,7 +25,7 @@ class BookDetailScreen extends ConsumerWidget {
         if (book == null) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(
+            body: Center(
               child: Text(context.l10n.bookNotFound,
                   style: const TextStyle(color: MarginaliaColors.inkMuted)),
             ),

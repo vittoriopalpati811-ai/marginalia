@@ -1413,9 +1413,10 @@ class SupabaseService {
     if (userId == null) return 0;
     final res = await _client
         .from('notifications')
-        .select('id', const FetchOptions(count: CountOption.exact))
+        .select('id')
         .eq('user_id', userId)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .count(CountOption.exact);
     return res.count ?? 0;
   }
 
