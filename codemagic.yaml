@@ -30,6 +30,9 @@ workflows:
       - name: Get packages
         script: flutter pub get
 
+      - name: Generate localizations
+        script: flutter gen-l10n
+
       - name: Generate Isar schemas
         script: dart run build_runner build --delete-conflicting-outputs
 

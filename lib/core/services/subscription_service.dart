@@ -87,7 +87,7 @@ class SubscriptionService {
       if (package == null) return false;
 
       final info = await Purchases.purchasePackage(package);
-      return info.customerInfo.entitlements.active.containsKey(_entitlement);
+      return info.entitlements.active.containsKey(_entitlement);
     } on PurchasesErrorCode catch (code) {
       // User cancelled — not an error worth surfacing.
       if (code == PurchasesErrorCode.purchaseCancelledError) return false;
