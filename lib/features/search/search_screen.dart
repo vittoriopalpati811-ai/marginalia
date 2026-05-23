@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -242,7 +242,7 @@ class _UserCard extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: MarginaliaColors.ink,
@@ -252,7 +252,7 @@ class _UserCard extends StatelessWidget {
                   if (username != null && username.isNotEmpty)
                     Text(
                       '@$username',
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: MarginaliaColors.sienna,
                         fontWeight: FontWeight.w500,
@@ -265,7 +265,7 @@ class _UserCard extends StatelessWidget {
                         bio,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: MarginaliaColors.inkMuted,
                         ),
@@ -371,3 +371,4 @@ class _NoResults extends StatelessWidget {
     );
   }
 }
+

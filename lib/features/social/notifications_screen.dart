@@ -25,9 +25,10 @@ class NotificationsScreen extends ConsumerWidget {
         scrolledUnderElevation: 0,
         title: Text(
           context.l10n.notificationsTitle,
-          style: GoogleFonts.ebGaramond(
+          style: GoogleFonts.manrope(
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
             color: MarginaliaColors.ink,
           ),
         ),
@@ -44,7 +45,7 @@ class NotificationsScreen extends ConsumerWidget {
             },
             child: Text(
               context.l10n.notificationsMarkAllRead,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 13,
                 color: MarginaliaColors.primary,
                 fontWeight: FontWeight.w600,
@@ -211,8 +212,10 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               context.l10n.notificationsEmpty,
-              style: GoogleFonts.ebGaramond(
-                fontSize: 20,
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
                 color: MarginaliaColors.ink,
               ),
             ),
@@ -220,8 +223,9 @@ class _EmptyState extends StatelessWidget {
             Text(
               context.l10n.notificationsEmptyBody,
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 14,
+                fontWeight: FontWeight.w400,
                 color: MarginaliaColors.inkMuted,
               ),
             ),

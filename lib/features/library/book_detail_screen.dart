@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -496,7 +496,7 @@ class _HighlightCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             highlight.note!,
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                               fontSize: 12,
                               color: MarginaliaColors.inkMuted,
                               fontStyle: FontStyle.italic,
@@ -554,3 +554,4 @@ class _HighlightCard extends StatelessWidget {
     };
   }
 }
+

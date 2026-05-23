@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -277,7 +277,7 @@ class _UserRow extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: MarginaliaColors.ink,
@@ -316,7 +316,7 @@ class _UserRow extends StatelessWidget {
                   ] else
                     Text(
                       context.l10n.amiciNotReading,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: MarginaliaColors.inkFaint,
                       ),
@@ -502,7 +502,7 @@ class _EmptyFriends extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               context.l10n.amiciNoFriends,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
@@ -513,7 +513,7 @@ class _EmptyFriends extends StatelessWidget {
             Text(
               context.l10n.amiciNoFriendsBody,
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
                 height: 1.65,
@@ -525,3 +525,4 @@ class _EmptyFriends extends StatelessWidget {
     );
   }
 }
+

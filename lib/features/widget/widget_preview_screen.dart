@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,7 +124,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
         elevation: 0,
         title: Text(
           'Anteprima widget',
-          style: GoogleFonts.barlow(
+          style: GoogleFonts.manrope(
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -170,7 +170,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
                     SnackBar(
                       content: Text(
                         'Widget aggiornato sul telefono',
-                        style: GoogleFonts.barlow(fontSize: 13),
+                        style: GoogleFonts.manrope(fontSize: 13),
                       ),
                       backgroundColor: MarginaliaColors.primary,
                       behavior: SnackBarBehavior.floating,
@@ -254,7 +254,7 @@ class _PhoneFrame extends StatelessWidget {
                             // Lock screen date
                             Text(
                               dateStr,
-                              style: GoogleFonts.barlow(
+                              style: GoogleFonts.manrope(
                                 fontSize: 13,
                                 color: Colors.white.withAlpha(180),
                                 fontWeight: FontWeight.w400,
@@ -379,7 +379,7 @@ class _StatusBar extends StatelessWidget {
         children: [
           Text(
             time,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: Colors.white,
@@ -433,7 +433,7 @@ class _SmallWidget extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             highlight.bookTitle,
-            style: GoogleFonts.barlowCondensed(
+            style: GoogleFonts.manrope(
               fontSize: 9,
               color: const Color(0xFF9EBB8A),
               letterSpacing: 1.2,
@@ -481,7 +481,7 @@ class _MediumWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   highlight.bookTitle,
-                  style: GoogleFonts.barlowCondensed(
+                  style: GoogleFonts.manrope(
                     fontSize: 9.5,
                     color: const Color(0xFF9EBB8A),
                     letterSpacing: 1.2,
@@ -581,7 +581,7 @@ class _LargeWidget extends StatelessWidget {
                     ),
                     Text(
                       highlight.author,
-                      style: GoogleFonts.barlowCondensed(
+                      style: GoogleFonts.manrope(
                         fontSize: 10,
                         color: const Color(0xFF9EBB8A),
                         letterSpacing: 0.8,
@@ -676,7 +676,7 @@ class _WidgetBrand extends StatelessWidget {
         if (!small)
           Text(
             greeting,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 11,
               color: const Color(0xFF9EBB8A),
               fontWeight: FontWeight.w500,
@@ -756,7 +756,7 @@ class _BottomBar extends StatelessWidget {
                 pushed
                     ? 'Widget aggiornato ✓'
                     : 'Invia al widget iOS',
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
@@ -768,7 +768,7 @@ class _BottomBar extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Richiede installazione del widget su iPhone',
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 11,
                 color: Colors.white.withAlpha(60),
                 letterSpacing: 0.2,
@@ -802,7 +802,7 @@ class _ContextPill extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 11,
               color: Colors.white.withAlpha(160),
               fontWeight: FontWeight.w500,
@@ -847,7 +847,7 @@ class _SizeSelector extends StatelessWidget {
                   _WidgetSize.medium => 'M',
                   _WidgetSize.large  => 'L',
                 },
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -886,3 +886,4 @@ String _weatherLabel(String mood) => switch (mood) {
       'snow'   => 'Neve',
       _        => 'Cielo',
     };
+

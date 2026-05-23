@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -452,7 +452,7 @@ class _LanguageStepState extends State<_LanguageStep> {
           // ── Prompt ────────────────────────────────────────────────────────
           Text(
             'Choose your language',
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 13,
               color: MarginaliaColors.inkFaint,
               letterSpacing: 1.8,
@@ -500,7 +500,7 @@ class _LanguageStepState extends State<_LanguageStep> {
           // ── Footnote ─────────────────────────────────────────────────────
           Text(
             'You can change this later in Settings',
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 12,
               color: MarginaliaColors.inkFaint,
             ),
@@ -601,7 +601,7 @@ class _LangCard extends StatelessWidget {
                 // Subtitle in the OTHER language
                 Text(
                   sublabel,
-                  style: GoogleFonts.barlow(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: MarginaliaColors.inkFaint,
                     fontWeight: FontWeight.w400,
@@ -716,7 +716,7 @@ class _WelcomeStep extends StatelessWidget {
           // Subtitle
           Text(
             context.l10n.onboardingWelcomeSubtitle,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               color: MarginaliaColors.inkMuted,
               fontWeight: FontWeight.w400,
@@ -735,7 +735,7 @@ class _WelcomeStep extends StatelessWidget {
               onPressed: onStart,
               child: Text(
                 context.l10n.onboardingStart,
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -753,7 +753,7 @@ class _WelcomeStep extends StatelessWidget {
             onPressed: onLogin,
             child: Text(
               context.l10n.onboardingHaveAccount,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 14,
                 color: MarginaliaColors.inkMuted,
                 fontWeight: FontWeight.w500,
@@ -816,7 +816,7 @@ class _AuthStep extends StatelessWidget {
             loginMode
                 ? context.l10n.onboardingAuthLoginSubtitle
                 : context.l10n.onboardingAuthCreateSubtitle,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
             ),
@@ -882,7 +882,7 @@ class _AuthStep extends StatelessWidget {
                     )
                   : Text(
                       context.l10n.onboardingContinue,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -959,7 +959,7 @@ class _UsernameStep extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             context.l10n.onboardingUsernameSubtitle,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
             ),
@@ -975,7 +975,7 @@ class _UsernameStep extends StatelessWidget {
             decoration: InputDecoration(
               hintText: 'username',
               prefixText: '@',
-              prefixStyle: GoogleFonts.barlow(
+              prefixStyle: GoogleFonts.manrope(
                 fontWeight: FontWeight.w600,
                 color: MarginaliaColors.primary,
               ),
@@ -987,7 +987,7 @@ class _UsernameStep extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               context.l10n.onboardingUsernameTaken,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 12,
                 color: const Color(0xFFDC2626),
               ),
@@ -1002,7 +1002,7 @@ class _UsernameStep extends StatelessWidget {
               onPressed: _canContinue ? onContinue : null,
               child: Text(
                 context.l10n.onboardingContinue,
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1016,7 +1016,7 @@ class _UsernameStep extends StatelessWidget {
             onPressed: onSkip,
             child: Text(
               context.l10n.onboardingSkip,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
               ),
@@ -1065,7 +1065,7 @@ class _NameStep extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             context.l10n.onboardingNameSubtitle,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
             ),
@@ -1092,7 +1092,7 @@ class _NameStep extends StatelessWidget {
               onPressed: onContinue,
               child: Text(
                 context.l10n.onboardingContinue,
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1106,7 +1106,7 @@ class _NameStep extends StatelessWidget {
             onPressed: onSkip,
             child: Text(
               context.l10n.onboardingSkip,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
               ),
@@ -1157,7 +1157,7 @@ class _AvatarStep extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             context.l10n.onboardingAvatarSubtitle,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
             ),
@@ -1211,7 +1211,7 @@ class _AvatarStep extends StatelessWidget {
               icon: const Icon(Icons.photo_library_outlined, size: 18),
               label: Text(
                 context.l10n.onboardingAvatarPick,
-                style: GoogleFonts.barlow(fontWeight: FontWeight.w600),
+                style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: MarginaliaColors.primary,
@@ -1233,7 +1233,7 @@ class _AvatarStep extends StatelessWidget {
               onPressed: onContinue,
               child: Text(
                 context.l10n.onboardingContinue,
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1247,7 +1247,7 @@ class _AvatarStep extends StatelessWidget {
             onPressed: onSkip,
             child: Text(
               context.l10n.onboardingSkip,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
               ),
@@ -1298,7 +1298,7 @@ class _CoverStep extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             context.l10n.onboardingCoverSubtitle,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
             ),
@@ -1339,7 +1339,7 @@ class _CoverStep extends StatelessWidget {
                             const SizedBox(height: 6),
                             Text(
                               context.l10n.onboardingCoverPlaceholder,
-                              style: GoogleFonts.barlow(
+                              style: GoogleFonts.manrope(
                                 fontSize: 13,
                                 color: MarginaliaColors.primary.withAlpha(160),
                               ),
@@ -1360,7 +1360,7 @@ class _CoverStep extends StatelessWidget {
               icon: const Icon(Icons.photo_library_outlined, size: 18),
               label: Text(
                 context.l10n.onboardingCoverPick,
-                style: GoogleFonts.barlow(fontWeight: FontWeight.w600),
+                style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: MarginaliaColors.primary,
@@ -1382,7 +1382,7 @@ class _CoverStep extends StatelessWidget {
               onPressed: onContinue,
               child: Text(
                 context.l10n.onboardingContinue,
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1396,7 +1396,7 @@ class _CoverStep extends StatelessWidget {
             onPressed: onSkip,
             child: Text(
               context.l10n.onboardingSkip,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
               ),
@@ -1510,7 +1510,7 @@ class _CompleteStepState extends State<_CompleteStep>
                 ? context.l10n.onboardingCompleteBody(displayUsername)
                 : context.l10n.onboardingCompleteBodyAnon,
             textAlign: TextAlign.center,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               fontSize: 15,
               color: MarginaliaColors.inkMuted,
             ),
@@ -1533,7 +1533,7 @@ class _CompleteStepState extends State<_CompleteStep>
                     )
                   : Text(
                       context.l10n.onboardingEnter,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1568,7 +1568,7 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: const Color(0xFFDC2626),
                 fontSize: 13,
               ),
@@ -1579,3 +1579,4 @@ class _ErrorBanner extends StatelessWidget {
     ).animate().fadeIn(duration: 200.ms).shake(duration: 300.ms);
   }
 }
+

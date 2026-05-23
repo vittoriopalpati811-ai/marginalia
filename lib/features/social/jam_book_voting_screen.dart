@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,9 +33,10 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
         scrolledUnderElevation: 0,
         title: Text(
           'Libro del mese',
-          style: GoogleFonts.ebGaramond(
+          style: GoogleFonts.manrope(
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
             color: MarginaliaColors.ink,
           ),
         ),
@@ -180,7 +181,7 @@ class _ProposalCard extends StatelessWidget {
                 children: [
                   Text(
                     data['title'] as String? ?? '',
-                    style: GoogleFonts.ebGaramond(
+                    style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: MarginaliaColors.ink,
@@ -197,7 +198,7 @@ class _ProposalCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       data['description'] as String,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         color: MarginaliaColors.inkMuted,
                         height: 1.4,
@@ -211,7 +212,7 @@ class _ProposalCard extends StatelessWidget {
                     children: [
                       Text(
                         'Proposto da $proposerName',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 11,
                           color: MarginaliaColors.inkFaint,
                         ),
@@ -255,7 +256,7 @@ class _ProposalCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '$voteCount',
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: hasVoted
@@ -295,8 +296,10 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Nessuna proposta ancora',
-              style: GoogleFonts.ebGaramond(
-                fontSize: 20,
+              style: GoogleFonts.manrope(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
                 color: MarginaliaColors.ink,
               ),
             ),
@@ -304,7 +307,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               'Proponi il prossimo libro da leggere insieme.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 14,
                 color: MarginaliaColors.inkMuted,
               ),
@@ -400,9 +403,10 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
           const SizedBox(height: 20),
           Text(
             'Proponi un libro',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
+            style: GoogleFonts.manrope(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.4,
               color: MarginaliaColors.ink,
             ),
           ),
@@ -440,3 +444,5 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
     );
   }
 }
+
+

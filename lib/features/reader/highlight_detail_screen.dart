@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -208,7 +208,7 @@ class _HighlightBody extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           highlight.note as String,
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkMuted,
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
@@ -374,3 +374,4 @@ class _MetaItem extends StatelessWidget {
     );
   }
 }
+

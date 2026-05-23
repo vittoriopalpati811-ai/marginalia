@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -1181,7 +1181,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           Flexible(
                             child: Text(
                               name,
-                              style: GoogleFonts.barlow(
+                              style: GoogleFonts.manrope(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                                 color: MarginaliaColors.ink,
@@ -1193,7 +1193,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           if (readingTitle != null && readingTitle.isNotEmpty) ...[
                             Text(
                               ' · ',
-                              style: GoogleFonts.barlow(
+                              style: GoogleFonts.manrope(
                                 fontSize: 11,
                                 color: MarginaliaColors.inkFaint,
                               ),
@@ -1207,7 +1207,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                             Flexible(
                               child: Text(
                                 readingTitle,
-                                style: GoogleFonts.barlow(
+                                style: GoogleFonts.manrope(
                                   fontSize: 11,
                                   fontStyle: FontStyle.italic,
                                   color: MarginaliaColors.siennaLight,
@@ -1223,7 +1223,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       if (timeAgo.isNotEmpty)
                         Text(
                           timeAgo,
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             fontSize: 11,
                             color: MarginaliaColors.inkFaint,
                           ),
@@ -1256,7 +1256,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
             child: Text(
               body,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 15,
                 color: MarginaliaColors.ink,
                 height: 1.65,
@@ -1318,7 +1318,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       const SizedBox(width: 5),
                       Text(
                         '$_likesCount',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: _liked
@@ -1351,7 +1351,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       const SizedBox(width: 5),
                       Text(
                         'Commenta',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: MarginaliaColors.inkFaint,
@@ -1692,7 +1692,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                           child: Text(
                             context.l10n.feedNoComments,
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                               fontSize: 14,
                               color: MarginaliaColors.inkMuted,
                               height: 1.6,
@@ -1753,7 +1753,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                   Expanded(
                     child: Text(
                       'Rispondendo a $_replyingToName',
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 12.5,
                         color: MarginaliaColors.inkMuted,
                       ),
@@ -1846,7 +1846,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     child: Center(
                       child: Text(
                         'GIF',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           color: MarginaliaColors.inkMuted,
@@ -1870,7 +1870,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       controller: _ctrl,
                       focusNode: _inputFocus,
                       maxLines: null,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         color: MarginaliaColors.ink,
                         height: 1.5,
@@ -2011,7 +2011,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                   children: [
                     Text(
                       name,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: widget.isReply ? 12.0 : 12.5,
                         fontWeight: FontWeight.w700,
                         color: MarginaliaColors.ink,
@@ -2020,7 +2020,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                     const SizedBox(width: 6),
                     Text(
                       widget.timeAgo,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: MarginaliaColors.inkFaint,
                       ),
@@ -2045,7 +2045,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                       if (content != null && content.isNotEmpty)
                         Text(
                           content,
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             fontSize: 13.5,
                             color: MarginaliaColors.ink,
                             height: 1.55,
@@ -2136,7 +2136,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                               const SizedBox(width: 3),
                               Text(
                                 '$_likeCount',
-                                style: GoogleFonts.barlow(
+                                style: GoogleFonts.manrope(
                                   fontSize: 11.5,
                                   color: _liked
                                       ? MarginaliaColors.sienna
@@ -2159,7 +2159,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                           padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
                           child: Text(
                             'Rispondi',
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                               fontSize: 11.5,
                               color: MarginaliaColors.inkFaint,
                               fontWeight: FontWeight.w500,
@@ -2230,7 +2230,7 @@ class _PostMenuSheet extends StatelessWidget {
                     const SizedBox(width: 14),
                     Text(
                       a.label,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: a.color ?? MarginaliaColors.ink,
@@ -2279,7 +2279,7 @@ class _EmptyFeed extends StatelessWidget {
           Text(
             'Segui altri lettori dalla scheda Amici\nper vedere i loro post qui.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.barlow(
+            style: GoogleFonts.manrope(
               color: MarginaliaColors.inkMuted,
               fontSize: 13,
               height: 1.65,
@@ -2346,3 +2346,4 @@ class _NotLoggedIn extends StatelessWidget {
     );
   }
 }
+

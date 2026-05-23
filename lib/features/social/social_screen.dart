@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -208,7 +208,7 @@ class _SocialHeader extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Jam e amici lettori',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           color: const Color(0xFFF1EEE7).withAlpha(140),
                           fontSize: 12,
                           letterSpacing: 0.1,
@@ -852,3 +852,4 @@ class _UnauthenticatedState extends StatelessWidget {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -335,7 +335,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Impossibile caricare i messaggi',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           color: MarginaliaColors.inkMuted,
                           fontSize: 15,
                         ),
@@ -346,7 +346,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             _messagesProvider(widget.conversationId)),
                         child: Text(
                           'Riprova',
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -489,7 +489,7 @@ class _MessageBubble extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 4, bottom: 4),
                     child: Text(
                       senderName,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: MarginaliaColors.inkFaint,
@@ -523,7 +523,7 @@ class _MessageBubble extends StatelessWidget {
                       if (content != null && content.isNotEmpty)
                         Text(
                           content,
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             fontSize: 14,
                             color: isMe ? Colors.white : MarginaliaColors.ink,
                             height: 1.45,
@@ -538,7 +538,7 @@ class _MessageBubble extends StatelessWidget {
                   children: [
                     Text(
                       timeLabel,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 10,
                         color: MarginaliaColors.inkFaint,
                       ),
@@ -714,7 +714,7 @@ class _DateSeparator extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               label,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 11,
                 color: MarginaliaColors.inkFaint,
                 fontWeight: FontWeight.w500,
@@ -773,7 +773,7 @@ class _EmptyChatState extends StatelessWidget {
             Text(
               'Inizia la conversazione\nscrivendo il primo messaggio.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 13,
                 color: MarginaliaColors.inkMuted,
                 height: 1.6,
@@ -846,7 +846,7 @@ class _MessageInputBar extends StatelessWidget {
               minLines: 1,
               maxLines: 5,
               textCapitalization: TextCapitalization.sentences,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 15,
                 color: MarginaliaColors.ink,
                 height: 1.4,
@@ -855,7 +855,7 @@ class _MessageInputBar extends StatelessWidget {
                 hintText: uploadingMedia
                     ? 'Caricamento…'
                     : 'Scrivi un messaggio…',
-                hintStyle: GoogleFonts.barlow(
+                hintStyle: GoogleFonts.manrope(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
                 ),
@@ -940,3 +940,4 @@ class _MediaButton extends StatelessWidget {
     );
   }
 }
+

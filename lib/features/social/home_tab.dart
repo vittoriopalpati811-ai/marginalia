@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -76,7 +76,7 @@ class _HomeHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Il tuo feed di lettura',
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       color: const Color(0xFFF1EEE7).withAlpha(140),
                       fontSize: 12,
                       letterSpacing: 0.1,
@@ -124,3 +124,4 @@ class _HomeHeader extends StatelessWidget {
 
 // _CreatePostSheet removed — HomeTab now uses the public CreatePostSheet
 // from feed_tab.dart (which also supports image attachment).
+

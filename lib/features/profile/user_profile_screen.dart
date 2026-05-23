@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -300,7 +300,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
                           child: Text(
                             'Nessun post ancora.',
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                                 color: MarginaliaColors.inkMuted, fontSize: 13),
                           ),
                         ),
@@ -493,7 +493,7 @@ class _UserProfilePostCard extends StatelessWidget {
                   if (createdAt != null)
                     Text(
                       _timeAgo(createdAt),
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: MarginaliaColors.inkFaint,
                       ),
@@ -502,7 +502,7 @@ class _UserProfilePostCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       body,
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         fontSize: 14.5,
                         color: MarginaliaColors.ink,
                         height: 1.6,
@@ -577,7 +577,7 @@ class _UserProfilePostCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     '$likes',
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: MarginaliaColors.inkFaint,
                       fontWeight: FontWeight.w600,
@@ -592,3 +592,4 @@ class _UserProfilePostCard extends StatelessWidget {
     );
   }
 }
+

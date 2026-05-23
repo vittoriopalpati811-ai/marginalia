@@ -4,6 +4,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:marginalia/generated/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -314,9 +315,9 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
   }
 }
 
-// ─── Shell scaffold with floating nav ────────────────────────────────────────
+// ─── Shell scaffold with flat nav ────────────────────────────────────────────
 
-class _ScaffoldWithNav extends StatefulWidget {
+class _ScaffoldWithNav extends StatelessWidget {
   const _ScaffoldWithNav({
     required this.child,
     required this.routePath,
@@ -325,118 +326,42 @@ class _ScaffoldWithNav extends StatefulWidget {
   final Widget child;
   final String routePath;
 
-  @override
-  State<_ScaffoldWithNav> createState() => _ScaffoldWithNavState();
-}
-
-class _ScaffoldWithNavState extends State<_ScaffoldWithNav>
-    with SingleTickerProviderStateMixin {
-
   static const _tabs = [
-    (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,          label: ''),
-    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,          label: ''),
-    (path: '/search',   icon: Icons.search_outlined,       activeIcon: Icons.search_rounded,        label: ''),
-    (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,        label: ''),
-    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,          label: ''),
-    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,        label: ''),
+    (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,          label: 'Home'),
+    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,          label: 'Libreria'),
+    (path: '/search',   icon: Icons.search_outlined,       activeIcon: Icons.search_rounded,        label: 'Cerca'),
+    (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,        label: 'Jam'),
+    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,          label: 'Messaggi'),
+    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,        label: 'Profilo'),
   ];
-
-  late final AnimationController _navCtrl;
-  late final Animation<Offset> _navSlide;
-  bool _navVisible = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _navCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 240),
-    );
-    _navSlide = _navCtrl.drive(
-      Tween(begin: Offset.zero, end: const Offset(0, 2.5))
-          .chain(CurveTween(curve: Curves.easeInOutCubic)),
-    );
-  }
-
-  @override
-  void didUpdateWidget(_ScaffoldWithNav old) {
-    super.didUpdateWidget(old);
-    // Always show nav when switching tabs
-    if (old.routePath != widget.routePath) _showNav();
-  }
-
-  @override
-  void dispose() {
-    _navCtrl.dispose();
-    super.dispose();
-  }
-
-  void _showNav() {
-    if (!_navVisible) {
-      _navVisible = true;
-      _navCtrl.reverse();
-    }
-  }
-
-  void _hideNav() {
-    if (_navVisible) {
-      _navVisible = false;
-      _navCtrl.forward();
-    }
-  }
-
-  bool _onScroll(ScrollNotification notification) {
-    if (notification is ScrollUpdateNotification) {
-      final delta = notification.scrollDelta ?? 0;
-      final pixels = notification.metrics.pixels;
-      // Always reveal at the very top
-      if (pixels <= 0) {
-        _showNav();
-        return false;
-      }
-      if (delta > 5)       _hideNav();
-      else if (delta < -5) _showNav();
-    } else if (notification is ScrollEndNotification) {
-      // Snap: reveal if close to top after fling
-      if (notification.metrics.pixels <= 60) _showNav();
-    }
-    return false;
-  }
 
   @override
   Widget build(BuildContext context) {
     final selectedIndex =
-        _tabs.indexWhere((t) => t.path == widget.routePath).clamp(0, _tabs.length - 1);
+        _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
 
     return Scaffold(
       extendBody: true,
-      // Tab transitions: fade between screens
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOut,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
-          child: KeyedSubtree(
-            key: ValueKey(widget.routePath),
-            child: widget.child,
-          ),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+        child: KeyedSubtree(
+          key: ValueKey(routePath),
+          child: child,
         ),
       ),
-      bottomNavigationBar: SlideTransition(
-        position: _navSlide,
-        child: _FloatingNavBar(
-          selectedIndex: selectedIndex,
-          tabs: _tabs,
-          onTap: (i) {
-            HapticFeedback.lightImpact();
-            context.go(_tabs[i].path);
-          },
-        ),
+      bottomNavigationBar: _AirbnbNavBar(
+        selectedIndex: selectedIndex,
+        tabs: _tabs,
+        onTap: (i) {
+          HapticFeedback.lightImpact();
+          context.go(_tabs[i].path);
+        },
       ),
     );
   }
@@ -479,12 +404,12 @@ class _DevStatusBar extends StatelessWidget {
   }
 }
 
-// ─── Floating pill nav bar ────────────────────────────────────────────────────
+// ─── Airbnb-style flat nav bar ────────────────────────────────────────────────
 
 typedef _Tab = ({String path, IconData icon, IconData activeIcon, String label});
 
-class _FloatingNavBar extends StatelessWidget {
-  const _FloatingNavBar({
+class _AirbnbNavBar extends StatelessWidget {
+  const _AirbnbNavBar({
     required this.selectedIndex,
     required this.tabs,
     required this.onTap,
@@ -496,89 +421,75 @@ class _FloatingNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).padding.bottom;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 16),
-      child: Container(
-        height: 64,
-        decoration: BoxDecoration(
-          color: MarginaliaColors.primary,
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x40261E1D),
-              blurRadius: 24,
-              offset: Offset(0, 8),
-            ),
-            BoxShadow(
-              color: Color(0x18261E1D),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.surface,
+        border: Border(
+          top: BorderSide(color: MarginaliaColors.rule, width: 0.5),
         ),
-        child: LayoutBuilder(
-          builder: (ctx, constraints) {
-            final tabWidth = constraints.maxWidth / tabs.length;
-
-            return Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                // ── Pill indicatore animato ──────────────────────────────
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeInOutCubic,
-                  left: tabWidth * selectedIndex + 8,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 280),
-                    curve: Curves.easeInOutCubic,
-                    width: tabWidth - 16,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1EEE7).withAlpha(36),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                ),
-
-                // ── Tab items ────────────────────────────────────────────
-                Row(
-                  children: List.generate(tabs.length, (i) {
-                    final active = i == selectedIndex;
-                    final tab = tabs[i];
-                    return Expanded(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => onTap(i),
-                        child: SizedBox(
-                          height: 64,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 200),
-                                transitionBuilder: (child, anim) =>
-                                    ScaleTransition(scale: anim, child: child),
-                                child: Icon(
-                                  active ? tab.activeIcon : tab.icon,
-                                  key: ValueKey(active),
-                                  size: active ? 26 : 24,
-                                  color: active
-                                      ? const Color(0xFFF1EEE7)
-                                      : const Color(0xFFF1EEE7).withAlpha(100),
-                                ),
-                              ),
-                            ],
-                          ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 52,
+          child: Row(
+            children: List.generate(tabs.length, (i) {
+              final active = i == selectedIndex;
+              final tab = tabs[i];
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(i),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Icon with animated scale switch
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, anim) {
+                          final scale = Tween<double>(begin: 0.82, end: 1.0)
+                              .animate(CurvedAnimation(
+                            parent: anim,
+                            curve: Curves.easeOutCubic,
+                          ));
+                          return ScaleTransition(
+                            scale: scale,
+                            child: FadeTransition(opacity: anim, child: child),
+                          );
+                        },
+                        child: Icon(
+                          active ? tab.activeIcon : tab.icon,
+                          key: ValueKey('${tab.path}_$active'),
+                          size: 24,
+                          color: active
+                              ? MarginaliaColors.primary
+                              : MarginaliaColors.inkFaint,
                         ),
                       ),
-                    );
-                  }),
+                      const SizedBox(height: 3),
+                      // Label with animated color
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOut,
+                        style: GoogleFonts.manrope(
+                          fontSize: 9,
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w500,
+                          letterSpacing: active ? 0.1 : 0.0,
+                          color: active
+                              ? MarginaliaColors.primary
+                              : MarginaliaColors.inkFaint,
+                        ),
+                        child: Text(tab.label),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            );
-          },
+              );
+            }),
+          ),
         ),
       ),
     );

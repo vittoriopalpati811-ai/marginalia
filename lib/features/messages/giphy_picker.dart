@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -172,13 +172,13 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
               autofocus: false,
               onSubmitted: _search,
               textInputAction: TextInputAction.search,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 fontSize: 15,
                 color: MarginaliaColors.ink,
               ),
               decoration: InputDecoration(
                 hintText: 'Cerca GIF…',
-                hintStyle: GoogleFonts.barlow(
+                hintStyle: GoogleFonts.manrope(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
                 ),
@@ -230,7 +230,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
               alignment: Alignment.centerRight,
               child: Text(
                 'Via Tenor',
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: MarginaliaColors.inkFaint,
                   letterSpacing: 0.3,
@@ -251,7 +251,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                         const SizedBox(height: 10),
                         Text(
                           _error!,
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,
                           ),
@@ -270,7 +270,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                     ? Center(
                         child: Text(
                           _hasSearched ? 'Nessun risultato' : 'Caricamento…',
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,
                           ),
@@ -322,3 +322,4 @@ class _GifItem {
   final String previewUrl; // tinygif (~220 px animated) for grid
   final String fullUrl;    // gif full-res to send
 }
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -96,7 +96,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Errore nel caricamento',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: MarginaliaColors.inkMuted,
@@ -107,7 +107,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                         onPressed: () => ref.invalidate(conversationsProvider),
                         child: Text(
                           'Riprova',
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.primary,
                             fontWeight: FontWeight.w600,
                           ),
@@ -169,7 +169,7 @@ class _MessagesHeader extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Conversazioni e gruppi',
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         color: const Color(0xFFF1EEE7).withAlpha(140),
                         fontSize: 12,
                         letterSpacing: 0.1,
@@ -314,7 +314,7 @@ class _ConversationCard extends StatelessWidget {
                             displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: MarginaliaColors.ink,
@@ -326,7 +326,7 @@ class _ConversationCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             timeLabel,
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                               fontSize: 11,
                               color: MarginaliaColors.inkFaint,
                             ),
@@ -342,7 +342,7 @@ class _ConversationCard extends StatelessWidget {
                             lastPreview,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.barlow(
+                            style: GoogleFonts.manrope(
                               fontSize: 13,
                               color: hasUnread
                                   ? MarginaliaColors.ink
@@ -371,7 +371,7 @@ class _ConversationCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${members.length} partecipanti',
-                        style: GoogleFonts.barlow(
+                        style: GoogleFonts.manrope(
                           fontSize: 11,
                           color: MarginaliaColors.inkFaint,
                           letterSpacing: 0.2,
@@ -527,7 +527,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               'Inizia a scrivere a un lettore\no crea un gruppo di lettura.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(
+              style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
                 height: 1.6,
                 fontSize: 14,
@@ -668,7 +668,7 @@ class _SheetOption extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: MarginaliaColors.ink,
@@ -676,7 +676,7 @@ class _SheetOption extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: MarginaliaColors.inkMuted,
                     ),
@@ -794,7 +794,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                   controller: _searchController,
                   autofocus: true,
                   onChanged: _search,
-                  style: GoogleFonts.barlow(
+                  style: GoogleFonts.manrope(
                     fontSize: 15,
                     color: MarginaliaColors.ink,
                   ),
@@ -828,14 +828,14 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                 ? Center(
                     child: Text(
                       _error!,
-                      style: GoogleFonts.barlow(color: MarginaliaColors.inkMuted),
+                      style: GoogleFonts.manrope(color: MarginaliaColors.inkMuted),
                     ),
                   )
                 : _results.isEmpty && _searchController.text.isNotEmpty && !_loading
                     ? Center(
                         child: Text(
                           'Nessun utente trovato',
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,
                           ),
@@ -867,7 +867,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                             ),
                             title: Text(
                               name,
-                              style: GoogleFonts.barlow(
+                              style: GoogleFonts.manrope(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: MarginaliaColors.ink,
@@ -876,7 +876,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                             subtitle: username.isNotEmpty
                                 ? Text(
                                     '@$username',
-                                    style: GoogleFonts.barlow(
+                                    style: GoogleFonts.manrope(
                                       fontSize: 12,
                                       color: MarginaliaColors.inkFaint,
                                     ),
@@ -1031,7 +1031,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                 TextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.sentences,
-                  style: GoogleFonts.barlow(
+                  style: GoogleFonts.manrope(
                     fontSize: 15,
                     color: MarginaliaColors.ink,
                   ),
@@ -1046,7 +1046,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                 TextField(
                   controller: _searchController,
                   onChanged: _search,
-                  style: GoogleFonts.barlow(
+                  style: GoogleFonts.manrope(
                     fontSize: 15,
                     color: MarginaliaColors.ink,
                   ),
@@ -1082,7 +1082,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                         onDeleted: () => _toggleUser(user),
                         deleteIcon: const Icon(Icons.close, size: 14),
                         backgroundColor: MarginaliaColors.primaryFaint,
-                        labelStyle: GoogleFonts.barlow(
+                        labelStyle: GoogleFonts.manrope(
                           fontSize: 12,
                           color: MarginaliaColors.primary,
                           fontWeight: FontWeight.w600,
@@ -1104,7 +1104,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                 ? Center(
                     child: Text(
                       'Cerca un utente per aggiungerlo',
-                      style: GoogleFonts.barlow(
+                      style: GoogleFonts.manrope(
                         color: MarginaliaColors.inkFaint,
                         fontSize: 13,
                       ),
@@ -1114,7 +1114,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     ? Center(
                         child: Text(
                           'Nessun utente trovato',
-                          style: GoogleFonts.barlow(
+                          style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,
                           ),
@@ -1147,7 +1147,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                             ),
                             title: Text(
                               name,
-                              style: GoogleFonts.barlow(
+                              style: GoogleFonts.manrope(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: MarginaliaColors.ink,
@@ -1156,7 +1156,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                             subtitle: username.isNotEmpty
                                 ? Text(
                                     '@$username',
-                                    style: GoogleFonts.barlow(
+                                    style: GoogleFonts.manrope(
                                       fontSize: 12,
                                       color: MarginaliaColors.inkFaint,
                                     ),
@@ -1199,3 +1199,4 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
     );
   }
 }
+

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,9 +32,10 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
         scrolledUnderElevation: 0,
         title: Text(
           'Sfide di lettura',
-          style: GoogleFonts.ebGaramond(
+          style: GoogleFonts.manrope(
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
             color: MarginaliaColors.ink,
           ),
         ),
@@ -156,7 +157,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
               Expanded(
                 child: Text(
                   widget.data['title'] as String? ?? '',
-                  style: GoogleFonts.ebGaramond(
+                  style: GoogleFonts.manrope(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
                     color: MarginaliaColors.ink,
@@ -169,7 +170,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
             const SizedBox(height: 6),
             Text(
               widget.data['description'] as String,
-              style: GoogleFonts.barlow(fontSize: 13, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 13, color: MarginaliaColors.inkMuted),
             ),
           ],
           const SizedBox(height: 14),
@@ -189,7 +190,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
             children: [
               Text(
                 '$progress / $target $_unit',
-                style: GoogleFonts.barlow(
+                style: GoogleFonts.manrope(
                   fontSize: 12,
                   color: MarginaliaColors.inkMuted,
                   fontWeight: FontWeight.w600,
@@ -199,7 +200,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
               if (_deadline != null)
                 Text(
                   'Scadenza: ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
-                  style: GoogleFonts.barlow(fontSize: 11, color: MarginaliaColors.inkFaint),
+                  style: GoogleFonts.manrope(fontSize: 11, color: MarginaliaColors.inkFaint),
                 ),
             ],
           ),
@@ -219,7 +220,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   '$progress',
-                  style: GoogleFonts.ebGaramond(
+                  style: GoogleFonts.manrope(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                     color: MarginaliaColors.ink,
@@ -285,13 +286,13 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Nessuna sfida attiva',
-              style: GoogleFonts.ebGaramond(fontSize: 20, color: MarginaliaColors.ink),
+              style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
               'Crea una sfida condivisa e motiva i tuoi compagni di lettura.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(fontSize: 14, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -380,7 +381,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             const SizedBox(height: 20),
             Text(
               'Crea sfida',
-              style: GoogleFonts.ebGaramond(fontSize: 22, fontWeight: FontWeight.w600, color: MarginaliaColors.ink),
+              style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -404,7 +405,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Obiettivo', style: GoogleFonts.barlow(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text('Obiettivo', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       Row(
                         children: [
@@ -414,7 +415,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                           ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('$_target', style: GoogleFonts.ebGaramond(fontSize: 24, fontWeight: FontWeight.w600)),
+                            child: Text('$_target', style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w600)),
                           ),
                           _ProgressButton(
                             icon: Icons.add,
@@ -430,7 +431,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Unità', style: GoogleFonts.barlow(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text('Unità', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         value: _unit,
@@ -465,7 +466,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                 _deadline != null
                     ? 'Scadenza: ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'
                     : 'Imposta scadenza (opzionale)',
-                style: GoogleFonts.barlow(fontSize: 14),
+                style: GoogleFonts.manrope(fontSize: 14),
               ),
             ),
             const SizedBox(height: 20),
@@ -484,3 +485,5 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
     );
   }
 }
+
+

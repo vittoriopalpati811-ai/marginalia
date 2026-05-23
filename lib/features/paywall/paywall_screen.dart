@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -366,7 +366,7 @@ class _PaywallBody extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
-                  textStyle: GoogleFonts.barlow(
+                  textStyle: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.2,
@@ -549,3 +549,4 @@ class _DotPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DotPatternPainter _) => false;
 }
+

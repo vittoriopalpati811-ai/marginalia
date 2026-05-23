@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,9 +33,10 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
         scrolledUnderElevation: 0,
         title: Text(
           'Sondaggi highlight',
-          style: GoogleFonts.ebGaramond(
+          style: GoogleFonts.manrope(
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
             color: MarginaliaColors.ink,
           ),
         ),
@@ -187,9 +188,9 @@ class _PollCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.ebGaramond(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                    style: GoogleFonts.manrope(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: MarginaliaColors.ink,
                     ),
                   ),
@@ -202,7 +203,7 @@ class _PollCard extends StatelessWidget {
                   ),
                   child: Text(
                     closed ? 'Chiuso' : 'Aperto',
-                    style: GoogleFonts.barlow(
+                    style: GoogleFonts.manrope(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: closed ? MarginaliaColors.inkMuted : MarginaliaColors.primary,
@@ -219,7 +220,7 @@ class _PollCard extends StatelessWidget {
                 closed
                     ? 'Terminato il ${endsAt.day}/${endsAt.month}/${endsAt.year}'
                     : 'Scade il ${endsAt.day}/${endsAt.month}/${endsAt.year}',
-                style: GoogleFonts.barlow(fontSize: 12, color: MarginaliaColors.inkFaint),
+                style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkFaint),
               ),
             ),
           const Divider(height: 1, color: MarginaliaColors.rule),
@@ -230,7 +231,7 @@ class _PollCard extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               child: Text(
                 'Nessun highlight ancora. Aggiungi il tuo!',
-                style: GoogleFonts.barlow(fontSize: 13, color: MarginaliaColors.inkMuted),
+                style: GoogleFonts.manrope(fontSize: 13, color: MarginaliaColors.inkMuted),
               ),
             )
           else
@@ -285,7 +286,7 @@ class _PollCard extends StatelessWidget {
                                 ),
                                 Text(
                                   '$voteCount',
-                                  style: GoogleFonts.barlow(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                     color: myVote ? Colors.white : MarginaliaColors.primary,
@@ -358,13 +359,13 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Nessun sondaggio ancora',
-              style: GoogleFonts.ebGaramond(fontSize: 20, color: MarginaliaColors.ink),
+              style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
               'Crea un sondaggio per votare il miglior highlight della settimana.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.barlow(fontSize: 14, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -445,7 +446,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
           const SizedBox(height: 20),
           Text(
             'Nuovo sondaggio',
-            style: GoogleFonts.ebGaramond(fontSize: 22, fontWeight: FontWeight.w600, color: MarginaliaColors.ink),
+            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
           ),
           const SizedBox(height: 20),
           TextField(
@@ -467,7 +468,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
             icon: const Icon(Icons.calendar_today_outlined, size: 16),
             label: Text(
               'Scade il: ${_endsAt.day}/${_endsAt.month}/${_endsAt.year}',
-              style: GoogleFonts.barlow(fontSize: 14),
+              style: GoogleFonts.manrope(fontSize: 14),
             ),
           ),
           const SizedBox(height: 20),
@@ -527,14 +528,14 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
           const SizedBox(height: 20),
           Text(
             'Scegli il tuo highlight',
-            style: GoogleFonts.ebGaramond(fontSize: 22, fontWeight: FontWeight.w600, color: MarginaliaColors.ink),
+            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
           ),
           const SizedBox(height: 16),
           SizedBox(
             height: 280,
             child: highlightsAsync.when(
               data: (highlights) => highlights.isEmpty
-                  ? Center(child: Text(context.l10n.jamNoHighlightsAvailable, style: GoogleFonts.barlow(color: MarginaliaColors.inkMuted)))
+                  ? Center(child: Text(context.l10n.jamNoHighlightsAvailable, style: GoogleFonts.manrope(color: MarginaliaColors.inkMuted)))
                   : ListView.builder(
                       itemCount: highlights.length,
                       itemBuilder: (_, i) {
@@ -551,7 +552,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: h.bookTitle != null
-                              ? Text(h.bookTitle as String, style: GoogleFonts.barlow(fontSize: 11, color: MarginaliaColors.inkMuted))
+                              ? Text(h.bookTitle as String, style: GoogleFonts.manrope(fontSize: 11, color: MarginaliaColors.inkMuted))
                               : null,
                           onTap: () => setState(() {
                             _selectedHighlightContent = content;
@@ -603,3 +604,4 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
     }
   }
 }
+
