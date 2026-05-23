@@ -7,7 +7,7 @@
 
 ## 📌 Stato attuale del progetto
 
-**Fase**: Flutter MVP — Jam 2.0 completo + i18n completa + notifiche infrastruttura
+**Fase**: Flutter MVP — Airbnb redesign completo + Jam 2.0 + i18n + notifiche
 **Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Jam 2.0
 **Prossima azione founder**:
   1. Applicare migrations **020–023** in Supabase SQL Editor (in ordine)
@@ -35,6 +35,36 @@
 ---
 
 ## Sessioni
+
+### Sessione 15 — 2026-05-23
+**Durata**: ~1.5h
+**Branch**: master
+**Commit**: `c570226`
+
+#### Fatto
+
+**Airbnb redesign — Nav bar (✅)**
+- `_FloatingNavBar` (pill matcha verde, floating) sostituito con `_AirbnbNavBar` (flat, bianco, bordo top 0.5px)
+- `_ScaffoldWithNav` downgradato da `StatefulWidget` a `StatelessWidget` — rimossi `AnimationController`, `scroll-hide`, `SingleTickerProviderStateMixin`
+- Ogni tab: icona 24px + gap 3px + label 9px Manrope — selected = `primary` matcha, unselected = `inkFaint`
+- `AnimatedSwitcher` sull'icona con scale 0.82→1.0 ease-out-cubic + FadeTransition
+- `AnimatedDefaultTextStyle` sul label (180ms, ease-out) per color interpolation
+- Aggiunte label ai tab: 'Home', 'Libreria', 'Cerca', 'Jam', 'Messaggi', 'Profilo'
+
+**Airbnb redesign — Tipografia globale (✅)**
+- Barlow + BarlowCondensed → Manrope in tutti i 18 screen (rimossi 0 riferimenti residui)
+- EB Garamond → Manrope per UI chrome (AppBar title, empty state heading, sheet title) in:
+  - jam_book_voting_screen.dart, jam_challenge_screen.dart, jam_poll_screen.dart, notifications_screen.dart
+- **Preservato** EB Garamond per contenuto letterario: italic highlight quotes in jam_poll, quote display in feed/chat/widget_preview/share_card
+- AppBar titles: w800 letterSpacing -0.5; empty states: w700 -0.3; sheet titles: w800 -0.4
+- `theme.dart` aggiornato (Sessione 14): Manrope per tutto UI, EB Garamond solo per highlightBody/quoteDecor
+
+#### Note tecniche
+- `_AirbnbNavBar` usa `SafeArea(top: false)` + `SizedBox(height: 52)` — compatibile con iPhone home indicator
+- `extendBody: true` preservato nel Scaffold per evitare problemi con FAB nelle tab
+- Font import google_fonts aggiunto in app.dart per `GoogleFonts.manrope()` nel nav bar
+
+---
 
 ### Sessione 14 — 2026-05-23
 **Durata**: ~2h
