@@ -414,7 +414,7 @@ class _DevStatusBar extends StatelessWidget {
 
 typedef _Tab = ({String path, IconData icon, IconData activeIcon, String label});
 
-class _LiquidGlassNavBar extends StatelessWidget {
+class _LiquidGlassNavBar extends StatefulWidget {
   const _LiquidGlassNavBar({
     required this.selectedIndex,
     required this.tabs,
@@ -426,133 +426,298 @@ class _LiquidGlassNavBar extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   @override
+  State<_LiquidGlassNavBar> createState() => _LiquidGlassNavBarState();
+}
+
+class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bounceCtrl;
+  late final Animation<double> _bounceAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _bounceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    // Quick compress → overshoot → settle
+    _bounceAnim = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.94)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 18,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.94, end: 1.03)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 32,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.03, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 50,
+      ),
+    ]).animate(_bounceCtrl);
+  }
+
+  @override
+  void didUpdateWidget(_LiquidGlassNavBar old) {
+    super.didUpdateWidget(old);
+    if (old.selectedIndex != widget.selectedIndex) {
+      _bounceCtrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _bounceCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottom = MediaQuery.of(context).padding.bottom;
 
     final glassColor = isDark
-        ? const Color(0xFF1C1C1E).withAlpha(210)
-        : Colors.white.withAlpha(215);
-    final borderColor = isDark
-        ? Colors.white.withAlpha(28)
-        : Colors.white.withAlpha(200);
+        ? const Color(0xFF18181A).withAlpha(205)
+        : Colors.white.withAlpha(195);
     final activeColor = MarginaliaColors.primary;
     final inactiveColor = isDark
         ? const Color(0xFF8E8E93)
         : MarginaliaColors.inkFaint;
     final indicatorColor = isDark
-        ? Colors.white.withAlpha(22)
+        ? Colors.white.withAlpha(24)
         : MarginaliaColors.primaryFaint;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 14),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(38),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-          child: Container(
-            height: 66,
-            decoration: BoxDecoration(
-              color: glassColor,
-              borderRadius: BorderRadius.circular(38),
-              border: Border.all(color: borderColor, width: 1.0),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withAlpha(90)
-                      : const Color(0xFF1C221C).withAlpha(28),
-                  blurRadius: 32,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 10),
+      child: AnimatedBuilder(
+        animation: _bounceAnim,
+        builder: (context, child) => Transform.scale(
+          scale: _bounceAnim.value,
+          alignment: Alignment.bottomCenter,
+          child: child,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(38),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+            child: Stack(
+              children: [
+                // ── Glass body ─────────────────────────────────────────
+                Container(
+                  height: 66,
+                  decoration: BoxDecoration(
+                    color: glassColor,
+                    borderRadius: BorderRadius.circular(38),
+                    boxShadow: [
+                      // Soft diffuse shadow
+                      BoxShadow(
+                        color: isDark
+                            ? Colors.black.withAlpha(110)
+                            : const Color(0xFF1C2A1C).withAlpha(32),
+                        blurRadius: 36,
+                        spreadRadius: -2,
+                        offset: const Offset(0, 12),
+                      ),
+                      // Tight contact shadow
+                      BoxShadow(
+                        color: isDark
+                            ? Colors.black.withAlpha(55)
+                            : const Color(0xFF1C2A1C).withAlpha(12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: List.generate(widget.tabs.length, (i) {
+                      final active = i == widget.selectedIndex;
+                      final tab = widget.tabs[i];
+                      return Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => widget.onTap(i),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 260),
+                                curve: Curves.easeOutCubic,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: active
+                                      ? indicatorColor
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 220),
+                                  switchInCurve: Curves.easeOutCubic,
+                                  switchOutCurve: Curves.easeInCubic,
+                                  transitionBuilder: (child, anim) =>
+                                      ScaleTransition(
+                                    scale: Tween<double>(begin: 0.80, end: 1.0)
+                                        .animate(CurvedAnimation(
+                                            parent: anim,
+                                            curve: Curves.easeOutCubic)),
+                                    child: FadeTransition(
+                                        opacity: anim, child: child),
+                                  ),
+                                  child: Icon(
+                                    active ? tab.activeIcon : tab.icon,
+                                    key: ValueKey('${tab.path}_$active'),
+                                    size: 22,
+                                    color:
+                                        active ? activeColor : inactiveColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 1),
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOut,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 9,
+                                  fontWeight: active
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: active ? activeColor : inactiveColor,
+                                ),
+                                child: Text(tab.label),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
                 ),
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withAlpha(45)
-                      : const Color(0xFF1C221C).withAlpha(10),
-                  blurRadius: 8,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            // ── Specular top-edge gloss ─────────────────────────────────
-            foregroundDecoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(38),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.0, 0.08],
-                colors: [
-                  Colors.white.withAlpha(isDark ? 18 : 40),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: Row(
-              children: List.generate(tabs.length, (i) {
-                final active = i == selectedIndex;
-                final tab = tabs[i];
 
-                return Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onTap(i),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Pill indicator + icon
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 260),
-                          curve: Curves.easeOutCubic,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: active ? indicatorColor : Colors.transparent,
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            switchInCurve: Curves.easeOutCubic,
-                            switchOutCurve: Curves.easeInCubic,
-                            transitionBuilder: (child, anim) => ScaleTransition(
-                              scale: Tween<double>(begin: 0.80, end: 1.0)
-                                  .animate(CurvedAnimation(
-                                      parent: anim,
-                                      curve: Curves.easeOutCubic)),
-                              child: FadeTransition(opacity: anim, child: child),
-                            ),
-                            child: Icon(
-                              active ? tab.activeIcon : tab.icon,
-                              key: ValueKey('${tab.path}_$active'),
-                              size: 22,
-                              color: active ? activeColor : inactiveColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 1),
-                        // Label
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          style: GoogleFonts.manrope(
-                            fontSize: 9,
-                            fontWeight:
-                                active ? FontWeight.w700 : FontWeight.w500,
-                            color: active ? activeColor : inactiveColor,
-                          ),
-                          child: Text(tab.label),
-                        ),
-                      ],
+                // ── Layer 1: Outer border (bright top, dim bottom) ──────
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _GlassBorderPainter(isDark: isDark),
                     ),
                   ),
-                );
-              }),
+                ),
+
+                // ── Layer 2: Top specular highlight ─────────────────────
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(38),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.0, 0.22, 0.50],
+                            colors: [
+                              Colors.white.withAlpha(isDark ? 32 : 55),
+                              Colors.white.withAlpha(isDark ? 8 : 16),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Layer 3: Bottom depth darkening ─────────────────────
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(38),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0.55, 1.0],
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withAlpha(isDark ? 38 : 14),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Layer 4: Centre-left internal shimmer ───────────────
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(38),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.35, -0.9),
+                            radius: 0.55,
+                            colors: [
+                              Colors.white.withAlpha(isDark ? 18 : 30),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+}
+
+// ─── Glass border painter (gradient: bright top arc → dim bottom arc) ─────────
+
+class _GlassBorderPainter extends CustomPainter {
+  const _GlassBorderPainter({required this.isDark});
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const r = 38.0;
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1),
+      const Radius.circular(r),
+    );
+
+    // Top-half: bright specular rim
+    final topPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        stops: const [0.0, 0.45, 0.55, 1.0],
+        colors: [
+          Colors.white.withAlpha(isDark ? 55 : 120),
+          Colors.white.withAlpha(isDark ? 30 : 70),
+          Colors.white.withAlpha(isDark ? 12 : 30),
+          Colors.white.withAlpha(isDark ? 6 : 12),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawRRect(rect, topPaint);
+  }
+
+  @override
+  bool shouldRepaint(_GlassBorderPainter old) => old.isDark != isDark;
 }
 
 // ─── Localization config ──────────────────────────────────────────────────────

@@ -61,6 +61,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   children: [
                     Row(
                       children: [
+                        // ── Back button ──────────────────────────────────
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(22),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.white.withAlpha(35),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 15,
+                              color: Color(0xFFF2F5EA),
+                            ),
+                          ),
+                        ),
                         Text(
                           context.l10n.searchTitle,
                           style: const TextStyle(
