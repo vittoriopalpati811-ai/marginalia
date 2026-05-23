@@ -1233,4 +1233,237 @@ class SupabaseService {
         .eq('id', postId)
         .eq('user_id', userId!);
   }
+
+  // ─── Jam 2.0: Book Voting ───────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchBookProposals(String jamId) async {
+    final res = await _client
+        .from('jam_book_proposals')
+        .select('*, profiles:proposed_by(display_name, username, avatar_url), jam_book_votes(user_id)')
+        .eq('jam_id', jamId)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  Future<void> proposeBook({
+    required String jamId,
+    required String title,
+    String? author,
+    String? description,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_book_proposals').insert({
+      'jam_id': jamId,
+      'proposed_by': userId,
+      'title': title.trim(),
+      'author': author?.trim(),
+      'description': description?.trim(),
+    });
+  }
+
+  Future<void> voteForBook(String proposalId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_book_votes').upsert({
+      'proposal_id': proposalId,
+      'user_id': userId,
+    });
+  }
+
+  Future<void> unvoteForBook(String proposalId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client
+        .from('jam_book_votes')
+        .delete()
+        .eq('proposal_id', proposalId)
+        .eq('user_id', userId);
+  }
+
+  Future<void> deleteBookProposal(String proposalId) async {
+    await _client.from('jam_book_proposals').delete().eq('id', proposalId);
+  }
+
+  // ─── Jam 2.0: Reading Challenges ────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchJamChallenges(String jamId) async {
+    final res = await _client
+        .from('jam_challenges')
+        .select('*, jam_challenge_progress(user_id, current_count)')
+        .eq('jam_id', jamId)
+        .eq('is_active', true)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  Future<void> createChallenge({
+    required String jamId,
+    required String title,
+    String? description,
+    required int targetCount,
+    String unit = 'books',
+    DateTime? deadline,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_challenges').insert({
+      'jam_id': jamId,
+      'created_by': userId,
+      'title': title.trim(),
+      'description': description?.trim(),
+      'target_count': targetCount,
+      'unit': unit,
+      'deadline': deadline?.toIso8601String(),
+    });
+  }
+
+  Future<void> updateChallengeProgress({
+    required String challengeId,
+    required int count,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_challenge_progress').upsert({
+      'challenge_id': challengeId,
+      'user_id': userId,
+      'current_count': count,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // ─── Jam 2.0: Highlight Polls ────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchJamPolls(String jamId) async {
+    final res = await _client
+        .from('jam_highlight_polls')
+        .select('*, jam_poll_candidates(id, submitted_by, highlight_content, book_title, book_author, jam_poll_votes(user_id))')
+        .eq('jam_id', jamId)
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  Future<void> createPoll({
+    required String jamId,
+    required String title,
+    required DateTime endsAt,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_highlight_polls').insert({
+      'jam_id': jamId,
+      'created_by': userId,
+      'title': title.trim(),
+      'ends_at': endsAt.toIso8601String(),
+    });
+  }
+
+  Future<void> submitPollCandidate({
+    required String pollId,
+    required String highlightContent,
+    String? bookTitle,
+    String? bookAuthor,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_poll_candidates').upsert({
+      'poll_id': pollId,
+      'submitted_by': userId,
+      'highlight_content': highlightContent.trim(),
+      'book_title': bookTitle?.trim(),
+      'book_author': bookAuthor?.trim(),
+    });
+  }
+
+  Future<void> voteOnPollCandidate(String candidateId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client.from('jam_poll_votes').upsert({
+      'candidate_id': candidateId,
+      'user_id': userId,
+    });
+  }
+
+  Future<void> unvoteOnPollCandidate(String candidateId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    await _client
+        .from('jam_poll_votes')
+        .delete()
+        .eq('candidate_id', candidateId)
+        .eq('user_id', userId);
+  }
+
+  // ─── Jam 2.0: Notifications ──────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchNotifications() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+    final res = await _client
+        .from('notifications')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(50);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  Future<int> fetchUnreadNotificationCount() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return 0;
+    final res = await _client
+        .from('notifications')
+        .select('id', const FetchOptions(count: CountOption.exact))
+        .eq('user_id', userId)
+        .eq('is_read', false);
+    return res.count ?? 0;
+  }
+
+  Future<void> markNotificationRead(String notificationId) async {
+    await _client
+        .from('notifications')
+        .update({'is_read': true})
+        .eq('id', notificationId);
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client
+        .from('notifications')
+        .update({'is_read': true})
+        .eq('user_id', userId)
+        .eq('is_read', false);
+  }
+
+  /// Registers the APNs device token for push notifications.
+  Future<void> registerDeviceToken(String token) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+    await _client.from('device_tokens').upsert({
+      'user_id': userId,
+      'token': token,
+      'platform': 'ios',
+    });
+  }
+
+  RealtimeChannel subscribeToNotifications(
+    String userId,
+    void Function(Map<String, dynamic>) onNew,
+  ) {
+    return _client
+        .channel('notifications:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notifications',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) => onNew(payload.newRecord),
+        )
+        .subscribe();
+  }
 }

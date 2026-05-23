@@ -217,5 +217,18 @@
   "jamMemberCount": "{count, plural, =1{member} other{members}}",
   "@jamMemberCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "jamFeatureVoting": "Book of the month",
+  "jamFeatureVotingSubtitle": "Vote for the next book",
+  "jamFeatureChallenges": "Challenges",
+  "jamFeatureChallengesSubtitle": "Shared goals",
+  "jamFeaturePolls": "Polls",
+  "jamFeaturePollsSubtitle": "Vote on highlights",
+  "jamMemberCurrentlyReading": "Currently reading",
+
+  "notificationsTitle": "Notifications",
+  "notificationsEmpty": "No notifications",
+  "notificationsEmptyBody": "Jam activity will appear here.",
+  "notificationsMarkAllRead": "Mark all as read"
 }

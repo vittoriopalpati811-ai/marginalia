@@ -21,6 +21,10 @@ import 'features/reader/highlight_detail_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/social/social_screen.dart';
 import 'features/social/jam_detail_screen.dart';
+import 'features/social/jam_book_voting_screen.dart';
+import 'features/social/jam_challenge_screen.dart';
+import 'features/social/jam_poll_screen.dart';
+import 'features/social/notifications_screen.dart';
 import 'features/profile/user_profile_screen.dart';
 import 'features/profile/my_profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
@@ -149,6 +153,36 @@ final router = GoRouter(
       },
     ),
     GoRoute(
+      path: '/jam/:id/voting',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return _pushPage(JamBookVotingScreen(jamId: id), state);
+      },
+    ),
+    GoRoute(
+      path: '/jam/:id/challenges',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return _pushPage(JamChallengeScreen(jamId: id), state);
+      },
+    ),
+    GoRoute(
+      path: '/jam/:id/polls',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return _pushPage(JamPollScreen(jamId: id), state);
+      },
+    ),
+    GoRoute(
+      path: '/notifications',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) =>
+          _pushPage(const NotificationsScreen(), state),
+    ),
+    GoRoute(
       path: '/user/:id',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) {
@@ -225,6 +259,16 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
           router.push('/reset-password');
         });
       }
+      // TODO: register APNs device token when user signs in.
+      // Requires a platform plugin to retrieve the token (e.g. firebase_messaging
+      // without FirebaseApp, or flutter_apns_only). Once you have the token:
+      //
+      //   if (data.event == AuthChangeEvent.signedIn) {
+      //     final token = await YourPushPlugin.getToken();
+      //     if (token != null) {
+      //       ref.read(supabaseServiceProvider).registerDeviceToken(token);
+      //     }
+      //   }
     });
   }
 

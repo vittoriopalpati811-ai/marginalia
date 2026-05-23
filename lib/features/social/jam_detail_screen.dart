@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
+import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'jam_highlight_detail_screen.dart'
     show reactionsProvider, commentsProvider, JamHighlightDetailScreen;
@@ -183,6 +185,17 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     );
   }
 
+  // ── Member profile sheet ────────────────────────────────────────────────────
+
+  void _showMemberProfile(Map<String, dynamic> member) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _MemberProfileSheet(member: member),
+    );
+  }
+
   // ── Discussion ──────────────────────────────────────────────────────────────
 
   void _openDiscussion(Map<String, dynamic> data) {
@@ -208,6 +221,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     final membersAsync = ref.watch(jamMembersProvider(widget.jamId));
     final jamDetailAsync = ref.watch(jamDetailProvider(widget.jamId));
     final prompt = WeeklyPrompt.current();
+    final unreadCount = ref.watch(unreadNotificationCountProvider).maybeWhen(
+      data: (n) => n,
+      orElse: () => 0,
+    );
 
     final inviteCode = jamDetailAsync.maybeWhen(
       data: (j) => j?['invite_code'] as String?,
@@ -238,6 +255,34 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             elevation: 0,
             scrolledUnderElevation: 0,
             actions: [
+              // Notification bell with unread dot
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    tooltip: context.l10n.notificationsTitle,
+                    onPressed: () => context.push('/notifications'),
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE64A4A),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: MarginaliaColors.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               // Cover photo upload button
               _uploadingCover
                   ? const Padding(
@@ -410,10 +455,18 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             child: _WeeklyPromptBanner(prompt: prompt),
           ),
 
+          // ── Feature cards ──────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _JamFeaturesRow(jamId: widget.jamId),
+          ),
+
           // ── Membri ─────────────────────────────────────────────────────
           membersAsync.when(
             data: (members) => SliverToBoxAdapter(
-              child: _MembersStrip(members: members),
+              child: _MembersStrip(
+                members: members,
+                onTapMember: _showMemberProfile,
+              ),
             ),
             loading: () =>
                 const SliverToBoxAdapter(child: SizedBox.shrink()),
@@ -734,8 +787,12 @@ class _WeeklyPromptBanner extends StatelessWidget {
 // ─── Members strip ────────────────────────────────────────────────────────────
 
 class _MembersStrip extends StatelessWidget {
-  const _MembersStrip({required this.members});
+  const _MembersStrip({
+    required this.members,
+    required this.onTapMember,
+  });
   final List<Map<String, dynamic>> members;
+  final void Function(Map<String, dynamic>) onTapMember;
 
   @override
   Widget build(BuildContext context) {
@@ -768,7 +825,9 @@ class _MembersStrip extends StatelessWidget {
               final avatarColor =
                   MarginaliaDecorations.bookCoverColor(name);
 
-              return Padding(
+              return GestureDetector(
+                onTap: () => onTapMember(m),
+                child: Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Tooltip(
                   message: isReading ? 'Sta leggendo: $readingTitle' : name,
@@ -852,6 +911,7 @@ class _MembersStrip extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
               );
             },
           ),
@@ -1506,6 +1566,300 @@ class _CountChip extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Jam features row ─────────────────────────────────────────────────────────
+
+class _JamFeaturesRow extends StatelessWidget {
+  const _JamFeaturesRow({required this.jamId});
+  final String jamId;
+
+  @override
+  Widget build(BuildContext context) {
+    final features = [
+      (
+        icon: Icons.menu_book_rounded,
+        label: context.l10n.jamFeatureVoting,
+        sub: context.l10n.jamFeatureVotingSubtitle,
+        route: '/jam/$jamId/voting',
+      ),
+      (
+        icon: Icons.emoji_events_outlined,
+        label: context.l10n.jamFeatureChallenges,
+        sub: context.l10n.jamFeatureChallengesSubtitle,
+        route: '/jam/$jamId/challenges',
+      ),
+      (
+        icon: Icons.how_to_vote_outlined,
+        label: context.l10n.jamFeaturePolls,
+        sub: context.l10n.jamFeaturePollsSubtitle,
+        route: '/jam/$jamId/polls',
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          child: Row(
+            children: [
+              Text('ATTIVITÀ', style: MarginaliaTextStyles.sectionTitle),
+              const SizedBox(width: 12),
+              const Expanded(child: Divider(color: MarginaliaColors.rule)),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 98,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: features.length,
+            itemBuilder: (_, i) {
+              final f = features[i];
+              return GestureDetector(
+                onTap: () => context.push(f.route),
+                child: Container(
+                  width: 136,
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: MarginaliaColors.rule, width: 0.8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(f.icon,
+                          size: 20, color: MarginaliaColors.primary),
+                      const Spacer(),
+                      Text(
+                        f.label,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: MarginaliaColors.ink,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        f.sub,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: MarginaliaColors.inkFaint,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+                  .animate(delay: (i * 50).ms)
+                  .fadeIn(duration: 260.ms)
+                  .slideX(begin: 0.05, end: 0, duration: 260.ms);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Member profile sheet ─────────────────────────────────────────────────────
+
+class _MemberProfileSheet extends StatelessWidget {
+  const _MemberProfileSheet({required this.member});
+  final Map<String, dynamic> member;
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = member['profile'] as Map<String, dynamic>? ?? {};
+    final name = profile['display_name'] as String? ?? 'Utente';
+    final username = profile['username'] as String?;
+    final readingTitle = profile['currently_reading_title'] as String?;
+    final readingAuthor = profile['currently_reading_author'] as String?;
+    final isOwner = member['role'] == 'owner';
+    final userId = member['user_id'] as String? ??
+        profile['id'] as String? ?? '';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final avatarColor = MarginaliaDecorations.bookCoverColor(name);
+    final bottom = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          const SizedBox(height: 12),
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: MarginaliaColors.rule,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+
+          // Avatar
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [avatarColor, MarginaliaColors.primaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(40),
+              border: isOwner
+                  ? Border.all(
+                      color: MarginaliaColors.sienna, width: 3)
+                  : null,
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Color(0xFFF1EEE7),
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+
+          // Owner badge
+          if (isOwner) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: MarginaliaColors.siennaFaint,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'OWNER',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.5,
+                  color: MarginaliaColors.sienna,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+
+          // Name
+          Text(
+            name,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: MarginaliaColors.ink,
+              letterSpacing: -0.4,
+            ),
+          ),
+          if (username != null && username.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              '@$username',
+              style: const TextStyle(
+                fontSize: 14,
+                color: MarginaliaColors.inkMuted,
+              ),
+            ),
+          ],
+
+          // Currently reading card
+          if (readingTitle != null && readingTitle.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: MarginaliaColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: MarginaliaColors.rule),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_stories,
+                      size: 16, color: MarginaliaColors.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.jamMemberCurrentlyReading
+                              .toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                            color: MarginaliaColors.inkFaint,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          readingTitle,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: MarginaliaColors.ink,
+                          ),
+                        ),
+                        if (readingAuthor != null &&
+                            readingAuthor.isNotEmpty)
+                          Text(
+                            readingAuthor.toUpperCase(),
+                            style: MarginaliaTextStyles.bookAuthor,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+
+          // View profile button
+          if (userId.isNotEmpty)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.push('/user/$userId');
+                },
+                icon: const Icon(Icons.person_outline, size: 16),
+                label: const Text('Visualizza profilo'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: MarginaliaColors.primary,
+                  side: const BorderSide(color: MarginaliaColors.rule),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

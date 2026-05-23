@@ -579,5 +579,38 @@
   "jamMemberCount": "{count, plural, =1{membro} other{membri}}",
   "@jamMemberCount": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "jamFeatureVoting": "Libro del mese",
+  "@jamFeatureVoting": {},
+
+  "jamFeatureVotingSubtitle": "Vota il prossimo libro",
+  "@jamFeatureVotingSubtitle": {},
+
+  "jamFeatureChallenges": "Sfide",
+  "@jamFeatureChallenges": {},
+
+  "jamFeatureChallengesSubtitle": "Obiettivi condivisi",
+  "@jamFeatureChallengesSubtitle": {},
+
+  "jamFeaturePolls": "Sondaggi",
+  "@jamFeaturePolls": {},
+
+  "jamFeaturePollsSubtitle": "Vota gli highlight",
+  "@jamFeaturePollsSubtitle": {},
+
+  "jamMemberCurrentlyReading": "In lettura",
+  "@jamMemberCurrentlyReading": {},
+
+  "notificationsTitle": "Notifiche",
+  "@notificationsTitle": {},
+
+  "notificationsEmpty": "Nessuna notifica",
+  "@notificationsEmpty": {},
+
+  "notificationsEmptyBody": "Le attività nelle tue Jam appariranno qui.",
+  "@notificationsEmptyBody": {},
+
+  "notificationsMarkAllRead": "Segna tutto come letto",
+  "@notificationsMarkAllRead": {}
 }
