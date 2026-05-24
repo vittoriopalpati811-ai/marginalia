@@ -169,6 +169,7 @@ final libraryRecommendationsProvider =
   final themeWordSet = topWords.toSet();
 
   // Exclude books already in library
+  final myBooks      = ref.read(booksProvider).value ?? [];
   final myTitlesLower =
       myBooks.map((b) => b.title.toLowerCase().trim()).toSet();
 
