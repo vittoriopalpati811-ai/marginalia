@@ -8,6 +8,7 @@
 //   LibraryRecommendationsSection  — drop-in ConsumerWidget
 
 import 'dart:convert';
+import 'dart:math' show log;
 
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
@@ -135,15 +136,16 @@ class BookRecommendation {
 
 final libraryRecommendationsProvider =
     FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
-  // ── 1. Fetch highlight contents ───────────────────────────────────────────
+  // ── 1. Collect highlights grouped by book ────────────────────────────────
   //
-  // On web we call Supabase directly, bypassing allHighlightsProvider.
-  // Using ref.read/ref.watch on an autoDispose FutureProvider from inside
-  // another async FutureProvider is unreliable: the dependency can be
-  // disposed while its future is still in-flight, cancelling the computation.
+  // We fetch ALL highlights and group by book so that every book in the
+  // library contributes equally to theme extraction — not just the most
+  // recently imported ones.
   //
-  // On native, Isar resolves synchronously from disk — no disposal risk.
-  List<String> recentContents;
+  // On web: Supabase directly (bypass autoDispose lifecycle issues).
+  // On native: Isar resolves from disk, no disposal risk.
+
+  Map<String, List<String>> bookContents; // bookId → [content, …]
 
   if (kIsWeb) {
     final service = ref.read(supabaseServiceProvider);
@@ -152,51 +154,95 @@ final libraryRecommendationsProvider =
       return [];
     }
     try {
-      // fetchHighlights() already orders by added_at DESC
       final data = await service.fetchHighlights();
       debugPrint('[Recs] fetchHighlights → ${data.length} rows');
-      recentContents = data
-          .take(30)
-          .map((m) => m['content'] as String? ?? '')
-          .where((s) => s.isNotEmpty)
-          .toList();
+      bookContents = {};
+      for (final h in data) {
+        final bookId = (h['book_id'] as String?)?.trim() ?? '';
+        final content = (h['content'] as String?)?.trim() ?? '';
+        if (bookId.isNotEmpty && content.isNotEmpty) {
+          bookContents.putIfAbsent(bookId, () => []).add(content);
+        }
+      }
     } catch (e, st) {
-      // Real error (network, RLS, etc.) — propagate so the error hint shows
       debugPrint('[Recs] fetchHighlights error: $e\n$st');
       rethrow;
     }
   } else {
     final all = await ref.read(allHighlightsProvider.future);
-    if (all.isEmpty) return [];
-    final sorted = List<Highlight>.from(all)
-      ..sort((a, b) =>
-          (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
-    recentContents = sorted
-        .take(30)
-        .map((h) => h.content)
-        .where((s) => s.isNotEmpty)
-        .toList();
-  }
-
-  debugPrint('[Recs] recentContents: ${recentContents.length}');
-  if (recentContents.isEmpty) return [];
-
-  // ── 2. Build word-frequency map ──────────────────────────────────────────
-  final wordFreq = <String, int>{};
-  for (final content in recentContents) {
-    for (final w in _extractWords(content)) {
-      wordFreq[w] = (wordFreq[w] ?? 0) + 1;
+    bookContents = {};
+    for (final h in all) {
+      if (h.content.isNotEmpty) {
+        bookContents
+            .putIfAbsent(h.bookId.toString(), () => [])
+            .add(h.content);
+      }
     }
   }
-  debugPrint('[Recs] wordFreq size: ${wordFreq.length}');
-  if (wordFreq.isEmpty) return [];
 
-  final topWords = (wordFreq.entries.toList()
+  final numBooks = bookContents.length;
+  debugPrint('[Recs] numBooks: $numBooks');
+  if (numBooks == 0) return [];
+
+  // ── 2. Per-book TF-IDF ───────────────────────────────────────────────────
+  //
+  // Algorithm:
+  //   • Sample up to kMaxPerBook highlights from EACH book (equal weight).
+  //     This is the "sample ≥ (x/2 + x/4)" strategy: all x books contribute
+  //     proportionally rather than recent imports dominating.
+  //   • TF  = word frequency within a single book's sample.
+  //   • IDF = log((numBooks+1) / (df+1)) where df = number of books that
+  //           contain the word. Words shared by many books are penalised — they
+  //           are part of the user's general vocabulary, not a book's identity.
+  //   • Global score = Σ (TF × IDF) across all books.
+  //   • Top-6 words by score → Open Library query.
+  //
+  // Result: words characteristic of *some* books but not ubiquitous, giving
+  // the query semantic specificity instead of generic frequency counts.
+
+  const kMaxPerBook = 5;
+
+  // TF: word frequency within each book's sampled highlights
+  final Map<String, Map<String, int>> bookWordTF = {};
+  for (final entry in bookContents.entries) {
+    final freq = <String, int>{};
+    for (final content in entry.value.take(kMaxPerBook)) {
+      for (final word in _extractWords(content)) {
+        freq[word] = (freq[word] ?? 0) + 1;
+      }
+    }
+    if (freq.isNotEmpty) bookWordTF[entry.key] = freq;
+  }
+
+  // DF: number of books containing each word
+  final Map<String, int> wordDF = {};
+  for (final freq in bookWordTF.values) {
+    for (final word in freq.keys) {
+      wordDF[word] = (wordDF[word] ?? 0) + 1;
+    }
+  }
+
+  // Global TF-IDF: sum across all books, skip words in every book (idf ≤ 0)
+  final Map<String, double> wordScore = {};
+  for (final freq in bookWordTF.values) {
+    for (final entry in freq.entries) {
+      final idf = log((numBooks + 1) / ((wordDF[entry.key] ?? 1) + 1));
+      if (idf > 0) {
+        wordScore[entry.key] =
+            (wordScore[entry.key] ?? 0.0) + entry.value * idf;
+      }
+    }
+  }
+
+  debugPrint('[Recs] wordScore entries: ${wordScore.length}');
+  if (wordScore.isEmpty) return [];
+
+  final topWords = (wordScore.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value)))
       .take(6)
       .map((e) => e.key)
       .toList();
-  debugPrint('[Recs] topWords: $topWords');
+  debugPrint('[Recs] topWords (TF-IDF): $topWords');
   final themeWordSet = topWords.toSet();
 
   // Exclude books already in library
