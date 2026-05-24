@@ -1316,7 +1316,7 @@ class _LibraryRecommendationsSection extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                'Basati sul contenuto dei tuoi highlight, non sul genere',
+                'Selezionati per affinità tematica con i tuoi gusti, non solo per genere.',
                 style: GoogleFonts.manrope(
                   fontSize: 11,
                   color: MarginaliaColors.inkFaint,
