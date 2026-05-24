@@ -292,45 +292,31 @@ class LibraryRecommendationsSection extends ConsumerWidget {
 
 // ─── Dynamic subtitle ─────────────────────────────────────────────────────────
 //
-// Builds a sentence like:
-//   "Selezionati da Gemini in base ai tuoi highlight, al meteo di oggi
-//    (pioggia a Milano) e alla tua attività recente."
+// Base: "Selezionati da Marginalia in base ai tuoi highlight."
+// + meteo se disponibile, + attività fisica se disponibile (iOS + HealthKit).
 
 class _RecommendationsSubtitle extends ConsumerWidget {
   const _RecommendationsSubtitle();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weather     = ref.watch(weatherProvider).asData?.value;
-    final steps       = ref.watch(stepCountLabelProvider);
-    final lastWorkout = ref.watch(lastWorkoutLabelProvider);
-    final cyclePhase  = ref.watch(cyclePhaseLabelProvider);
+    final hasWeather  = ref.watch(weatherProvider).asData?.value != null;
+    final hasActivity = ref.watch(lastWorkoutLabelProvider) != null ||
+        ref.watch(stepCountLabelProvider) != null;
 
-    final parts = <String>['ai tuoi highlight'];
-    if (weather != null) {
-      parts.add('al meteo di oggi (${weather.conditionLabel.toLowerCase()}'
-          ' a ${weather.cityName})');
-    }
-    if (lastWorkout != null) {
-      parts.add('alla tua attività recente');
-    } else if (steps != null) {
-      parts.add('al tuo movimento di oggi');
-    }
-    if (cyclePhase != null) {
-      parts.add('al tuo ciclo');
-    }
-
-    final String sentence;
-    if (parts.length == 1) {
-      sentence = 'Selezionati da Gemini in base ${parts[0]}'
-          ' e alle trame dei libri che hai letto.';
+    final String suffix;
+    if (hasWeather && hasActivity) {
+      suffix = ', al meteo di oggi e alla tua attività fisica recente';
+    } else if (hasWeather) {
+      suffix = ' e al meteo di oggi';
+    } else if (hasActivity) {
+      suffix = ' e alla tua attività fisica recente';
     } else {
-      final last = parts.removeLast();
-      sentence = 'Selezionati da Gemini in base ${parts.join(", ")} e $last.';
+      suffix = '';
     }
 
     return Text(
-      sentence,
+      'Selezionati da Marginalia in base ai tuoi highlight$suffix.',
       style: GoogleFonts.manrope(
         fontSize: 11,
         color: MarginaliaColors.inkFaint,

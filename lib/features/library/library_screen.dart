@@ -19,8 +19,6 @@ import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
-import '../../core/providers/weather_provider.dart';
-import '../../core/providers/health_provider.dart';
 
 // ─── Filter state ─────────────────────────────────────────────────────────────
 
@@ -487,7 +485,7 @@ final _myDisplayNameProvider =
 
 // ─── Header editoriale ────────────────────────────────────────────────────────
 
-class _EditorialHeader extends ConsumerWidget {
+class _EditorialHeader extends StatelessWidget {
   const _EditorialHeader({
     required this.isImporting,
     required this.onImport,
@@ -501,30 +499,13 @@ class _EditorialHeader extends ConsumerWidget {
   final String? userName;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
-
-    // ── Context data ────────────────────────────────────────────────────────
-    final weather     = ref.watch(weatherProvider).asData?.value;
-    final steps       = ref.watch(stepCountLabelProvider);
-    final lastWorkout = ref.watch(lastWorkoutLabelProvider);
-    final cyclePhase  = ref.watch(cyclePhaseLabelProvider);
-
-    // Build a flat list of small context tokens to display inline
-    final tokens = <(String emoji, String label)>[
-      if (weather != null)
-        (weather.emoji, '${weather.temperatureRounded}° ${weather.cityName}'),
-      if (steps != null)        ('👣', steps),
-      if (lastWorkout != null)  ('🏃', lastWorkout),
-      if (cyclePhase != null)   ('🌸', cyclePhase),
-    ];
-
     return Padding(
       padding: EdgeInsets.fromLTRB(24, top + 14, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title row
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -566,8 +547,6 @@ class _EditorialHeader extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 2),
-
-          // Greeting
           Text(
             contextualGreeting(userName),
             style: MarginaliaTextStyles.label.copyWith(
@@ -576,69 +555,10 @@ class _EditorialHeader extends ConsumerWidget {
               fontSize: 12,
             ),
           ),
-
-          // Context bar: weather + health tokens (hidden if all empty)
-          if (tokens.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  for (int i = 0; i < tokens.length; i++) ...[
-                    if (i > 0) _contextDivider(),
-                    _ContextToken(
-                      emoji: tokens[i].$1,
-                      label: tokens[i].$2,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-
           const SizedBox(height: 16),
           Container(height: 0.8, color: MarginaliaColors.ruleFaint),
         ],
       ),
-    );
-  }
-
-  static Widget _contextDivider() => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Text(
-          '·',
-          style: TextStyle(
-            color: MarginaliaColors.ruleFaint,
-            fontSize: 12,
-          ),
-        ),
-      );
-}
-
-/// Tiny inline token: emoji + label in muted sepia style.
-class _ContextToken extends StatelessWidget {
-  const _ContextToken({required this.emoji, required this.label});
-  final String emoji;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 12)),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: GoogleFonts.manrope(
-            fontSize: 11,
-            color: MarginaliaColors.inkMuted,
-            fontWeight: FontWeight.w500,
-            height: 1,
-          ),
-        ),
-      ],
     );
   }
 }
