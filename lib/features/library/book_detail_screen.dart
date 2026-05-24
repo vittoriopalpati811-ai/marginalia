@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
+import 'book_cover.dart';
 
 class BookDetailScreen extends ConsumerWidget {
   const BookDetailScreen({super.key, required this.bookId});
@@ -33,8 +34,6 @@ class BookDetailScreen extends ConsumerWidget {
         }
 
         final coverColor = MarginaliaDecorations.bookCoverColor(book.title);
-        final initial =
-            book.title.isNotEmpty ? book.title[0].toUpperCase() : '?';
 
         final highlightCount = highlightsAsync.maybeWhen(
           data: (h) => h.length,
@@ -45,18 +44,15 @@ class BookDetailScreen extends ConsumerWidget {
           backgroundColor: MarginaliaColors.background,
           body: Stack(
             children: [
-              // ── Hero colorato (full screen height = copertina) ────────────
+              // ── Editorial hero cover ──────────────────────────────────────
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
                 height: 300,
-                child: _BookHero(
-                  coverColor: coverColor,
-                  initial: initial,
+                child: BookEditorialCover(
                   title: book.title,
                   author: book.author,
-                  highlightCount: highlightCount,
                 ),
               ),
 
@@ -213,107 +209,6 @@ class BookDetailScreen extends ConsumerWidget {
       error: (e, _) => Scaffold(
         appBar: AppBar(),
         body: Center(child: Text('$e')),
-      ),
-    );
-  }
-}
-
-// ─── Hero copertina ───────────────────────────────────────────────────────────
-
-class _BookHero extends StatelessWidget {
-  const _BookHero({
-    required this.coverColor,
-    required this.initial,
-    required this.title,
-    required this.author,
-    required this.highlightCount,
-  });
-
-  final Color coverColor;
-  final String initial;
-  final String title;
-  final String author;
-  final int highlightCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [coverColor, coverColor.withAlpha(210)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Virgoletta decorativa — EB Garamond
-          Positioned(
-            bottom: 60,
-            right: 16,
-            child: Text(
-              '"',
-              style: MarginaliaTextStyles.quoteDecor.copyWith(
-                fontSize: 160,
-                height: 1,
-                color: Colors.white.withAlpha(16),
-              ),
-            ),
-          ),
-          // Initial letter — EB Garamond serif
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 80,
-            child: Center(
-              child: Text(
-                initial,
-                style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                  fontSize: 88,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withAlpha(195),
-                  height: 1,
-                ),
-              ),
-            ),
-          ),
-          // Titolo + autore in basso
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 32,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                    color: Colors.white,
-                    fontSize: 20,
-                    shadows: [
-                      const Shadow(
-                        color: Color(0x40000000),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  author.toUpperCase(),
-                  style: MarginaliaTextStyles.bookAuthor.copyWith(
-                    color: Colors.white.withAlpha(175),
-                    letterSpacing: 1.2,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

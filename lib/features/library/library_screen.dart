@@ -17,6 +17,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
+import 'book_cover.dart';
 
 // ─── Filter state ─────────────────────────────────────────────────────────────
 
@@ -815,10 +816,6 @@ class _BookGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final coverColor = MarginaliaDecorations.bookCoverColor(book.title);
-    final initial =
-        book.title.isNotEmpty ? book.title[0].toUpperCase() : '?';
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -837,57 +834,15 @@ class _BookGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Cover block (63%) ─────────────────────────────────────────
+            // ── Editorial cover (63%) ─────────────────────────────────────
             Expanded(
               flex: 63,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      coverColor,
-                      Color.fromARGB(
-                        255,
-                        (coverColor.red * 0.60).round(),
-                        (coverColor.green * 0.60).round(),
-                        (coverColor.blue * 0.60).round(),
-                      ),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // Virgoletta decorativa EB Garamond
-                    Positioned(
-                      bottom: -18,
-                      right: 2,
-                      child: Text(
-                        '"',
-                        style: MarginaliaTextStyles.quoteDecor.copyWith(
-                          fontSize: 100,
-                          color: Colors.white.withAlpha(18),
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                    // Initial letter in EB Garamond serif
-                    Center(
-                      child: Text(
-                        initial,
-                        style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                          fontSize: 52,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withAlpha(210),
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ],
+              child: BookEditorialCover(
+                title: book.title,
+                author: book.author,
+                borderRadius: const BorderRadius.only(
+                  topLeft:  Radius.circular(15),
+                  topRight: Radius.circular(15),
                 ),
               ),
             ),

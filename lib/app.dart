@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 
 import 'package:animations/animations.dart';
@@ -502,9 +503,29 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(38),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-            child: Stack(
+          child: LayoutBuilder(
+            builder: (context, pillConstraints) {
+              // iOS 26-style liquid glass: zoom the content behind the pill
+              // (12% magnification centred on the pill), then blur.
+              const s  = 1.12;
+              final cx = pillConstraints.maxWidth  / 2;
+              const cy = 33.0; // half of fixed pill height 66
+              final matrix = Float64List(16)
+                ..[0]  = s
+                ..[5]  = s
+                ..[10] = 1.0
+                ..[15] = 1.0
+                ..[12] = cx * (1 - s)  // translate to keep centre fixed
+                ..[13] = cy * (1 - s);
+              return BackdropFilter(
+                filter: ImageFilter.compose(
+                  // inner runs first: magnify background content
+                  inner: ImageFilter.matrix(matrix),
+                  // outer runs second: frosted-glass blur on magnified pixels
+                  outer: ImageFilter.blur(sigmaX: 22, sigmaY: 22,
+                      tileMode: TileMode.mirror),
+                ),
+                child: Stack(
               children: [
                 // ── Glass body ─────────────────────────────────────────
                 Container(
@@ -676,9 +697,11 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
+            ),         // Stack
+          );           // BackdropFilter (return)
+        },             // LayoutBuilder builder
+      ),               // LayoutBuilder
+    ),                 // ClipRRect
       ),
     );
   }
