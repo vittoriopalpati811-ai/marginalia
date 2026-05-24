@@ -1,19 +1,23 @@
 // ─── HomeTab ──────────────────────────────────────────────────────────────────
 //
 // Discovery home — three editorial sections:
-//   1. "Frase di oggi"      — one contextual highlight, rotates 4× per day
-//   2. "Frasi recenti"      — horizontal strip of last 12 saved highlights
-//   3. "Torna a sfogliare"  — content-based book recommendations
+//   1. "Frase di oggi"   — one contextual highlight, rotates 4× per day
+//   2. "Frasi recenti"   — horizontal strip of last 12 saved highlights
+//   3. "Scopri"          — new-book recommendations via Open Library API
 //
-// Algorithm for §3 (pure Dart, no AI, platform-agnostic):
-//   • Extract the 20 most recent highlights → "current reading interests"
-//   • Build a word-frequency map, keep top-15 words (≥5 chars, non-stop-word)
-//   • Score every OTHER book: count how many theme words appear across its highlights
-//   • Return top-5 by score — books thematically close to what you're reading now
+// Algorithm for §3:
+//   • Extract the top-4 "theme words" from the 20 most-recent highlights
+//     (words ≥5 chars, Italian + English stop-word list, ranked by frequency)
+//   • Query Open Library search API with those words
+//   • Filter out books the user already has in their library (by title)
+//   • Surface up to 5 results with real cover images when available
+
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 import '../../core/providers/highlights_provider.dart';
@@ -21,28 +25,24 @@ import '../../core/providers/books_provider.dart';
 import '../../core/models/highlight.dart';
 import '../../core/models/book.dart';
 import '../library/book_cover.dart';
-import 'feed_tab.dart'; // postsProvider, feedProvider, CreatePostSheet
+import 'feed_tab.dart'; // CreatePostSheet
 
 // ─── Home-scoped providers ────────────────────────────────────────────────────
-//
-// All three derive from allHighlightsProvider (which pre-loads book links)
-// and booksProvider — no extra Isar/Supabase round-trips.
 
 /// "Frase di oggi" — deterministic, changes 4× a day (6-hour buckets).
-/// Uses a stable sort by addedAt so the chosen highlight is predictable.
 final _todayHighlightProvider = FutureProvider.autoDispose<Highlight?>(
   (ref) async {
     final all = await ref.watch(allHighlightsProvider.future);
     if (all.isEmpty) return null;
 
-    // Sort oldest → newest for a stable index
+    // Stable sort (oldest → newest) ensures a consistent index per bucket.
     final stable = List<Highlight>.from(all)
       ..sort((a, b) =>
           (a.addedAt ?? DateTime(0)).compareTo(b.addedAt ?? DateTime(0)));
 
     final now       = DateTime.now();
     final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
-    final bucket    = now.hour ~/ 6; // 0 night · 1 morning · 2 afternoon · 3 evening
+    final bucket    = now.hour ~/ 6; // 0=night · 1=morning · 2=afternoon · 3=evening
     final index     = (dayOfYear * 4 + bucket) % stable.length;
     return stable[index];
   },
@@ -52,8 +52,6 @@ final _todayHighlightProvider = FutureProvider.autoDispose<Highlight?>(
 final _recentHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
   (ref) async {
     final all = await ref.watch(allHighlightsProvider.future);
-    // allHighlightsProvider on native is already sorted desc; explicit sort
-    // covers the web path where Supabase ordering may differ.
     final sorted = List<Highlight>.from(all)
       ..sort((a, b) =>
           (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
@@ -61,29 +59,39 @@ final _recentHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
   },
 );
 
-/// Content-based book recommendations.
-final _recommendedBooksProvider =
-    FutureProvider.autoDispose<List<_ScoredBook>>(
-  (ref) async {
-    final all   = await ref.watch(allHighlightsProvider.future);
-    final books = ref.watch(booksProvider).value ?? [];
-    if (all.isEmpty || books.length < 2) return [];
+/// Book recommendation data class — sourced from Open Library.
+class _BookSuggestion {
+  const _BookSuggestion({
+    required this.title,
+    required this.author,
+    this.coverUrl,
+  });
+  final String title;
+  final String author;
+  final String? coverUrl; // Open Library cover image URL, nullable
+}
 
-    // 1. Recent 20 highlights sorted desc
+/// §3 — New book recommendations via Open Library API.
+///
+/// Algorithm:
+///   1. Extract top-4 theme words from the 20 most-recent highlights.
+///   2. Query Open Library: GET /search.json?q=<words>&limit=25.
+///   3. Filter out titles already in the user's library (case-insensitive).
+///   4. Return first 5 results with cover URL when available.
+final _recommendedBooksProvider =
+    FutureProvider.autoDispose<List<_BookSuggestion>>(
+  (ref) async {
+    final all     = await ref.watch(allHighlightsProvider.future);
+    final myBooks = ref.watch(booksProvider).value ?? [];
+    if (all.isEmpty) return [];
+
+    // 1. Sort by addedAt desc, take 20 most recent highlights
     final sorted = List<Highlight>.from(all)
       ..sort((a, b) =>
           (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
     final recent = sorted.take(20).toList();
 
-    // "Recently read" book titles (platform-agnostic: bookTitle works on both
-    // native IsarLink and web Supabase join).
-    final recentTitles = recent
-        .map((h) => h.bookTitle)
-        .whereType<String>()
-        .where((t) => t.isNotEmpty)
-        .toSet();
-
-    // 2. Build word-frequency map from recent highlights
+    // 2. Build word-frequency map from recent highlight content
     final wordFreq = <String, int>{};
     for (final h in recent) {
       for (final w in _extractWords(h.content)) {
@@ -92,46 +100,62 @@ final _recommendedBooksProvider =
     }
     if (wordFreq.isEmpty) return [];
 
-    // Top-15 distinctive words
+    // Top-4 most-frequent theme words → search query
     final topWords = (wordFreq.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value)))
-        .take(15)
+        .take(4)
         .map((e) => e.key)
-        .toSet();
+        .toList();
 
-    // 3. Group ALL highlights by book title for fast scoring
-    final byTitle = <String, List<String>>{};
-    for (final h in all) {
-      final t = h.bookTitle;
-      if (t == null || t.isEmpty) continue;
-      byTitle.putIfAbsent(t, () => []).add(h.content);
-    }
+    // 3. Build set of user's existing book titles (lowercase for comparison)
+    final myTitlesLower =
+        myBooks.map((b) => b.title.toLowerCase().trim()).toSet();
 
-    // 4. Score non-recent books
-    final results = <_ScoredBook>[];
-    for (final book in books) {
-      if (recentTitles.contains(book.title)) continue;
-      final contents = byTitle[book.title] ?? [];
-      if (contents.isEmpty) continue;
-      int score = 0;
-      for (final content in contents) {
-        for (final w in _extractWords(content)) {
-          if (topWords.contains(w)) score++;
-        }
+    // 4. Query Open Library
+    final query = Uri.encodeQueryComponent(topWords.join(' '));
+    try {
+      final uri = Uri.parse(
+        'https://openlibrary.org/search.json'
+        '?q=$query&limit=25&fields=title,author_name,cover_i',
+      );
+      final response = await http
+          .get(uri, headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode != 200) return [];
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final docs  = (body['docs'] as List<dynamic>?) ?? [];
+
+      final results = <_BookSuggestion>[];
+      for (final raw in docs) {
+        final doc   = raw as Map<String, dynamic>;
+        final title = (doc['title'] as String? ?? '').trim();
+        if (title.isEmpty) continue;
+        // Skip books the user already owns
+        if (myTitlesLower.contains(title.toLowerCase())) continue;
+
+        final authorList =
+            (doc['author_name'] as List<dynamic>?)?.cast<String>() ?? [];
+        final author  = authorList.isNotEmpty ? authorList.first : '';
+        final coverId = doc['cover_i'];
+        final coverUrl = coverId != null
+            ? 'https://covers.openlibrary.org/b/id/$coverId-M.jpg'
+            : null;
+
+        results.add(_BookSuggestion(
+          title:    title,
+          author:   author,
+          coverUrl: coverUrl,
+        ));
+        if (results.length >= 5) break;
       }
-      if (score > 0) results.add(_ScoredBook(book: book, score: score));
+      return results;
+    } catch (_) {
+      return [];
     }
-
-    results.sort((a, b) => b.score.compareTo(a.score));
-    return results.take(5).toList();
   },
 );
-
-class _ScoredBook {
-  const _ScoredBook({required this.book, required this.score});
-  final Book book;
-  final int score;
-}
 
 // ─── Stop-word list (Italian + English) ──────────────────────────────────────
 
@@ -146,7 +170,7 @@ const _kStopWords = {
   'della', 'delle', 'degli', 'nella', 'nelle', 'negli', 'sulla', 'sulle',
   'sugli', 'dalla', 'dalle', 'dagli', 'mentre', 'dunque', 'quindi',
   'allora', 'invece', 'almeno', 'infatti', 'oppure', 'ovvero', 'ormai',
-  'spesso', 'finche', 'poiche', 'quando', 'adesso', 'quindi', 'stessa',
+  'spesso', 'finche', 'poiche', 'adesso', 'stessa',
   // English
   'about', 'after', 'again', 'against', 'being', 'before', 'because',
   'between', 'could', 'during', 'every', 'first', 'great', 'however',
@@ -158,7 +182,7 @@ const _kStopWords = {
   'maybe', 'people', 'should', 'things', 'though', 'toward', 'unless',
   'wanted', 'another', 'became', 'become', 'called', 'coming', 'giving',
   'having', 'making', 'moving', 'seemed', 'simply', 'taking', 'trying',
-  'turned', 'really', 'seemed', 'rather',
+  'turned', 'really', 'rather',
 };
 
 List<String> _extractWords(String text) =>
@@ -218,7 +242,6 @@ class HomeTab extends ConsumerWidget {
             const SliverToBoxAdapter(child: _TodaySection()),
             const SliverToBoxAdapter(child: _RecentSection()),
             const SliverToBoxAdapter(child: _RecommendedSection()),
-            // Bottom padding for nav bar
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
@@ -258,15 +281,12 @@ class _HomeHeader extends StatelessWidget {
               ],
             ),
           ),
-          // Write button — opens post composer
           GestureDetector(
             onTap: () => showModalBottomSheet<void>(
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
-              builder: (_) => CreatePostSheet(
-                onCreated: () {},
-              ),
+              builder: (_) => CreatePostSheet(onCreated: () {}),
             ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -332,10 +352,7 @@ class _SectionHeader extends StatelessWidget {
         ],
         const SizedBox(width: 12),
         const Expanded(
-          child: Divider(
-            color: MarginaliaColors.ruleFaint,
-            thickness: 0.8,
-          ),
+          child: Divider(color: MarginaliaColors.ruleFaint, thickness: 0.8),
         ),
       ],
     );
@@ -365,8 +382,7 @@ class _TodaySection extends ConsumerWidget {
             ),
             data: (highlight) => highlight == null
                 ? const _EmptyCard(
-                    message:
-                        'Importa i tuoi highlight Kindle per iniziare.',
+                    message: 'Importa i tuoi highlight Kindle per iniziare.',
                   )
                 : _TodayHighlightCard(highlight: highlight),
           ),
@@ -393,7 +409,6 @@ class _TodayHighlightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Decorative opening quote
           Text(
             '“',
             style: GoogleFonts.ebGaramond(
@@ -404,7 +419,6 @@ class _TodayHighlightCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // Quote body
           Text(
             highlight.content,
             style: GoogleFonts.ebGaramond(
@@ -418,10 +432,8 @@ class _TodayHighlightCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 18),
-          // Hairline rule
           const Divider(color: Color(0x33F5F0E8), thickness: 0.8),
           const SizedBox(height: 10),
-          // Book title
           if (highlight.bookTitle?.isNotEmpty ?? false)
             Text(
               highlight.bookTitle!.toUpperCase(),
@@ -434,7 +446,6 @@ class _TodayHighlightCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-          // Author
           if (highlight.bookAuthor?.isNotEmpty ?? false) ...[
             const SizedBox(height: 3),
             Text(
@@ -492,9 +503,7 @@ class _RecentSection extends ConsumerWidget {
             if (highlights.isEmpty) {
               return const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
-                child: _EmptyCard(
-                  message: 'Nessuna frase salvata ancora.',
-                ),
+                child: _EmptyCard(message: 'Nessuna frase salvata ancora.'),
               );
             }
             return SizedBox(
@@ -518,7 +527,6 @@ class _RecentHighlightCard extends StatelessWidget {
   const _RecentHighlightCard({required this.highlight});
   final Highlight highlight;
 
-  // Returns a very subtle tint color from the Kindle highlight color.
   static Color _tintColor(String? color) => switch (color) {
         'yellow' => MarginaliaColors.highlightAmber,
         'blue'   => MarginaliaColors.highlightSky,
@@ -535,7 +543,6 @@ class _RecentHighlightCard extends StatelessWidget {
       width: 192,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        // Subtle tint from Kindle highlight color — functional, not decorative
         color: Color.alphaBlend(tint.withAlpha(38), MarginaliaColors.surface),
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
@@ -555,7 +562,6 @@ class _RecentHighlightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Quote text
           Expanded(
             child: Text(
               highlight.content,
@@ -569,7 +575,6 @@ class _RecentHighlightCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          // Book title
           Text(
             (highlight.bookTitle ?? '').toUpperCase(),
             style: GoogleFonts.manrope(
@@ -611,7 +616,7 @@ class _HorizontalSkeleton extends StatelessWidget {
   }
 }
 
-// ─── §3 — Libri consigliati ───────────────────────────────────────────────────
+// ─── §3 — Scopri (libri consigliati da Open Library) ─────────────────────────
 
 class _RecommendedSection extends ConsumerWidget {
   const _RecommendedSection();
@@ -630,12 +635,12 @@ class _RecommendedSection extends ConsumerWidget {
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 28, 16, 4),
-              child: _SectionHeader(label: 'Torna a sfogliare'),
+              child: _SectionHeader(label: 'Scopri'),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
               child: Text(
-                'Libri vicini ai tuoi interessi attuali',
+                'Libri simili a quelli che stai leggendo',
                 style: GoogleFonts.manrope(
                   fontSize: 12,
                   color: MarginaliaColors.inkFaint,
@@ -644,13 +649,13 @@ class _RecommendedSection extends ConsumerWidget {
               ),
             ),
             SizedBox(
-              height: 196,
+              height: 210,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: books.length,
                 itemBuilder: (_, i) =>
-                    _RecommendedBookCard(scored: books[i]),
+                    _RecommendedBookCard(suggestion: books[i]),
               ),
             ),
           ],
@@ -661,35 +666,41 @@ class _RecommendedSection extends ConsumerWidget {
 }
 
 class _RecommendedBookCard extends StatelessWidget {
-  const _RecommendedBookCard({required this.scored});
-  final _ScoredBook scored;
+  const _RecommendedBookCard({required this.suggestion});
+  final _BookSuggestion suggestion;
 
   @override
   Widget build(BuildContext context) {
-    final book = scored.book;
-
     return Container(
       width: 124,
       margin: const EdgeInsets.only(right: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Editorial cover
+          // Real cover from Open Library, editorial fallback if missing/broken
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: SizedBox(
-              height: 132,
+              height: 140,
               width: 124,
-              child: BookEditorialCover(
-                title: book.title,
-                author: book.author,
-              ),
+              child: suggestion.coverUrl != null
+                  ? Image.network(
+                      suggestion.coverUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => BookEditorialCover(
+                        title: suggestion.title,
+                        author: suggestion.author,
+                      ),
+                    )
+                  : BookEditorialCover(
+                      title: suggestion.title,
+                      author: suggestion.author,
+                    ),
             ),
           ),
           const SizedBox(height: 8),
-          // Title
           Text(
-            book.title,
+            suggestion.title,
             style: GoogleFonts.manrope(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -700,18 +711,19 @@ class _RecommendedBookCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 3),
-          // Match indicator
-          Text(
-            '${scored.score} parole in comune',
-            style: GoogleFonts.manrope(
-              fontSize: 9.5,
-              color: MarginaliaColors.primary,
-              fontWeight: FontWeight.w600,
+          if (suggestion.author.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              suggestion.author,
+              style: GoogleFonts.manrope(
+                fontSize: 10,
+                color: MarginaliaColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          ],
         ],
       ),
     );
@@ -728,10 +740,10 @@ class _BooksSkeleton extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 28, 16, 14),
-          child: _SectionHeader(label: 'Torna a sfogliare'),
+          child: _SectionHeader(label: 'Scopri'),
         ),
         SizedBox(
-          height: 196,
+          height: 210,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -743,7 +755,7 @@ class _BooksSkeleton extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    height: 132,
+                    height: 140,
                     width: 124,
                     decoration: BoxDecoration(
                       color: MarginaliaColors.surfaceElevated,
@@ -756,6 +768,15 @@ class _BooksSkeleton extends StatelessWidget {
                     width: 90,
                     decoration: BoxDecoration(
                       color: MarginaliaColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    height: 10,
+                    width: 60,
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.ruleFaint,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
