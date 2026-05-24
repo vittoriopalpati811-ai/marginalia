@@ -10,10 +10,11 @@
 **Fase**: Flutter MVP — Airbnb redesign completo + Jam 2.0 + i18n + notifiche
 **Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Jam 2.0
 **Prossima azione founder**:
-  1. Applicare migrations **020–023** in Supabase SQL Editor (in ordine)
-  2. Eseguire `flutter pub get && flutter gen-l10n`
-  3. (Opzionale) Deploy push notifications: `supabase secrets set APNS_*` + `supabase functions deploy send-push-notification`
-  4. Creare account RevenueCat → inserire API key in `subscription_service.dart`
+  1. Applicare **024_favorite_books.sql** in Supabase SQL Editor
+  2. Applicare migrations **020–023** in ordine (se non già fatto)
+  3. Eseguire `flutter pub get && flutter gen-l10n`
+  4. (Opzionale) Deploy push notifications: `supabase secrets set APNS_*` + `supabase functions deploy send-push-notification`
+  5. Creare account RevenueCat → inserire API key in `subscription_service.dart`
 **Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
 **Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)
@@ -35,6 +36,51 @@
 ---
 
 ## Sessioni
+
+### Sessione 16 — 2026-05-24
+**Durata**: ~2h
+**Branch**: master
+**Commit**: `b9af21f`
+
+#### Fatto
+
+**Libreria — Saluti contestualizzati (✅)**
+- `contextualGreeting(name, {hour})` computa frase in base all'orario del dispositivo:
+  "Così presto", "Buongiorno", "Prenditi una pausa", "Buon pomeriggio", "Buonasera", "Buonanotte"
+- `_myDisplayNameProvider` FutureProvider per il nome dell'utente (riusa `fetchPublicProfile`)
+- `_EditorialHeader` aggiornato: riceve `userName` dal provider e lo passa a `contextualGreeting`
+
+**App nav — Jam tab + Liquid glass (✅)**
+- Outline Jam tab (index 2): 1.8pt verde (`MarginaliaColors.primary`) + semi-trasparente quando inattivo
+- Liquid glass zoom su nav pill: `LayoutBuilder` → `Float64List(16)` matrice 4×4 scale 1.12× centrata,
+  composita con `ImageFilter.blur(22,22)` — effetto iOS 26
+
+**Status bar — Fix notch (✅)**
+- `main.dart`: `SystemChrome.setEnabledSystemUIMode(edgeToEdge)` + overlay style globale dark icons
+- `jam_detail_screen.dart`: `systemOverlayStyle` light su `SliverAppBar` + scrim top → status bar sempre visibile
+
+**Profilo — 6 Libri del cuore (✅)**
+- `_FavoriteBooksSection`: header "LIBRI DEL CUORE" + pulsante Scegli/Modifica
+- `_FavBooksGrid`: griglia masonry Pinterest — riga 1: big left (55%) + 2 stacked mediums (45%);
+  riga 2: tre small uguali
+- `_FavBookTile`: `BookEditorialCover` + overlay gradiente + testo adattato per tile size (large/medium/small)
+- `_openFavBooksSheet` + `_FavBooksSheet`: picker con mini cover, checkbox animato circolare,
+  contatore animato 0/6→6/6
+- `SupabaseService.updateFavoriteBooks()`: persiste la lista a Supabase
+- Migration **024** `favorite_books` (jsonb, default `[]`) — **applicare manualmente in SQL Editor**
+
+**Widget Scriptable — Liquid glass + saluto locale (✅)**
+- `localGreeting()`: saluto calcolato live dal clock del dispositivo + giorno settimana
+  (Buon lunedì, Buon weekend, ecc.) — non più stale
+- Refresh ridotto da 4h a **45 min** (meteo + saluto sempre aggiornati)
+- Glass panel: frosted card attorno alla citazione con `backgroundColor = Color(0.10 alpha)` +
+  edge speculare top da `Color(0.18 alpha)` — evoca iOS 26 liquid glass
+
+#### Prossima azione founder
+- ⚠️ Applicare `supabase/migrations/024_favorite_books.sql` nel SQL Editor
+- ⚠️ Applicare migrations 020–023 (se non già fatto)
+
+---
 
 ### Sessione 15 — 2026-05-23
 **Durata**: ~1.5h
