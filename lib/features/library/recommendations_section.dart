@@ -25,7 +25,9 @@ import '../../core/providers/books_provider.dart';
 // ─── Stop-word list (Italian + English) ──────────────────────────────────────
 
 const _kStopWords = {
-  // Italian
+  // ── Italian elided prepositions (artifacts from dell', nell', sull', etc.)
+  'dell', 'nell', 'sull', 'coll', 'dall', 'agli', 'alle',
+  // ── Italian stop words
   'questo', 'questa', 'questi', 'queste', 'quello', 'quella', 'quelli',
   'quelle', 'anche', 'ancora', 'quando', 'dove', 'come', 'perche',
   'tutto', 'tutta', 'tutti', 'tutte', 'ogni', 'qualcosa', 'qualcuno',
@@ -35,8 +37,13 @@ const _kStopWords = {
   'della', 'delle', 'degli', 'nella', 'nelle', 'negli', 'sulla', 'sulle',
   'sugli', 'dalla', 'dalle', 'dagli', 'mentre', 'dunque', 'quindi',
   'allora', 'invece', 'almeno', 'infatti', 'oppure', 'ovvero', 'ormai',
-  'spesso', 'finche', 'poiche', 'adesso', 'stessa',
-  // English
+  'spesso', 'finche', 'poiche', 'adesso', 'stessa', 'stesse', 'stessi',
+  // overly generic Italian nouns that don't help thematic matching
+  'mondo', 'uomo', 'vita', 'cosa', 'modo', 'caso', 'anno', 'anno',
+  'parte', 'fatto', 'volta', 'nome', 'solo', 'gran', 'mano', 'tipo',
+  'dice', 'deve', 'sono', 'fare', 'fece', 'voce', 'dove', 'cosi',
+  'citta', 'tempo', 'giorno', 'notte', 'casa', 'occhi', 'forse',
+  // ── English stop words
   'about', 'after', 'again', 'against', 'being', 'before', 'because',
   'between', 'could', 'during', 'every', 'first', 'great', 'however',
   'large', 'later', 'makes', 'might', 'never', 'often', 'other', 'place',
@@ -47,15 +54,30 @@ const _kStopWords = {
   'maybe', 'people', 'should', 'things', 'though', 'toward', 'unless',
   'wanted', 'another', 'became', 'become', 'called', 'coming', 'giving',
   'having', 'making', 'moving', 'seemed', 'simply', 'taking', 'trying',
-  'turned', 'really', 'rather',
+  'turned', 'really', 'rather', 'world', 'human', 'time', 'life',
+  'just', 'like', 'know', 'even', 'only', 'than', 'will', 'with',
+  'they', 'this', 'that', 'from', 'have', 'what', 'when', 'your',
+  'more', 'some', 'been', 'also', 'then', 'them', 'were', 'into',
 };
 
+/// Normalise accented characters so e.g. "città" → "citta"
+/// and split on apostrophes so "dell'uomo" → ["dell","uomo"]
+/// before stripping non-ASCII, preventing garbage tokens like "citt" or "dell".
+String _normalizeText(String raw) => raw
+    .replaceAll('à', 'a').replaceAll('á', 'a').replaceAll('â', 'a').replaceAll('ä', 'a')
+    .replaceAll('è', 'e').replaceAll('é', 'e').replaceAll('ê', 'e').replaceAll('ë', 'e')
+    .replaceAll('ì', 'i').replaceAll('í', 'i').replaceAll('î', 'i').replaceAll('ï', 'i')
+    .replaceAll('ò', 'o').replaceAll('ó', 'o').replaceAll('ô', 'o').replaceAll('ö', 'o')
+    .replaceAll('ù', 'u').replaceAll('ú', 'u').replaceAll('û', 'u').replaceAll('ü', 'u')
+    .replaceAll('ñ', 'n').replaceAll('ç', 'c').replaceAll('ß', 'ss')
+    // split apostrophes BEFORE stripping: dell'uomo → dell uomo
+    .replaceAll(RegExp(r"[''`‘’‚‛]"), ' ');
+
 List<String> _extractWords(String text) =>
-    text
-        .toLowerCase()
+    _normalizeText(text.toLowerCase())
         .replaceAll(RegExp(r'[^a-z\s]'), ' ')
         .split(RegExp(r'\s+'))
-        .where((w) => w.length >= 4 && !_kStopWords.contains(w))
+        .where((w) => w.length >= 5 && !_kStopWords.contains(w))
         .toList();
 
 // ─── Country name → Italian ───────────────────────────────────────────────────
