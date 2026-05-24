@@ -9,7 +9,7 @@
 
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -125,17 +125,23 @@ final libraryRecommendationsProvider =
 
   if (kIsWeb) {
     final service = ref.read(supabaseServiceProvider);
-    if (!service.isAuthenticated) return [];
+    if (!service.isAuthenticated) {
+      debugPrint('[Recs] not authenticated → empty');
+      return [];
+    }
     try {
       // fetchHighlights() already orders by added_at DESC
       final data = await service.fetchHighlights();
+      debugPrint('[Recs] fetchHighlights → ${data.length} rows');
       recentContents = data
           .take(30)
           .map((m) => m['content'] as String? ?? '')
           .where((s) => s.isNotEmpty)
           .toList();
-    } catch (_) {
-      return [];
+    } catch (e, st) {
+      // Real error (network, RLS, etc.) — propagate so the error hint shows
+      debugPrint('[Recs] fetchHighlights error: $e\n$st');
+      rethrow;
     }
   } else {
     final all = await ref.read(allHighlightsProvider.future);
@@ -150,6 +156,7 @@ final libraryRecommendationsProvider =
         .toList();
   }
 
+  debugPrint('[Recs] recentContents: ${recentContents.length}');
   if (recentContents.isEmpty) return [];
 
   // ── 2. Build word-frequency map ──────────────────────────────────────────
@@ -159,6 +166,7 @@ final libraryRecommendationsProvider =
       wordFreq[w] = (wordFreq[w] ?? 0) + 1;
     }
   }
+  debugPrint('[Recs] wordFreq size: ${wordFreq.length}');
   if (wordFreq.isEmpty) return [];
 
   final topWords = (wordFreq.entries.toList()
@@ -166,12 +174,14 @@ final libraryRecommendationsProvider =
       .take(6)
       .map((e) => e.key)
       .toList();
+  debugPrint('[Recs] topWords: $topWords');
   final themeWordSet = topWords.toSet();
 
   // Exclude books already in library
   final myBooks      = ref.read(booksProvider).value ?? [];
   final myTitlesLower =
       myBooks.map((b) => b.title.toLowerCase().trim()).toSet();
+  debugPrint('[Recs] myTitlesLower: ${myTitlesLower.length} books');
 
   // Open Library search
   final query     = Uri.encodeQueryComponent(topWords.join(' '));
@@ -179,9 +189,11 @@ final libraryRecommendationsProvider =
     'https://openlibrary.org/search.json'
     '?q=$query&limit=25&fields=title,author_name,first_publish_year,key',
   );
+  debugPrint('[Recs] Open Library query: $searchUri');
   final searchResp = await http
       .get(searchUri)
-      .timeout(const Duration(seconds: 8));
+      .timeout(const Duration(seconds: 20));
+  debugPrint('[Recs] Open Library status: ${searchResp.statusCode}');
   if (searchResp.statusCode != 200) return [];
 
   final docs = ((jsonDecode(searchResp.body)

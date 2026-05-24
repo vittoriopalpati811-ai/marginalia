@@ -7,6 +7,17 @@
   <meta name="theme-color" content="#0d0d1a">
   <link rel="icon" href="favicon.png">
   <title>Marginalia — Preview</title>
+  <!-- Redirect mobile browsers immediately, before iframe starts loading -->
+  <script>
+    (function () {
+      var ua = navigator.userAgent;
+      var isMobileUA = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(ua);
+      var isSmallViewport = window.innerWidth < 769 || window.innerHeight < 751;
+      if (isMobileUA || isSmallViewport) {
+        window.location.replace('app.html');
+      }
+    })();
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -404,11 +415,5 @@
 
   </div>
 
-  <script>
-    // Su mobile reindirizza direttamente all'app
-    if (window.innerWidth < 769 || window.innerHeight < 751) {
-      window.location.replace('app.html');
-    }
-  </script>
 </body>
 </html>
