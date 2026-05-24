@@ -3,107 +3,33 @@
 // Shared widget used by both LibraryScreen and MyProfileScreen.
 //
 // Public surface:
-//   BookRecommendation           — data class
-//   libraryRecommendationsProvider — FutureProvider (TF-IDF + Open Library)
-//   LibraryRecommendationsSection  — drop-in ConsumerWidget
+//   BookRecommendation              — data class
+//   libraryRecommendationsProvider  — FutureProvider (Edge Function + Claude AI)
+//   LibraryRecommendationsSection   — drop-in ConsumerWidget
+//
+// How it works:
+//   1. Group all user highlights by book (title + author from embedded join).
+//   2. Take the 20 most recently active distinct books.
+//   3. Send to the `recommend-books` Supabase Edge Function:
+//        • book title, author, up to 4 highlights each as reading context
+//        • full list of existing titles to exclude from suggestions
+//   4. The Edge Function fetches Open Library plots and asks Claude Haiku
+//      for 5 personalised recommendations with Italian explanations.
+//   5. Display each recommendation with an AI-written reason.
 
 import 'dart:convert';
-import 'dart:math' show log;
 
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
-
-// ─── Stop-word list (Italian + English) ──────────────────────────────────────
-
-const _kStopWords = {
-  // ── Italian elided prepositions (artifacts from dell', nell', sull', etc.)
-  'dell', 'nell', 'sull', 'coll', 'dall', 'agli', 'alle',
-  // ── Italian stop words
-  'questo', 'questa', 'questi', 'queste', 'quello', 'quella', 'quelli',
-  'quelle', 'anche', 'ancora', 'quando', 'dove', 'come', 'perche',
-  'tutto', 'tutta', 'tutti', 'tutte', 'ogni', 'qualcosa', 'qualcuno',
-  'sempre', 'senza', 'dopo', 'prima', 'altri', 'altre', 'molto', 'molti',
-  'molte', 'poco', 'pochi', 'poche', 'proprio', 'propria', 'propri',
-  'essere', 'avere', 'aveva', 'erano', 'hanno', 'stata', 'stato',
-  'della', 'delle', 'degli', 'nella', 'nelle', 'negli', 'sulla', 'sulle',
-  'sugli', 'dalla', 'dalle', 'dagli', 'mentre', 'dunque', 'quindi',
-  'allora', 'invece', 'almeno', 'infatti', 'oppure', 'ovvero', 'ormai',
-  'spesso', 'finche', 'poiche', 'adesso', 'stessa', 'stesse', 'stessi',
-  // overly generic Italian nouns that don't help thematic matching
-  'mondo', 'uomo', 'vita', 'cosa', 'modo', 'caso', 'anno', 'anno',
-  'parte', 'fatto', 'volta', 'nome', 'solo', 'gran', 'mano', 'tipo',
-  'dice', 'deve', 'sono', 'fare', 'fece', 'voce', 'dove', 'cosi',
-  'citta', 'tempo', 'giorno', 'notte', 'casa', 'occhi', 'forse',
-  // ── English stop words
-  'about', 'after', 'again', 'against', 'being', 'before', 'because',
-  'between', 'could', 'during', 'every', 'first', 'great', 'however',
-  'large', 'later', 'makes', 'might', 'never', 'often', 'other', 'place',
-  'right', 'shall', 'since', 'small', 'still', 'their', 'there', 'these',
-  'thing', 'think', 'those', 'three', 'through', 'under', 'until',
-  'using', 'where', 'which', 'while', 'whole', 'within', 'without',
-  'would', 'years', 'always', 'cannot', 'either', 'almost', 'little',
-  'maybe', 'people', 'should', 'things', 'though', 'toward', 'unless',
-  'wanted', 'another', 'became', 'become', 'called', 'coming', 'giving',
-  'having', 'making', 'moving', 'seemed', 'simply', 'taking', 'trying',
-  'turned', 'really', 'rather', 'world', 'human', 'time', 'life',
-  'just', 'like', 'know', 'even', 'only', 'than', 'will', 'with',
-  'they', 'this', 'that', 'from', 'have', 'what', 'when', 'your',
-  'more', 'some', 'been', 'also', 'then', 'them', 'were', 'into',
-};
-
-/// Normalise accented characters so e.g. "città" → "citta"
-/// and split on apostrophes so "dell'uomo" → ["dell","uomo"]
-/// before stripping non-ASCII, preventing garbage tokens like "citt" or "dell".
-String _normalizeText(String raw) => raw
-    .replaceAll('à', 'a').replaceAll('á', 'a').replaceAll('â', 'a').replaceAll('ä', 'a')
-    .replaceAll('è', 'e').replaceAll('é', 'e').replaceAll('ê', 'e').replaceAll('ë', 'e')
-    .replaceAll('ì', 'i').replaceAll('í', 'i').replaceAll('î', 'i').replaceAll('ï', 'i')
-    .replaceAll('ò', 'o').replaceAll('ó', 'o').replaceAll('ô', 'o').replaceAll('ö', 'o')
-    .replaceAll('ù', 'u').replaceAll('ú', 'u').replaceAll('û', 'u').replaceAll('ü', 'u')
-    .replaceAll('ñ', 'n').replaceAll('ç', 'c').replaceAll('ß', 'ss')
-    // split apostrophes BEFORE stripping: dell'uomo → dell uomo
-    .replaceAll(RegExp(r"[''`‘’‚‛]"), ' ');
-
-List<String> _extractWords(String text) =>
-    _normalizeText(text.toLowerCase())
-        .replaceAll(RegExp(r'[^a-z\s]'), ' ')
-        .split(RegExp(r'\s+'))
-        .where((w) => w.length >= 5 && !_kStopWords.contains(w))
-        .toList();
-
-// ─── Country name → Italian ───────────────────────────────────────────────────
-
-const _kCountryIt = {
-  'United States': 'Stati Uniti', 'United Kingdom': 'Regno Unito',
-  'England': 'Inghilterra', 'France': 'Francia', 'Germany': 'Germania',
-  'Italy': 'Italia', 'Spain': 'Spagna', 'Russia': 'Russia',
-  'Japan': 'Giappone', 'China': 'Cina', 'India': 'India',
-  'Brazil': 'Brasile', 'Argentina': 'Argentina', 'Mexico': 'Messico',
-  'Canada': 'Canada', 'Australia': 'Australia', 'Netherlands': 'Olanda',
-  'Sweden': 'Svezia', 'Norway': 'Norvegia', 'Denmark': 'Danimarca',
-  'Poland': 'Polonia', 'Austria': 'Austria', 'Switzerland': 'Svizzera',
-  'Belgium': 'Belgio', 'Greece': 'Grecia', 'Portugal': 'Portogallo',
-  'Czech Republic': 'Rep. Ceca', 'Hungary': 'Ungheria', 'Romania': 'Romania',
-  'Turkey': 'Turchia', 'Iran': 'Iran', 'Israel': 'Israele',
-  'South Africa': 'Sudafrica', 'Egypt': 'Egitto', 'Nigeria': 'Nigeria',
-  'Colombia': 'Colombia', 'Chile': 'Cile', 'Peru': 'Perù', 'Cuba': 'Cuba',
-  'Ireland': 'Irlanda', 'Scotland': 'Scozia', 'Wales': 'Galles',
-};
-
-String _italianCountry(String? raw) {
-  if (raw == null || raw.isEmpty) return '—';
-  return _kCountryIt[raw] ?? raw;
-}
 
 // ─── Book recommendation data class ──────────────────────────────────────────
 
@@ -112,40 +38,31 @@ class BookRecommendation {
     required this.title,
     required this.author,
     required this.year,
-    required this.country,
-    required this.description,
-    this.themeScore = 0,
+    required this.reason,
   });
   final String title;
   final String author;
   final String year;
-  final String country;
-  final String description;
-  final int themeScore;
+  final String reason; // AI-generated personalised explanation (Italian)
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
-//
-// Algorithm:
-//   1. Take 30 most-recent highlights → extract top-6 theme words (TF-IDF-like)
-//   2. Query Open Library /search.json with those words
-//   3. Filter out books already in the user's library (case-insensitive title)
-//   4. Fetch /works/{key}.json in parallel → description + country
-//   5. Re-rank by "description theme score" (content match, not genre)
-//   6. Return top-5
 
 final libraryRecommendationsProvider =
     FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
-  // ── 1. Collect highlights grouped by book ────────────────────────────────
+  // ── 1. Collect highlights grouped by book ──────────────────────────────────
   //
-  // We fetch ALL highlights and group by book so that every book in the
-  // library contributes equally to theme extraction — not just the most
-  // recently imported ones.
+  // We fetch all highlights ordered by added_at DESC (Supabase) so that
+  // "most recent book" = first distinct book_id encountered.
   //
-  // On web: Supabase directly (bypass autoDispose lifecycle issues).
-  // On native: Isar resolves from disk, no disposal risk.
+  // For each book we keep:
+  //   • title + author   (from embedded books() join)
+  //   • up to 4 highlight texts (reading context for Claude)
 
-  Map<String, List<String>> bookContents; // bookId → [content, …]
+  // bookId → { title, author, highlights[] }
+  final Map<String, Map<String, dynamic>> bookMap = {};
+  // Ordered list of distinct book IDs (insertion order = recency)
+  final List<String> orderedBookIds = [];
 
   if (kIsWeb) {
     final service = ref.read(supabaseServiceProvider);
@@ -156,12 +73,30 @@ final libraryRecommendationsProvider =
     try {
       final data = await service.fetchHighlights();
       debugPrint('[Recs] fetchHighlights → ${data.length} rows');
-      bookContents = {};
+
       for (final h in data) {
-        final bookId = (h['book_id'] as String?)?.trim() ?? '';
+        final bookId  = (h['book_id'] as String?)?.trim() ?? '';
         final content = (h['content'] as String?)?.trim() ?? '';
-        if (bookId.isNotEmpty && content.isNotEmpty) {
-          bookContents.putIfAbsent(bookId, () => []).add(content);
+        if (bookId.isEmpty) continue;
+
+        if (!bookMap.containsKey(bookId)) {
+          final booksEmbed = h['books'] as Map<String, dynamic>?;
+          final title  = (booksEmbed?['title']  as String? ?? '').trim();
+          final author = (booksEmbed?['author'] as String? ?? '').trim();
+          if (title.isEmpty) continue;
+
+          bookMap[bookId] = {
+            'title':      title,
+            'author':     author,
+            'highlights': <String>[],
+          };
+          orderedBookIds.add(bookId);
+        }
+
+        // Keep up to 4 highlights per book
+        final highlights = bookMap[bookId]!['highlights'] as List<String>;
+        if (highlights.length < 4 && content.isNotEmpty) {
+          highlights.add(content);
         }
       }
     } catch (e, st) {
@@ -169,175 +104,107 @@ final libraryRecommendationsProvider =
       rethrow;
     }
   } else {
-    final all = await ref.read(allHighlightsProvider.future);
-    bookContents = {};
+    // Native (Isar): no embedded join, use book ID + title from booksProvider
+    final all    = await ref.read(allHighlightsProvider.future);
+    final books  = ref.read(booksProvider).value ?? [];
+    final bookById = { for (final b in books) b.supabaseId: b };
+
     for (final h in all) {
-      if (h.content.isNotEmpty) {
-        bookContents
-            .putIfAbsent(h.bookId.toString(), () => [])
-            .add(h.content);
+      final bookId = h.bookId.toString();
+      if (!bookMap.containsKey(bookId)) {
+        final book = bookById[bookId];
+        if (book == null || book.title.isEmpty) continue;
+        bookMap[bookId] = {
+          'title':      book.title,
+          'author':     book.author,
+          'highlights': <String>[],
+        };
+        orderedBookIds.add(bookId);
+      }
+      final highlights = bookMap[bookId]!['highlights'] as List<String>;
+      if (highlights.length < 4 && h.content.isNotEmpty) {
+        highlights.add(h.content);
       }
     }
   }
 
-  final numBooks = bookContents.length;
-  debugPrint('[Recs] numBooks: $numBooks');
-  if (numBooks == 0) return [];
+  debugPrint('[Recs] distinct books: ${orderedBookIds.length}');
+  if (orderedBookIds.isEmpty) return [];
 
-  // ── 2. Per-book TF-IDF ───────────────────────────────────────────────────
+  // ── 2. Build request payload ───────────────────────────────────────────────
   //
-  // Algorithm:
-  //   • Sample up to kMaxPerBook highlights from EACH book (equal weight).
-  //     This is the "sample ≥ (x/2 + x/4)" strategy: all x books contribute
-  //     proportionally rather than recent imports dominating.
-  //   • TF  = word frequency within a single book's sample.
-  //   • IDF = log((numBooks+1) / (df+1)) where df = number of books that
-  //           contain the word. Words shared by many books are penalised — they
-  //           are part of the user's general vocabulary, not a book's identity.
-  //   • Global score = Σ (TF × IDF) across all books.
-  //   • Top-6 words by score → Open Library query.
-  //
-  // Result: words characteristic of *some* books but not ubiquitous, giving
-  // the query semantic specificity instead of generic frequency counts.
+  // Take the 20 most recently active books as the primary reading context.
+  // Pass the full list of titles to the Edge Function for exclusion.
 
-  const kMaxPerBook = 5;
-
-  // TF: word frequency within each book's sampled highlights
-  final Map<String, Map<String, int>> bookWordTF = {};
-  for (final entry in bookContents.entries) {
-    final freq = <String, int>{};
-    for (final content in entry.value.take(kMaxPerBook)) {
-      for (final word in _extractWords(content)) {
-        freq[word] = (freq[word] ?? 0) + 1;
-      }
-    }
-    if (freq.isNotEmpty) bookWordTF[entry.key] = freq;
-  }
-
-  // DF: number of books containing each word
-  final Map<String, int> wordDF = {};
-  for (final freq in bookWordTF.values) {
-    for (final word in freq.keys) {
-      wordDF[word] = (wordDF[word] ?? 0) + 1;
-    }
-  }
-
-  // Global TF-IDF: sum across all books, skip words in every book (idf ≤ 0)
-  final Map<String, double> wordScore = {};
-  for (final freq in bookWordTF.values) {
-    for (final entry in freq.entries) {
-      final idf = log((numBooks + 1) / ((wordDF[entry.key] ?? 1) + 1));
-      if (idf > 0) {
-        wordScore[entry.key] =
-            (wordScore[entry.key] ?? 0.0) + entry.value * idf;
-      }
-    }
-  }
-
-  debugPrint('[Recs] wordScore entries: ${wordScore.length}');
-  if (wordScore.isEmpty) return [];
-
-  final topWords = (wordScore.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value)))
-      .take(6)
-      .map((e) => e.key)
+  final recentIds   = orderedBookIds.take(20).toList();
+  final allTitles   = orderedBookIds
+      .map((id) => bookMap[id]!['title'] as String)
       .toList();
-  debugPrint('[Recs] topWords (TF-IDF): $topWords');
-  final themeWordSet = topWords.toSet();
 
-  // Exclude books already in library
-  final myBooks      = ref.read(booksProvider).value ?? [];
-  final myTitlesLower =
-      myBooks.map((b) => b.title.toLowerCase().trim()).toSet();
-  debugPrint('[Recs] myTitlesLower: ${myTitlesLower.length} books');
+  final booksPayload = recentIds.map((id) {
+    final info = bookMap[id]!;
+    return {
+      'title':      info['title'] as String,
+      'author':     info['author'] as String,
+      'highlights': (info['highlights'] as List<String>),
+    };
+  }).toList();
 
-  // Open Library search
-  final query     = Uri.encodeQueryComponent(topWords.join(' '));
-  final searchUri = Uri.parse(
-    'https://openlibrary.org/search.json'
-    '?q=$query&limit=25&fields=title,author_name,first_publish_year,key',
-  );
-  debugPrint('[Recs] Open Library query: $searchUri');
-  final searchResp = await http
-      .get(searchUri)
-      .timeout(const Duration(seconds: 20));
-  debugPrint('[Recs] Open Library status: ${searchResp.statusCode}');
-  if (searchResp.statusCode != 200) return [];
+  debugPrint('[Recs] calling recommend-books with ${booksPayload.length} books');
 
-  final docs = ((jsonDecode(searchResp.body)
-          as Map<String, dynamic>)['docs'] as List<dynamic>?) ??
-      [];
+  // ── 3. Invoke Edge Function ────────────────────────────────────────────────
 
-  final candidates = <Map<String, dynamic>>[];
-  for (final raw in docs) {
-    final doc   = raw as Map<String, dynamic>;
-    final title = (doc['title'] as String? ?? '').trim();
-    if (title.isEmpty || myTitlesLower.contains(title.toLowerCase())) continue;
-    candidates.add(doc);
-    if (candidates.length >= 8) break;
+  final service = ref.read(supabaseServiceProvider);
+  late final Map<String, dynamic> responseBody;
+
+  try {
+    final result = await service.client.functions.invoke(
+      'recommend-books',
+      body: {
+        'books':          booksPayload,
+        'existingTitles': allTitles,
+      },
+    );
+
+    if (result.data == null) {
+      debugPrint('[Recs] Edge Function returned null data');
+      return [];
+    }
+
+    // result.data is already decoded by supabase_flutter
+    if (result.data is Map<String, dynamic>) {
+      responseBody = result.data as Map<String, dynamic>;
+    } else if (result.data is String) {
+      responseBody = jsonDecode(result.data as String) as Map<String, dynamic>;
+    } else {
+      debugPrint('[Recs] unexpected data type: ${result.data.runtimeType}');
+      return [];
+    }
+  } catch (e, st) {
+    debugPrint('[Recs] Edge Function error: $e\n$st');
+    rethrow;
   }
-  if (candidates.isEmpty) return [];
 
-  // Fetch Works API in parallel for description + country
-  final enriched = await Future.wait(
-    candidates.map((doc) async {
-      final title      = (doc['title'] as String? ?? '').trim();
-      final authorList =
-          (doc['author_name'] as List<dynamic>?)?.cast<String>() ?? [];
-      final author     = authorList.isNotEmpty ? authorList.first : '—';
-      final year       = (doc['first_publish_year'] as int?)?.toString() ?? '—';
-      final key        = doc['key'] as String? ?? '';
+  // ── 4. Parse recommendations ───────────────────────────────────────────────
 
-      String description = '';
-      String country     = '—';
-      int    themeScore  = 0;
+  final rawList = responseBody['recommendations'] as List<dynamic>?;
+  if (rawList == null || rawList.isEmpty) {
+    debugPrint('[Recs] no recommendations in response');
+    return [];
+  }
 
-      if (key.isNotEmpty) {
-        try {
-          final worksResp = await http
-              .get(Uri.parse('https://openlibrary.org$key.json'))
-              .timeout(const Duration(seconds: 5));
+  final recommendations = rawList.map((raw) {
+    final r = raw as Map<String, dynamic>;
+    return BookRecommendation(
+      title:  (r['title']  as String? ?? '').trim(),
+      author: (r['author'] as String? ?? '').trim(),
+      year:   (r['year']   as String? ?? '').trim(),
+      reason: (r['reason'] as String? ?? '').trim(),
+    );
+  }).where((r) => r.title.isNotEmpty).toList();
 
-          if (worksResp.statusCode == 200) {
-            final w = jsonDecode(worksResp.body) as Map<String, dynamic>;
-
-            final rawDesc = w['description'];
-            if (rawDesc is String) {
-              description = rawDesc;
-            } else if (rawDesc is Map<String, dynamic>) {
-              description = rawDesc['value'] as String? ?? '';
-            }
-            if (description.length > 500) {
-              description = '${description.substring(0, 500)}…';
-            }
-
-            final places =
-                (w['subject_places'] as List<dynamic>?)?.cast<String>() ?? [];
-            if (places.isNotEmpty) country = _italianCountry(places.first);
-
-            for (final word in _extractWords(description)) {
-              if (themeWordSet.contains(word)) themeScore++;
-            }
-          }
-        } catch (_) {
-          // Works API unavailable — continue without description
-        }
-      }
-
-      return BookRecommendation(
-        title:       title,
-        author:      author,
-        year:        year,
-        country:     country,
-        description: description,
-        themeScore:  themeScore,
-      );
-    }),
-  );
-
-  final ranked = List<BookRecommendation>.from(enriched)
-    ..sort((a, b) => b.themeScore.compareTo(a.themeScore));
-  return ranked.take(5).toList();
+  debugPrint('[Recs] received ${recommendations.length} recommendations');
+  return recommendations;
 });
 
 // ─── Section widget ───────────────────────────────────────────────────────────
@@ -351,14 +218,17 @@ class LibraryRecommendationsSection extends ConsumerWidget {
 
     return async.when(
       loading: () => const _RecommendationsSkeleton(),
-      error: (_, __) => const _RecommendationsHint(
-        "Suggerimenti non disponibili al momento. Riprova più tardi.",
-      ),
+      error: (e, _) {
+        debugPrint('[Recs] UI error: $e');
+        return const _RecommendationsHint(
+          "Suggerimenti non disponibili al momento. Riprova più tardi.",
+        );
+      },
       data: (books) {
         if (books.isEmpty) {
           return const _RecommendationsHint(
             "Importa i tuoi highlight Kindle per ricevere suggerimenti"
-            " personalizzati in base ai tuoi temi di lettura.",
+            " personalizzati basati sui tuoi temi di lettura.",
           );
         }
         return Padding(
@@ -369,7 +239,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
               _sectionHeader(),
               const SizedBox(height: 6),
               Text(
-                "Selezionati per affinità tematica con i tuoi gusti, non solo per genere. Migliorano man mano che usi l'app.",
+                "Selezionati da Claude in base ai tuoi highlight e alle trame dei libri che hai letto.",
                 style: GoogleFonts.manrope(
                   fontSize: 11,
                   color: MarginaliaColors.inkFaint,
@@ -389,8 +259,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
 
   static Widget _sectionHeader() => Row(
         children: [
-          Text('LIBRI CONSIGLIATI',
-              style: MarginaliaTextStyles.sectionTitle),
+          Text('LIBRI CONSIGLIATI', style: MarginaliaTextStyles.sectionTitle),
           const SizedBox(width: 12),
           const Expanded(
             child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
@@ -408,6 +277,10 @@ class _RecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final meta = [rec.author, rec.year]
+        .where((s) => s.isNotEmpty && s != '—')
+        .join(' · ');
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -417,12 +290,14 @@ class _RecommendationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
         boxShadow: const [
-          BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+          BoxShadow(
+              color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title
           Text(
             rec.title,
             style: GoogleFonts.manrope(
@@ -433,26 +308,29 @@ class _RecommendationCard extends StatelessWidget {
               letterSpacing: -0.2,
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            [rec.author, rec.year, rec.country]
-                .where((s) => s.isNotEmpty && s != '—')
-                .join(' · '),
-            style: GoogleFonts.manrope(
-              fontSize: 11,
-              color: MarginaliaColors.inkMuted,
-              fontWeight: FontWeight.w500,
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              meta,
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: MarginaliaColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 10),
           Container(height: 0.7, color: MarginaliaColors.ruleFaint),
           const SizedBox(height: 10),
+          // AI reason
           Text(
-            rec.description.isNotEmpty ? rec.description : 'Trama non disponibile.',
+            rec.reason.isNotEmpty
+                ? rec.reason
+                : 'Consigliato in base ai tuoi gusti di lettura.',
             style: GoogleFonts.ebGaramond(
               fontSize: 14,
               height: 1.65,
-              color: rec.description.isNotEmpty
+              color: rec.reason.isNotEmpty
                   ? MarginaliaColors.ink
                   : MarginaliaColors.inkFaint,
               fontStyle: FontStyle.italic,
@@ -467,7 +345,7 @@ class _RecommendationCard extends StatelessWidget {
   }
 }
 
-// ─── Hint widget (empty state / error state) ─────────────────────────────────
+// ─── Hint widget (empty state / error state) ──────────────────────────────────
 
 class _RecommendationsHint extends StatelessWidget {
   const _RecommendationsHint(this.message);
@@ -486,7 +364,8 @@ class _RecommendationsHint extends StatelessWidget {
                   style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(
-                child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
+                child:
+                    Divider(color: MarginaliaColors.ruleFaint, height: 1),
               ),
             ],
           ),
@@ -528,10 +407,19 @@ class _RecommendationsSkeleton extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 6),
+          Text(
+            'Claude sta analizzando i tuoi highlight…',
+            style: GoogleFonts.manrope(
+              fontSize: 11,
+              color: MarginaliaColors.inkFaint,
+              height: 1.4,
+            ),
+          ),
           const SizedBox(height: 16),
           for (int i = 0; i < 3; i++)
             Container(
-              height: 110,
+              height: 120,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: MarginaliaColors.surfaceElevated,
