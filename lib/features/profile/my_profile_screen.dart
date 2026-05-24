@@ -330,10 +330,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       ),
                     ),
                   )
-                : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _ProfilePostCard(post: posts[i]),
-                      childCount: posts.length,
+                : SliverToBoxAdapter(
+                    child: _PostsGrid(
+                      posts: posts,
                     ),
                   ),
           ),
@@ -920,7 +919,7 @@ class _SpotlightCard extends StatelessWidget {
   }
 }
 
-// ─── Book cell (3-col grid) ───────────────────────────────────────────────────
+// ─── Book cell (3-col grid) — uses editorial cover ────────────────────────────
 
 class _BookCell extends StatelessWidget {
   const _BookCell({required this.book, required this.index});
@@ -931,57 +930,196 @@ class _BookCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final title  = book['title']  as String? ?? '';
     final author = book['author'] as String? ?? '';
-    final bg     = MarginaliaDecorations.bookCoverColor(title);
-    final dark   = Color.fromARGB(255, (bg.red * 0.58).round(),
-        (bg.green * 0.58).round(), (bg.blue * 0.58).round());
 
     return GestureDetector(
       onTap: () {/* TODO: navigate to book detail */},
-      child: Container(
-        decoration: BoxDecoration(
-          gradient:
-              LinearGradient(colors: [bg, dark], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: const [
-            BoxShadow(color: Color(0x18000000), blurRadius: 8, offset: Offset(0, 2)),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFEDE5D5),
-                  height: 1.3,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                author.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withAlpha(150),
-                  letterSpacing: 0.3,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: BookEditorialCover(title: title, author: author),
       ),
     )
         .animate(delay: (index * 30).ms)
         .fadeIn(duration: 260.ms, curve: Curves.easeOut);
+  }
+}
+
+// ─── Instagram-style posts grid ───────────────────────────────────────────────
+
+// Muted dark-toned backgrounds for text-only post tiles
+const _kPostBgColors = [
+  Color(0xFF3D5A4E), // sage
+  Color(0xFF4A3D5A), // plum
+  Color(0xFF5A4A3D), // umber
+  Color(0xFF3D4A5A), // slate
+  Color(0xFF5A3D4A), // dusty rose
+  Color(0xFF4A5A3D), // olive
+  Color(0xFF5A3D3D), // terracotta
+  Color(0xFF3D3D5A), // indigo
+];
+
+class _PostsGrid extends StatelessWidget {
+  const _PostsGrid({required this.posts});
+  final List<Map<String, dynamic>> posts;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
+          childAspectRatio: 1.0, // square tiles
+        ),
+        itemCount: posts.length,
+        itemBuilder: (_, i) => _PostGridTile(
+          post: posts[i],
+          onTap: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => _PostDetailSheet(post: posts[i]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PostGridTile extends StatelessWidget {
+  const _PostGridTile({required this.post, required this.onTap});
+  final Map<String, dynamic> post;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final body      = post['body']       as String?;
+    final imageUrl  = post['image_url']  as String?;
+    final highlight = post['highlights'] as Map?;
+    final hlContent = highlight?['content'] as String?;
+
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+    // Show body first; fall back to highlight snippet
+    final isQuote  = (body == null || body.trim().isEmpty) && hlContent != null;
+    final preview  = isQuote
+        ? hlContent!.trim()
+        : (body?.trim() ?? '');
+    final hash     = preview.hashCode.abs();
+    final bgColor  = _kPostBgColors[hash % _kPostBgColors.length];
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // ── Background ──────────────────────────────────────────────
+            if (hasImage)
+              Image.network(
+                imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => ColoredBox(color: bgColor),
+              )
+            else
+              ColoredBox(color: bgColor),
+
+            // ── Bottom gradient scrim ─────────────────────────────────
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withAlpha(hasImage ? 170 : 110),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.25, 1.0],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Preview text ──────────────────────────────────────────
+            if (preview.isNotEmpty)
+              Positioned(
+                left: 7, right: 18, bottom: 7,
+                child: Text(
+                  preview,
+                  style: isQuote
+                      ? GoogleFonts.ebGaramond(
+                          fontSize: 8.5,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.white,
+                          height: 1.3,
+                        )
+                      : GoogleFonts.manrope(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          height: 1.3,
+                        ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+            // ── "More" chevron ────────────────────────────────────────
+            const Positioned(
+              bottom: 4, right: 4,
+              child: Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xCCFFFFFF),
+                size: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Post detail bottom sheet ─────────────────────────────────────────────────
+
+class _PostDetailSheet extends StatelessWidget {
+  const _PostDetailSheet({required this.post});
+  final Map<String, dynamic> post;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 4),
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.rule,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Full post card (reuses existing layout)
+          Flexible(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bottom + 20),
+              child: _ProfilePostCard(post: post),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
