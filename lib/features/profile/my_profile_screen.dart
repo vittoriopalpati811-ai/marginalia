@@ -990,18 +990,6 @@ class _BookCell extends StatelessWidget {
 
 // ─── Instagram-style posts grid ───────────────────────────────────────────────
 
-// Muted dark-toned backgrounds for text-only post tiles
-const _kPostBgColors = [
-  Color(0xFF3D5A4E), // sage
-  Color(0xFF4A3D5A), // plum
-  Color(0xFF5A4A3D), // umber
-  Color(0xFF3D4A5A), // slate
-  Color(0xFF5A3D4A), // dusty rose
-  Color(0xFF4A5A3D), // olive
-  Color(0xFF5A3D3D), // terracotta
-  Color(0xFF3D3D5A), // indigo
-];
-
 class _PostsGrid extends StatelessWidget {
   const _PostsGrid({required this.posts});
   final List<Map<String, dynamic>> posts;
@@ -1045,86 +1033,123 @@ class _PostGridTile extends StatelessWidget {
     final imageUrl  = post['image_url']  as String?;
     final highlight = post['highlights'] as Map?;
     final hlContent = highlight?['content'] as String?;
+    final hlBook    = highlight?['books']   as Map?;
+    final hlTitle   = hlBook?['title']  as String?;
 
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
-    // Show body first; fall back to highlight snippet
     final isQuote  = (body == null || body.trim().isEmpty) && hlContent != null;
-    final preview  = isQuote
-        ? hlContent!.trim()
-        : (body?.trim() ?? '');
-    final hash     = preview.hashCode.abs();
-    final bgColor  = _kPostBgColors[hash % _kPostBgColors.length];
+    final preview  = isQuote ? hlContent!.trim() : (body?.trim() ?? '');
 
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ── Background ──────────────────────────────────────────────
-            if (hasImage)
-              Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => ColoredBox(color: bgColor),
-              )
-            else
-              ColoredBox(color: bgColor),
-
-            // ── Bottom gradient scrim ─────────────────────────────────
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withAlpha(hasImage ? 170 : 110),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.25, 1.0],
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Preview text ──────────────────────────────────────────
-            if (preview.isNotEmpty)
-              Positioned(
-                left: 7, right: 18, bottom: 7,
-                child: Text(
-                  preview,
-                  style: isQuote
-                      ? GoogleFonts.ebGaramond(
-                          fontSize: 8.5,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.white,
-                          height: 1.3,
-                        )
-                      : GoogleFonts.manrope(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          height: 1.3,
-                        ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-
-            // ── "More" chevron ────────────────────────────────────────
-            const Positioned(
-              bottom: 4, right: 4,
-              child: Icon(
-                Icons.chevron_right_rounded,
-                color: Color(0xCCFFFFFF),
-                size: 14,
-              ),
-            ),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(6),
+        child: hasImage
+            ? _buildImageTile(imageUrl!, preview, isQuote)
+            : _buildTextTile(preview, isQuote, hlTitle),
       ),
+    );
+  }
+
+  // Light surface + dark readable text, ellipsis if too long
+  Widget _buildTextTile(String preview, bool isQuote, String? hlTitle) {
+    return Container(
+      color: MarginaliaColors.surfaceElevated,
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isQuote && hlTitle != null && hlTitle.isNotEmpty) ...[
+            Text(
+              hlTitle.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 6.5,
+                fontWeight: FontWeight.w700,
+                color: MarginaliaColors.sienna,
+                letterSpacing: 0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 3),
+          ],
+          Text(
+            preview,
+            style: isQuote
+                ? GoogleFonts.ebGaramond(
+                    fontSize: 10.5,
+                    fontStyle: FontStyle.italic,
+                    color: MarginaliaColors.ink,
+                    height: 1.4,
+                  )
+                : GoogleFonts.manrope(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w500,
+                    color: MarginaliaColors.ink,
+                    height: 1.4,
+                  ),
+            maxLines: 7,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Photo + gradient scrim + white text overlay
+  Widget _buildImageTile(String imageUrl, String preview, bool isQuote) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              const ColoredBox(color: MarginaliaColors.surfaceElevated),
+        ),
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.transparent, Color(0xCC000000)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: [0.25, 1.0],
+              ),
+            ),
+          ),
+        ),
+        if (preview.isNotEmpty)
+          Positioned(
+            left: 7, right: 7, bottom: 7,
+            child: Text(
+              preview,
+              style: isQuote
+                  ? GoogleFonts.ebGaramond(
+                      fontSize: 8.5,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white,
+                      height: 1.3,
+                    )
+                  : GoogleFonts.manrope(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      height: 1.3,
+                    ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        const Positioned(
+          bottom: 4, right: 4,
+          child: Icon(
+            Icons.chevron_right_rounded,
+            color: Color(0xCCFFFFFF),
+            size: 14,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1875,63 +1900,73 @@ class _FavBooksGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Always work with exactly 6 slots (pad with empty entries).
-    final books = List<Map<String, String>>.from(favBooks);
-    while (books.length < 6) {
-      books.add({'title': '', 'author': ''});
-    }
+    final n = favBooks.length.clamp(0, 6);
+    if (n == 0) return const SizedBox.shrink();
 
-    const gap  = 6.0;
-    const row1 = 200.0; // large left + two medium rights
-    const row2 = 118.0; // three small equal tiles
+    const gap   = 6.0;
+    const row1H = 200.0;
+    const row2H = 118.0;
+
+    final row1 = favBooks.take(3).toList();
+    final row2 = n > 3
+        ? favBooks.skip(3).take(3).toList()
+        : <Map<String, String>>[];
 
     return Column(
       children: [
-        // ── Row 1 ────────────────────────────────────────────────────────
+        // ── Row 1: large left + up to two stacked mediums ─────────────────
         SizedBox(
-          height: row1,
+          height: row1H,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Book 1 — big left tile (55% width)
               Expanded(
-                flex: 55,
-                child: _FavBookTile(book: books[0], size: _TileSize.large),
+                flex: row1.length >= 2 ? 55 : 100,
+                child: _FavBookTile(book: row1[0], size: _TileSize.large),
               ),
-              const SizedBox(width: gap),
-              // Books 2 + 3 — right column (45% width, stacked)
-              Expanded(
-                flex: 45,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: _FavBookTile(book: books[1], size: _TileSize.medium),
-                    ),
-                    const SizedBox(height: gap),
-                    Expanded(
-                      child: _FavBookTile(book: books[2], size: _TileSize.medium),
-                    ),
-                  ],
+              if (row1.length >= 2) ...[
+                const SizedBox(width: gap),
+                Expanded(
+                  flex: 45,
+                  child: row1.length >= 3
+                      ? Column(
+                          children: [
+                            Expanded(
+                              child: _FavBookTile(
+                                  book: row1[1], size: _TileSize.medium),
+                            ),
+                            const SizedBox(height: gap),
+                            Expanded(
+                              child: _FavBookTile(
+                                  book: row1[2], size: _TileSize.medium),
+                            ),
+                          ],
+                        )
+                      : _FavBookTile(book: row1[1], size: _TileSize.medium),
                 ),
-              ),
+              ],
             ],
           ),
         ),
-        const SizedBox(height: gap),
-        // ── Row 2 ────────────────────────────────────────────────────────
-        SizedBox(
-          height: row2,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _FavBookTile(book: books[3], size: _TileSize.small)),
-              const SizedBox(width: gap),
-              Expanded(child: _FavBookTile(book: books[4], size: _TileSize.small)),
-              const SizedBox(width: gap),
-              Expanded(child: _FavBookTile(book: books[5], size: _TileSize.small)),
-            ],
+        // ── Row 2: 1–3 small tiles (only when books 4–6 exist) ────────────
+        if (row2.isNotEmpty) ...[
+          const SizedBox(height: gap),
+          SizedBox(
+            height: row2H,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < row2.length; i++) ...[
+                  if (i > 0) const SizedBox(width: gap),
+                  Expanded(
+                    child: _FavBookTile(
+                        book: row2[i], size: _TileSize.small),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
