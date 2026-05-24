@@ -25,12 +25,9 @@ VALUES
   ('comment-images', 'comment-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- ─── 3. Ensure RLS is enabled on storage.objects ─────────────────────────────
--- (Should already be enabled, but make sure)
-
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
--- ─── 4. Re-create all storage RLS policies ────────────────────────────────────
+-- ─── 3. Re-create all storage RLS policies ───────────────────────────────────
+-- NOTE: Do NOT run ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY —
+-- that table is owned by supabase_storage_admin and RLS is already enabled.
 -- Drop and re-create to ensure they exist and are correct.
 
 -- Avatars

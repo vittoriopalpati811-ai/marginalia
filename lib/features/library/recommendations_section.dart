@@ -53,7 +53,7 @@ List<String> _extractWords(String text) =>
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z\s]'), ' ')
         .split(RegExp(r'\s+'))
-        .where((w) => w.length >= 5 && !_kStopWords.contains(w))
+        .where((w) => w.length >= 4 && !_kStopWords.contains(w))
         .toList();
 
 // ─── Country name → Italian ───────────────────────────────────────────────────
@@ -240,25 +240,22 @@ class LibraryRecommendationsSection extends ConsumerWidget {
 
     return async.when(
       loading: () => const _RecommendationsSkeleton(),
-      error:   (_, __) => const SizedBox.shrink(),
+      error: (_, __) => const _RecommendationsHint(
+        "Suggerimenti non disponibili al momento. Riprova più tardi.",
+      ),
       data: (books) {
-        if (books.isEmpty) return const SizedBox.shrink();
+        if (books.isEmpty) {
+          return const _RecommendationsHint(
+            "Importa i tuoi highlight Kindle per ricevere suggerimenti"
+            " personalizzati in base ai tuoi temi di lettura.",
+          );
+        }
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text('LIBRI CONSIGLIATI',
-                      style: MarginaliaTextStyles.sectionTitle),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Divider(
-                        color: MarginaliaColors.ruleFaint, height: 1),
-                  ),
-                ],
-              ),
+              _sectionHeader(),
               const SizedBox(height: 6),
               Text(
                 "Selezionati per affinità tematica con i tuoi gusti, non solo per genere. Migliorano man mano che usi l'app.",
@@ -278,6 +275,17 @@ class LibraryRecommendationsSection extends ConsumerWidget {
       },
     );
   }
+
+  static Widget _sectionHeader() => Row(
+        children: [
+          Text('LIBRI CONSIGLIATI',
+              style: MarginaliaTextStyles.sectionTitle),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
+          ),
+        ],
+      );
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
@@ -345,6 +353,44 @@ class _RecommendationCard extends StatelessWidget {
         .animate(delay: (index * 80).ms)
         .fadeIn(duration: 400.ms, curve: Curves.easeOut)
         .slideY(begin: 0.04, end: 0, duration: 400.ms, curve: Curves.easeOut);
+  }
+}
+
+// ─── Hint widget (empty state / error state) ─────────────────────────────────
+
+class _RecommendationsHint extends StatelessWidget {
+  const _RecommendationsHint(this.message);
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('LIBRI CONSIGLIATI',
+                  style: MarginaliaTextStyles.sectionTitle),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              color: MarginaliaColors.inkFaint,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
