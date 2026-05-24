@@ -33,6 +33,9 @@ import '../../core/providers/books_provider.dart';
 import '../../core/providers/weather_provider.dart';
 import '../../core/providers/health_provider.dart';
 
+// Re-export so library_screen can import just this file if needed
+export '../../core/providers/auth_provider.dart' show myDisplayNameProvider;
+
 // ─── Book recommendation data class ──────────────────────────────────────────
 
 class BookRecommendation {
@@ -158,7 +161,11 @@ final libraryRecommendationsProvider =
 
   debugPrint('[Recs] calling recommend-books with ${booksPayload.length} books');
 
-  // ── 3. Collect context: weather + health ───────────────────────────────────
+  // ── 3. Collect user name ───────────────────────────────────────────────────
+
+  final userName = ref.read(myDisplayNameProvider).asData?.value ?? '';
+
+  // ── 4. Collect context: weather + health ──────────────────────────────────
   //
   // These are optional — if unavailable the Edge Function still works.
   // Weather enriches the Gemini prompt so it can mention seasonal resonance.
@@ -184,7 +191,7 @@ final libraryRecommendationsProvider =
 
   debugPrint('[Recs] context payload: $contextPayload');
 
-  // ── 4. Invoke Edge Function ────────────────────────────────────────────────
+  // ── 5. Invoke Edge Function ────────────────────────────────────────────────
 
   final service = ref.read(supabaseServiceProvider);
   late final Map<String, dynamic> responseBody;
@@ -196,6 +203,7 @@ final libraryRecommendationsProvider =
         'books':          booksPayload,
         'existingTitles': allTitles,
         'context':        contextPayload,
+        'userName':       userName,
       },
     );
 
@@ -218,7 +226,7 @@ final libraryRecommendationsProvider =
     return [];
   }
 
-  // ── 5. Parse recommendations ───────────────────────────────────────────────
+  // ── 6. Parse recommendations ───────────────────────────────────────────────
 
   final rawList = responseBody['recommendations'] as List<dynamic>?;
   if (rawList == null || rawList.isEmpty) {

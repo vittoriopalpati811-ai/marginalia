@@ -28,3 +28,16 @@ final currentUserProvider = Provider<User?>(
 final isAuthenticatedProvider = Provider<bool>(
   (ref) => ref.watch(currentUserProvider) != null,
 );
+
+/// Current user's display name, fetched from their public Supabase profile.
+/// Cached for the lifetime of the provider (autoDispose = disposed when unused).
+final myDisplayNameProvider = FutureProvider.autoDispose<String?>((ref) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated || svc.userId == null) return null;
+  try {
+    final p = await svc.fetchPublicProfile(svc.userId!);
+    return p?['display_name'] as String?;
+  } catch (_) {
+    return null;
+  }
+});

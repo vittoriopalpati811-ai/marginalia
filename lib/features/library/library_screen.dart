@@ -19,6 +19,7 @@ import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
+import '../../core/providers/daily_highlight_provider.dart';
 
 // ─── Filter state ─────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final booksAsync        = ref.watch(booksProvider);
     final allHighlightsAsync = ref.watch(allHighlightsProvider);
     final filter            = ref.watch(_libraryFilterProvider);
-    final randomAsync       = ref.watch(randomHighlightProvider);
+    final randomAsync       = ref.watch(dailyHighlightProvider);
 
     // Apply filter
     final filteredBooksAsync = booksAsync.whenData((books) {
@@ -83,7 +84,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 isImporting:    _isImporting,
                 onImport:       _pickAndImportFile,
                 onForceReimport: () => _pickAndImportFile(forceClean: true),
-                userName: ref.watch(_myDisplayNameProvider).asData?.value,
+                userName: ref.watch(myDisplayNameProvider).asData?.value,
               ),
             ),
 
@@ -403,7 +404,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   void _invalidateAfterImport() {
     ref.invalidate(booksProvider);
-    ref.invalidate(randomHighlightProvider);
+    ref.invalidate(dailyHighlightProvider);
     ref.invalidate(allHighlightsProvider);
     ref.invalidate(libraryRecommendationsProvider);
   }
@@ -469,19 +470,7 @@ String contextualGreeting(String? name, {int? hour}) {
   return '$base$suffix';
 }
 
-// ─── Provider for current user display name ───────────────────────────────────
-
-final _myDisplayNameProvider =
-    FutureProvider.autoDispose<String?>((ref) async {
-  final svc = ref.watch(supabaseServiceProvider);
-  if (!svc.isAuthenticated || svc.userId == null) return null;
-  try {
-    final p = await svc.fetchPublicProfile(svc.userId!);
-    return p?['display_name'] as String?;
-  } catch (_) {
-    return null;
-  }
-});
+// myDisplayNameProvider lives in auth_provider.dart (shared with other screens)
 
 // ─── Header editoriale ────────────────────────────────────────────────────────
 

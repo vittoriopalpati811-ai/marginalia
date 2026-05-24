@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
     books?: InputBook[];
     existingTitles?: string[];
     context?: Record<string, unknown>;
+    userName?: string;
   };
   try {
     body = await req.json();
@@ -76,6 +77,7 @@ Deno.serve(async (req) => {
     t.toLowerCase().trim()
   );
   const userContext: Record<string, unknown> = body.context ?? {};
+  const userName: string = (body.userName ?? "").trim();
 
   if (books.length === 0) {
     return json({ recommendations: [] });
@@ -92,7 +94,7 @@ Deno.serve(async (req) => {
 
   // ── 2. Build prompt ──────────────────────────────────────────────────────
 
-  const prompt = buildPrompt(withPlots, existingTitles, userContext);
+  const prompt = buildPrompt(withPlots, existingTitles, userContext, userName);
 
   // ── 3. Call Groq API ─────────────────────────────────────────────────────
 
@@ -165,7 +167,8 @@ interface BookWithPlot extends InputBook {
 function buildPrompt(
   books: BookWithPlot[],
   existingTitles: string[],
-  ctx: Record<string, unknown>
+  ctx: Record<string, unknown>,
+  userName: string
 ): string {
   const bookList = books
     .map((b, i) => {
@@ -213,6 +216,12 @@ function buildPrompt(
     ? `\n\nCONTESTO UTENTE: ${contextParts.join("; ")}. Puoi usarlo per sfumare i consigli, ma non è obbligatorio.`
     : "";
 
+  // How to address the user in the reason field
+  const addressee = userName ? userName : "lettore";
+  const reasonInstruction = userName
+    ? `Per ogni libro scrivi una "reason" in italiano (2-3 frasi) rivolgendoti direttamente all'utente per nome, in seconda persona. Inizia SEMPRE con "${userName}, apprezzerai" oppure "${userName}, adorerai" oppure "${userName}, ti conquisterà" — mai con "Il lettore" o frasi impersonali. Cita connessioni concrete con i suoi highlight.`
+    : `Per ogni libro scrivi una "reason" in italiano (2-3 frasi) in seconda persona diretta ("apprezzerai", "adorerai", "ti conquisterà"). Cita connessioni concrete con i suoi highlight.`;
+
   return `Sei un bibliotecario italiano esperto e appassionato lettore. Analizza i libri che questo utente ha letto e i suoi highlight personali, poi suggerisci 5 libri che potrebbe amare.
 
 LIBRI LETTI:
@@ -222,7 +231,7 @@ ISTRUZIONI:
 - Suggerisci esattamente 5 libri che l'utente NON ha ancora letto.
 - Scegli libri che risuonano con i temi, le idee e lo stile degli highlight.
 - Varia tra classici e contemporanei, italiani e stranieri.
-- Per ogni libro scrivi una "reason" in italiano (2-3 frasi) che spieghi PERCHÉ risuonerà con questo lettore, citando connessioni concrete con i suoi highlight.
+- ${reasonInstruction}
 - Rispondi SOLO con un array JSON valido, senza markdown, senza testo extra.
 
 [
