@@ -37,6 +37,45 @@
 
 ## Sessioni
 
+### Sessione 17 — 2026-05-24
+**Durata**: ~1h
+**Branch**: master
+**Commit**: `d3e3f27`
+
+#### Fatto
+
+**Profilo — Post Instagram-style (✅)**
+- `profile_shared_widgets.dart` (nuovo file): widget pubblici condivisi tra `MyProfileScreen` e `UserProfileScreen`:
+  `FavBooksGrid`, `FavBookTile`, `FavTileSize`, `PostsGrid`, `PostGridTile`, `PostDetailSheet`
+- Post ora visualizzati come griglia 3 colonne quadrate (stile Instagram), non più card verticali Twitter
+- `PostGridTile`: background colorato con tinta da `kPostBgColors`, preview text in basso, freccia chevron, tap → `PostDetailSheet`
+- `PostDetailSheet` generica: timestamp, body text, highlight snippet (box stilizzato), immagine, like count
+
+**Profilo — Pulsante "Scrivi" post (✅)**
+- Intestazione POST ha ora pulsante pill "Scrivi" in alto a destra
+- Tap apre `CreatePostSheet` (importato da `feed_tab.dart`); su `onCreated` invalida `_myPostsProvider` per refresh immediato
+
+**Profilo — Pull-to-refresh (✅)**
+- `RefreshIndicator` (sienna) avvolge il `CustomScrollView`
+- `onRefresh` invalida: `_myProfileProvider`, `_myBooksProvider`, `_myStatsProvider`, `_myPostsProvider`, `_mySpotlightProvider`
+- Resetta anche `_favBooksProvider` a `[]` perché il listener di `_myProfileProvider` lo ri-popola dal server
+
+**Profilo pubblico — Libri del cuore (✅)**
+- `UserProfileScreen` legge `profile['favorite_books']` e mostra `FavBooksGrid(favBooks: favs)` read-only prima della sezione POST
+- Nascosto automaticamente se la lista è vuota o assente
+
+**Widget Scriptable — Carta Invecchiata redesign (✅)**
+- Tema completamente rifatto: sfondo crema caldo (#F6EFDF → #EDE4CC), inchiostro scuro (#1C1008), accento sienna (#8B4515)
+- Nessun pannello glass: il testo `Georgia-Italic` scuro si appoggia direttamente sulla carta
+- Opening quote `"` in sienna su ogni size; greeting `Georgia-Italic` molto sbiadito (faint) sul medium/large
+- Hairline rule sienna (0.22 alpha) tra quote e attribution
+- Mantenuti: `localGreeting()` con giorno-settimana, `fetchWeather()`, refresh 45 min
+
+#### Prossima azione founder
+- ⚠️ Applicare `supabase/migrations/024_favorite_books.sql` nel SQL Editor (se non già fatto)
+
+---
+
 ### Sessione 16 — 2026-05-24
 **Durata**: ~2h
 **Branch**: master
