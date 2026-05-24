@@ -37,6 +37,48 @@
 
 ## Sessioni
 
+### Sessione 18 — 2026-05-24
+**Durata**: ~1h
+**Branch**: master
+**Commit**: `c0fff9a`
+
+#### Fatto
+
+**Home tab — Redesign Airbnb-style discovery (✅)**
+
+`lib/features/social/home_tab.dart` completamente riscritto. La vecchia home (FeedTab) sostituita con 3 sezioni editoriali:
+
+**§1 — Frase di oggi**
+- `_todayHighlightProvider`: deterministico, cambia 4× al giorno (bucket orario `hour ~/ 6` = notte/mattina/pomeriggio/sera)
+- Lista highlights ordinata per `addedAt` → indice `(dayOfYear * 4 + bucket) % count` — stabile per tutta la sessione
+- Hero card con gradiente matcha (`MarginaliaDecorations.heroCard`), EB Garamond italic crema, hairline rule, attribution
+- Tag contestuale (🌤 mattina / ☀️ pomeriggio / 🌆 sera / 🌙 notte) in pill verde accanto al titolo sezione
+
+**§2 — Frasi recenti**
+- `_recentHighlightsProvider`: ultimi 12 highlights ordinati per `addedAt` desc
+- Scroll orizzontale, card 192×150 con sfondo lievemente tintato dal colore Kindle (yellow/blue/pink/orange → alpha 38)
+- Tinting con `Color.alphaBlend(kindleColor.withAlpha(38), surface)` — funzionale non decorativo
+- EB Garamond italic, titolo libro in ALL CAPS faint in basso
+
+**§3 — Torna a sfogliare (libri consigliati)**
+- `_recommendedBooksProvider`: algoritmo content-based TF-IDF-like, puro Dart, nessuna AI:
+  1. Prende i 20 highlight più recenti → "interessi attuali"
+  2. Estrae le top-15 parole tematiche (≥5 chars, filtro stop-word IT+EN)
+  3. Raggruppa tutti gli highlight per titolo libro (platform-agnostic: usa `bookTitle` non Isar ID)
+  4. Assegna uno score ad ogni libro NON letto di recente: quante parole tematiche compaiono nei suoi highlight
+  5. Restituisce top-5 ordinati per score
+- Scroll orizzontale, card 124px con `BookEditorialCover` + titolo + badge "N parole in comune"
+- Sezione nascosta se score = 0 su tutti i libri (utente ha un solo libro, ecc.)
+
+**Architettura provider**
+- Tutti e 3 i provider sono `autoDispose`, derivano da `allHighlightsProvider` + `booksProvider` (nessuna query Isar extra)
+- Pull-to-refresh invalida tutti e 5 i provider (inclusi quelli base)
+- Skeleton loading per ogni sezione; empty state con `"` decorativo per §1 e §2
+- Platform-agnostic: algoritmo usa `bookTitle` (disponibile su Isar native e Supabase web join)
+- Stop-word list integrata: 80+ termini italiani + inglesi comuni
+
+---
+
 ### Sessione 17 — 2026-05-24
 **Durata**: ~1h
 **Branch**: master
