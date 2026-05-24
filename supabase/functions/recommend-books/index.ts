@@ -27,7 +27,8 @@
 //   }
 //
 // Required secrets:
-//   ANTHROPIC_API_KEY    — Anthropic API key (sk-ant-…)
+//   GEMINI_API_KEY    — Google AI Studio key (free: 1 500 req/day, 15 RPM)
+//                       https://aistudio.google.com/apikey
 //
 // Auto-injected by Supabase:
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
@@ -35,7 +36,7 @@
 // Deploy:
 //   supabase functions deploy recommend-books
 // Set key:
-//   supabase secrets set ANTHROPIC_API_KEY=sk-ant-…
+//   supabase secrets set GEMINI_API_KEY=AIza…
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -100,22 +101,22 @@ Deno.serve(async (req) => {
 
   const prompt = buildPrompt(withPlots, existingTitles);
 
-  // ── 3. Call Claude API ───────────────────────────────────────────────────
+  // ── 3. Call Gemini API ───────────────────────────────────────────────────
 
-  const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!anthropicKey) {
-    return json({ error: "ANTHROPIC_API_KEY not configured" }, 500);
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!geminiKey) {
+    return json({ error: "GEMINI_API_KEY not configured" }, 500);
   }
 
-  let claudeResponse: Recommendation[];
+  let geminiResponse: Recommendation[];
   try {
-    claudeResponse = await callClaude(anthropicKey, prompt);
+    geminiResponse = await callGemini(geminiKey, prompt);
   } catch (e) {
-    console.error("Claude API error:", e);
+    console.error("Gemini API error:", e);
     return json({ error: "AI service unavailable" }, 502);
   }
 
-  return json({ recommendations: claudeResponse });
+  return json({ recommendations: geminiResponse });
 });
 
 // ─── Open Library ─────────────────────────────────────────────────────────────
@@ -219,41 +220,46 @@ Formato risposta:
 ]`;
 }
 
-// ─── Claude API ───────────────────────────────────────────────────────────────
+// ─── Gemini API (google/gemini-1.5-flash — free tier) ────────────────────────
+//
+// Free limits: 15 RPM, 1 500 req/day, 1 M tokens/day (as of 2025)
+// Key: https://aistudio.google.com/apikey  (no credit card required)
 
-async function callClaude(
+async function callGemini(
   apiKey: string,
   prompt: string
 ): Promise<Recommendation[]> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      model: "claude-haiku-4-5",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 1024,
+        temperature: 0.7,
+      },
     }),
     signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Claude API ${res.status}: ${errText}`);
+    throw new Error(`Gemini API ${res.status}: ${errText}`);
   }
 
   const data = await res.json();
-  const rawText: string = data?.content?.[0]?.text ?? "";
+  const rawText: string =
+    data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-  // Extract JSON from response (Claude sometimes wraps in ```json … ```)
+  // Extract JSON array from response (Gemini may wrap in ```json … ```)
   const extracted = extractJson(rawText);
   const parsed = JSON.parse(extracted);
 
   if (!Array.isArray(parsed)) {
-    throw new Error("Claude response is not an array");
+    throw new Error("Gemini response is not an array");
   }
 
   return (parsed as Recommendation[]).slice(0, 5).map((r) => ({
