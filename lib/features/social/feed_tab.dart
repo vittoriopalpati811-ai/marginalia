@@ -1272,7 +1272,43 @@ class _PostCardState extends ConsumerState<_PostCard> {
               imageUrl,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              loadingBuilder: (_, child, progress) => progress == null
+                  ? child
+                  : Container(
+                      height: 220,
+                      color: MarginaliaColors.surfaceElevated,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: MarginaliaColors.sienna,
+                          value: progress.expectedTotalBytes != null
+                              ? progress.cumulativeBytesLoaded /
+                                  progress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    ),
+              errorBuilder: (_, __, ___) => Container(
+                height: 72,
+                color: MarginaliaColors.surfaceElevated,
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.broken_image_outlined,
+                          size: 18, color: MarginaliaColors.inkFaint),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Immagine non disponibile',
+                        style: GoogleFonts.manrope(
+                          fontSize: 11,
+                          color: MarginaliaColors.inkFaint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
 

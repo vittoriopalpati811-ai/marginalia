@@ -248,7 +248,8 @@ class PostGridTile extends StatelessWidget {
   }
 }
 
-// Text-only: pure white bg (stands out against the page) + dark ink text
+// Quote tile: warm cream + serif opening mark
+// Text tile: white + manrope body
 class _PostTextTile extends StatelessWidget {
   const _PostTextTile({required this.preview, required this.isQuote});
   final String preview;
@@ -256,28 +257,57 @@ class _PostTextTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: MarginaliaColors.surface, // pure white — clearly distinct from bg
-        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
-      ),
-      padding: const EdgeInsets.all(7),
-      alignment: Alignment.topLeft,
-      child: Text(
-        preview,
-        style: isQuote
-            ? GoogleFonts.ebGaramond(
-                fontSize: 11,
+    if (isQuote) {
+      return Container(
+        decoration: BoxDecoration(
+          color: MarginaliaColors.background,
+          border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+        ),
+        padding: const EdgeInsets.fromLTRB(7, 5, 7, 7),
+        alignment: Alignment.topLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '“',
+              style: GoogleFonts.ebGaramond(
+                fontSize: 17,
+                color: MarginaliaColors.siennaLight.withAlpha(150),
+                height: 0.85,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              preview,
+              style: GoogleFonts.ebGaramond(
+                fontSize: 10.5,
                 fontStyle: FontStyle.italic,
                 color: MarginaliaColors.ink,
                 height: 1.4,
-              )
-            : GoogleFonts.manrope(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: MarginaliaColors.ink,
-                height: 1.4,
               ),
+              maxLines: 5,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: MarginaliaColors.surface,
+        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+      ),
+      padding: const EdgeInsets.all(8),
+      alignment: Alignment.topLeft,
+      child: Text(
+        preview,
+        style: GoogleFonts.manrope(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: MarginaliaColors.ink,
+          height: 1.4,
+        ),
         maxLines: 6,
         overflow: TextOverflow.ellipsis,
       ),
@@ -285,7 +315,7 @@ class _PostTextTile extends StatelessWidget {
   }
 }
 
-// Image tile: just the photo, no text overlay
+// Image tile: photo with loading shimmer and visible error state
 class _PostImageTile extends StatelessWidget {
   const _PostImageTile({required this.imageUrl});
   final String imageUrl;
@@ -295,8 +325,35 @@ class _PostImageTile extends StatelessWidget {
     return Image.network(
       imageUrl,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) =>
-          const ColoredBox(color: MarginaliaColors.surface),
+      loadingBuilder: (_, child, progress) => progress == null
+          ? child
+          : Container(
+              color: MarginaliaColors.surfaceElevated,
+              child: Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: MarginaliaColors.inkFaint,
+                    value: progress.expectedTotalBytes != null
+                        ? progress.cumulativeBytesLoaded /
+                            progress.expectedTotalBytes!
+                        : null,
+                  ),
+                ),
+              ),
+            ),
+      errorBuilder: (_, __, ___) => Container(
+        color: MarginaliaColors.surfaceElevated,
+        child: const Center(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 22,
+            color: MarginaliaColors.inkFaint,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -421,7 +478,36 @@ class PostDetailSheet extends StatelessWidget {
                         imageUrl,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        loadingBuilder: (_, child, progress) =>
+                            progress == null
+                                ? child
+                                : Container(
+                                    height: 180,
+                                    decoration: BoxDecoration(
+                                      color: MarginaliaColors.surfaceElevated,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 1.5,
+                                        color: MarginaliaColors.sienna,
+                                      ),
+                                    ),
+                                  ),
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: MarginaliaColors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.broken_image_outlined,
+                              size: 22,
+                              color: MarginaliaColors.inkFaint,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
