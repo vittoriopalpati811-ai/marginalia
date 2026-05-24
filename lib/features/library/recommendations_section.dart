@@ -9,6 +9,7 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
 import '../../core/models/highlight.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 
@@ -111,23 +113,49 @@ class BookRecommendation {
 
 final libraryRecommendationsProvider =
     FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
-  // Use ref.read (not ref.watch) — ref.watch inside an async FutureProvider
-  // restarts the whole computation every time a dependency changes, which
-  // cancels in-flight HTTP requests and causes infinite loading.
-  final all     = await ref.read(allHighlightsProvider.future);
-  final myBooks = ref.read(booksProvider).value ?? [];
-  if (all.isEmpty) return [];
+  // ── 1. Fetch highlight contents ───────────────────────────────────────────
+  //
+  // On web we call Supabase directly, bypassing allHighlightsProvider.
+  // Using ref.read/ref.watch on an autoDispose FutureProvider from inside
+  // another async FutureProvider is unreliable: the dependency can be
+  // disposed while its future is still in-flight, cancelling the computation.
+  //
+  // On native, Isar resolves synchronously from disk — no disposal risk.
+  List<String> recentContents;
 
-  // Sort by addedAt desc, take 30 most recent
-  final sorted = List<Highlight>.from(all)
-    ..sort((a, b) =>
-        (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
-  final recent = sorted.take(30).toList();
+  if (kIsWeb) {
+    final service = ref.read(supabaseServiceProvider);
+    if (!service.isAuthenticated) return [];
+    try {
+      // fetchHighlights() already orders by added_at DESC
+      final data = await service.fetchHighlights();
+      recentContents = data
+          .take(30)
+          .map((m) => m['content'] as String? ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  } else {
+    final all = await ref.read(allHighlightsProvider.future);
+    if (all.isEmpty) return [];
+    final sorted = List<Highlight>.from(all)
+      ..sort((a, b) =>
+          (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
+    recentContents = sorted
+        .take(30)
+        .map((h) => h.content)
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
 
-  // Build word-frequency map
+  if (recentContents.isEmpty) return [];
+
+  // ── 2. Build word-frequency map ──────────────────────────────────────────
   final wordFreq = <String, int>{};
-  for (final h in recent) {
-    for (final w in _extractWords(h.content)) {
+  for (final content in recentContents) {
+    for (final w in _extractWords(content)) {
       wordFreq[w] = (wordFreq[w] ?? 0) + 1;
     }
   }
