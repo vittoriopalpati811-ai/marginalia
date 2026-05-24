@@ -211,7 +211,7 @@ final libraryRecommendationsProvider =
     }
   } catch (e, st) {
     debugPrint('[Recs] Edge Function error: $e\n$st');
-    rethrow;
+    return [];
   }
 
   // ── 5. Parse recommendations ───────────────────────────────────────────────
@@ -249,9 +249,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
       loading: () => const _RecommendationsSkeleton(),
       error: (e, _) {
         debugPrint('[Recs] UI error: $e');
-        return const _RecommendationsHint(
-          "I suggerimenti arriveranno non appena la funzione AI sarà attiva.",
-        );
+        return const SizedBox.shrink();
       },
       data: (books) {
         if (books.isEmpty) {
