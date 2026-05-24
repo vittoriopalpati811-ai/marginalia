@@ -1033,8 +1033,6 @@ class _PostGridTile extends StatelessWidget {
     final imageUrl  = post['image_url']  as String?;
     final highlight = post['highlights'] as Map?;
     final hlContent = highlight?['content'] as String?;
-    final hlBook    = highlight?['books']   as Map?;
-    final hlTitle   = hlBook?['title']  as String?;
 
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
     final isQuote  = (body == null || body.trim().isEmpty) && hlContent != null;
@@ -1045,111 +1043,40 @@ class _PostGridTile extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(6),
         child: hasImage
-            ? _buildImageTile(imageUrl!, preview, isQuote)
-            : _buildTextTile(preview, isQuote, hlTitle),
-      ),
-    );
-  }
-
-  // Light surface + dark readable text, ellipsis if too long
-  Widget _buildTextTile(String preview, bool isQuote, String? hlTitle) {
-    return Container(
-      color: MarginaliaColors.surfaceElevated,
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isQuote && hlTitle != null && hlTitle.isNotEmpty) ...[
-            Text(
-              hlTitle.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 6.5,
-                fontWeight: FontWeight.w700,
-                color: MarginaliaColors.sienna,
-                letterSpacing: 0.5,
+            ? Image.network(
+                imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const ColoredBox(color: MarginaliaColors.surface),
+              )
+            : Container(
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.surface,
+                  border: Border.all(
+                      color: MarginaliaColors.ruleFaint, width: 0.8),
+                ),
+                padding: const EdgeInsets.all(7),
+                alignment: Alignment.topLeft,
+                child: Text(
+                  preview,
+                  style: isQuote
+                      ? GoogleFonts.ebGaramond(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: MarginaliaColors.ink,
+                          height: 1.4,
+                        )
+                      : GoogleFonts.manrope(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                          color: MarginaliaColors.ink,
+                          height: 1.4,
+                        ),
+                  maxLines: 6,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 3),
-          ],
-          Text(
-            preview,
-            style: isQuote
-                ? GoogleFonts.ebGaramond(
-                    fontSize: 10.5,
-                    fontStyle: FontStyle.italic,
-                    color: MarginaliaColors.ink,
-                    height: 1.4,
-                  )
-                : GoogleFonts.manrope(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w500,
-                    color: MarginaliaColors.ink,
-                    height: 1.4,
-                  ),
-            maxLines: 7,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
-    );
-  }
-
-  // Photo + gradient scrim + white text overlay
-  Widget _buildImageTile(String imageUrl, String preview, bool isQuote) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              const ColoredBox(color: MarginaliaColors.surfaceElevated),
-        ),
-        const Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.transparent, Color(0xCC000000)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0.25, 1.0],
-              ),
-            ),
-          ),
-        ),
-        if (preview.isNotEmpty)
-          Positioned(
-            left: 7, right: 7, bottom: 7,
-            child: Text(
-              preview,
-              style: isQuote
-                  ? GoogleFonts.ebGaramond(
-                      fontSize: 8.5,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.white,
-                      height: 1.3,
-                    )
-                  : GoogleFonts.manrope(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      height: 1.3,
-                    ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        const Positioned(
-          bottom: 4, right: 4,
-          child: Icon(
-            Icons.chevron_right_rounded,
-            color: Color(0xCCFFFFFF),
-            size: 14,
-          ),
-        ),
-      ],
     );
   }
 }
