@@ -257,9 +257,9 @@ Formato risposta:
 ]`;
 }
 
-// ─── Gemini API (google/gemini-1.5-flash — free tier) ────────────────────────
+// ─── Gemini API (google/gemini-2.0-flash — free tier) ────────────────────────
 //
-// Free limits: 15 RPM, 1 500 req/day, 1 M tokens/day (as of 2025)
+// Free limits: 15 RPM, 1 500 req/day (as of 2025)
 // Key: https://aistudio.google.com/apikey  (no credit card required)
 
 async function callGemini(
@@ -267,7 +267,7 @@ async function callGemini(
   prompt: string
 ): Promise<Recommendation[]> {
   const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   const res = await fetch(url, {
     method: "POST",
