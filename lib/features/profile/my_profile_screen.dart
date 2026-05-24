@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'followers_screen.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
+import '../library/recommendations_section.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
@@ -407,7 +408,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         // Grid (shrinkWrap inside SliverToBoxAdapter is fine for
                         // the small number of books on a profile page)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                           child: GridView.count(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -438,6 +439,14 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             error: (_, __) =>
                 const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
+
+          // ── Libri consigliati ────────────────────────────────────────────
+          const SliverToBoxAdapter(
+            child: LibraryRecommendationsSection(),
+          ),
+
+          // ── Bottom padding for nav bar ────────────────────────────────────
+          const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       ), // CustomScrollView
           ), // RefreshIndicator

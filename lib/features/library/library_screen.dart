@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -8,8 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/models/book.dart';
@@ -20,6 +17,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
+import 'recommendations_section.dart';
 
 // ─── Filter state ─────────────────────────────────────────────────────────────
 
@@ -27,243 +25,6 @@ enum _LibraryFilter { all, favorites }
 
 final _libraryFilterProvider =
     StateProvider<_LibraryFilter>((ref) => _LibraryFilter.all);
-
-// ─── Stop-word list (Italian + English) ──────────────────────────────────────
-//
-// Used by _extractWords to filter noise from highlight content before
-// building a semantic query for the Open Library recommendations.
-
-const _kStopWords = {
-  // Italian
-  'questo', 'questa', 'questi', 'queste', 'quello', 'quella', 'quelli',
-  'quelle', 'anche', 'ancora', 'quando', 'dove', 'come', 'perche',
-  'tutto', 'tutta', 'tutti', 'tutte', 'ogni', 'qualcosa', 'qualcuno',
-  'sempre', 'senza', 'dopo', 'prima', 'altri', 'altre', 'molto', 'molti',
-  'molte', 'poco', 'pochi', 'poche', 'proprio', 'propria', 'propri',
-  'essere', 'avere', 'aveva', 'erano', 'hanno', 'stata', 'stato',
-  'della', 'delle', 'degli', 'nella', 'nelle', 'negli', 'sulla', 'sulle',
-  'sugli', 'dalla', 'dalle', 'dagli', 'mentre', 'dunque', 'quindi',
-  'allora', 'invece', 'almeno', 'infatti', 'oppure', 'ovvero', 'ormai',
-  'spesso', 'finche', 'poiche', 'adesso', 'stessa',
-  // English
-  'about', 'after', 'again', 'against', 'being', 'before', 'because',
-  'between', 'could', 'during', 'every', 'first', 'great', 'however',
-  'large', 'later', 'makes', 'might', 'never', 'often', 'other', 'place',
-  'right', 'shall', 'since', 'small', 'still', 'their', 'there', 'these',
-  'thing', 'think', 'those', 'three', 'through', 'under', 'until',
-  'using', 'where', 'which', 'while', 'whole', 'within', 'without',
-  'would', 'years', 'always', 'cannot', 'either', 'almost', 'little',
-  'maybe', 'people', 'should', 'things', 'though', 'toward', 'unless',
-  'wanted', 'another', 'became', 'become', 'called', 'coming', 'giving',
-  'having', 'making', 'moving', 'seemed', 'simply', 'taking', 'trying',
-  'turned', 'really', 'rather',
-};
-
-List<String> _extractWords(String text) =>
-    text
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z\s]'), ' ')
-        .split(RegExp(r'\s+'))
-        .where((w) => w.length >= 5 && !_kStopWords.contains(w))
-        .toList();
-
-// ─── Country code → Italian country name ─────────────────────────────────────
-//
-// Open Library's subject_places list gives plain English place names.
-// We map the most common ones to Italian for a polished UI.
-
-const _kCountryIt = {
-  'United States': 'Stati Uniti', 'United Kingdom': 'Regno Unito',
-  'England': 'Inghilterra', 'France': 'Francia', 'Germany': 'Germania',
-  'Italy': 'Italia', 'Spain': 'Spagna', 'Russia': 'Russia',
-  'Japan': 'Giappone', 'China': 'Cina', 'India': 'India',
-  'Brazil': 'Brasile', 'Argentina': 'Argentina', 'Mexico': 'Messico',
-  'Canada': 'Canada', 'Australia': 'Australia', 'Netherlands': 'Olanda',
-  'Sweden': 'Svezia', 'Norway': 'Norvegia', 'Denmark': 'Danimarca',
-  'Poland': 'Polonia', 'Austria': 'Austria', 'Switzerland': 'Svizzera',
-  'Belgium': 'Belgio', 'Greece': 'Grecia', 'Portugal': 'Portogallo',
-  'Czech Republic': 'Rep. Ceca', 'Hungary': 'Ungheria', 'Romania': 'Romania',
-  'Turkey': 'Turchia', 'Iran': 'Iran', 'Israel': 'Israele',
-  'South Africa': 'Sudafrica', 'Egypt': 'Egitto', 'Nigeria': 'Nigeria',
-  'Colombia': 'Colombia', 'Chile': 'Cile', 'Peru': 'Perù', 'Cuba': 'Cuba',
-  'Ireland': 'Irlanda', 'Scotland': 'Scozia', 'Wales': 'Galles',
-};
-
-String _italianCountry(String? raw) {
-  if (raw == null || raw.isEmpty) return '—';
-  return _kCountryIt[raw] ?? raw;
-}
-
-// ─── Book recommendation model ────────────────────────────────────────────────
-
-class _BookRecommendation {
-  const _BookRecommendation({
-    required this.title,
-    required this.author,
-    required this.year,
-    required this.country,
-    required this.description,
-    this.themeScore = 0,
-  });
-  final String title;
-  final String author;
-  final String year;
-  final String country;
-  final String description;
-  final int themeScore; // how many theme words appear in the description
-}
-
-// ─── Library recommendations provider ────────────────────────────────────────
-//
-// Algorithm:
-//   1. Take the 30 most-recent highlights → "current reading DNA"
-//   2. Build TF-IDF-like word frequency map; keep top-6 "theme words"
-//      (words ≥5 chars, filtered against stop-word list, ranked by frequency)
-//   3. Query Open Library /search.json with those words
-//   4. Filter out titles already in the user's library (case-insensitive)
-//   5. For each candidate (up to 8), fetch Open Library /works/{key}.json in
-//      parallel to get: description (trama) and subject_places (country)
-//   6. Re-rank by "description theme score" — books whose synopsis contains
-//      the most theme words surface first (content-match, not genre-match)
-//   7. Return top-5 by score
-//
-// This differs from genre-based systems: we match on the *actual vocabulary*
-// of what the user highlights, not on genre tags attached to their books.
-// Two thrillers can have totally different theme words; two literary novels
-// from different genres can share the same vocabulary of ideas.
-
-final _libraryRecommendationsProvider =
-    FutureProvider.autoDispose<List<_BookRecommendation>>(
-  (ref) async {
-    final all     = await ref.watch(allHighlightsProvider.future);
-    final myBooks = ref.watch(booksProvider).value ?? [];
-    if (all.isEmpty) return [];
-
-    // 1. Sort highlights by addedAt desc, take 30 most recent
-    final sorted = List<Highlight>.from(all)
-      ..sort((a, b) =>
-          (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
-    final recent = sorted.take(30).toList();
-
-    // 2. Build word-frequency map from recent highlight content
-    final wordFreq = <String, int>{};
-    for (final h in recent) {
-      for (final w in _extractWords(h.content)) {
-        wordFreq[w] = (wordFreq[w] ?? 0) + 1;
-      }
-    }
-    if (wordFreq.isEmpty) return [];
-
-    // Top-6 most-frequent theme words → richer semantic query
-    final topWords = (wordFreq.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value)))
-        .take(6)
-        .map((e) => e.key)
-        .toList();
-    final themeWordSet = topWords.toSet();
-
-    // 3. Build exclusion set from user's existing library
-    final myTitlesLower =
-        myBooks.map((b) => b.title.toLowerCase().trim()).toSet();
-
-    // 4. Query Open Library search
-    final query = Uri.encodeQueryComponent(topWords.join(' '));
-    final searchUri = Uri.parse(
-      'https://openlibrary.org/search.json'
-      '?q=$query&limit=25&fields=title,author_name,first_publish_year,key',
-    );
-    final searchResp = await http
-        .get(searchUri, headers: {'Accept': 'application/json'})
-        .timeout(const Duration(seconds: 8));
-    if (searchResp.statusCode != 200) return [];
-
-    final searchBody =
-        jsonDecode(searchResp.body) as Map<String, dynamic>;
-    final docs = (searchBody['docs'] as List<dynamic>?) ?? [];
-
-    // Collect up to 8 candidates (filtered)
-    final candidates = <Map<String, dynamic>>[];
-    for (final raw in docs) {
-      final doc   = raw as Map<String, dynamic>;
-      final title = (doc['title'] as String? ?? '').trim();
-      if (title.isEmpty || myTitlesLower.contains(title.toLowerCase())) continue;
-      candidates.add(doc);
-      if (candidates.length >= 8) break;
-    }
-    if (candidates.isEmpty) return [];
-
-    // 5. Fetch Works API in parallel for description + country
-    final enriched = await Future.wait(
-      candidates.map((doc) async {
-        final title      = (doc['title'] as String? ?? '').trim();
-        final authorList =
-            (doc['author_name'] as List<dynamic>?)?.cast<String>() ?? [];
-        final author     = authorList.isNotEmpty ? authorList.first : '—';
-        final year       =
-            (doc['first_publish_year'] as int?)?.toString() ?? '—';
-        final key        = doc['key'] as String? ?? '';
-
-        String description = '';
-        String country     = '—';
-        int    themeScore  = 0;
-
-        if (key.isNotEmpty) {
-          try {
-            final worksUri =
-                Uri.parse('https://openlibrary.org$key.json');
-            final worksResp = await http
-                .get(worksUri, headers: {'Accept': 'application/json'})
-                .timeout(const Duration(seconds: 5));
-
-            if (worksResp.statusCode == 200) {
-              final w = jsonDecode(worksResp.body) as Map<String, dynamic>;
-
-              // Description — can be String or {value: String}
-              final rawDesc = w['description'];
-              if (rawDesc is String) {
-                description = rawDesc;
-              } else if (rawDesc is Map<String, dynamic>) {
-                description = rawDesc['value'] as String? ?? '';
-              }
-              // Truncate long descriptions
-              if (description.length > 500) {
-                description = '${description.substring(0, 500)}…';
-              }
-
-              // Country from subject_places (first recognisable entry)
-              final places =
-                  (w['subject_places'] as List<dynamic>?)?.cast<String>() ??
-                      [];
-              if (places.isNotEmpty) country = _italianCountry(places.first);
-
-              // Score: how many theme words appear in the description
-              for (final word in _extractWords(description)) {
-                if (themeWordSet.contains(word)) themeScore++;
-              }
-            }
-          } catch (_) {
-            // Works API unavailable — continue without description
-          }
-        }
-
-        return _BookRecommendation(
-          title:       title,
-          author:      author,
-          year:        year,
-          country:     country,
-          description: description,
-          themeScore:  themeScore,
-        );
-      }),
-    );
-
-    // 6. Re-rank by description theme-score (content match, not genre)
-    final ranked = List<_BookRecommendation>.from(enriched)
-      ..sort((a, b) => b.themeScore.compareTo(a.themeScore));
-
-    return ranked.take(5).toList();
-  },
-);
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -491,7 +252,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
             // ── Libri consigliati ─────────────────────────────────────────
             const SliverToBoxAdapter(
-              child: _LibraryRecommendationsSection(),
+              child: LibraryRecommendationsSection(),
             ),
 
             // ── Bottom padding for nav bar ─────────────────────────────────
@@ -643,7 +404,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     ref.invalidate(booksProvider);
     ref.invalidate(randomHighlightProvider);
     ref.invalidate(allHighlightsProvider);
-    ref.invalidate(_libraryRecommendationsProvider);
+    ref.invalidate(libraryRecommendationsProvider);
   }
 
   // ─── Demo data ───────────────────────────────────────────────────────────────
@@ -1284,171 +1045,4 @@ class _EmptyLibrary extends StatelessWidget {
   }
 }
 
-// ─── Libri consigliati section ────────────────────────────────────────────────
-
-class _LibraryRecommendationsSection extends ConsumerWidget {
-  const _LibraryRecommendationsSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(_libraryRecommendationsProvider);
-
-    return async.when(
-      loading: () => const _RecommendationsSkeleton(),
-      error:   (_, __) => const SizedBox.shrink(),
-      data: (books) {
-        if (books.isEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Section header
-              Row(
-                children: [
-                  Text('LIBRI CONSIGLIATI',
-                      style: MarginaliaTextStyles.sectionTitle),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Divider(
-                        color: MarginaliaColors.ruleFaint, height: 1),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Selezionati per affinità tematica con i tuoi gusti, non solo per genere. Migliorano man mano che usi l\'app.',
-                style: GoogleFonts.manrope(
-                  fontSize: 11,
-                  color: MarginaliaColors.inkFaint,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Book cards
-              ...books.asMap().entries.map(
-                    (e) => _RecommendationCard(
-                  rec:   e.value,
-                  index: e.key,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _RecommendationCard extends StatelessWidget {
-  const _RecommendationCard({required this.rec, required this.index});
-  final _BookRecommendation rec;
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          Text(
-            rec.title,
-            style: GoogleFonts.manrope(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: MarginaliaColors.ink,
-              height: 1.3,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 5),
-          // Author · Year · Country
-          Text(
-            [rec.author, rec.year, rec.country]
-                .where((s) => s.isNotEmpty && s != '—')
-                .join(' · '),
-            style: GoogleFonts.manrope(
-              fontSize: 11,
-              color: MarginaliaColors.inkMuted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(height: 0.7, color: MarginaliaColors.ruleFaint),
-          const SizedBox(height: 10),
-          // Trama
-          Text(
-            rec.description.isNotEmpty
-                ? rec.description
-                : 'Trama non disponibile.',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 14,
-              height: 1.65,
-              color: rec.description.isNotEmpty
-                  ? MarginaliaColors.ink
-                  : MarginaliaColors.inkFaint,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    )
-        .animate(delay: (index * 80).ms)
-        .fadeIn(duration: 400.ms, curve: Curves.easeOut)
-        .slideY(begin: 0.04, end: 0, duration: 400.ms, curve: Curves.easeOut);
-  }
-}
-
-class _RecommendationsSkeleton extends StatelessWidget {
-  const _RecommendationsSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('LIBRI CONSIGLIATI',
-                  style: MarginaliaTextStyles.sectionTitle),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Divider(
-                    color: MarginaliaColors.ruleFaint, height: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 3 skeleton cards
-          for (int i = 0; i < 3; i++)
-            Container(
-              height: 110,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: MarginaliaColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+// ─── Recommendations section → see recommendations_section.dart ──────────────
