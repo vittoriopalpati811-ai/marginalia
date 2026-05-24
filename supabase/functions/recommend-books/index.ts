@@ -72,7 +72,11 @@ Deno.serve(async (req) => {
     return json({ error: "POST only" }, 405);
   }
 
-  let body: { books?: InputBook[]; existingTitles?: string[] };
+  let body: {
+    books?: InputBook[];
+    existingTitles?: string[];
+    context?: Record<string, unknown>;
+  };
   try {
     body = await req.json();
   } catch {
@@ -83,6 +87,7 @@ Deno.serve(async (req) => {
   const existingTitles: string[] = (body.existingTitles ?? []).map((t) =>
     t.toLowerCase().trim()
   );
+  const userContext: Record<string, unknown> = body.context ?? {};
 
   if (books.length === 0) {
     return json({ recommendations: [] });
@@ -97,9 +102,9 @@ Deno.serve(async (req) => {
     })
   );
 
-  // ── 2. Build Claude prompt ───────────────────────────────────────────────
+  // ── 2. Build prompt ──────────────────────────────────────────────────────
 
-  const prompt = buildPrompt(withPlots, existingTitles);
+  const prompt = buildPrompt(withPlots, existingTitles, userContext);
 
   // ── 3. Call Gemini API ───────────────────────────────────────────────────
 
@@ -177,7 +182,8 @@ interface BookWithPlot extends InputBook {
 
 function buildPrompt(
   books: BookWithPlot[],
-  existingTitles: string[]
+  existingTitles: string[],
+  ctx: Record<string, unknown>
 ): string {
   const bookList = books
     .map((b, i) => {
@@ -197,10 +203,41 @@ function buildPrompt(
       ? `\n\nNon suggerire MAI questi titoli già in libreria (sono ${existingTitles.length} libri): ${existingTitles.slice(0, 40).join(", ")}${existingTitles.length > 40 ? ", e altri…" : ""}.`
       : "";
 
+  // Build contextual note from weather + health data
+  const contextParts: string[] = [];
+  if (ctx.weather && ctx.weatherCity) {
+    const weatherMap: Record<string, string> = {
+      sunny: "sole", rain: "pioggia", cloudy: "nuvolo",
+      snow: "neve", clear: "sereno",
+    };
+    const cond = weatherMap[ctx.weather as string] ?? String(ctx.weather);
+    contextParts.push(
+      `Oggi c'è ${cond} a ${ctx.weatherCity}, ${ctx.weatherTemp}°C`
+    );
+  }
+  if (ctx.stepsToday) {
+    contextParts.push(`l'utente ha fatto ${ctx.stepsToday} passi oggi`);
+  }
+  if (ctx.lastWorkout) {
+    contextParts.push(`ha fatto ${ctx.lastWorkout} di recente`);
+  }
+  if (ctx.cyclePhase) {
+    const phaseMap: Record<string, string> = {
+      menstruation: "mestruazioni", follicular: "fase follicolare",
+      ovulation: "ovulazione", luteal: "fase luteale",
+    };
+    const phase = phaseMap[ctx.cyclePhase as string] ?? String(ctx.cyclePhase);
+    contextParts.push(`si trova in fase di ${phase} del ciclo`);
+  }
+
+  const contextNote = contextParts.length > 0
+    ? `\n\nCONTESTO DELL'UTENTE OGGI: ${contextParts.join("; ")}. Puoi usarlo per aggiungere sfumature alla motivazione (es. un libro da leggere sotto la pioggia, un saggio per una giornata di recupero fisico), ma non è obbligatorio.`
+    : "";
+
   return `Sei un bibliotecario italiano esperto e appassionato lettore. Analizza i libri che questo utente ha letto e i suoi highlight personali, poi suggerisci 5 libri che potrebbe amare.
 
 LIBRI LETTI E HIGHLIGHT DELL'UTENTE:
-${bookList}${exclusionNote}
+${bookList}${exclusionNote}${contextNote}
 
 ISTRUZIONI:
 - Suggerisci esattamente 5 libri che l'utente NON ha ancora letto.

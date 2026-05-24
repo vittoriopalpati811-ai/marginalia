@@ -30,6 +30,8 @@ import '../../core/models/highlight.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
+import '../../core/providers/weather_provider.dart';
+import '../../core/providers/health_provider.dart';
 
 // ─── Book recommendation data class ──────────────────────────────────────────
 
@@ -152,7 +154,33 @@ final libraryRecommendationsProvider =
 
   debugPrint('[Recs] calling recommend-books with ${booksPayload.length} books');
 
-  // ── 3. Invoke Edge Function ────────────────────────────────────────────────
+  // ── 3. Collect context: weather + health ───────────────────────────────────
+  //
+  // These are optional — if unavailable the Edge Function still works.
+  // Weather enriches the Gemini prompt so it can mention seasonal resonance.
+  // Health data (when available on iOS) adds lifestyle context to suggestions.
+
+  final weather     = ref.read(weatherProvider).asData?.value;
+  final healthSnap  = ref.read(healthSnapshotProvider).asData?.value;
+
+  final contextPayload = <String, dynamic>{
+    if (weather != null) ...{
+      'weather':     weather.widgetParam,       // 'sunny', 'rain', …
+      'weatherCity': weather.cityName,
+      'weatherTemp': weather.temperatureRounded,
+    },
+    if (healthSnap != null && healthSnap.isAvailable) ...{
+      if (healthSnap.stepsToday != null) 'stepsToday': healthSnap.stepsToday,
+      if (healthSnap.workoutsThisWeek.isNotEmpty)
+        'lastWorkout': healthSnap.workoutsThisWeek.first.typeLabel,
+      if (healthSnap.hasCycle && healthSnap.cyclePhase != null)
+        'cyclePhase': healthSnap.cyclePhase!.name,
+    },
+  };
+
+  debugPrint('[Recs] context payload: $contextPayload');
+
+  // ── 4. Invoke Edge Function ────────────────────────────────────────────────
 
   final service = ref.read(supabaseServiceProvider);
   late final Map<String, dynamic> responseBody;
@@ -163,6 +191,7 @@ final libraryRecommendationsProvider =
       body: {
         'books':          booksPayload,
         'existingTitles': allTitles,
+        'context':        contextPayload,
       },
     );
 
@@ -185,7 +214,7 @@ final libraryRecommendationsProvider =
     rethrow;
   }
 
-  // ── 4. Parse recommendations ───────────────────────────────────────────────
+  // ── 5. Parse recommendations ───────────────────────────────────────────────
 
   final rawList = responseBody['recommendations'] as List<dynamic>?;
   if (rawList == null || rawList.isEmpty) {
@@ -238,14 +267,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
             children: [
               _sectionHeader(),
               const SizedBox(height: 6),
-              Text(
-                "Selezionati da Claude in base ai tuoi highlight e alle trame dei libri che hai letto.",
-                style: GoogleFonts.manrope(
-                  fontSize: 11,
-                  color: MarginaliaColors.inkFaint,
-                  height: 1.4,
-                ),
-              ),
+              _RecommendationsSubtitle(),
               const SizedBox(height: 16),
               ...books.asMap().entries.map(
                     (e) => _RecommendationCard(rec: e.value, index: e.key),
@@ -266,6 +288,56 @@ class LibraryRecommendationsSection extends ConsumerWidget {
           ),
         ],
       );
+}
+
+// ─── Dynamic subtitle ─────────────────────────────────────────────────────────
+//
+// Builds a sentence like:
+//   "Selezionati da Gemini in base ai tuoi highlight, al meteo di oggi
+//    (pioggia a Milano) e alla tua attività recente."
+
+class _RecommendationsSubtitle extends ConsumerWidget {
+  const _RecommendationsSubtitle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final weather     = ref.watch(weatherProvider).asData?.value;
+    final steps       = ref.watch(stepCountLabelProvider);
+    final lastWorkout = ref.watch(lastWorkoutLabelProvider);
+    final cyclePhase  = ref.watch(cyclePhaseLabelProvider);
+
+    final parts = <String>['ai tuoi highlight'];
+    if (weather != null) {
+      parts.add('al meteo di oggi (${weather.conditionLabel.toLowerCase()}'
+          ' a ${weather.cityName})');
+    }
+    if (lastWorkout != null) {
+      parts.add('alla tua attività recente');
+    } else if (steps != null) {
+      parts.add('al tuo movimento di oggi');
+    }
+    if (cyclePhase != null) {
+      parts.add('al tuo ciclo');
+    }
+
+    final String sentence;
+    if (parts.length == 1) {
+      sentence = 'Selezionati da Gemini in base ${parts[0]}'
+          ' e alle trame dei libri che hai letto.';
+    } else {
+      final last = parts.removeLast();
+      sentence = 'Selezionati da Gemini in base ${parts.join(", ")} e $last.';
+    }
+
+    return Text(
+      sentence,
+      style: GoogleFonts.manrope(
+        fontSize: 11,
+        color: MarginaliaColors.inkFaint,
+        height: 1.4,
+      ),
+    );
+  }
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
