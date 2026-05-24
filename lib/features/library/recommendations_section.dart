@@ -250,7 +250,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
       error: (e, _) {
         debugPrint('[Recs] UI error: $e');
         return const _RecommendationsHint(
-          "Suggerimenti non disponibili al momento. Riprova più tardi.",
+          "I suggerimenti arriveranno non appena la funzione AI sarà attiva.",
         );
       },
       data: (books) {
@@ -279,12 +279,29 @@ class LibraryRecommendationsSection extends ConsumerWidget {
     );
   }
 
-  static Widget _sectionHeader() => Row(
+  static Widget _sectionHeader() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('LIBRI CONSIGLIATI', style: MarginaliaTextStyles.sectionTitle),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
+          Row(
+            children: [
+              Text('LIBRI CONSIGLIATI',
+                  style: MarginaliaTextStyles.sectionTitle),
+              const SizedBox(width: 12),
+              const Expanded(
+                child:
+                    Divider(color: MarginaliaColors.ruleFaint, height: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Consigliati da Marginalia per te (fidati, ti capiamo benissimo)',
+            style: GoogleFonts.ebGaramond(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: MarginaliaColors.sienna,
+              height: 1.3,
+            ),
           ),
         ],
       );
@@ -427,6 +444,16 @@ class _RecommendationsHint extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 5),
+          Text(
+            'Consigliati da Marginalia per te (fidati, ti capiamo benissimo)',
+            style: GoogleFonts.ebGaramond(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: MarginaliaColors.sienna,
+              height: 1.3,
+            ),
+          ),
           const SizedBox(height: 10),
           Text(
             message,
@@ -465,9 +492,19 @@ class _RecommendationsSkeleton extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
-            'Claude sta analizzando i tuoi highlight…',
+            'Consigliati da Marginalia per te (fidati, ti capiamo benissimo)',
+            style: GoogleFonts.ebGaramond(
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+              color: MarginaliaColors.sienna,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Marginalia sta analizzando i tuoi highlight…',
             style: GoogleFonts.manrope(
               fontSize: 11,
               color: MarginaliaColors.inkFaint,
