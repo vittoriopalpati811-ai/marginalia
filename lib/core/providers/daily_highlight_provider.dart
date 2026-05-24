@@ -3,11 +3,15 @@
 // Uses Groq (Llama 3.3 70B) via the `pick-daily-highlight` Edge Function to
 // select the most contextually resonant highlight from the user's library.
 //
-// Context factors: time of day, weather, steps, workout, cycle phase.
+// NOT autoDispose — the result is stable for the entire app session (doesn't
+// change when the user navigates away and back). It auto-refreshes after 3 hours
+// by invalidating itself via a Timer. Force-refresh via ref.invalidate() after
+// import.
 //
-// Falls back to a date-seeded deterministic pick if the Edge Function fails.
-// Cached until midnight so Groq is called at most once per day.
+// Context factors: time of day, weather, steps, workout, cycle phase.
+// Falls back to a date+hour-seeded deterministic pick if the Edge Function fails.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -20,13 +24,22 @@ import '../providers/weather_provider.dart';
 import '../providers/health_provider.dart';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
+//
+// Regular (non-autoDispose) FutureProvider so it is never torn down by
+// navigation. Riverpod keeps the computed value alive as long as the app runs.
 
-final dailyHighlightProvider = FutureProvider.autoDispose<Highlight?>((ref) async {
-  // Cache until midnight — Groq is called at most once per day per session.
-  final link = ref.keepAlive();
-  final now = DateTime.now();
-  final midnight = DateTime(now.year, now.month, now.day + 1);
-  Future.delayed(midnight.difference(now), link.close);
+final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
+  // ── Auto-invalidate after 3 hours ─────────────────────────────────────────
+  //
+  // When the timer fires the provider is invalidated; next time the library
+  // screen is visited Groq is called again with fresh context.
+  Timer(const Duration(hours: 3), () {
+    try {
+      ref.invalidateSelf();
+    } catch (_) {
+      // Provider may already be gone (app closed) — safe to ignore.
+    }
+  });
 
   // ── 1. Get all highlights ──────────────────────────────────────────────────
   final List<Highlight> all;
@@ -38,17 +51,17 @@ final dailyHighlightProvider = FutureProvider.autoDispose<Highlight?>((ref) asyn
   }
 
   if (all.isEmpty) return null;
-
-  // With fewer than 3 highlights there's no real choice to make — just return.
   if (all.length < 3) return all.first;
 
   // ── 2. Build a diverse sample (max 40 highlights sent to Groq) ────────────
   //
-  // Prefer favorites (they carry stronger personal meaning) but include a
-  // healthy mix of regular highlights so Groq has real variety to choose from.
+  // Prefer favorites (stronger personal meaning) but include a healthy mix so
+  // Groq has real variety to choose from. The sample is shuffled once here and
+  // is stable for this computation run (won't change on re-watch).
 
   final favs   = all.where((h) => h.isFavorite).toList();
-  final others = (all.where((h) => !h.isFavorite).toList()..shuffle());
+  final others = (List<Highlight>.from(all.where((h) => !h.isFavorite))
+    ..shuffle());
 
   final sample = <Highlight>[
     ...favs.take(20),
@@ -59,6 +72,7 @@ final dailyHighlightProvider = FutureProvider.autoDispose<Highlight?>((ref) asyn
 
   // ── 3. Collect context ─────────────────────────────────────────────────────
 
+  final now        = DateTime.now();
   final weather    = ref.read(weatherProvider).asData?.value;
   final healthSnap = ref.read(healthSnapshotProvider).asData?.value;
 
@@ -120,12 +134,12 @@ final dailyHighlightProvider = FutureProvider.autoDispose<Highlight?>((ref) asyn
     debugPrint('[DailyHL] Edge Function error: $e');
   }
 
-  // ── 5. Fallback: deterministic date-seeded pick ────────────────────────────
+  // ── 5. Fallback: hour-seeded deterministic pick ────────────────────────────
   //
-  // Changes every day but is stable within a day (same highlight shown
-  // consistently even without network).
+  // Changes every 3 hours (aligned to the timer above) and is stable within
+  // that window even without network. Uses the same 3-hour bucket as the timer.
 
-  debugPrint('[DailyHL] using date-seeded fallback');
-  final seed = now.year * 10000 + now.month * 100 + now.day;
-  return all[seed % all.length];
+  debugPrint('[DailyHL] using hour-seeded fallback');
+  final bucket = now.year * 100000 + now.month * 1000 + now.day * 10 + (now.hour ~/ 3);
+  return all[bucket % all.length];
 });

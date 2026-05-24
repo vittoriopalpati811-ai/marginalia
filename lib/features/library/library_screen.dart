@@ -560,13 +560,10 @@ class _DailyCard extends StatelessWidget {
   final String content;
   final VoidCallback onTap;
 
-  static const _days = ['LUN', 'MAR', 'MER', 'GIO', 'VEN', 'SAB', 'DOM'];
-
   @override
   Widget build(BuildContext context) {
     final text =
         content.length > 260 ? '${content.substring(0, 260)}…' : content;
-    final dayLabel = _days[DateTime.now().weekday - 1];
 
     return GestureDetector(
       onTap: onTap,
@@ -579,15 +576,11 @@ class _DailyCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('HIGHLIGHT DEL GIORNO',
+                Text('SCELTO PER TE',
                     style: MarginaliaTextStyles.sectionTitle),
-                const SizedBox(width: 10),
-                Text(
-                  '·  $dayLabel',
-                  style: MarginaliaTextStyles.sectionTitle.copyWith(
-                    color: MarginaliaColors.inkFaint,
-                    letterSpacing: 1.5,
-                  ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
                 ),
               ],
             ),
