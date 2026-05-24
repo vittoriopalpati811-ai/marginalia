@@ -111,8 +111,11 @@ class BookRecommendation {
 
 final libraryRecommendationsProvider =
     FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
-  final all     = await ref.watch(allHighlightsProvider.future);
-  final myBooks = ref.watch(booksProvider).value ?? [];
+  // Use ref.read (not ref.watch) — ref.watch inside an async FutureProvider
+  // restarts the whole computation every time a dependency changes, which
+  // cancels in-flight HTTP requests and causes infinite loading.
+  final all     = await ref.read(allHighlightsProvider.future);
+  final myBooks = ref.read(booksProvider).value ?? [];
   if (all.isEmpty) return [];
 
   // Sort by addedAt desc, take 30 most recent
@@ -148,7 +151,7 @@ final libraryRecommendationsProvider =
     '?q=$query&limit=25&fields=title,author_name,first_publish_year,key',
   );
   final searchResp = await http
-      .get(searchUri, headers: {'Accept': 'application/json'})
+      .get(searchUri)
       .timeout(const Duration(seconds: 8));
   if (searchResp.statusCode != 200) return [];
 
@@ -183,8 +186,7 @@ final libraryRecommendationsProvider =
       if (key.isNotEmpty) {
         try {
           final worksResp = await http
-              .get(Uri.parse('https://openlibrary.org$key.json'),
-                  headers: {'Accept': 'application/json'})
+              .get(Uri.parse('https://openlibrary.org$key.json'))
               .timeout(const Duration(seconds: 5));
 
           if (worksResp.statusCode == 200) {
