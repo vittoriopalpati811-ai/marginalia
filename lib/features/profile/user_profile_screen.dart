@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import 'profile_shared_widgets.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -275,6 +276,48 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   ),
                 ),
 
+              // ── Libri del cuore (read-only) ──────────────────────────────
+              SliverToBoxAdapter(
+                child: Builder(
+                  builder: (_) {
+                    final raw = profile['favorite_books'];
+                    if (raw is! List || (raw as List).isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    final favs = raw
+                        .whereType<Map>()
+                        .map((e) => <String, String>{
+                              'title':  e['title']?.toString()  ?? '',
+                              'author': e['author']?.toString() ?? '',
+                            })
+                        .where((m) => m['title']!.isNotEmpty)
+                        .take(6)
+                        .toList();
+                    if (favs.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text('LIBRI DEL CUORE',
+                                  style: MarginaliaTextStyles.sectionTitle),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                  child: Divider(
+                                      color: MarginaliaColors.ruleFaint)),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          FavBooksGrid(favBooks: favs),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
               // ── Post section header ───────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
@@ -305,11 +348,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           ),
                         ),
                       )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (ctx, i) => _UserProfilePostCard(post: posts[i]),
-                          childCount: posts.length,
-                        ),
+                    : SliverToBoxAdapter(
+                        child: PostsGrid(posts: posts),
                       ),
                 loading: () => const SliverToBoxAdapter(
                   child: Padding(

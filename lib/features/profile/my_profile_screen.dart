@@ -13,6 +13,7 @@ import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'followers_screen.dart';
+import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
@@ -210,9 +211,20 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
 
           // ── Scrollable content ───────────────────────────────────────────
-          CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+          RefreshIndicator(
+            color: MarginaliaColors.sienna,
+            onRefresh: () async {
+              ref.invalidate(_myProfileProvider);
+              ref.invalidate(_myBooksProvider);
+              ref.invalidate(_myStatsProvider);
+              ref.invalidate(_myPostsProvider);
+              ref.invalidate(_mySpotlightProvider);
+              ref.read(_favBooksProvider.notifier).state = [];
+            },
+            child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
+          slivers: [
 
           // ── Gradient hero header ─────────────────────────────────────────
           SliverToBoxAdapter(
@@ -297,7 +309,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
           ),
 
-          // ── I miei post (Twitter-style) ───────────────────────────────────
+          // ── I miei post ──────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
@@ -306,6 +318,38 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   Text('POST', style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => CreatePostSheet(
+                        onCreated: () => ref.invalidate(_myPostsProvider),
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: MarginaliaColors.primaryFaint,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: MarginaliaColors.primary.withAlpha(50),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: const Text(
+                        'Scrivi',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: MarginaliaColors.primary,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -396,6 +440,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           ),
         ],
       ), // CustomScrollView
+          ), // RefreshIndicator
         ], // Stack children
       ), // Stack
     );

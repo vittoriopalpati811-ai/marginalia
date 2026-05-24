@@ -1,15 +1,16 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  MARGINALIA  ·  Widget Scriptable  ·  Nocturne + Liquid Glass
+//  MARGINALIA  ·  Widget Scriptable  ·  Carta Invecchiata
 // ═══════════════════════════════════════════════════════════════════════════
 //
-//  Design: dark literary warmth with iOS 26-inspired frosted glass panels.
-//  Greeting computed locally from device clock — always up to date.
+//  Design: aged-paper warmth — cream background, dark ink, sienna accent.
+//  Evokes a beloved marginalia-filled paperback, not a glowing screen.
+//  No frosted glass, no dark mode. Just the page and the words on it.
 //
 //  INSTALLAZIONE (una sola volta, ~3 minuti):
 //  ─────────────────────────────────────────
 //  1. Installa "Scriptable" dall'App Store (gratis)
 //  2. Apri Scriptable → tocca + → incolla tutto il testo → rinomina "Marginalia"
-//  3. Imposta USER_ID qui sotto (riga ~26)
+//  3. Imposta USER_ID qui sotto (riga ~27)
 //     → Supabase Dashboard → Authentication → Users → copia il tuo UUID
 //  4. Home screen → tieni premuto → + → Scriptable → scegli dimensione
 //     → "Add Widget" → tieni premuto → Edit Widget → Script → Marginalia
@@ -23,28 +24,36 @@ const FUNCTION_URL = "https://ibucvloawkfwobaelwbr.supabase.co/functions/v1/widg
 const ANON_KEY     = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
 
 // ── PALETTE ───────────────────────────────────────────────────────────────────
-//  Warm near-black background → aged ivory text → deep amber gold accents.
-//  Glass panel: translucent cream tint over dark — frosted, not glowing.
+//  Aged paper: warm cream background, near-black ink, sienna rust accent.
+//
+//  paperTop / paperBottom — cream gradient, like paper yellowed by afternoon light
+//  ink                    — deep warm brown, almost-black but never cold
+//  inkMid / inkFaint      — same hue at reduced opacity for secondary text
+//  sienna                 — terracotta rust; the colour of an old book's spine label
+//  rule                   — hairline separator between quote and attribution
 
 const C = {
-  ivory:      new Color("#EDE3CC"),
-  ivoryMid:   new Color("#EDE3CC", 0.52),
-  ivoryFaint: new Color("#EDE3CC", 0.18),
-  gold:       new Color("#BF8C38"),
-  goldFaint:  new Color("#BF8C38", 0.22),
-  // Liquid glass: very subtle warm tint — visible as a lifted frosted panel
-  glass:      new Color("#F0E8D8", 0.10),
-  glassEdge:  new Color("#FFFFFF",  0.18),  // specular top highlight
+  paperTop:    new Color("#F6EFDF"),
+  paperBottom: new Color("#EDE4CC"),
+
+  ink:         new Color("#1C1008"),
+  inkMid:      new Color("#1C1008", 0.52),
+  inkFaint:    new Color("#1C1008", 0.28),
+
+  sienna:      new Color("#8B4515"),
+  siennaFaint: new Color("#8B4515", 0.16),
+
+  rule:        new Color("#8B4515", 0.22),
 };
 
 // ── BACKGROUND ────────────────────────────────────────────────────────────────
 
 function makeGradient() {
   const g      = new LinearGradient();
-  g.colors     = [new Color("#1E1309"), new Color("#0C0904")];
+  g.colors     = [C.paperTop, C.paperBottom];
   g.locations  = [0.0, 1.0];
-  g.startPoint = new Point(0.15, 0.0);
-  g.endPoint   = new Point(0.85, 1.0);
+  g.startPoint = new Point(0.1, 0.0);
+  g.endPoint   = new Point(0.9, 1.0);
   return g;
 }
 
@@ -58,9 +67,9 @@ function makeGradient() {
 //           21–23  Buonanotte
 
 function localGreeting() {
-  const now  = new Date();
-  const h    = now.getHours();
-  const dow  = now.getDay();      // 0 = domenica, 6 = sabato
+  const now       = new Date();
+  const h         = now.getHours();
+  const dow       = now.getDay();   // 0 = domenica, 6 = sabato
   const isMon     = dow === 1;
   const isWeekend = dow === 0 || dow === 6;
 
@@ -82,8 +91,7 @@ const widget = new ListWidget();
 widget.backgroundGradient = makeGradient();
 widget.setPadding(14, 16, 13, 16);
 
-// 45 min refresh — frequent enough to keep greeting current each hour
-// and weather reasonably fresh throughout the day.
+// 45 min refresh — keeps greeting current each hour and weather fresh.
 widget.refreshAfterDate = new Date(Date.now() + 45 * 60 * 1000);
 
 try {
@@ -144,8 +152,11 @@ function mapWeatherCode(code) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  RENDERING — LIQUID GLASS NOCTURNE
+//  RENDERING — CARTA INVECCHIATA
 // ═══════════════════════════════════════════════════════════════════════════
+//
+//  No glass panel, no scrim. The cream page IS the background.
+//  Dark ink sits directly on warm paper — premium and legible.
 
 function renderWidget(widget, data, weather) {
   const fam     = config.widgetFamily ?? "medium";
@@ -155,9 +166,9 @@ function renderWidget(widget, data, weather) {
   const greeting = localGreeting();  // always computed fresh from device clock
 
   // ── Header row ────────────────────────────────────────────────────────
-  //  Small:  [❝ gold]  ···spacer···  [weather]
-  //  Medium: [greeting]  ···  [❝ gold]  ···  [weather]
-  //  Large:  [greeting]  ···spacer···  [weather]  (❝ on next line, larger)
+  //  Small:  [" sienna]  ···spacer···  [weather emoji]
+  //  Medium: [greeting faint italic]  ···  [" sienna]  ···  [weather]
+  //  Large:  [greeting faint italic]  ···spacer···  [weather]  (then " on own line)
 
   const header = widget.addStack();
   header.layoutHorizontally();
@@ -165,85 +176,73 @@ function renderWidget(widget, data, weather) {
 
   if (isSmall) {
     const qm     = header.addText("“");
-    qm.font      = Font.boldSystemFont(22);
-    qm.textColor = C.gold;
+    qm.font      = Font.named("Georgia-Bold", 24) ?? Font.boldSystemFont(24);
+    qm.textColor = C.sienna;
     header.addSpacer();
     const wx     = header.addText(weatherEmoji(weather));
     wx.font      = Font.systemFont(11);
+
   } else if (isLarge) {
     const greet     = header.addText(greeting);
-    greet.font      = Font.lightSystemFont(10);
-    greet.textColor = C.ivoryMid;
+    greet.font      = Font.named("Georgia-Italic", 10)
+                   ?? Font.italicSystemFont(10);
+    greet.textColor = C.inkFaint;
     header.addSpacer();
     const wx        = header.addText(weatherEmoji(weather));
     wx.font         = Font.systemFont(12);
+
   } else {
-    // Medium: greeting · spacer · ❝ · gap · weather
+    // Medium: greeting · spacer · " · gap · weather
     const greet     = header.addText(greeting);
-    greet.font      = Font.lightSystemFont(10);
-    greet.textColor = C.ivoryMid;
+    greet.font      = Font.named("Georgia-Italic", 10)
+                   ?? Font.italicSystemFont(10);
+    greet.textColor = C.inkFaint;
     header.addSpacer();
     const qm        = header.addText("“");
-    qm.font         = Font.boldSystemFont(20);
-    qm.textColor    = C.gold;
+    qm.font         = Font.named("Georgia-Bold", 22) ?? Font.boldSystemFont(22);
+    qm.textColor    = C.sienna;
     header.addSpacer(8);
     const wx        = header.addText(weatherEmoji(weather));
     wx.font         = Font.systemFont(12);
   }
 
-  // Large: opening quote on its own line below header
+  // Large only: opening quote on its own line, larger and more prominent
   if (isLarge) {
     widget.addSpacer(4);
     const qm     = widget.addText("“");
-    qm.font      = Font.boldSystemFont(30);
-    qm.textColor = C.gold;
+    qm.font      = Font.named("Georgia-Bold", 32) ?? Font.boldSystemFont(32);
+    qm.textColor = C.sienna;
   }
 
-  // ── Liquid glass quote panel ──────────────────────────────────────────
-  //  A frosted-glass card: subtle cream tint + specular top edge lift the
-  //  quote off the dark background, evoking iOS 26 liquid glass.
+  // ── Quote body ────────────────────────────────────────────────────────
+  //  Dark Georgia-Italic directly on the warm cream page.
+  //  No container, no shadow — ink on paper.
 
-  widget.addSpacer(isSmall ? 5 : isLarge ? 3 : 8);
+  widget.addSpacer(isSmall ? 5 : isLarge ? 2 : 8);
 
   const maxChars = isLarge ? 320 : isSmall ? 80 : 145;
   const body     = clip(data.content ?? "", maxChars);
 
-  // Outer glass container
-  const panel = widget.addStack();
-  panel.layoutVertically();
-  panel.setPadding(0, 0, 0, 0);
-  panel.cornerRadius = 11;
-  panel.backgroundColor = C.glass;
-
-  // Specular top edge — thin bright line simulates glass refraction
-  const specular = panel.addStack();
-  specular.size  = new Size(-1, 0.5);
-  specular.backgroundColor = C.glassEdge;
-
-  // Inner padding container
-  const inner = panel.addStack();
-  inner.layoutVertically();
-  inner.setPadding(isSmall ? 8 : 10, 11, isSmall ? 8 : 10, 11);
-
-  const q = inner.addText(body);
+  const q = widget.addText(body);
   q.font  = Font.named("Georgia-Italic", isSmall ? 11.5 : isLarge ? 14.5 : 12.5)
          ?? Font.italicSystemFont(isSmall ? 11.5 : isLarge ? 14.5 : 12.5);
-  q.textColor          = C.ivory;
+  q.textColor          = C.ink;
   q.lineLimit          = isLarge ? 12 : 5;
   q.minimumScaleFactor = 0.78;
 
   widget.addSpacer();
 
   // ── Hairline rule ─────────────────────────────────────────────────────
+  //  Sienna tint — matches the accent, barely-there but intentional.
   const rule = widget.addStack();
-  rule.backgroundColor = C.goldFaint;
+  rule.backgroundColor = C.rule;
   rule.size = new Size(-1, 0.5);
 
   widget.addSpacer(isSmall ? 4 : 5);
 
   // ── Attribution ───────────────────────────────────────────────────────
-  //  Small:  BOOK TITLE only
-  //  Others: BOOK TITLE  ·  Author
+  //  Small:  BOOK TITLE only (caps, tight tracking)
+  //  Others: BOOK TITLE · Author
 
   const title    = (data.title  ?? "").toUpperCase();
   const author   =  data.author ?? "";
@@ -253,7 +252,7 @@ function renderWidget(widget, data, weather) {
 
   const attr     = widget.addText(attrText);
   attr.font      = Font.lightSystemFont(isSmall ? 7 : 7.5);
-  attr.textColor = C.ivoryMid;
+  attr.textColor = C.inkMid;
   attr.lineLimit = 1;
 }
 
@@ -263,20 +262,20 @@ function renderSetup(widget) {
   widget.addSpacer();
 
   const qm     = widget.addText("“");
-  qm.font      = Font.boldSystemFont(34);
-  qm.textColor = C.gold;
+  qm.font      = Font.named("Georgia-Bold", 36) ?? Font.boldSystemFont(36);
+  qm.textColor = C.sienna;
 
   widget.addSpacer(4);
 
   const t1     = widget.addText("Marginalia");
   t1.font      = Font.named("Georgia-Italic", 17) ?? Font.italicSystemFont(17);
-  t1.textColor = C.ivory;
+  t1.textColor = C.ink;
 
   widget.addSpacer(6);
 
   const t2     = widget.addText("Imposta USER_ID nello script per iniziare.");
   t2.font      = Font.lightSystemFont(10);
-  t2.textColor = C.ivoryMid;
+  t2.textColor = C.inkMid;
 
   widget.addSpacer();
 }
@@ -288,13 +287,13 @@ function renderError(widget, msg) {
 
   const dot     = widget.addText("·");
   dot.font      = Font.lightSystemFont(22);
-  dot.textColor = C.goldFaint;
+  dot.textColor = C.siennaFaint;
 
   widget.addSpacer(6);
 
   const t     = widget.addText(msg);
   t.font      = Font.lightSystemFont(10);
-  t.textColor = C.ivoryMid;
+  t.textColor = C.inkMid;
   t.lineLimit = 4;
 
   widget.addSpacer();
