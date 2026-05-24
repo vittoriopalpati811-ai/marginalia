@@ -73,6 +73,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               isImporting: _isImporting,
               onImport: _pickAndImportFile,
               onForceReimport: () => _pickAndImportFile(forceClean: true),
+              userName: ref.watch(_myDisplayNameProvider).asData?.value,
             ),
           ),
 
@@ -388,6 +389,38 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 }
 
+// ─── Greeting utility ─────────────────────────────────────────────────────────
+
+/// Returns an Italian time-aware greeting.  [name] may be empty — in that case
+/// the greeting is returned without the comma suffix.
+String contextualGreeting(String? name, {int? hour}) {
+  final h = hour ?? DateTime.now().hour;
+  final String base;
+  if (h < 6)       base = 'Così presto';
+  else if (h < 12) base = 'Buongiorno';
+  else if (h < 13) base = 'Prenditi una pausa';
+  else if (h < 18) base = 'Buon pomeriggio';
+  else if (h < 21) base = 'Buonasera';
+  else             base = 'Buonanotte';
+
+  final trimmed = name?.trim() ?? '';
+  if (trimmed.isEmpty) return base;
+  // "Buongiorno, Vittorio" — add "?" after "Così presto"
+  final suffix = h < 6 ? ', $trimmed?' : ', $trimmed';
+  return '$base$suffix';
+}
+
+// ─── Provider for current user display name ───────────────────────────────────
+
+final _myDisplayNameProvider = FutureProvider.autoDispose<String?>((ref) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated || svc.userId == null) return null;
+  try {
+    final p = await svc.fetchPublicProfile(svc.userId!);
+    return p?['display_name'] as String?;
+  } catch (_) { return null; }
+});
+
 // ─── Header editoriale ────────────────────────────────────────────────────────
 
 class _EditorialHeader extends StatelessWidget {
@@ -395,18 +428,13 @@ class _EditorialHeader extends StatelessWidget {
     required this.isImporting,
     required this.onImport,
     required this.onForceReimport,
+    this.userName,
   });
 
   final bool isImporting;
   final VoidCallback onImport;
   final VoidCallback onForceReimport;
-
-  static String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Buona mattina';
-    if (h < 18) return 'Buon pomeriggio';
-    return 'Buona lettura';
-  }
+  final String? userName;
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +487,7 @@ class _EditorialHeader extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            _greeting(),
+            contextualGreeting(userName),
             style: MarginaliaTextStyles.label.copyWith(
               color: MarginaliaColors.inkFaint,
               letterSpacing: 0.2,

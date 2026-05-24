@@ -574,6 +574,17 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
                                       ? indicatorColor
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(22),
+                                  // Jam tab (index 2) always gets a green ring
+                                  // for emphasis — thicker than a normal border.
+                                  border: (i == 2)
+                                      ? Border.all(
+                                          color: active
+                                              ? MarginaliaColors.primary
+                                              : MarginaliaColors.primary
+                                                  .withAlpha(100),
+                                          width: 1.8,
+                                        )
+                                      : null,
                                 ),
                                 child: AnimatedSwitcher(
                                   duration: const Duration(milliseconds: 220),

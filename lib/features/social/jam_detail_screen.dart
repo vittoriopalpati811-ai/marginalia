@@ -254,6 +254,12 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             foregroundColor: const Color(0xFFF1EEE7),
             elevation: 0,
             scrolledUnderElevation: 0,
+            // Keep status-bar icons white even when the hero image is visible.
+            systemOverlayStyle: const SystemUiOverlayStyle(
+              statusBarBrightness: Brightness.dark,        // iOS
+              statusBarIconBrightness: Brightness.light,   // Android
+              statusBarColor: Colors.transparent,
+            ),
             actions: [
               // Notification bell with unread dot
               Stack(
@@ -331,13 +337,17 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                         Image.network(jamCoverUrl, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
                                 Container(decoration: MarginaliaDecorations.gradientHeader)),
+                        // Top scrim — keeps status-bar icons visible over photos.
+                        // Bottom scrim — ensures title text is readable.
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
+                                Colors.black.withAlpha(90),  // top scrim
                                 Colors.transparent,
-                                Colors.black.withAlpha(120),
+                                Colors.black.withAlpha(130), // bottom scrim
                               ],
+                              stops: const [0.0, 0.30, 1.0],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                             ),

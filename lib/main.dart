@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/services/widget_service.dart';
@@ -11,6 +12,18 @@ const _supabaseAnonKey =
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Always show the status bar; never let individual routes hide it.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // Default status-bar style: dark icons on cream bg (light theme).
+  // Screens with dark headers override this via AppBar.systemOverlayStyle.
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarBrightness: Brightness.light,       // iOS
+    statusBarIconBrightness: Brightness.dark,    // Android
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
 
   await Supabase.initialize(
     url: _supabaseUrl,

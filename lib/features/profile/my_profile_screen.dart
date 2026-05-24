@@ -13,6 +13,7 @@ import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'followers_screen.dart';
+import '../library/book_cover.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
@@ -84,6 +85,10 @@ final _mySpotlightProvider =
 final _gradientKeyProvider = StateProvider<String>((ref) => 'sepia');
 final _patternKeyProvider   = StateProvider<String>((ref) => 'none');
 
+/// Locally selected favourite books (up to 6). Prefilled from profile on load.
+/// Each entry: {title, author}.
+final _favBooksProvider = StateProvider<List<Map<String, String>>>((ref) => []);
+
 final _myPostsProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final svc = ref.watch(supabaseServiceProvider);
@@ -153,6 +158,22 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
         }
         if (ref.read(_patternKeyProvider) != newPat) {
           ref.read(_patternKeyProvider.notifier).state = newPat;
+        }
+        // Seed favourite books from profile (migration 024).
+        final raw = p['favorite_books'];
+        if (raw is List && ref.read(_favBooksProvider).isEmpty) {
+          final favs = raw
+              .whereType<Map>()
+              .map((e) => {
+                    'title':  e['title']?.toString()  ?? '',
+                    'author': e['author']?.toString() ?? '',
+                  })
+              .where((m) => m['title']!.isNotEmpty)
+              .take(6)
+              .toList();
+          if (favs.isNotEmpty) {
+            ref.read(_favBooksProvider.notifier).state = favs;
+          }
         }
       });
     });
@@ -252,6 +273,27 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                   : _SpotlightCard(highlight: hl, gp: gp),
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
+            ),
+          ),
+
+          // ── Libri del cuore ───────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: _FavoriteBooksSection(
+              favBooks: ref.watch(_favBooksProvider),
+              allBooks: booksAsync.asData?.value ?? [],
+              onEdit: () => _openFavBooksSheet(
+                context,
+                allBooks: booksAsync.asData?.value ?? [],
+                current: ref.read(_favBooksProvider),
+                onSave: (picked) async {
+                  ref.read(_favBooksProvider.notifier).state = picked;
+                  try {
+                    await ref
+                        .read(supabaseServiceProvider)
+                        .updateFavoriteBooks(picked);
+                  } catch (_) {} // silent — migration may not be applied yet
+                },
+              ),
             ),
           ),
 
@@ -1566,6 +1608,560 @@ class _ProfilePostCard extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Favourite books section ──────────────────────────────────────────────────
+
+class _FavoriteBooksSection extends StatelessWidget {
+  const _FavoriteBooksSection({
+    required this.favBooks,
+    required this.allBooks,
+    required this.onEdit,
+  });
+
+  final List<Map<String, String>> favBooks;
+  final List<Map<String, dynamic>> allBooks;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Section header ──────────────────────────────────────────────
+          Row(
+            children: [
+              Text('LIBRI DEL CUORE', style: MarginaliaTextStyles.sectionTitle),
+              const SizedBox(width: 12),
+              const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onEdit,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.primaryFaint,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: MarginaliaColors.primary.withAlpha(50),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    favBooks.isEmpty ? 'Scegli' : 'Modifica',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: MarginaliaColors.primary,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // ── Grid or empty state ─────────────────────────────────────────
+          if (favBooks.isEmpty)
+            _EmptyFavBooks(onEdit: onEdit)
+          else
+            _FavBooksGrid(favBooks: favBooks),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms, delay: 60.ms);
+  }
+}
+
+// ─── Pinterest masonry grid (2 rows) ──────────────────────────────────────────
+
+enum _TileSize { large, medium, small }
+
+class _FavBooksGrid extends StatelessWidget {
+  const _FavBooksGrid({required this.favBooks});
+  final List<Map<String, String>> favBooks;
+
+  @override
+  Widget build(BuildContext context) {
+    // Always work with exactly 6 slots (pad with empty entries).
+    final books = List<Map<String, String>>.from(favBooks);
+    while (books.length < 6) {
+      books.add({'title': '', 'author': ''});
+    }
+
+    const gap  = 6.0;
+    const row1 = 200.0; // large left + two medium rights
+    const row2 = 118.0; // three small equal tiles
+
+    return Column(
+      children: [
+        // ── Row 1 ────────────────────────────────────────────────────────
+        SizedBox(
+          height: row1,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Book 1 — big left tile (55% width)
+              Expanded(
+                flex: 55,
+                child: _FavBookTile(book: books[0], size: _TileSize.large),
+              ),
+              const SizedBox(width: gap),
+              // Books 2 + 3 — right column (45% width, stacked)
+              Expanded(
+                flex: 45,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _FavBookTile(book: books[1], size: _TileSize.medium),
+                    ),
+                    const SizedBox(height: gap),
+                    Expanded(
+                      child: _FavBookTile(book: books[2], size: _TileSize.medium),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: gap),
+        // ── Row 2 ────────────────────────────────────────────────────────
+        SizedBox(
+          height: row2,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _FavBookTile(book: books[3], size: _TileSize.small)),
+              const SizedBox(width: gap),
+              Expanded(child: _FavBookTile(book: books[4], size: _TileSize.small)),
+              const SizedBox(width: gap),
+              Expanded(child: _FavBookTile(book: books[5], size: _TileSize.small)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Single tile ──────────────────────────────────────────────────────────────
+
+class _FavBookTile extends StatelessWidget {
+  const _FavBookTile({required this.book, required this.size});
+  final Map<String, String> book;
+  final _TileSize size;
+
+  @override
+  Widget build(BuildContext context) {
+    final title  = book['title']  ?? '';
+    final author = book['author'] ?? '';
+
+    // Empty placeholder
+    if (title.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: MarginaliaColors.ruleFaint),
+        ),
+        child: const Center(
+          child: Icon(Icons.add_outlined,
+              size: 22, color: MarginaliaColors.inkFaint),
+        ),
+      );
+    }
+
+    final double titleSize = switch (size) {
+      _TileSize.large  => 13.0,
+      _TileSize.medium => 11.5,
+      _TileSize.small  => 9.5,
+    };
+    final int maxLines = switch (size) {
+      _TileSize.large  => 3,
+      _TileSize.medium => 2,
+      _TileSize.small  => 2,
+    };
+    final double gradH = switch (size) {
+      _TileSize.large  => 90.0,
+      _TileSize.medium => 72.0,
+      _TileSize.small  => 60.0,
+    };
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Editorial cover ─────────────────────────────────────────────
+          BookEditorialCover(title: title, author: author),
+
+          // ── Gradient for text legibility ────────────────────────────────
+          Positioned(
+            left: 0, right: 0, bottom: 0, height: gradH,
+            child: const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.transparent, Color(0xCC000000)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+
+          // ── Title (+ author on large) ───────────────────────────────────
+          Positioned(
+            left: 8, right: 8, bottom: 8,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFEDE5D5),
+                    height: 1.25,
+                    letterSpacing: -0.1,
+                  ),
+                  maxLines: maxLines,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (size == _TileSize.large && author.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    author.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0x99EDE5D5),
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+class _EmptyFavBooks extends StatelessWidget {
+  const _EmptyFavBooks({required this.onEdit});
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onEdit,
+      child: Container(
+        height: 92,
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: MarginaliaColors.ruleFaint),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.favorite_border,
+                size: 22, color: MarginaliaColors.inkFaint),
+            const SizedBox(height: 8),
+            Text(
+              'Scegli i tuoi sei libri preferiti',
+              style: GoogleFonts.manrope(
+                fontSize: 12.5,
+                color: MarginaliaColors.inkMuted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Favourite books bottom-sheet picker ──────────────────────────────────────
+
+Future<void> _openFavBooksSheet(
+  BuildContext context, {
+  required List<Map<String, dynamic>> allBooks,
+  required List<Map<String, String>> current,
+  required Future<void> Function(List<Map<String, String>>) onSave,
+}) async {
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _FavBooksSheet(
+      allBooks: allBooks,
+      current: current,
+      onSave: onSave,
+    ),
+  );
+}
+
+class _FavBooksSheet extends StatefulWidget {
+  const _FavBooksSheet({
+    required this.allBooks,
+    required this.current,
+    required this.onSave,
+  });
+  final List<Map<String, dynamic>> allBooks;
+  final List<Map<String, String>> current;
+  final Future<void> Function(List<Map<String, String>>) onSave;
+
+  @override
+  State<_FavBooksSheet> createState() => _FavBooksSheetState();
+}
+
+class _FavBooksSheetState extends State<_FavBooksSheet> {
+  late final List<Map<String, String>> _selected;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = List.from(widget.current);
+  }
+
+  bool _isSelected(Map<String, dynamic> book) {
+    final t = book['title'] as String? ?? '';
+    return _selected.any((s) => s['title'] == t);
+  }
+
+  void _toggle(Map<String, dynamic> book) {
+    final t = book['title']  as String? ?? '';
+    final a = book['author'] as String? ?? '';
+    setState(() {
+      if (_isSelected(book)) {
+        _selected.removeWhere((s) => s['title'] == t);
+      } else if (_selected.length < 6) {
+        _selected.add({'title': t, 'author': a});
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    final maxH   = MediaQuery.of(context).size.height * 0.82;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxH),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: MarginaliaColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          // mainAxisSize.max so Flexible(ListView) gets remaining space
+          // up to the ConstrainedBox(maxHeight) boundary.
+          children: [
+
+            // ── Handle ────────────────────────────────────────────────────
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 4),
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: MarginaliaColors.rule,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // ── Title + counter ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Row(
+                children: [
+                  const Text(
+                    'Libri del cuore',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: MarginaliaColors.ink,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: Text(
+                      '${_selected.length}/6',
+                      key: ValueKey(_selected.length),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: _selected.length >= 6
+                            ? MarginaliaColors.primary
+                            : MarginaliaColors.inkMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+
+            // ── Book list ─────────────────────────────────────────────────
+            Flexible(
+              child: widget.allBooks.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Text(
+                        'Aggiungi libri alla tua libreria prima di scegliere i preferiti.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.manrope(
+                          fontSize: 13.5,
+                          color: MarginaliaColors.inkMuted,
+                          height: 1.6,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      itemCount: widget.allBooks.length,
+                      itemBuilder: (_, i) {
+                        final book   = widget.allBooks[i];
+                        final title  = book['title']  as String? ?? '';
+                        final author = book['author'] as String? ?? '';
+                        final sel    = _isSelected(book);
+                        final maxed  = _selected.length >= 6 && !sel;
+
+                        return InkWell(
+                          onTap: maxed ? null : () => _toggle(book),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 9),
+                            child: Row(
+                              children: [
+                                // Mini editorial cover
+                                SizedBox(
+                                  width: 36, height: 50,
+                                  child: BookEditorialCover(
+                                    title: title,
+                                    author: author,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                // Title + author
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: maxed
+                                              ? MarginaliaColors.inkFaint
+                                              : MarginaliaColors.ink,
+                                          height: 1.3,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (author.isNotEmpty)
+                                        Text(
+                                          author.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            letterSpacing: 0.4,
+                                            fontWeight: FontWeight.w500,
+                                            color: maxed
+                                                ? MarginaliaColors.inkFaint
+                                                : MarginaliaColors.inkMuted,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                // Circle checkbox
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  width: 22, height: 22,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: sel
+                                        ? MarginaliaColors.primary
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: sel
+                                          ? MarginaliaColors.primary
+                                          : maxed
+                                              ? MarginaliaColors.ruleFaint
+                                              : MarginaliaColors.rule,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: sel
+                                      ? const Icon(Icons.check,
+                                          color: Colors.white, size: 13)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+
+            // ── Save button ───────────────────────────────────────────────
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _saving
+                      ? null
+                      : () async {
+                          setState(() => _saving = true);
+                          await widget.onSave(_selected);
+                          if (mounted) Navigator.of(context).pop();
+                        },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: MarginaliaColors.primary,
+                    foregroundColor: const Color(0xFFF1EEE7),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18, height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              color: Color(0xFFF1EEE7)))
+                      : const Text(
+                          'Salva',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w700)),
+                ),
               ),
             ),
           ],

@@ -609,6 +609,16 @@ class SupabaseService {
     return list.first;
   }
 
+  /// Saves the user's 6 favourite books (title + author) to their profile.
+  /// Requires migration 024 to add `favorite_books jsonb` to profiles.
+  Future<void> updateFavoriteBooks(
+      List<Map<String, String>> books) async {
+    if (!isAuthenticated || userId == null) return;
+    await _client.from('profiles').update({
+      'favorite_books': books,
+    }).eq('id', userId!);
+  }
+
   Future<void> updateProfileAppearance(
       String gradientPreset, String patternPreset) async {
     if (!isAuthenticated || userId == null) return;
