@@ -103,7 +103,7 @@ final libraryRecommendationsProvider =
       }
     } catch (e, st) {
       debugPrint('[Recs] fetchHighlights error: $e\n$st');
-      rethrow;
+      return [];
     }
   } else {
     // Native (Isar): no embedded join, use book ID + title from booksProvider

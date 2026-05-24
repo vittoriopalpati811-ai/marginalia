@@ -118,7 +118,8 @@ Deno.serve(async (req) => {
     geminiResponse = await callGemini(geminiKey, prompt);
   } catch (e) {
     console.error("Gemini API error:", e);
-    return json({ error: "AI service unavailable" }, 502);
+    // Return empty array (200) so Flutter never sees a non-2xx → no FunctionException
+    return json({ recommendations: [] });
   }
 
   return json({ recommendations: geminiResponse });
