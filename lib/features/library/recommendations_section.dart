@@ -52,6 +52,10 @@ class BookRecommendation {
 
 final libraryRecommendationsProvider =
     FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
+  // Cache recommendations for 1 hour — avoids re-calling Gemini on every
+  // screen transition and prevents hitting the 15 RPM free-tier limit.
+  final link = ref.keepAlive();
+  Future.delayed(const Duration(hours: 1), link.close);
   // ── 1. Collect highlights grouped by book ──────────────────────────────────
   //
   // We fetch all highlights ordered by added_at DESC (Supabase) so that

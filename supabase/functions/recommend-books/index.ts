@@ -3,40 +3,28 @@
 //
 // Receives the user's last 20 books (title, author, sample highlights) from
 // the Flutter app, fetches plot descriptions from Open Library, then asks
-// Claude to recommend 3–5 books the user has NOT yet read.
+// Llama 3.3 70B (via Groq) to recommend 5 books the user has NOT yet read.
 //
 // Request body (POST, JSON):
 //   {
-//     books: [                      ← up to 20 most-recent books
-//       {
-//         title:      string,
-//         author:     string,
-//         highlights: string[],     ← up to 4 highlights for context
-//       },
-//       …
-//     ],
-//     existingTitles: string[],     ← full list of library titles (for exclusion)
+//     books: [{ title, author, highlights: string[] }],  ← up to 20 books
+//     existingTitles: string[],                           ← for exclusion
+//     context?: { weather?, weatherCity?, weatherTemp?,
+//                 stepsToday?, lastWorkout?, cyclePhase? }
 //   }
 //
-// Response (200, JSON):
-//   {
-//     recommendations: [
-//       { title: string, author: string, year: string, reason: string },
-//       …
-//     ]
-//   }
+// Response (always 200, JSON):
+//   { recommendations: [{ title, author, year, reason }] }
+//   (empty array on any error — Flutter never sees a non-2xx)
 //
-// Required secrets:
-//   GEMINI_API_KEY    — Google AI Studio key (free: 1 500 req/day, 15 RPM)
-//                       https://aistudio.google.com/apikey
-//
-// Auto-injected by Supabase:
-//   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+// Required secret:
+//   GROQ_API_KEY  — free at https://console.groq.com
+//                   Free tier: 30 RPM, 14 400 req/day
 //
 // Deploy:
 //   supabase functions deploy recommend-books
 // Set key:
-//   supabase secrets set GEMINI_API_KEY=AIza…
+//   supabase secrets set GROQ_API_KEY=gsk_…
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -106,23 +94,23 @@ Deno.serve(async (req) => {
 
   const prompt = buildPrompt(withPlots, existingTitles, userContext);
 
-  // ── 3. Call Gemini API ───────────────────────────────────────────────────
+  // ── 3. Call Groq API ─────────────────────────────────────────────────────
 
-  const geminiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!geminiKey) {
-    return json({ error: "GEMINI_API_KEY not configured" }, 500);
-  }
-
-  let geminiResponse: Recommendation[];
-  try {
-    geminiResponse = await callGemini(geminiKey, prompt);
-  } catch (e) {
-    console.error("Gemini API error:", e);
-    // Return empty array (200) so Flutter never sees a non-2xx → no FunctionException
+  const groqKey = Deno.env.get("GROQ_API_KEY");
+  if (!groqKey) {
+    console.error("GROQ_API_KEY not configured");
     return json({ recommendations: [] });
   }
 
-  return json({ recommendations: geminiResponse });
+  let recommendations: Recommendation[];
+  try {
+    recommendations = await callGroq(groqKey, prompt);
+  } catch (e) {
+    console.error("Groq API error:", e);
+    return json({ recommendations: [] });
+  }
+
+  return json({ recommendations });
 });
 
 // ─── Open Library ─────────────────────────────────────────────────────────────
@@ -133,25 +121,18 @@ async function fetchOpenLibraryPlot(
 ): Promise<string> {
   try {
     const q = encodeURIComponent(`${title} ${author}`);
-    const searchUrl =
-      `https://openlibrary.org/search.json?q=${q}&limit=1&fields=key,description`;
-    const searchRes = await fetch(searchUrl, {
-      signal: AbortSignal.timeout(8_000),
-    });
+    const searchRes = await fetch(
+      `https://openlibrary.org/search.json?q=${q}&limit=1&fields=key,description`,
+      { signal: AbortSignal.timeout(8_000) }
+    );
     if (!searchRes.ok) return "";
 
     const data = await searchRes.json();
-    const docs = data?.docs ?? [];
-    if (docs.length === 0) return "";
+    const doc = data?.docs?.[0];
+    if (!doc) return "";
 
-    const doc = docs[0];
+    if (doc.description) return extractText(doc.description).slice(0, 600);
 
-    // Some search results include description directly
-    if (doc.description) {
-      return extractText(doc.description).slice(0, 600);
-    }
-
-    // Otherwise fetch the Works record
     const key = doc.key as string | undefined;
     if (!key) return "";
 
@@ -192,7 +173,7 @@ function buildPrompt(
       if (b.plot) lines.push(`   Trama: ${b.plot}`);
       if (b.highlights.length > 0) {
         lines.push(
-          `   Highlight dell'utente: ${b.highlights.slice(0, 3).map((h) => `"${h.slice(0, 150)}"`).join(" | ")}`
+          `   Highlight: ${b.highlights.slice(0, 3).map((h) => `"${h.slice(0, 150)}"`).join(" | ")}`
         );
       }
       return lines.join("\n");
@@ -201,10 +182,9 @@ function buildPrompt(
 
   const exclusionNote =
     existingTitles.length > 0
-      ? `\n\nNon suggerire MAI questi titoli già in libreria (sono ${existingTitles.length} libri): ${existingTitles.slice(0, 40).join(", ")}${existingTitles.length > 40 ? ", e altri…" : ""}.`
+      ? `\n\nNon suggerire MAI questi titoli (${existingTitles.length} libri già in libreria): ${existingTitles.slice(0, 40).join(", ")}${existingTitles.length > 40 ? ", e altri…" : ""}.`
       : "";
 
-  // Build contextual note from weather + health data
   const contextParts: string[] = [];
   if (ctx.weather && ctx.weatherCity) {
     const weatherMap: Record<string, string> = {
@@ -212,9 +192,7 @@ function buildPrompt(
       snow: "neve", clear: "sereno",
     };
     const cond = weatherMap[ctx.weather as string] ?? String(ctx.weather);
-    contextParts.push(
-      `Oggi c'è ${cond} a ${ctx.weatherCity}, ${ctx.weatherTemp}°C`
-    );
+    contextParts.push(`Oggi c'è ${cond} a ${ctx.weatherCity}, ${ctx.weatherTemp}°C`);
   }
   if (ctx.stepsToday) {
     contextParts.push(`l'utente ha fatto ${ctx.stepsToday} passi oggi`);
@@ -232,73 +210,67 @@ function buildPrompt(
   }
 
   const contextNote = contextParts.length > 0
-    ? `\n\nCONTESTO DELL'UTENTE OGGI: ${contextParts.join("; ")}. Puoi usarlo per aggiungere sfumature alla motivazione (es. un libro da leggere sotto la pioggia, un saggio per una giornata di recupero fisico), ma non è obbligatorio.`
+    ? `\n\nCONTESTO UTENTE: ${contextParts.join("; ")}. Puoi usarlo per sfumare i consigli, ma non è obbligatorio.`
     : "";
 
   return `Sei un bibliotecario italiano esperto e appassionato lettore. Analizza i libri che questo utente ha letto e i suoi highlight personali, poi suggerisci 5 libri che potrebbe amare.
 
-LIBRI LETTI E HIGHLIGHT DELL'UTENTE:
+LIBRI LETTI:
 ${bookList}${exclusionNote}${contextNote}
 
 ISTRUZIONI:
 - Suggerisci esattamente 5 libri che l'utente NON ha ancora letto.
-- Scegli libri che risuonano con i temi, le idee e lo stile che emergono dagli highlight.
+- Scegli libri che risuonano con i temi, le idee e lo stile degli highlight.
 - Varia tra classici e contemporanei, italiani e stranieri.
-- Per ogni libro scrivi una "reason" in italiano (2-3 frasi) che spieghi PERCHÉ questo libro specifico risuonerà con questo lettore specifico, citando connessioni concrete con i suoi highlight o i temi dei libri letti.
+- Per ogni libro scrivi una "reason" in italiano (2-3 frasi) che spieghi PERCHÉ risuonerà con questo lettore, citando connessioni concrete con i suoi highlight.
 - Rispondi SOLO con un array JSON valido, senza markdown, senza testo extra.
 
-Formato risposta:
 [
   {
-    "title": "Titolo del libro",
-    "author": "Nome Autore",
-    "year": "anno di pubblicazione originale",
-    "reason": "Spiegazione personalizzata in italiano di perché questo libro."
+    "title": "Titolo",
+    "author": "Autore",
+    "year": "anno",
+    "reason": "Spiegazione personalizzata."
   }
 ]`;
 }
 
-// ─── Gemini API (google/gemini-2.0-flash — free tier) ────────────────────────
+// ─── Groq API (llama-3.3-70b-versatile — free tier) ──────────────────────────
 //
-// Free limits: 15 RPM, 1 500 req/day (as of 2025)
-// Key: https://aistudio.google.com/apikey  (no credit card required)
+// Free limits: 30 RPM, 14 400 req/day (as of 2025)
+// Dashboard: https://console.groq.com
 
-async function callGemini(
+async function callGroq(
   apiKey: string,
   prompt: string
 ): Promise<Recommendation[]> {
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-  const res = await fetch(url, {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "authorization": `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 1024,
-        temperature: 0.7,
-      },
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1024,
+      temperature: 0.7,
     }),
     signal: AbortSignal.timeout(30_000),
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini API ${res.status}: ${errText}`);
+    throw new Error(`Groq API ${res.status}: ${errText}`);
   }
 
   const data = await res.json();
-  const rawText: string =
-    data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const rawText: string = data?.choices?.[0]?.message?.content ?? "";
 
-  // Extract JSON array from response (Gemini may wrap in ```json … ```)
   const extracted = extractJson(rawText);
   const parsed = JSON.parse(extracted);
 
-  if (!Array.isArray(parsed)) {
-    throw new Error("Gemini response is not an array");
-  }
+  if (!Array.isArray(parsed)) throw new Error("Response is not an array");
 
   return (parsed as Recommendation[]).slice(0, 5).map((r) => ({
     title:  String(r.title  ?? ""),
@@ -309,17 +281,14 @@ async function callGemini(
 }
 
 function extractJson(text: string): string {
-  // Strip leading/trailing markdown fences if present
   const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) return fenceMatch[1].trim();
 
-  // Find first '[' to last ']'
   const start = text.indexOf("[");
   const end   = text.lastIndexOf("]");
   if (start !== -1 && end !== -1 && end > start) {
     return text.slice(start, end + 1);
   }
-
   return text.trim();
 }
 
