@@ -62,27 +62,42 @@
     <div id="loading-m">M</div>
     <div id="loading-text">Loading Marginalia…</div>
     <div id="loading-error">
-      <p>Could not load the preview in this browser.</p>
-      <p style="margin-top:4px; font-size:13px; color:#A8A29C">Try opening in Safari or Chrome.</p>
-      <a href="mailto:vittoriopalpati811@gmail.com?subject=Marginalia%20Beta">
-        Request beta access
+      <p style="font-size:13px; color:#A8A29C; margin-bottom:12px">
+        Taking longer than usual…
+      </p>
+      <a href="javascript:window.location.reload(true)"
+         style="border:1px solid #4A7A35; border-radius:10px; padding:10px 24px;
+                color:#4A7A35; font-weight:600; font-size:14px; text-decoration:none;">
+        Reload
       </a>
     </div>
   </div>
 
   <script>
+    // Clear stale service worker caches — old cached files can break the app
+    // on Safari when the build changes. Unregister and let Flutter re-register.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.unregister(); });
+      });
+      caches.keys().then(function (keys) {
+        keys.forEach(function (k) { caches.delete(k); });
+      });
+    }
+
     // Hide loading overlay once Flutter signals it's ready
     window.addEventListener('flutter-first-frame', function () {
       var el = document.getElementById('loading');
-      if (el) { el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 300); }
+      if (el) { el.style.opacity = '0'; setTimeout(function () { el.remove(); }, 300); }
     });
-    // Show error if Flutter hasn't rendered within 12 seconds
+
+    // Show retry button after 30s (generous for slow mobile connections)
     setTimeout(function () {
       var el = document.getElementById('loading');
-      if (!el) return;
-      document.getElementById('loading-text').style.display = 'none';
+      if (!el) return; // already gone — Flutter loaded fine
+      document.getElementById('loading-text').textContent = 'Still loading…';
       document.getElementById('loading-error').style.display = 'block';
-    }, 12000);
+    }, 30000);
   </script>
 
   <script src="flutter_bootstrap.js" async></script>
