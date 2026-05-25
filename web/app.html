@@ -15,26 +15,72 @@
   <link rel="icon" href="favicon.png">
   <title>Marginalia</title>
   <style>
-    /*
-     * iOS Safari: 100vh = full screen height INCLUDING the address bar, causing
-     * content to be clipped. -webkit-fill-available is the correct fix for Safari.
-     * We apply it to <html> and then let <body> inherit with height: 100%.
-     */
-    html {
-      height: -webkit-fill-available;
-    }
+    html { height: -webkit-fill-available; }
     body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
       min-height: -webkit-fill-available;
       overflow: hidden;
       background-color: #F9F8F5;
+      font-family: -apple-system, sans-serif;
+    }
+    #loading {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #F9F8F5;
+      gap: 16px;
+      transition: opacity 0.3s;
+    }
+    #loading-m {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #4A7A35, #2F5220);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 700; color: #F1EEE7;
+      font-family: Georgia, serif;
+      box-shadow: 0 4px 20px rgba(74,122,53,0.3);
+    }
+    #loading-text {
+      font-size: 13px; color: #9E9689; letter-spacing: 0.2px;
+    }
+    #loading-error {
+      display: none;
+      text-align: center; padding: 0 32px;
+      font-size: 14px; color: #6B6560; line-height: 1.6;
+    }
+    #loading-error a {
+      color: #4A7A35; font-weight: 600; text-decoration: none;
     }
   </style>
 </head>
 <body>
+  <div id="loading">
+    <div id="loading-m">M</div>
+    <div id="loading-text">Loading Marginalia…</div>
+    <div id="loading-error">
+      <p>Could not load the app preview in this browser.</p>
+      <p style="margin-top:8px">
+        <a href="https://apps.apple.com/app/marginalia/id0000000000">Download on the App Store</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Hide loading overlay once Flutter signals it's ready
+    window.addEventListener('flutter-first-frame', function () {
+      var el = document.getElementById('loading');
+      if (el) { el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 300); }
+    });
+    // Show error if Flutter hasn't rendered within 12 seconds
+    setTimeout(function () {
+      var el = document.getElementById('loading');
+      if (!el) return;
+      document.getElementById('loading-text').style.display = 'none';
+      document.getElementById('loading-error').style.display = 'block';
+    }, 12000);
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

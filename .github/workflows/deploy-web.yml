@@ -39,7 +39,7 @@ jobs:
         run: flutter test
 
       - name: Build web
-        run: flutter build web --release --base-href "/marginalia/"
+        run: flutter build web --release --base-href "/marginalia/" --web-renderer auto
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
