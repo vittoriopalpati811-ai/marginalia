@@ -662,11 +662,17 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottom = MediaQuery.of(context).padding.bottom;
 
-    // Dark mode: use the surfaceElevated tone (#252C25) so the pill is
-    // visually distinct from the near-black background (#111411) even
-    // without blur. Previous #18181A was indistinguishable → looked black.
+    // Web: BackdropFilter (CSS backdrop-filter) blurs the ENTIRE page content
+    // in Flutter's HTML renderer — it applies to the full Flutter scene behind
+    // the element, not just the immediate background. Remove it on web and rely
+    // on a visually distinct glass color + specular border layers instead.
+    //
+    // Dark mode on web needs a noticeably lighter color so the pill stands out
+    // against the near-black (#111411) background without any blur to help.
     final glassColor = isDark
-        ? const Color(0xFF252C25).withAlpha(232)
+        ? (kIsWeb
+            ? const Color(0xFF3D4840).withAlpha(245) // web: medium green-gray panel
+            : const Color(0xFF252C25).withAlpha(232)) // native: darker (blur provides lift)
         : Colors.white.withAlpha(195);
     final activeColor = MarginaliaColors.primary;
     final inactiveColor = isDark
@@ -685,20 +691,15 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
     );
 
     final bounceChild = kIsWeb
-        // ── Web: BackdropFilter OUTSIDE ClipRRect ───────────────────────────
-        // In the HTML renderer, BackdropFilter inside ClipRRect does not
-        // composite correctly — the CSS backdrop-filter is blocked by the
-        // overflow:hidden from ClipRRect. Reversing the order lets the blur
-        // sample from the real page content behind the pill.
-        ? BackdropFilter(
-            filter: ImageFilter.blur(
-                sigmaX: 18, sigmaY: 18, tileMode: TileMode.mirror),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: navStack,
-            ),
+        // ── Web: plain ClipRRect, no BackdropFilter ──────────────────────────
+        // Glass look comes from the semi-transparent glassColor + specular
+        // border layers in _buildNavStack. No blur — avoids blurring all
+        // page content which is what BackdropFilter does in HTML renderer.
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(38),
+            child: navStack,
           )
-        // ── Native: ClipRRect → LayoutBuilder → matrix + blur ──────────────
+        // ── Native: ClipRRect → LayoutBuilder → matrix + blur ───────────────
         // Full iOS 26-style liquid glass: 12% magnification + Gaussian blur.
         : ClipRRect(
             borderRadius: BorderRadius.circular(38),
