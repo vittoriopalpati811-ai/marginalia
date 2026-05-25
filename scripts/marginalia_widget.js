@@ -72,25 +72,39 @@ function greeting() {
 async function fetchHighlight(wx) {
   const h   = new Date().getHours();
   const dow = new Date().getDay();
-  const url = `${FUNCTION_URL}?user_id=${USER_ID}&hour=${h}&weekday=${dow}&weather=${wx}`;
+  // Sanity check: never let undefined/null leak into the URL
+  const w   = (typeof wx === "string" && wx.length > 0) ? wx : "clear";
+  const url = `${FUNCTION_URL}?user_id=${encodeURIComponent(USER_ID)}&hour=${h}&weekday=${dow}&weather=${encodeURIComponent(w)}`;
   const req = new Request(url);
   req.headers = { "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` };
   req.timeoutInterval = 8;
   const d = await req.loadJSON();
+  if (!d || typeof d !== "object") throw new Error("Risposta vuota dalla function");
   if (d.error) throw new Error(d.error);
   return d;
 }
 
 async function fetchWeather() {
+  // Defensive: if Location permission is denied, Location.current() can
+  // throw, hang, or return a partial object. Any of these → fallback "clear".
   try {
-    const loc  = await Location.current();
-    const url  = `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude.toFixed(4)}&longitude=${loc.longitude.toFixed(4)}&current=weathercode&forecast_days=1`;
-    const req  = new Request(url);
+    const loc = await Promise.race([
+      Location.current(),
+      new Promise((_, rej) =>
+        setTimeout(() => rej(new Error("location timeout")), 3500)),
+    ]);
+    if (!loc || typeof loc.latitude !== "number" || typeof loc.longitude !== "number") {
+      return "clear";
+    }
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude.toFixed(4)}&longitude=${loc.longitude.toFixed(4)}&current=weathercode&forecast_days=1`;
+    const req = new Request(url);
     req.timeoutInterval = 5;
     const d    = await req.loadJSON();
     const code = d?.current?.weathercode ?? 0;
     return codeToParam(code);
-  } catch { return "clear"; }
+  } catch (_) {
+    return "clear";
+  }
 }
 
 function codeToParam(c) {

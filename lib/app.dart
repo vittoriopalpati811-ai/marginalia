@@ -493,23 +493,36 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
           decoration: BoxDecoration(
             color: glassColor,
             borderRadius: BorderRadius.circular(38),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withAlpha(110)
-                    : const Color(0xFF1C2A1C).withAlpha(32),
-                blurRadius: 36,
-                spreadRadius: -2,
-                offset: const Offset(0, 12),
-              ),
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withAlpha(55)
-                    : const Color(0xFF1C2A1C).withAlpha(12),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            // Web: skip the soft 36px-blur shadow. iOS Safari can render
+            // high-blur box-shadows as a dark overlay that wraps the element.
+            // Native gets the full two-layer shadow.
+            boxShadow: kIsWeb
+                ? [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withAlpha(60)
+                          : const Color(0xFF1C2A1C).withAlpha(18),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withAlpha(110)
+                          : const Color(0xFF1C2A1C).withAlpha(32),
+                      blurRadius: 36,
+                      spreadRadius: -2,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withAlpha(55)
+                          : const Color(0xFF1C2A1C).withAlpha(12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
           ),
           child: Row(
             children: List.generate(widget.tabs.length, (i) {
@@ -667,13 +680,16 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
     // the element, not just the immediate background. Remove it on web and rely
     // on a visually distinct glass color + specular border layers instead.
     //
-    // Dark mode on web needs a noticeably lighter color so the pill stands out
-    // against the near-black (#111411) background without any blur to help.
+    // Dark mode on web: FULLY OPAQUE color (no withAlpha) to rule out any
+    // iOS Safari compositing issue with semi-transparent containers.
+    // Color chosen to be clearly distinct from the #111411 background.
     final glassColor = isDark
         ? (kIsWeb
-            ? const Color(0xFF3D4840).withAlpha(245) // web: medium green-gray panel
+            ? const Color(0xFF454D45) // fully opaque medium green-gray
             : const Color(0xFF252C25).withAlpha(232)) // native: darker (blur provides lift)
-        : Colors.white.withAlpha(195);
+        : (kIsWeb
+            ? const Color(0xFFFAFAF8) // fully opaque near-white
+            : Colors.white.withAlpha(195));
     final activeColor = MarginaliaColors.primary;
     final inactiveColor = isDark
         ? const Color(0xFF8E8E93)
