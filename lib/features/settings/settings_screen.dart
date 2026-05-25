@@ -818,6 +818,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 context.go('/');
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined,
+                  color: MarginaliaColors.primary),
+              title: const Text('Privacy Policy'),
+              trailing: const Icon(Icons.open_in_new,
+                  size: 14, color: MarginaliaColors.inkFaint),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final uri = Uri.parse(
+                    'https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
+                if (await canLaunchUrl(uri)) await launchUrl(uri);
+              },
+            ),
             const Divider(indent: 16, endIndent: 16),
             ListTile(
               leading: const Icon(Icons.logout_outlined,
