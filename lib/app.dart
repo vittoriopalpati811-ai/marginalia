@@ -476,13 +476,197 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
     super.dispose();
   }
 
+  // Builds the glass pill content (icons + labels + decorative layers).
+  // Shared between web and native render paths.
+  Widget _buildNavStack({
+    required bool isDark,
+    required Color glassColor,
+    required Color activeColor,
+    required Color inactiveColor,
+    required Color indicatorColor,
+  }) {
+    return Stack(
+      children: [
+        // ── Glass body ───────────────────────────────────────────────
+        Container(
+          height: 66,
+          decoration: BoxDecoration(
+            color: glassColor,
+            borderRadius: BorderRadius.circular(38),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withAlpha(110)
+                    : const Color(0xFF1C2A1C).withAlpha(32),
+                blurRadius: 36,
+                spreadRadius: -2,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withAlpha(55)
+                    : const Color(0xFF1C2A1C).withAlpha(12),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: List.generate(widget.tabs.length, (i) {
+              final active = i == widget.selectedIndex;
+              final tab = widget.tabs[i];
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => widget.onTap(i),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: active
+                              ? indicatorColor
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(22),
+                          border: (i == 2)
+                              ? Border.all(
+                                  color: active
+                                      ? MarginaliaColors.primary
+                                      : MarginaliaColors.primary.withAlpha(100),
+                                  width: 1.8,
+                                )
+                              : null,
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, anim) => ScaleTransition(
+                            scale: Tween<double>(begin: 0.80, end: 1.0).animate(
+                                CurvedAnimation(
+                                    parent: anim, curve: Curves.easeOutCubic)),
+                            child: FadeTransition(opacity: anim, child: child),
+                          ),
+                          child: Icon(
+                            active ? tab.activeIcon : tab.icon,
+                            key: ValueKey('${tab.path}_$active'),
+                            size: 22,
+                            color: active ? activeColor : inactiveColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOut,
+                        style: GoogleFonts.manrope(
+                          fontSize: 9,
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w500,
+                          color: active ? activeColor : inactiveColor,
+                        ),
+                        child: Text(tab.label),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+
+        // ── Layer 1: Outer border (bright top, dim bottom) ──────────
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(
+              painter: _GlassBorderPainter(isDark: isDark),
+            ),
+          ),
+        ),
+
+        // ── Layer 2: Top specular highlight ─────────────────────────
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(38),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.22, 0.50],
+                    colors: [
+                      Colors.white.withAlpha(isDark ? 32 : 55),
+                      Colors.white.withAlpha(isDark ? 8 : 16),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // ── Layer 3: Bottom depth darkening ─────────────────────────
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(38),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.55, 1.0],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withAlpha(isDark ? 38 : 14),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // ── Layer 4: Centre-left internal shimmer ────────────────────
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(38),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.35, -0.9),
+                    radius: 0.55,
+                    colors: [
+                      Colors.white.withAlpha(isDark ? 18 : 30),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottom = MediaQuery.of(context).padding.bottom;
 
+    // Dark mode: use the surfaceElevated tone (#252C25) so the pill is
+    // visually distinct from the near-black background (#111411) even
+    // without blur. Previous #18181A was indistinguishable → looked black.
     final glassColor = isDark
-        ? const Color(0xFF18181A).withAlpha(205)
+        ? const Color(0xFF252C25).withAlpha(232)
         : Colors.white.withAlpha(195);
     final activeColor = MarginaliaColors.primary;
     final inactiveColor = isDark
@@ -491,6 +675,56 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
     final indicatorColor = isDark
         ? Colors.white.withAlpha(24)
         : MarginaliaColors.primaryFaint;
+
+    final navStack = _buildNavStack(
+      isDark: isDark,
+      glassColor: glassColor,
+      activeColor: activeColor,
+      inactiveColor: inactiveColor,
+      indicatorColor: indicatorColor,
+    );
+
+    final bounceChild = kIsWeb
+        // ── Web: BackdropFilter OUTSIDE ClipRRect ───────────────────────────
+        // In the HTML renderer, BackdropFilter inside ClipRRect does not
+        // composite correctly — the CSS backdrop-filter is blocked by the
+        // overflow:hidden from ClipRRect. Reversing the order lets the blur
+        // sample from the real page content behind the pill.
+        ? BackdropFilter(
+            filter: ImageFilter.blur(
+                sigmaX: 18, sigmaY: 18, tileMode: TileMode.mirror),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(38),
+              child: navStack,
+            ),
+          )
+        // ── Native: ClipRRect → LayoutBuilder → matrix + blur ──────────────
+        // Full iOS 26-style liquid glass: 12% magnification + Gaussian blur.
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(38),
+            child: LayoutBuilder(
+              builder: (context, pillConstraints) {
+                const s = 1.12;
+                final cx = pillConstraints.maxWidth / 2;
+                const cy = 33.0; // half of pill height 66
+                final matrix = Float64List(16)
+                  ..[0]  = s
+                  ..[5]  = s
+                  ..[10] = 1.0
+                  ..[15] = 1.0
+                  ..[12] = cx * (1 - s)
+                  ..[13] = cy * (1 - s);
+                return BackdropFilter(
+                  filter: ImageFilter.compose(
+                    inner: ImageFilter.matrix(matrix),
+                    outer: ImageFilter.blur(
+                        sigmaX: 22, sigmaY: 22, tileMode: TileMode.mirror),
+                  ),
+                  child: navStack,
+                );
+              },
+            ),
+          );
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 14),
@@ -501,221 +735,7 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
           alignment: Alignment.bottomCenter,
           child: child,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(38),
-          child: LayoutBuilder(
-            builder: (context, pillConstraints) {
-              // iOS 26-style liquid glass: zoom the content behind the pill
-              // (12% magnification centred on the pill), then blur.
-              const s  = 1.12;
-              final cx = pillConstraints.maxWidth  / 2;
-              const cy = 33.0; // half of fixed pill height 66
-              final matrix = Float64List(16)
-                ..[0]  = s
-                ..[5]  = s
-                ..[10] = 1.0
-                ..[15] = 1.0
-                ..[12] = cx * (1 - s)  // translate to keep centre fixed
-                ..[13] = cy * (1 - s);
-              final navStack = Stack(
-              children: [
-                // ── Glass body ─────────────────────────────────────────
-                Container(
-                  height: 66,
-                  decoration: BoxDecoration(
-                    color: glassColor,
-                    borderRadius: BorderRadius.circular(38),
-                    boxShadow: [
-                      // Soft diffuse shadow
-                      BoxShadow(
-                        color: isDark
-                            ? Colors.black.withAlpha(110)
-                            : const Color(0xFF1C2A1C).withAlpha(32),
-                        blurRadius: 36,
-                        spreadRadius: -2,
-                        offset: const Offset(0, 12),
-                      ),
-                      // Tight contact shadow
-                      BoxShadow(
-                        color: isDark
-                            ? Colors.black.withAlpha(55)
-                            : const Color(0xFF1C2A1C).withAlpha(12),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: List.generate(widget.tabs.length, (i) {
-                      final active = i == widget.selectedIndex;
-                      final tab = widget.tabs[i];
-                      return Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => widget.onTap(i),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 260),
-                                curve: Curves.easeOutCubic,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: active
-                                      ? indicatorColor
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(22),
-                                  // Jam tab (index 2) always gets a green ring
-                                  // for emphasis — thicker than a normal border.
-                                  border: (i == 2)
-                                      ? Border.all(
-                                          color: active
-                                              ? MarginaliaColors.primary
-                                              : MarginaliaColors.primary
-                                                  .withAlpha(100),
-                                          width: 1.8,
-                                        )
-                                      : null,
-                                ),
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 220),
-                                  switchInCurve: Curves.easeOutCubic,
-                                  switchOutCurve: Curves.easeInCubic,
-                                  transitionBuilder: (child, anim) =>
-                                      ScaleTransition(
-                                    scale: Tween<double>(begin: 0.80, end: 1.0)
-                                        .animate(CurvedAnimation(
-                                            parent: anim,
-                                            curve: Curves.easeOutCubic)),
-                                    child: FadeTransition(
-                                        opacity: anim, child: child),
-                                  ),
-                                  child: Icon(
-                                    active ? tab.activeIcon : tab.icon,
-                                    key: ValueKey('${tab.path}_$active'),
-                                    size: 22,
-                                    color:
-                                        active ? activeColor : inactiveColor,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              AnimatedDefaultTextStyle(
-                                duration: const Duration(milliseconds: 180),
-                                curve: Curves.easeOut,
-                                style: GoogleFonts.manrope(
-                                  fontSize: 9,
-                                  fontWeight: active
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: active ? activeColor : inactiveColor,
-                                ),
-                                child: Text(tab.label),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-
-                // ── Layer 1: Outer border (bright top, dim bottom) ──────
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _GlassBorderPainter(isDark: isDark),
-                    ),
-                  ),
-                ),
-
-                // ── Layer 2: Top specular highlight ─────────────────────
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(38),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            stops: const [0.0, 0.22, 0.50],
-                            colors: [
-                              Colors.white.withAlpha(isDark ? 32 : 55),
-                              Colors.white.withAlpha(isDark ? 8 : 16),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ── Layer 3: Bottom depth darkening ─────────────────────
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(38),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            stops: const [0.55, 1.0],
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withAlpha(isDark ? 38 : 14),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ── Layer 4: Centre-left internal shimmer ───────────────
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(38),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: RadialGradient(
-                            center: const Alignment(-0.35, -0.9),
-                            radius: 0.55,
-                            colors: [
-                              Colors.white.withAlpha(isDark ? 18 : 30),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );         // Stack
-          // ImageFilter.matrix (magnification) is not supported in Flutter's
-          // HTML renderer and causes a full-app transparent-overlay artifact.
-          // On web, fall back to a plain blur — still frosted glass, no magnify.
-          final filter = kIsWeb
-              ? ImageFilter.blur(sigmaX: 18, sigmaY: 18,
-                  tileMode: TileMode.mirror)
-              : ImageFilter.compose(
-                  inner: ImageFilter.matrix(matrix),
-                  outer: ImageFilter.blur(sigmaX: 22, sigmaY: 22,
-                      tileMode: TileMode.mirror),
-                );
-          return BackdropFilter(filter: filter, child: navStack);
-        },             // LayoutBuilder builder
-      ),               // LayoutBuilder
-    ),                 // ClipRRect
+        child: bounceChild,
       ),
     );
   }
