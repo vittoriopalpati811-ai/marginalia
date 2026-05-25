@@ -95,8 +95,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       return;
     }
     Share.share(
-      '📚 Unisciti alla mia Jam "$name" su Marginalia!\n\n'
-      'Codice invito: $code',
+      '📚 Join my Jam "$name" on Marginalia!\n\n'
+      'Invite code: $code',
       subject: 'Marginalia Jam – $name',
     );
   }
@@ -125,7 +125,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
                 SnackBar(
-                    content: Text('Errore: $e'),
+                    content: Text('Error: $e'),
                     duration: const Duration(seconds: 10)),
               );
             }
@@ -156,7 +156,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             if (jam == null) {
               if (ctx.mounted) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Codice non valido.')),
+                  const SnackBar(content: Text('Invalid code.')),
                 );
               }
               return;
@@ -168,7 +168,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
                 SnackBar(
-                    content: Text('Errore: $e'),
+                    content: Text('Error: $e'),
                     duration: const Duration(seconds: 10)),
               );
             }
@@ -265,8 +265,8 @@ class _SocialHeader extends StatelessWidget {
               letterSpacing: 0.1,
             ),
             tabs: const [
-              Tab(text: 'Jam'),
-              Tab(text: 'Amici'),
+              Tab(text: 'Jams'),
+              Tab(text: 'Friends'),
             ],
           ),
         ],
@@ -487,7 +487,7 @@ class _JamTabContent extends ConsumerWidget {
         child: CircularProgressIndicator(
             color: MarginaliaColors.sienna, strokeWidth: 1.5),
       ),
-      error: (e, _) => Center(child: Text('Errore: $e')),
+      error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
 }
@@ -731,7 +731,7 @@ class _CreateJamFab extends StatelessWidget {
         foregroundColor: const Color(0xFFF1EEE7),
         elevation: 6,
         icon: const Icon(Icons.add, size: 20),
-        label: const Text('Nuova Jam',
+        label: const Text('New Jam',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
       ),
     );
@@ -774,10 +774,10 @@ class _CreateJamSheet extends StatelessWidget {
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nuova Jam',
+                  Text('New Jam',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  Text('Crea una nuova Jam',
+                  Text('Create a new reading circle',
                       style: TextStyle(
                           fontSize: 12, color: MarginaliaColors.inkMuted)),
                 ],
@@ -790,13 +790,13 @@ class _CreateJamSheet extends StatelessWidget {
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(
-              hintText: 'es. "Classici del Novecento"',
+              hintText: 'e.g. "20th Century Classics"',
               prefixIcon: Icon(Icons.auto_stories_outlined),
             ),
           ),
           const SizedBox(height: 12),
           const Text(
-            'Riceverai un codice invito da condividere con gli amici.',
+            'You will receive an invite code to share with friends.',
             style: TextStyle(
                 fontSize: 12, color: MarginaliaColors.inkMuted, height: 1.5),
           ),
@@ -805,7 +805,7 @@ class _CreateJamSheet extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: onConfirm,
-              child: const Text('Crea Jam'),
+              child: const Text('Create Jam'),
             ),
           ),
         ],
@@ -842,7 +842,7 @@ class _JoinJamSheet extends StatelessWidget {
                     color: MarginaliaColors.sienna, size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Unisciti a una Jam',
+              const Text('Join a Jam',
                   style:
                       TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             ],
@@ -853,7 +853,7 @@ class _JoinJamSheet extends StatelessWidget {
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
             decoration: const InputDecoration(
-              hintText: 'Codice invito (es. ABC123)',
+              hintText: 'Invite code (e.g. ABC123)',
               prefixIcon: Icon(Icons.tag_outlined),
             ),
           ),
@@ -861,7 +861,7 @@ class _JoinJamSheet extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-                onPressed: onConfirm, child: const Text('Unisciti')),
+                onPressed: onConfirm, child: const Text('Join')),
           ),
         ],
       ),
@@ -906,7 +906,7 @@ class _EmptyJams extends StatelessWidget {
                     letterSpacing: -0.3)),
             const SizedBox(height: 10),
             const Text(
-              'Crea una Jam o\nunisciti a quella di un amico.',
+              'Create a Jam or\njoin a friend\'s reading circle.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: MarginaliaColors.inkMuted,
@@ -917,13 +917,13 @@ class _EmptyJams extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreateJam,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Crea la prima Jam'),
+              label: const Text('Create your first Jam'),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: onJoinJam,
               icon: const Icon(Icons.link_outlined, size: 18),
-              label: const Text('Unisciti con codice'),
+              label: const Text('Join with code'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: MarginaliaColors.sienna,
                 side: const BorderSide(color: MarginaliaColors.sienna),
@@ -958,7 +958,7 @@ class _UnauthenticatedState extends StatelessWidget {
               bottom: false,
               child: const Padding(
                 padding: EdgeInsets.fromLTRB(20, 20, 20, 32),
-                child: Text('Sociale',
+                child: Text('Social',
                     style: TextStyle(
                         color: Color(0xFFF1EEE7),
                         fontSize: 28,

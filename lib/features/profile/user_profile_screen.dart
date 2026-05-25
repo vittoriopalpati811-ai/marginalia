@@ -79,7 +79,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _followLoading = false);
@@ -102,7 +102,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           if (profile == null) {
             return const Center(child: Text('Profilo non trovato.'));
           }
-          final name = profile['display_name'] as String? ?? 'Utente';
+          final name = profile['display_name'] as String? ?? 'User';
           final readingTitle = profile['currently_reading_title'] as String?;
           final readingAuthor = profile['currently_reading_author'] as String?;
           final avatarUrl = profile['avatar_url'] as String?;
@@ -244,7 +244,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                               ? OutlinedButton.icon(
                                   onPressed: () => _toggleFollow(true),
                                   icon: const Icon(Icons.check, size: 16),
-                                  label: const Text('Stai seguendo'),
+                                  label: const Text('Following'),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: MarginaliaColors.inkMuted,
                                     side: const BorderSide(
@@ -259,7 +259,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                               : FilledButton.icon(
                                   onPressed: () => _toggleFollow(false),
                                   icon: const Icon(Icons.add, size: 16),
-                                  label: const Text('Segui'),
+                                  label: const Text('Follow'),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: MarginaliaColors.primary,
                                     foregroundColor: const Color(0xFFF1EEE7),
@@ -342,7 +342,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
                           child: Text(
-                            'Nessun post ancora.',
+                            'No posts yet.',
                             style: GoogleFonts.manrope(
                                 color: MarginaliaColors.inkMuted, fontSize: 13),
                           ),
@@ -371,7 +371,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               color: MarginaliaColors.sienna, strokeWidth: 1.5),
         ),
         error: (_, __) => const Center(
-          child: Text('Errore caricamento profilo.',
+          child: Text('Error loading profile.',
               style: TextStyle(color: MarginaliaColors.inkMuted)),
         ),
       ),
@@ -397,9 +397,9 @@ class _StatsRow extends StatelessWidget {
           _Divider(),
           _StatBox(label: 'Condivisi', value: stats['shared'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Seguiti', value: stats['following'] ?? 0),
+          _StatBox(label: 'Following', value: stats['following'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Follower', value: stats['followers'] ?? 0),
+          _StatBox(label: 'Followers', value: stats['followers'] ?? 0),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0, duration: 350.ms);

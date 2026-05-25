@@ -129,7 +129,7 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) {
         final id   = state.pathParameters['id'] ?? '';
-        final name = state.uri.queryParameters['name'] ?? 'Messaggio';
+        final name = state.uri.queryParameters['name'] ?? 'Message';
         return _pushPage(
             ChatScreen(conversationId: id, conversationName: name), state);
       },
@@ -336,10 +336,10 @@ class _ScaffoldWithNav extends StatelessWidget {
 
   static const _tabs = [
     (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,     label: 'Home'),
-    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,     label: 'Libreria'),
+    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,     label: 'Library'),
     (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,   label: 'Jam'),
-    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,     label: 'Messaggi'),
-    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,   label: 'Profilo'),
+    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,     label: 'Messages'),
+    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,   label: 'Profile'),
   ];
 
   @override

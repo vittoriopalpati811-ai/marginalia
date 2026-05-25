@@ -340,7 +340,7 @@ class _PaywallBody extends StatelessWidget {
                           color: Colors.white.withAlpha(25), width: 1),
                     ),
                     child: Text(
-                      '~€1,67/mese',
+                      '~€1.67/month',
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.white.withAlpha(180),

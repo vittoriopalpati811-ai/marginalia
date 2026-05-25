@@ -120,7 +120,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           ),
         if (_syncState == _SyncState.error)
           _ErrorOverlay(
-            message: _errorMessage ?? 'Errore sconosciuto',
+            message: _errorMessage ?? 'Unknown error',
             onRetry: () {
               setState(() => _syncState = _SyncState.browsing);
               _webController.loadRequest(
@@ -157,8 +157,8 @@ class _WebNotSupported extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Il sync diretto con Amazon Kindle richiede l\'app iOS nativa.\n\n'
-              'Su web puoi importare i tuoi highlight manualmente: vai su Settings e carica il file My Clippings.txt dalla memoria del tuo Kindle.',
+              'Direct sync with Amazon Kindle requires the native iOS app.\n\n'
+              'On web you can import your highlights manually: go to Settings and upload the My Clippings.txt file from your Kindle\'s memory.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 14,
@@ -169,7 +169,7 @@ class _WebNotSupported extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => context.go('/profile'),
               icon: const Icon(Icons.upload_file_outlined),
-              label: const Text('Vai a Import manuale'),
+              label: const Text('Go to Manual Import'),
               style: FilledButton.styleFrom(
                 backgroundColor: MarginaliaColors.accent,
               ),
@@ -237,7 +237,7 @@ class _DoneOverlay extends StatelessWidget {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: onClose,
-              child: const Text('Vai alla libreria'),
+              child: const Text('Go to library'),
             ),
           ],
         ),
@@ -265,7 +265,7 @@ class _ErrorOverlay extends StatelessWidget {
                 size: 56, color: MarginaliaColors.textMuted),
             const SizedBox(height: 20),
             const Text(
-              'Qualcosa è andato storto',
+              'Something went wrong',
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -282,7 +282,7 @@ class _ErrorOverlay extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Riprova'),
+              label: const Text('Retry'),
             ),
           ],
         ),

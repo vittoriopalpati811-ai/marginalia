@@ -356,7 +356,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
         setState(() => _posting = false);
       }
     }
@@ -438,7 +438,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 height: 1.55,
               ),
               decoration: const InputDecoration(
-                hintText: 'Cosa stai leggendo? Condividi un pensiero…',
+                hintText: 'What are you reading? Share a thought…',
                 hintStyle: TextStyle(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
@@ -527,7 +527,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
 // ─── Post success: multilingual word-flowers animation ────────────────────────
 
 const _kPostWords = [
-  'Post pubblicato!',
+  'Posted!',
   'Publié!',
   'Published!',
   'Publicado!',
@@ -771,7 +771,7 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
-          'Pubblica',
+          'Publish',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
@@ -959,7 +959,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
         items: [
           _MenuAction(
             icon: Icons.edit_outlined,
-            label: 'Modifica post',
+            label: 'Edit post',
             color: MarginaliaColors.ink,
             onTap: () async {
               Navigator.pop(ctx);
@@ -969,7 +969,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
           ),
           _MenuAction(
             icon: Icons.delete_outline,
-            label: 'Elimina post',
+            label: 'Delete post',
             color: const Color(0xFFDC2626),
             onTap: () async {
               Navigator.pop(ctx);
@@ -978,17 +978,17 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 context: context,
                 builder: (_) => AlertDialog(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Elimina post'),
-                  content: const Text('Vuoi davvero eliminare questo post? L\'azione non è reversibile.'),
+                  title: const Text('Delete post'),
+                  content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Annulla'),
+                      child: const Text('Cancel'),
                     ),
                     FilledButton(
                       style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Elimina'),
+                      child: const Text('Delete'),
                     ),
                   ],
                 ),
@@ -1003,7 +1003,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('Errore: $e')));
+                        .showSnackBar(SnackBar(content: Text('Error: $e')));
                   }
                 }
               }
@@ -1023,20 +1023,20 @@ class _PostCardState extends ConsumerState<_PostCard> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Modifica post'),
+          title: const Text('Edit post'),
           content: TextField(
             controller: ctrl,
             maxLines: 6,
             maxLength: 1000,
             decoration: const InputDecoration(
-              hintText: 'Scrivi qualcosa…',
+              hintText: 'Write something…',
               border: OutlineInputBorder(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annulla'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: saving
@@ -1053,7 +1053,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                         setS(() => saving = false);
                         if (ctx.mounted) {
                           ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(content: Text('Errore: $e')));
+                              .showSnackBar(SnackBar(content: Text('Error: $e')));
                         }
                       }
                     },
@@ -1062,7 +1062,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Salva'),
+                  : const Text('Save'),
             ),
           ],
         ),
@@ -1127,7 +1127,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
 
     final post          = widget.post;
     final profile       = post['profile']    as Map?;
-    final name          = profile?['display_name']         as String? ?? 'Lettore';
+    final name          = profile?['display_name']         as String? ?? 'Reader';
     final avatarUrl     = profile?['avatar_url']           as String?;
     final readingTitle  = profile?['currently_reading_title'] as String?;
     final userId        = post['user_id']    as String?;
@@ -1638,7 +1638,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
         setState(() => _submitting = false);
       }
     }
@@ -1649,10 +1649,10 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'adesso';
+    if (diff.inMinutes < 1)  return 'just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m';
     if (diff.inHours < 24)   return '${diff.inHours}h';
-    return '${diff.inDays}g';
+    return '${diff.inDays}d';
   }
 
   @override
@@ -1749,7 +1749,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                 c['id'] as String,
                                 (c['profiles'] as Map?)?['display_name']
                                         as String? ??
-                                    'Lettore',
+                                    'Reader',
                               ),
                             ),
                             for (final reply
@@ -1764,7 +1764,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                     c['id'] as String,
                                     (reply['profiles'] as Map?)?[
                                                 'display_name'] as String? ??
-                                        'Lettore',
+                                        'Reader',
                                   ),
                                   isReply: true,
                                 ),
@@ -1913,8 +1913,8 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       ),
                       decoration: InputDecoration(
                         hintText: isReplying
-                            ? 'Rispondi a $_replyingToName…'
-                            : 'Scrivi un commento…',
+                            ? 'Reply to $_replyingToName…'
+                            : 'Write a comment…',
                         hintStyle: TextStyle(
                           color: MarginaliaColors.inkFaint,
                           fontSize: 14,
@@ -2017,7 +2017,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
   @override
   Widget build(BuildContext context) {
     final profile   = widget.comment['profiles'] as Map?;
-    final name      = profile?['display_name'] as String? ?? 'Lettore';
+    final name      = profile?['display_name'] as String? ?? 'Reader';
     final avatarUrl = profile?['avatar_url']   as String?;
     final content   = widget.comment['content']   as String?;
     final imageUrl  = widget.comment['image_url'] as String?;
@@ -2303,7 +2303,7 @@ class _EmptyFeed extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Il feed è vuoto',
+            'Your feed is empty',
             style: GoogleFonts.ebGaramond(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -2313,7 +2313,7 @@ class _EmptyFeed extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Segui altri lettori dalla scheda Amici\nper vedere i loro post qui.',
+            'Follow other readers from the Friends tab\nto see their posts here.',
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               color: MarginaliaColors.inkMuted,

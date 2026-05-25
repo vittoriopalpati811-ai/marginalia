@@ -160,7 +160,7 @@ class _ShareSheetState extends State<_ShareSheet> {
 
           // ── Title ──────────────────────────────────────────────────────────
           const Text(
-            'Condividi highlight',
+            'Share highlight',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
@@ -231,7 +231,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                           )
                         : const Icon(Icons.ios_share, size: 16),
                     label:
-                        Text(_capturing ? 'Preparando…' : 'Condividi immagine'),
+                        Text(_capturing ? 'Preparing…' : 'Share image'),
                     style: FilledButton.styleFrom(
                       backgroundColor: MarginaliaColors.primary,
                       foregroundColor: const Color(0xFFF1EEE7),

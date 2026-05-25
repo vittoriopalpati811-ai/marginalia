@@ -69,7 +69,7 @@ class _AmiciTabState extends ConsumerState<AmiciTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _loadingIds.remove(targetId));
@@ -86,7 +86,7 @@ class _AmiciTabState extends ConsumerState<AmiciTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore: $e')));
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _loadingIds.remove(targetId));
@@ -243,7 +243,7 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = user['display_name'] as String? ?? 'Utente';
+    final name = user['display_name'] as String? ?? 'User';
     final readingTitle = user['currently_reading_title'] as String?;
     final readingAuthor = user['currently_reading_author'] as String?;
     final uid = user['id'] as String?;

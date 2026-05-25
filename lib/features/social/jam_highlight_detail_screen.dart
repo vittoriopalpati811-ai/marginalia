@@ -89,7 +89,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Errore reazione: $e')),
+        SnackBar(content: Text('Reaction error: $e')),
       );
     }
   }
@@ -115,7 +115,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore commento: $e')),
+          SnackBar(content: Text('Comment error: $e')),
         );
       }
     } finally {
@@ -215,7 +215,7 @@ class _JamHighlightDetailScreenState
                             padding: const EdgeInsets.symmetric(vertical: 24),
                             child: Center(
                               child: Text(
-                                'Nessun commento ancora.\nSii il primo a rispondere.',
+                                'No comments yet.\nBe the first to reply.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: MarginaliaColors.inkMuted,
@@ -255,7 +255,7 @@ class _JamHighlightDetailScreenState
                         ),
                       ),
                     ),
-                    error: (e, _) => Text('Errore caricamento: $e',
+                    error: (e, _) => Text('Load error: $e',
                         style: const TextStyle(color: MarginaliaColors.inkMuted)),
                   ),
                 ],
@@ -326,7 +326,7 @@ class _JamHighlightDetailScreenState
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
-                      hintText: 'Scrivi un commento…',
+                      hintText: 'Write a comment…',
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
@@ -480,7 +480,7 @@ class _CommentBubble extends StatelessWidget {
     final content  = data['content'] as String? ?? '';
     final imageUrl = data['image_url'] as String?;
     final profile  = data['profiles'] as Map<String, dynamic>?;
-    final name     = profile?['display_name'] as String? ?? 'Utente';
+    final name     = profile?['display_name'] as String? ?? 'User';
     final createdAt = data['created_at'] as String?;
     final showText = content.isNotEmpty && content != '📷';
 

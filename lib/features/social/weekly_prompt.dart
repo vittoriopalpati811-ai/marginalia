@@ -3,18 +3,18 @@
 /// jam see the same prompt at the same time.
 class WeeklyPrompt {
   static const _prompts = [
-    'Condividi un highlight che ti ha cambiato idea questa settimana.',
-    'Una citazione che ti ha fatto ridere di recente — passala alla Jam.',
-    'L\'idea più scomoda che hai sottolineato negli ultimi giorni.',
-    'Un highlight su cui sei in disaccordo con l\'autore. Perché?',
-    'La citazione che vorresti tatuarti, se non avessi paura.',
-    'Un passaggio che hai dovuto rileggere tre volte. Perché?',
-    'Il consiglio più pratico che hai estratto questa settimana.',
-    'Una frase che pensavi fosse banale, ma che ora ti torna in mente.',
-    'Un highlight da un libro che non consiglieresti — ma con una buona idea dentro.',
-    'La citazione più "difficile" che hai sottolineato. Spiegacela in 2 righe.',
-    'Un passaggio che hai condiviso offline con qualcuno. Riportacelo qui.',
-    'Una sottolineatura che hai fatto anni fa e che oggi leggeresti diversamente.',
+    'Share a highlight that changed your mind this week.',
+    'A quote that made you laugh recently — share it with the Jam.',
+    'The most uncomfortable idea you have underlined recently.',
+    'A highlight you disagree with the author on. Why?',
+    'The quote you would get tattooed, if you weren\'t afraid.',
+    'A passage you had to re-read three times. Why?',
+    'The most practical advice you extracted this week.',
+    'A sentence you thought was obvious, but keeps coming back to you.',
+    'A highlight from a book you wouldn\'t recommend — but with a good idea inside.',
+    'The most "difficult" quote you underlined. Explain it in 2 lines.',
+    'A passage you shared offline with someone. Bring it here.',
+    'An annotation you made years ago that you would read differently today.',
   ];
 
   /// Current prompt — rotates by ISO week-of-year, stable within a week.

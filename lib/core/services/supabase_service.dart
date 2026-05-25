@@ -31,6 +31,14 @@ class SupabaseService {
 
   Future<void> signOut() => _client.auth.signOut();
 
+  /// Permanently deletes the current user's account and all their data.
+  /// Calls the delete_my_account() RPC (migration 025) which cascades
+  /// deletes through FK relationships in auth.users, then signs out.
+  Future<void> deleteAccount() async {
+    await _client.rpc('delete_my_account');
+    await _client.auth.signOut();
+  }
+
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
   // ─── Books ────────────────────────────────────────────────────────────────

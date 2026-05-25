@@ -47,7 +47,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       setState(() { _error = e.message; _loading = false; });
     } catch (_) {
       setState(() {
-        _error = 'Errore imprevisto. Riprova.';
+        _error = 'Unexpected error. Please try again.';
         _loading = false;
       });
     }
@@ -154,7 +154,7 @@ class _FormState extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            'Scegli una password di almeno 6 caratteri.',
+            'Choose a password of at least 6 characters.',
             style: TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
           ).animate(delay: 60.ms).fadeIn(duration: 300.ms),
 
@@ -165,7 +165,7 @@ class _FormState extends StatelessWidget {
             controller:  passwordCtrl,
             obscureText: obscure1,
             decoration:  InputDecoration(
-              hintText:   'Nuova password',
+              hintText:   'New password',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(obscure1
@@ -175,8 +175,8 @@ class _FormState extends StatelessWidget {
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Inserisci la nuova password';
-              if (v.length < 6) return 'Almeno 6 caratteri';
+              if (v == null || v.isEmpty) return 'Enter your new password';
+              if (v.length < 6) return 'At least 6 characters';
               return null;
             },
           ).animate(delay: 100.ms).fadeIn(duration: 280.ms),
@@ -188,7 +188,7 @@ class _FormState extends StatelessWidget {
             controller:  confirmCtrl,
             obscureText: obscure2,
             decoration:  InputDecoration(
-              hintText:   'Conferma password',
+              hintText:   'Confirm password',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(obscure2
@@ -198,7 +198,7 @@ class _FormState extends StatelessWidget {
               ),
             ),
             validator: (v) {
-              if (v != passwordCtrl.text) return 'Le password non coincidono';
+              if (v != passwordCtrl.text) return 'Passwords do not match';
               return null;
             },
           ).animate(delay: 140.ms).fadeIn(duration: 280.ms),
@@ -243,7 +243,7 @@ class _FormState extends StatelessWidget {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Salva password'),
+                  : const Text('Save password'),
             ),
           ).animate(delay: 180.ms).fadeIn(duration: 280.ms),
         ],

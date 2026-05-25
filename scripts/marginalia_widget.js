@@ -12,7 +12,7 @@
 
 // ── CONFIGURAZIONE ────────────────────────────────────────────────────────────
 
-const USER_ID      = "";   // ← IL TUO UUID
+const USER_ID      = "ea240e7d-4f33-49b3-a9f6-e6270066f339";
 const FUNCTION_URL = "https://ibucvloawkfwobaelwbr.supabase.co/functions/v1/widget-highlight";
 const ANON_KEY     = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
 
@@ -83,10 +83,12 @@ async function fetchHighlight(wx) {
 
 async function fetchWeather() {
   try {
-    const req = new Request("https://wttr.in/?format=j1");
-    req.timeoutInterval = 4;
+    const loc  = await Location.current();
+    const url  = `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude.toFixed(4)}&longitude=${loc.longitude.toFixed(4)}&current=weathercode&forecast_days=1`;
+    const req  = new Request(url);
+    req.timeoutInterval = 5;
     const d    = await req.loadJSON();
-    const code = parseInt(d?.current_condition?.[0]?.weatherCode ?? "113");
+    const code = d?.current?.weathercode ?? 0;
     return codeToParam(code);
   } catch { return "clear"; }
 }
@@ -117,7 +119,7 @@ function clip(text, max) {
 function addRule(parent, opacity = 0.18) {
   const line = parent.addStack();
   line.backgroundColor = new Color("#FFFFFF", opacity);
-  line.size = new Size(-1, 0.6);
+  line.size = new Size(300, 1);
 }
 
 // Badge "M" — pillola glass con bordo iridescente

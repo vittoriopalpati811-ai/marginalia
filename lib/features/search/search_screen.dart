@@ -222,7 +222,7 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name      = user['display_name'] as String? ?? 'Lettore';
+    final name      = user['display_name'] as String? ?? 'Reader';
     final username  = user['username']     as String?;
     final avatarUrl = user['avatar_url']   as String?;
     final bio       = user['bio']          as String?;

@@ -228,8 +228,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         children: [
                           Text(
                             _showAllBooks
-                                ? 'Nascondi'
-                                : 'Vedi tutti i ${allBooks.length} libri',
+                                ? 'Hide'
+                                : 'View all ${allBooks.length} books',
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -288,9 +288,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (!supabase.isAuthenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Accedi per importare i tuoi highlight.'),
+          content: const Text('Sign in to import your highlights.'),
           action: SnackBarAction(
-            label: 'Accedi',
+            label: 'Sign in',
             textColor: Colors.white,
             onPressed: () => context.push('/auth'),
           ),
@@ -313,13 +313,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           backgroundColor: MarginaliaColors.surfaceElevated,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20)),
-          title: const Text('Cancella e reimporta?',
+          title: const Text('Clear and reimport?',
               style:
                   TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
           content: const Text(
-            'Tutti i tuoi highlight e libri verranno eliminati da Supabase, '
-            'poi reimportati dal file scelto.\n\n'
-            'Utile per correggere caratteri corrotti da import precedenti.',
+            'All your highlights and books will be deleted from Supabase, '
+            'then reimported from the selected file.\n\n'
+            'Useful to fix corrupted characters from previous imports.',
             style: TextStyle(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
@@ -328,13 +328,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Annulla'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFB54848)),
-              child: const Text('Cancella e reimporta'),
+              child: const Text('Clear and reimport'),
             ),
           ],
         ),
@@ -361,7 +361,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Errore pulizia dati: $e')));
+              .showSnackBar(SnackBar(content: Text('Error clearing data: $e')));
         }
         setState(() => _isImporting = false);
         return;
@@ -378,12 +378,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
       if (mounted) {
         final msg = importResult.firstError != null
-            ? 'Import parziale — ${importResult.highlightsAdded} HL, '
-                '${importResult.highlightsFailed} errori.\n${importResult.firstError}'
+            ? 'Partial import — ${importResult.highlightsAdded} highlights, '
+                '${importResult.highlightsFailed} errors.\n${importResult.firstError}'
             : importResult.highlightsAdded > 0
-                ? '${importResult.highlightsAdded} highlight importati da '
-                    '${importResult.booksAdded} libri.'
-                : 'Nessun nuovo highlight (${importResult.highlightsDeduplicated} già presenti).';
+                ? '${importResult.highlightsAdded} highlights imported from '
+                    '${importResult.booksAdded} books.'
+                : 'No new highlights (${importResult.highlightsDeduplicated} already present).';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -395,7 +395,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore importazione: $e')));
+            .showSnackBar(SnackBar(content: Text('Import error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);
@@ -427,12 +427,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       _invalidateAfterImport();
       if (mounted) {
         final msg = result.firstError != null
-            ? 'Import parziale — ${result.booksAdded} libri, '
-                '${result.highlightsAdded} HL.\nErrore: ${result.firstError}'
+            ? 'Partial import — ${result.booksAdded} books, '
+                '${result.highlightsAdded} highlights.\nError: ${result.firstError}'
             : result.highlightsAdded > 0
-                ? 'Demo caricata: ${result.highlightsAdded} highlight da '
-                    '${result.booksAdded} libri.'
-                : 'I dati demo sono già presenti.';
+                ? 'Demo loaded: ${result.highlightsAdded} highlights from '
+                    '${result.booksAdded} books.'
+                : 'Demo data is already present.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -444,7 +444,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore caricamento demo: $e')));
+            .showSnackBar(SnackBar(content: Text('Error loading demo: $e')));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);
@@ -457,12 +457,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 String contextualGreeting(String? name, {int? hour}) {
   final h = hour ?? DateTime.now().hour;
   final String base;
-  if (h < 6)       base = 'Così presto';
-  else if (h < 12) base = 'Buongiorno';
-  else if (h < 13) base = 'Prenditi una pausa';
-  else if (h < 18) base = 'Buon pomeriggio';
-  else if (h < 21) base = 'Buonasera';
-  else             base = 'Buonanotte';
+  if (h < 6)       base = 'Up so early';
+  else if (h < 12) base = 'Good morning';
+  else if (h < 13) base = 'Take a break';
+  else if (h < 18) base = 'Good afternoon';
+  else if (h < 21) base = 'Good evening';
+  else             base = 'Good night';
 
   final trimmed = name?.trim() ?? '';
   if (trimmed.isEmpty) return base;
@@ -529,7 +529,7 @@ class _EditorialHeader extends StatelessWidget {
                     color: MarginaliaColors.inkFaint,
                     iconSize: 20,
                     tooltip:
-                        'Importa · Tieni premuto per reimportare da zero',
+                        'Import · Long press to reimport from scratch',
                     onPressed: onImport,
                   ),
                 ),
@@ -576,7 +576,7 @@ class _DailyCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('SCELTO PER TE',
+                Text('PICKED FOR YOU',
                     style: MarginaliaTextStyles.sectionTitle),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -614,7 +614,7 @@ class _DailyCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Leggi',
+                  'Read',
                   style: MarginaliaTextStyles.label.copyWith(
                     color: MarginaliaColors.sienna,
                     fontWeight: FontWeight.w600,
@@ -657,7 +657,7 @@ class _RecentHighlightsStrip extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
           child: Row(
             children: [
-              Text('RECENTI', style: MarginaliaTextStyles.sectionTitle),
+              Text('RECENT', style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(
                 child: Divider(
@@ -786,14 +786,14 @@ class _FilterChips extends StatelessWidget {
     return Row(
       children: [
         _Chip(
-          label:  'Tutti',
+          label:  'All',
           icon:   Icons.auto_stories_outlined,
           active: selected == _LibraryFilter.all,
           onTap:  () => onSelect(_LibraryFilter.all),
         ),
         const SizedBox(width: 8),
         _Chip(
-          label:  'Preferiti',
+          label:  'Favorites',
           icon:   Icons.bookmark_outline,
           active: selected == _LibraryFilter.favorites,
           onTap:  () => onSelect(_LibraryFilter.favorites),

@@ -89,10 +89,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   Future<void> _shareInviteCode(String? code) async {
     final inviteCode = code ?? widget.jamId.substring(0, 8).toUpperCase();
     await Share.share(
-      'Unisciti alla mia Jam su Marginalia! 📚\n\n'
-      'Codice: $inviteCode\n\n'
-      'Scarica l\'app: https://marginalia.app',
-      subject: 'Unisciti alla Jam "${widget.jamName}"',
+      'Join my Jam on Marginalia! 📚\n\n'
+      'Code: $inviteCode\n\n'
+      'Download the app: https://marginalia.app',
+      subject: 'Join the Jam "${widget.jamName}"',
     );
   }
 
@@ -128,7 +128,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore upload: $e')));
+            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
       }
     } finally {
       if (mounted) setState(() => _uploadingCover = false);
@@ -177,7 +177,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text('Errore: $e')));
+                  .showSnackBar(SnackBar(content: Text('Error: $e')));
             }
           }
         },
@@ -208,7 +208,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
         content: highlight?['content'] as String? ?? '',
         bookTitle: book?['title'] as String? ?? '',
         bookAuthor: book?['author'] as String? ?? '',
-        sharedBy: profile?['display_name'] as String? ?? 'Utente',
+        sharedBy: profile?['display_name'] as String? ?? 'User',
       ),
     ));
   }
@@ -554,7 +554,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               ),
             ),
             error: (e, _) => SliverFillRemaining(
-              child: Center(child: Text('Errore: $e')),
+              child: Center(child: Text('Error: $e')),
             ),
           ),
         ],
@@ -617,7 +617,7 @@ class _TrendingSection extends StatelessWidget {
               final profile =
                   data['profiles'] as Map<String, dynamic>?;
               final sharedBy =
-                  profile?['display_name'] as String? ?? 'Utente';
+                  profile?['display_name'] as String? ?? 'User';
 
               final coverColor =
                   MarginaliaDecorations.bookCoverColor(
@@ -824,7 +824,7 @@ class _MembersStrip extends StatelessWidget {
               final m = members[i];
               final profile = m['profile'] as Map<String, dynamic>?;
               final name =
-                  profile?['display_name'] as String? ?? 'Utente';
+                  profile?['display_name'] as String? ?? 'User';
               final readingTitle =
                   profile?['currently_reading_title'] as String?;
               final initial =
@@ -968,7 +968,7 @@ class _EmptyJamHighlights extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Il Jam è silenzioso',
+            'The Jam is quiet',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
@@ -977,7 +977,7 @@ class _EmptyJamHighlights extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Sii il primo a condividere un highlight\no invita amici a unirsi.',
+            'Be the first to share a highlight\nor invite friends to join.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: MarginaliaColors.inkMuted,
@@ -1005,7 +1005,7 @@ class _EmptyJamHighlights extends StatelessWidget {
               child: Column(
                 children: [
                   const Text(
-                    'CODICE INVITO',
+                    'INVITE CODE',
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -1352,7 +1352,7 @@ class _JamHighlightCard extends ConsumerWidget {
     final bookAuthor = book?['author'] as String? ?? '';
     final color = highlight?['color'] as String?;
     final profile = data['profiles'] as Map<String, dynamic>?;
-    final sharedBy = profile?['display_name'] as String? ?? 'Utente';
+    final sharedBy = profile?['display_name'] as String? ?? 'User';
     final sharedAt = data['shared_at'] as String?;
     final jhId = data['id'] as String? ?? '';
 
@@ -1616,7 +1616,7 @@ class _JamFeaturesRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: Row(
             children: [
-              Text('ATTIVITÀ', style: MarginaliaTextStyles.sectionTitle),
+              Text('ACTIVITY', style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(child: Divider(color: MarginaliaColors.rule)),
             ],
@@ -1691,7 +1691,7 @@ class _MemberProfileSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = member['profile'] as Map<String, dynamic>? ?? {};
-    final name = profile['display_name'] as String? ?? 'Utente';
+    final name = profile['display_name'] as String? ?? 'User';
     final username = profile['username'] as String?;
     final readingTitle = profile['currently_reading_title'] as String?;
     final readingAuthor = profile['currently_reading_author'] as String?;

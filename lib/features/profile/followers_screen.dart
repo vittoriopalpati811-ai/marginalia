@@ -77,9 +77,9 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
   }
 
   String get _title => switch (widget.type) {
-        ProfileListType.followers => 'Follower',
-        ProfileListType.following => 'Seguiti',
-        ProfileListType.books     => 'Libri letti',
+        ProfileListType.followers => 'Followers',
+        ProfileListType.following => 'Following',
+        ProfileListType.books     => 'Books read',
       };
 
   @override
@@ -148,7 +148,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                     : _error != null
                         ? Center(
                             child: Text(
-                              'Errore: $_error',
+                              'Error: $_error',
                               style: const TextStyle(
                                   color: MarginaliaColors.inkMuted),
                             ),
@@ -202,7 +202,7 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = data['display_name'] as String? ?? 'Lettore';
+    final name = data['display_name'] as String? ?? 'Reader';
     final reading = data['currently_reading_title'] as String?;
     final avatarUrl = data['avatar_url'] as String?;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'L';
@@ -374,9 +374,9 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, msg) = switch (type) {
-      ProfileListType.followers => (Icons.group_outlined, 'Nessun follower ancora'),
-      ProfileListType.following => (Icons.person_add_outlined, 'Non segui ancora nessuno'),
-      ProfileListType.books     => (Icons.menu_book_outlined, 'Nessun libro importato'),
+      ProfileListType.followers => (Icons.group_outlined, 'No followers yet'),
+      ProfileListType.following => (Icons.person_add_outlined, 'Not following anyone yet'),
+      ProfileListType.books     => (Icons.menu_book_outlined, 'No books imported'),
     };
     return Center(
       child: Column(

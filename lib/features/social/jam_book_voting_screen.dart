@@ -32,7 +32,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Libro del mese',
+          'Book of the month',
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -44,7 +44,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
           IconButton(
             icon: const Icon(Icons.add, color: MarginaliaColors.primary),
             onPressed: () => _showProposeSheet(),
-            tooltip: 'Proponi un libro',
+            tooltip: 'Propose a book',
           ),
         ],
       ),
@@ -141,7 +141,7 @@ class _ProposalCard extends StatelessWidget {
     final hasVoted = votes.any((v) => v['user_id'] == currentUserId);
     final proposer = data['profiles'] as Map<String, dynamic>?;
     final proposerName = proposer?['display_name'] as String? ??
-        proposer?['username'] as String? ?? 'Utente';
+        proposer?['username'] as String? ?? 'User';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -295,7 +295,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Nessuna proposta ancora',
+              'No proposals yet',
               style: GoogleFonts.manrope(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -305,7 +305,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Proponi il prossimo libro da leggere insieme.',
+              'Suggest the next book to read together.',
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 14,
@@ -316,7 +316,7 @@ class _EmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Proponi un libro'),
+              label: const Text('Propose a book'),
             ),
           ],
         ),
@@ -402,7 +402,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Proponi un libro',
+            'Propose a book',
             style: GoogleFonts.manrope(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -413,19 +413,19 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
           const SizedBox(height: 20),
           TextField(
             controller: _titleCtrl,
-            decoration: const InputDecoration(hintText: 'Titolo *', prefixIcon: Icon(Icons.book_outlined)),
+            decoration: const InputDecoration(hintText: 'Title *', prefixIcon: Icon(Icons.book_outlined)),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _authorCtrl,
-            decoration: const InputDecoration(hintText: 'Autore', prefixIcon: Icon(Icons.person_outline)),
+            decoration: const InputDecoration(hintText: 'Author', prefixIcon: Icon(Icons.person_outline)),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _descCtrl,
-            decoration: const InputDecoration(hintText: 'Perché questo libro? (opzionale)'),
+            decoration: const InputDecoration(hintText: 'Why this book? (optional)'),
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
           ),
@@ -436,7 +436,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
               onPressed: _loading ? null : _submit,
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Proponi'),
+                  : const Text('Propose'),
             ),
           ),
         ],

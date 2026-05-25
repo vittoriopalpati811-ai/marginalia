@@ -89,19 +89,19 @@ class ExportService {
   /// chronologically within each group.
   static String buildFullMarkdown(List<Highlight> allHighlights) {
     final buf = StringBuffer();
-    final now = DateFormat('d MMMM yyyy', 'it').format(DateTime.now());
+    final now = DateFormat('d MMMM yyyy', 'en').format(DateTime.now());
 
     buf.writeln('# Marginalia Export — $now');
     buf.writeln();
     buf.writeln(
-        '> Esportato da [Marginalia](https://marginalia.app) — '
-        'riscopri i tuoi highlight Kindle.');
+        '> Exported from [Marginalia](https://marginalia.app) — '
+        'rediscover your Kindle highlights.');
     buf.writeln();
 
     // Group by (bookTitle, bookAuthor) in insertion order.
     final grouped = <String, List<Highlight>>{};
     for (final h in allHighlights) {
-      final key = '${h.bookTitle ?? 'Senza titolo'}|||${h.bookAuthor ?? ''}';
+      final key = '${h.bookTitle ?? 'Untitled'}|||${h.bookAuthor ?? ''}';
       grouped.putIfAbsent(key, () => []).add(h);
     }
 
@@ -113,8 +113,8 @@ class ExportService {
 
     final totalBooks = grouped.length;
     final totalHighlights = allHighlights.length;
-    buf.writeln('$totalHighlights highlight da $totalBooks '
-        '${totalBooks == 1 ? 'libro' : 'libri'}');
+    buf.writeln('$totalHighlights highlight${totalHighlights == 1 ? '' : 's'} from $totalBooks '
+        '${totalBooks == 1 ? 'book' : 'books'}');
     buf.writeln();
     buf.writeln('---');
     buf.writeln();
@@ -142,12 +142,12 @@ class ExportService {
     required List<Highlight> highlights,
   }) {
     final buf = StringBuffer();
-    final now = DateFormat('d MMMM yyyy', 'it').format(DateTime.now());
+    final now = DateFormat('d MMMM yyyy', 'en').format(DateTime.now());
 
     buf.writeln('# $bookTitle');
     if (bookAuthor.isNotEmpty) buf.writeln('## *$bookAuthor*');
     buf.writeln();
-    buf.writeln('> Esportato da Marginalia il $now');
+    buf.writeln('> Exported from Marginalia on $now');
     buf.writeln();
     buf.writeln('---');
     buf.writeln();

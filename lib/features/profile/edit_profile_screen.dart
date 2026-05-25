@@ -21,14 +21,14 @@ class _GP {
 }
 
 const _kGradients = [
-  _GP('sepia',    'Seppia',   Color(0xFF6B4C3B), Color(0xFF2C1810)),
-  _GP('forest',   'Foresta',  Color(0xFF2D5A3D), Color(0xFF132A1E)),
-  _GP('ocean',    'Oceano',   Color(0xFF1A3A5C), Color(0xFF09141F)),
-  _GP('dusk',     'Tramonto', Color(0xFF6B3A7A), Color(0xFF1A0B26)),
-  _GP('rose',     'Rosa',     Color(0xFF7A3A4E), Color(0xFF2E1020)),
-  _GP('graphite', 'Grafite',  Color(0xFF3C3C3C), Color(0xFF141414)),
-  _GP('amber',    'Ambra',    Color(0xFF7A4E1A), Color(0xFF2C1A06)),
-  _GP('slate',    'Ardesia',  Color(0xFF2A3A4E), Color(0xFF0D141E)),
+  _GP('sepia',    'Sepia',    Color(0xFF6B4C3B), Color(0xFF2C1810)),
+  _GP('forest',   'Forest',   Color(0xFF2D5A3D), Color(0xFF132A1E)),
+  _GP('ocean',    'Ocean',    Color(0xFF1A3A5C), Color(0xFF09141F)),
+  _GP('dusk',     'Dusk',     Color(0xFF6B3A7A), Color(0xFF1A0B26)),
+  _GP('rose',     'Rose',     Color(0xFF7A3A4E), Color(0xFF2E1020)),
+  _GP('graphite', 'Graphite', Color(0xFF3C3C3C), Color(0xFF141414)),
+  _GP('amber',    'Amber',    Color(0xFF7A4E1A), Color(0xFF2C1A06)),
+  _GP('slate',    'Slate',    Color(0xFF2A3A4E), Color(0xFF0D141E)),
 ];
 
 _GP _gpFor(String key) =>
@@ -36,11 +36,11 @@ _GP _gpFor(String key) =>
 
 const _kPatterns = ['none', 'dots', 'lines', 'grid', 'circles'];
 const _kPatternLabels = {
-  'none':    'Nessuno',
-  'dots':    'Punti',
-  'lines':   'Linee',
-  'grid':    'Griglia',
-  'circles': 'Cerchi',
+  'none':    'None',
+  'dots':    'Dots',
+  'lines':   'Lines',
+  'grid':    'Grid',
+  'circles': 'Circles',
 };
 
 // ─── EditProfileScreen ────────────────────────────────────────────────────────
@@ -157,7 +157,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore upload: $e')));
+            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
       }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -185,7 +185,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore upload: $e')));
+            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
       }
     } finally {
       if (mounted) setState(() => _uploadingCover = false);
@@ -199,7 +199,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final username = _usernameCtrl.text.trim().toLowerCase();
     if (username.isNotEmpty && _usernameAvailable == false) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username non disponibile, scegline un altro.')),
+        const SnackBar(content: Text('Username unavailable, please choose another.')),
       );
       return;
     }
@@ -221,7 +221,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Errore salvataggio: $e')));
+            .showSnackBar(SnackBar(content: Text('Save error: $e')));
         setState(() => _saving = false);
       }
     }
@@ -276,7 +276,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                         const Expanded(
                           child: Text(
-                            'Modifica profilo',
+                            'Edit profile',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 17,
@@ -355,13 +355,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionLabel('INFORMAZIONI'),
+                  _SectionLabel('INFORMATION'),
                   const SizedBox(height: 10),
 
                   _Field(
                     controller: _nameCtrl,
-                    label: 'Nome visualizzato',
-                    hint: 'es. Marco Rossi',
+                    label: 'Display name',
+                    hint: 'e.g. Marco Rossi',
                     icon: Icons.person_outline,
                     onChanged: (_) => setState(() {}),
                   ),
@@ -379,33 +379,33 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   _Field(
                     controller: _bioCtrl,
                     label: 'Bio',
-                    hint: 'Racconta di te come lettore…',
+                    hint: 'Tell us about yourself as a reader…',
                     icon: Icons.edit_note_outlined,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 24),
 
-                  _SectionLabel('IN LETTURA'),
+                  _SectionLabel('CURRENTLY READING'),
                   const SizedBox(height: 10),
 
                   _Field(
                     controller: _readingTitleCtrl,
-                    label: 'Titolo del libro',
-                    hint: 'es. Il nome della rosa',
+                    label: 'Book title',
+                    hint: 'e.g. The Name of the Rose',
                     icon: Icons.menu_book_outlined,
                   ),
                   const SizedBox(height: 12),
 
                   _Field(
                     controller: _readingAuthorCtrl,
-                    label: 'Autore',
-                    hint: 'es. Umberto Eco',
+                    label: 'Author',
+                    hint: 'e.g. Umberto Eco',
                     icon: Icons.person_search_outlined,
                   ),
                   const SizedBox(height: 28),
 
                   // ── Gradient picker ────────────────────────────────────────
-                  _SectionLabel('SFONDO PROFILO'),
+                  _SectionLabel('PROFILE BACKGROUND'),
                   const SizedBox(height: 12),
 
                   // Live mini-preview
@@ -599,7 +599,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   strokeWidth: 1.8, color: Color(0xFFF1EEE7)),
                             )
                           : const Text(
-                              'Salva',
+                              'Save',
                               style: TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w700),
                             ),
@@ -786,7 +786,7 @@ class _UsernameField extends StatelessWidget {
             ),
             decoration: InputDecoration(
               labelText: 'Username',
-              hintText: 'es. marco_legge',
+              hintText: 'e.g. marco_reads',
               prefixIcon: const Icon(Icons.alternate_email,
                   size: 18, color: MarginaliaColors.inkFaint),
               suffixIcon: suffix,
@@ -804,7 +804,7 @@ class _UsernameField extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.only(left: 14, top: 4),
             child: Text(
-              'Username già in uso, scegline un altro.',
+              'Username already taken, choose another.',
               style: TextStyle(
                   fontSize: 11,
                   color: Color(0xFFBF4A4A),
@@ -815,7 +815,7 @@ class _UsernameField extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.only(left: 14, top: 4),
             child: Text(
-              'Username disponibile!',
+              'Username available!',
               style: TextStyle(
                   fontSize: 11,
                   color: Color(0xFF4A7A35),

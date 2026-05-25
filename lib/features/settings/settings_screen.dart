@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -71,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profile = profileAsync.asData?.value;
     final displayName = profile?['display_name'] as String? ??
         user?.email?.split('@').first ??
-        'Lettore';
+        'Reader';
     final readingTitle = profile?['currently_reading_title'] as String?;
     final readingAuthor = profile?['currently_reading_author'] as String?;
     final stats = statsAsync.asData?.value ?? {};
@@ -101,7 +102,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
-                tooltip: 'Impostazioni',
+                tooltip: 'Settings',
                 onPressed: () => _showSettingsSheet(context, ref, profile),
               ),
               const SizedBox(width: 4),
@@ -251,8 +252,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(width: 10),
                   OutlinedButton(
                     onPressed: () => Share.share(
-                      'Leggo su Marginalia 📚\n'
-                      'Vieni a leggere con me!\nhttps://marginalia.app',
+                      'I read on Marginalia\n'
+                      'Come read with me!\nhttps://marginalia.app',
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: MarginaliaColors.primary,
@@ -286,7 +287,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
               child: Row(
                 children: [
-                  Text('NELLE JAM',
+                  Text('IN JAMS',
                       style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 8),
                   Text(
@@ -339,7 +340,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
               child: Row(
                 children: [
-                  Text('IMPOSTAZIONI',
+                  Text('SETTINGS',
                       style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(child: Divider(color: MarginaliaColors.rule)),
@@ -352,26 +353,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             delegate: SliverChildListDelegate([
               _SettingsTile(
                 icon: Icons.sync_outlined,
-                label: 'Sincronizza con Kindle',
-                subtitle: 'Accedi ad Amazon e importa gli highlight',
+                label: 'Sync with Kindle',
+                subtitle: 'Sign in to Amazon and import highlights',
                 onTap: () => context.push('/sync/kindle'),
               ),
               _SettingsTile(
                 icon: Icons.upload_file_outlined,
-                label: 'Importa My Clippings.txt',
-                subtitle: 'Importa manualmente dal file Kindle',
+                label: 'Import My Clippings.txt',
+                subtitle: 'Manually import from your Kindle file',
                 onTap: () => context.go('/'),
               ),
               _SettingsTile(
                 icon: Icons.download_outlined,
-                label: 'Esporta in Markdown',
-                subtitle: 'Scarica tutti i tuoi highlight come file .md',
+                label: 'Export as Markdown',
+                subtitle: 'Download all your highlights as a .md file',
                 onTap: () => _exportAllHighlights(context, ref),
               ),
               _SettingsTile(
                 icon: Icons.widgets_outlined,
-                label: 'Widget iOS',
-                subtitle: 'Anteprima e aggiornamento del widget home screen',
+                label: 'iOS Widget',
+                subtitle: 'Preview and update the home screen widget',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const WidgetPreviewScreen(),
@@ -394,22 +395,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ),
-              _SettingsTile(
-                icon: Icons.privacy_tip_outlined,
-                label: 'Privacy Policy',
-                onTap: () {},
-                trailing: const Icon(Icons.open_in_new,
-                    size: 14, color: MarginaliaColors.inkFaint),
-              ),
               const _SettingsTile(
                 icon: Icons.info_outline,
-                label: 'Versione',
+                label: 'Version',
                 trailing: Text(
                   '1.0.0',
                   style: TextStyle(
                       color: MarginaliaColors.inkFaint, fontSize: 13),
                 ),
               ),
+
+              // ── PRIVACY & DATA section ─────────────────────────────────
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  children: [
+                    Text('PRIVACY & DATA',
+                        style: MarginaliaTextStyles.sectionTitle),
+                    const SizedBox(width: 12),
+                    const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                  ],
+                ),
+              ),
+              _SettingsTile(
+                icon: Icons.shield_outlined,
+                label: 'Your Data',
+                subtitle: 'What we store and how we use it',
+                onTap: () => _showYourDataSheet(context),
+              ),
+              _SettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Privacy Policy',
+                onTap: () async {
+                  final uri = Uri.parse('https://marginalia.app/privacy');
+                  if (await canLaunchUrl(uri)) await launchUrl(uri);
+                },
+                trailing: const Icon(Icons.open_in_new,
+                    size: 14, color: MarginaliaColors.inkFaint),
+              ),
+              _SettingsTile(
+                icon: Icons.delete_forever_outlined,
+                label: 'Delete Account',
+                subtitle: 'Permanently delete your account and all data',
+                onTap: () => _showDeleteAccountDialog(context, ref),
+                trailing: const Icon(Icons.chevron_right,
+                    color: Color(0xFFB54848), size: 18),
+              ),
+
               const SizedBox(height: 16),
               // Sign out
               Padding(
@@ -453,7 +486,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     strokeWidth: 2, color: Colors.white),
               ),
               SizedBox(width: 12),
-              Text('Preparando il file…'),
+              Text('Preparing file…'),
             ],
           ),
           duration: Duration(seconds: 5),
@@ -473,8 +506,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ..showSnackBar(
               const SnackBar(
                 content: Text(
-                    'Nessun highlight da esportare. '
-                    'Importa prima My Clippings.txt.'),
+                    'No highlights to export. '
+                    'Import My Clippings.txt first.'),
               ),
             );
         }
@@ -487,8 +520,125 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(
-            SnackBar(content: Text('Errore durante l\'esportazione: $e')),
+            SnackBar(content: Text('Export error: $e')),
           );
+      }
+    }
+  }
+
+  // ── Your Data bottom sheet (GDPR transparency) ────────────────────────────
+
+  void _showYourDataSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: MarginaliaColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(ctx).padding.bottom + 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.rule,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Your Data',
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.4),
+            ),
+            const SizedBox(height: 16),
+            _DataRow(
+              icon: Icons.email_outlined,
+              title: 'Email address',
+              body: 'Used for account authentication only.',
+            ),
+            _DataRow(
+              icon: Icons.format_quote_outlined,
+              title: 'Highlights & books',
+              body: 'Stored in our database to sync across devices. '
+                  'You can export or delete them at any time.',
+            ),
+            _DataRow(
+              icon: Icons.favorite_border,
+              title: 'Health data (steps, workouts, cycle)',
+              body: 'Processed on-device only to personalise your daily '
+                  'highlight. Never uploaded.',
+            ),
+            _DataRow(
+              icon: Icons.location_on_outlined,
+              title: 'Weather location',
+              body: 'Used on-device only to fetch weather context for your '
+                  'daily highlight. Never stored.',
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'No advertising. No tracking. No data sold.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: MarginaliaColors.sienna,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Delete account confirmation dialog ────────────────────────────────────
+
+  Future<void> _showDeleteAccountDialog(
+      BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete account?',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        content: const Text(
+          'This will permanently delete your account, all your highlights, '
+          'books, and Jam memberships. This action cannot be undone.',
+          style: TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB54848)),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!context.mounted) return;
+
+    try {
+      await ref.read(supabaseServiceProvider).deleteAccount();
+      // Navigate to auth screen after account deletion.
+      if (context.mounted) context.go('/auth');
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting account: $e')),
+        );
       }
     }
   }
@@ -533,7 +683,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Modifica profilo',
+            const Text('Edit profile',
                 style: TextStyle(
                     fontSize: 18, fontWeight: FontWeight.w700,
                     letterSpacing: -0.4)),
@@ -542,14 +692,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               controller: nameController,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
-                hintText: 'Nome visualizzato',
+                hintText: 'Display name',
                 prefixIcon: Icon(Icons.person_outline),
-                labelText: 'Nome',
+                labelText: 'Name',
               ),
             ),
             const SizedBox(height: 12),
             const Text(
-              'STO LEGGENDO',
+              'CURRENTLY READING',
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
@@ -562,7 +712,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               controller: titleController,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
-                hintText: 'Titolo del libro',
+                hintText: 'Book title',
                 prefixIcon: Icon(Icons.menu_book_outlined),
               ),
             ),
@@ -571,7 +721,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               controller: authorController,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
-                hintText: 'Autore (opzionale)',
+                hintText: 'Author (optional)',
                 prefixIcon: Icon(Icons.person_outline),
               ),
             ),
@@ -597,12 +747,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   } catch (e) {
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text('Errore: $e')));
+                          SnackBar(content: Text('Error: $e')));
                     }
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text('Salva'),
+                child: const Text('Save'),
               ),
             ),
           ],
@@ -644,7 +794,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.edit_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Modifica profilo'),
+              title: const Text('Edit profile'),
               onTap: () {
                 Navigator.pop(ctx);
                 _showEditProfileSheet(context, ref, profile);
@@ -653,7 +803,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.sync_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Sincronizza con Kindle'),
+              title: const Text('Sync with Kindle'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/sync/kindle');
@@ -662,7 +812,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.upload_file_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Importa My Clippings.txt'),
+              title: const Text('Import My Clippings.txt'),
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/');
@@ -672,7 +822,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.logout_outlined,
                   color: Color(0xFFB54848)),
-              title: const Text('Esci dall\'account',
+              title: const Text('Sign out',
                   style: TextStyle(color: Color(0xFFB54848))),
               onTap: () async {
                 Navigator.pop(ctx);
@@ -717,15 +867,15 @@ class _StatsRow extends StatelessWidget {
       decoration: MarginaliaDecorations.card(),
       child: Row(
         children: [
-          _StatBox(label: 'Libri', value: stats['books'] ?? 0),
+          _StatBox(label: 'Books', value: stats['books'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Highlight', value: stats['highlights'] ?? 0),
+          _StatBox(label: 'Highlights', value: stats['highlights'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Jam', value: stats['jams'] ?? 0),
+          _StatBox(label: 'Jams', value: stats['jams'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Seguiti', value: stats['following'] ?? 0),
+          _StatBox(label: 'Following', value: stats['following'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Seguaci', value: stats['followers'] ?? 0),
+          _StatBox(label: 'Followers', value: stats['followers'] ?? 0),
         ],
       ),
     );
@@ -831,7 +981,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'STO LEGGENDO',
+                    'CURRENTLY READING',
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -1001,7 +1151,7 @@ class _EmptySharedHighlights extends StatelessWidget {
                 size: 28, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 10),
             const Text(
-              'Nessun highlight condiviso',
+              'No shared highlights',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1010,7 +1160,7 @@ class _EmptySharedHighlights extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Condividi un highlight in una Jam\nper vederlo qui.',
+              'Share a highlight in a Jam\nto see it here.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 12, color: MarginaliaColors.inkFaint, height: 1.5),
@@ -1018,7 +1168,7 @@ class _EmptySharedHighlights extends StatelessWidget {
             const SizedBox(height: 14),
             TextButton(
               onPressed: onShare,
-              child: const Text('Vai alle Jam'),
+              child: const Text('Go to Jams'),
             ),
           ],
         ),
@@ -1083,7 +1233,7 @@ class _UnauthenticatedProfile extends StatelessWidget {
               bottom: false,
               child: const Padding(
                 padding: EdgeInsets.fromLTRB(20, 20, 20, 36),
-                child: Text('Profilo',
+                child: Text('Profile',
                     style: TextStyle(
                         color: Color(0xFFF1EEE7),
                         fontSize: 28,
@@ -1117,7 +1267,7 @@ class _UnauthenticatedProfile extends StatelessWidget {
                             letterSpacing: -0.3)),
                     const SizedBox(height: 10),
                     const Text(
-                      'Tieni traccia dei tuoi libri,\nhighlight e connessioni.',
+                      'Track your books,\nhighlights and connections.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: MarginaliaColors.inkMuted,
@@ -1132,6 +1282,58 @@ class _UnauthenticatedProfile extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Data row widget (used in "Your Data" GDPR sheet) ────────────────────────
+
+class _DataRow extends StatelessWidget {
+  const _DataRow({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: MarginaliaColors.sienna),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: MarginaliaColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: MarginaliaColors.inkMuted,
+                    height: 1.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

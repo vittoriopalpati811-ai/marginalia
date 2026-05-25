@@ -1,8 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -341,6 +343,48 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                     ),
 
                     const SizedBox(height: 20),
+
+                    // GDPR Article 7 consent — shown only on signup tab
+                    if (_tab.index == 1) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: MarginaliaColors.inkMuted,
+                              height: 1.5,
+                            ),
+                            children: [
+                              const TextSpan(
+                                text:
+                                    'By creating an account you agree to our ',
+                              ),
+                              TextSpan(
+                                text: 'Privacy Policy',
+                                style: const TextStyle(
+                                  color: MarginaliaColors.sienna,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () async {
+                                    final uri = Uri.parse(
+                                        'https://marginalia.app/privacy');
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(uri);
+                                    }
+                                  },
+                              ),
+                              const TextSpan(
+                                text: ' and confirm you are 16 or older.',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
                     TextButton(
                       onPressed: () => context.pop(),

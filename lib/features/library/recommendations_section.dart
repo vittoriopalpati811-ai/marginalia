@@ -305,7 +305,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'Consigliati da Marginalia per te (fidati, ti capiamo benissimo)',
+            'Recommended by Marginalia for you (trust us, we know you well)',
             style: GoogleFonts.ebGaramond(
               fontSize: 13,
               fontStyle: FontStyle.italic,
@@ -333,17 +333,17 @@ class _RecommendationsSubtitle extends ConsumerWidget {
 
     final String suffix;
     if (hasWeather && hasActivity) {
-      suffix = ', al meteo di oggi e alla tua attività fisica recente';
+      suffix = ', today\'s weather and your recent physical activity';
     } else if (hasWeather) {
-      suffix = ' e al meteo di oggi';
+      suffix = ' and today\'s weather';
     } else if (hasActivity) {
-      suffix = ' e alla tua attività fisica recente';
+      suffix = ' and your recent physical activity';
     } else {
       suffix = '';
     }
 
     return Text(
-      'Selezionati da Marginalia in base ai tuoi highlight$suffix.',
+      'Selected by Marginalia based on your highlights$suffix.',
       style: GoogleFonts.manrope(
         fontSize: 11,
         color: MarginaliaColors.inkFaint,
@@ -456,7 +456,7 @@ class _RecommendationsHint extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'Consigliati da Marginalia per te (fidati, ti capiamo benissimo)',
+            'Recommended by Marginalia for you (trust us, we know you well)',
             style: GoogleFonts.ebGaramond(
               fontSize: 13,
               fontStyle: FontStyle.italic,
@@ -504,7 +504,7 @@ class _RecommendationsSkeleton extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'Consigliati da Marginalia per te (fidati, ti capiamo benissimo)',
+            'Recommended by Marginalia for you (trust us, we know you well)',
             style: GoogleFonts.ebGaramond(
               fontSize: 13,
               fontStyle: FontStyle.italic,

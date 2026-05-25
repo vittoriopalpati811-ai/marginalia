@@ -61,7 +61,7 @@ class PinnedHighlightsSection extends ConsumerWidget {
                               size: 11, color: MarginaliaColors.sienna),
                           const SizedBox(width: 4),
                           Text(
-                            'Modifica',
+                            'Edit',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -276,7 +276,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Highlight in evidenza',
+                            'Featured highlights',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
@@ -285,7 +285,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             ),
                           ),
                           Text(
-                            'Seleziona fino a 3  (${_selectedIds.length}/3)',
+                            'Select up to 3  (${_selectedIds.length}/3)',
                             style: const TextStyle(
                               fontSize: 12,
                               color: MarginaliaColors.inkMuted,
@@ -317,7 +317,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                               child: CircularProgressIndicator(
                                   strokeWidth: 1.5,
                                   color: Color(0xFFF2F5EA)))
-                          : const Text('Salva',
+                          : const Text('Save',
                               style: TextStyle(
                                   fontSize: 13, fontWeight: FontWeight.w700)),
                     ),
@@ -334,7 +334,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                         color: MarginaliaColors.sienna, strokeWidth: 1.5),
                   ),
                   error: (e, _) =>
-                      Center(child: Text('Errore: $e')),
+                      Center(child: Text('Error: $e')),
                   data: (all) {
                     // Only synced highlights can be pinned (need a supabaseId)
                     final highlights =
@@ -344,7 +344,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                         child: Padding(
                           padding: EdgeInsets.all(32),
                           child: Text(
-                            'Sincronizza prima i tuoi highlight per poterli mettere in evidenza.',
+                            'Sync your highlights first to be able to feature them.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 color: MarginaliaColors.inkMuted,

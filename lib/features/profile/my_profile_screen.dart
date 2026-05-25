@@ -29,14 +29,14 @@ class _GP {
 }
 
 const _kGradients = [
-  _GP('sepia',    'Seppia',   Color(0xFF6B4C3B), Color(0xFF2C1810)),
-  _GP('forest',   'Foresta',  Color(0xFF2D5A3D), Color(0xFF132A1E)),
-  _GP('ocean',    'Oceano',   Color(0xFF1A3A5C), Color(0xFF09141F)),
-  _GP('dusk',     'Tramonto', Color(0xFF6B3A7A), Color(0xFF1A0B26)),
-  _GP('rose',     'Rosa',     Color(0xFF7A3A4E), Color(0xFF2E1020)),
-  _GP('graphite', 'Grafite',  Color(0xFF3C3C3C), Color(0xFF141414)),
-  _GP('amber',    'Ambra',    Color(0xFF7A4E1A), Color(0xFF2C1A06)),
-  _GP('slate',    'Ardesia',  Color(0xFF2A3A4E), Color(0xFF0D141E)),
+  _GP('sepia',    'Sepia',    Color(0xFF6B4C3B), Color(0xFF2C1810)),
+  _GP('forest',   'Forest',   Color(0xFF2D5A3D), Color(0xFF132A1E)),
+  _GP('ocean',    'Ocean',    Color(0xFF1A3A5C), Color(0xFF09141F)),
+  _GP('dusk',     'Dusk',     Color(0xFF6B3A7A), Color(0xFF1A0B26)),
+  _GP('rose',     'Rose',     Color(0xFF7A3A4E), Color(0xFF2E1020)),
+  _GP('graphite', 'Graphite', Color(0xFF3C3C3C), Color(0xFF141414)),
+  _GP('amber',    'Amber',    Color(0xFF7A4E1A), Color(0xFF2C1A06)),
+  _GP('slate',    'Slate',    Color(0xFF2A3A4E), Color(0xFF0D141E)),
 ];
 
 _GP _gpFor(String key) =>
@@ -47,11 +47,11 @@ _GP _gpFor(String key) =>
 
 const _kPatterns = ['none', 'dots', 'lines', 'grid', 'circles'];
 const _kPatternLabels = {
-  'none':    'Nessuno',
-  'dots':    'Punti',
-  'lines':   'Linee',
-  'grid':    'Griglia',
-  'circles': 'Cerchi',
+  'none':    'None',
+  'dots':    'Dots',
+  'lines':   'Lines',
+  'grid':    'Grid',
+  'circles': 'Circles',
 };
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -128,8 +128,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final name = profile?['display_name'] as String? ?? 'Marginalia';
     final uid  = ref.read(supabaseServiceProvider).userId ?? '';
     Share.share(
-      '📚 Segui $name su Marginalia!\n\nhttps://marginalia.app/user/$uid',
-      subject: 'Profilo Marginalia – $name',
+      '📚 Follow $name on Marginalia!\n\nhttps://marginalia.app/user/$uid',
+      subject: 'Marginalia Profile – $name',
     );
   }
 
@@ -341,7 +341,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         ),
                       ),
                       child: const Text(
-                        'Scrivi',
+                        'Write',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -369,7 +369,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                       child: Text(
-                        'Non hai ancora pubblicato nessun post.',
+                        'You haven\'t posted anything yet.',
                         style: GoogleFonts.manrope(
                           color: MarginaliaColors.inkMuted, fontSize: 13),
                       ),
@@ -396,7 +396,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
                           child: Row(
                             children: [
-                              Text('LIBRERIA',
+                              Text('LIBRARY',
                                   style: MarginaliaTextStyles.sectionTitle),
                               const SizedBox(width: 12),
                               const Expanded(
@@ -599,7 +599,7 @@ class _ProfileHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        name.isEmpty ? 'Il tuo profilo' : name,
+                        name.isEmpty ? 'Your profile' : name,
                         style: const TextStyle(
                           color: Color(0xFFEDE5D5),
                           fontSize: 20,
@@ -636,17 +636,17 @@ class _ProfileHeader extends StatelessWidget {
                 _IconBtn(
                     icon: Icons.edit_outlined,
                     onTap: onEditProfile,
-                    tooltip: 'Modifica profilo'),
+                    tooltip: 'Edit profile'),
                 const SizedBox(width: 8),
                 _IconBtn(
                     icon: Icons.ios_share_outlined,
                     onTap: onShare,
-                    tooltip: 'Condividi profilo'),
+                    tooltip: 'Share profile'),
                 const SizedBox(width: 8),
                 _IconBtn(
                     icon: Icons.settings_outlined,
                     onTap: onSettings,
-                    tooltip: 'Impostazioni'),
+                    tooltip: 'Settings'),
               ],
             ),
           ),
@@ -706,13 +706,13 @@ class _StatsRow extends StatelessWidget {
       decoration: MarginaliaDecorations.card(),
       child: Row(
         children: [
-          _StatBox(label: 'Libri', value: booksCount, onTap: onBooks),
+          _StatBox(label: 'Books', value: booksCount, onTap: onBooks),
           _Div(),
-          _StatBox(label: 'Highlight', value: stats['highlights'] ?? 0),
+          _StatBox(label: 'Highlights', value: stats['highlights'] ?? 0),
           _Div(),
-          _StatBox(label: 'Seguiti', value: stats['following'] ?? 0, onTap: onFollowing),
+          _StatBox(label: 'Following', value: stats['following'] ?? 0, onTap: onFollowing),
           _Div(),
-          _StatBox(label: 'Follower', value: stats['followers'] ?? 0, onTap: onFollowers),
+          _StatBox(label: 'Followers', value: stats['followers'] ?? 0, onTap: onFollowers),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0, duration: 350.ms);
@@ -809,7 +809,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'IN LETTURA',
+                    'CURRENTLY READING',
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
@@ -885,7 +885,7 @@ class _SpotlightCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
-                Text('HIGHLIGHT IN EVIDENZA',
+                Text('FEATURED HIGHLIGHT',
                     style: MarginaliaTextStyles.sectionTitle),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -1187,7 +1187,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Personalizza profilo',
+              'Customise profile',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
@@ -1220,7 +1220,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                       CustomPaint(painter: _PatternPainter(_pat)),
                     Center(
                       child: Text(
-                        'Anteprima',
+                        'Preview',
                         style: TextStyle(
                           color: Colors.white.withAlpha(180),
                           fontSize: 13,
@@ -1241,7 +1241,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'SFONDO',
+                'BACKGROUND',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
@@ -1465,7 +1465,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                         child: CircularProgressIndicator(
                             strokeWidth: 1.5,
                             color: Color(0xFFF1EEE7)))
-                    : const Text('Salva',
+                    : const Text('Save',
                         style: TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w700)),
               ),
@@ -1577,7 +1577,7 @@ class _NotLoggedIn extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Accedi per vedere il profilo',
+                'Sign in to view your profile',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -1619,11 +1619,11 @@ class _ProfilePostCard extends StatelessWidget {
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'adesso';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
-    if (diff.inHours < 24)   return '${diff.inHours}h fa';
-    if (diff.inDays < 7)     return '${diff.inDays}g fa';
-    return '${(diff.inDays / 7).round()}sett fa';
+    if (diff.inMinutes < 1)  return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24)   return '${diff.inHours}h ago';
+    if (diff.inDays < 7)     return '${diff.inDays}d ago';
+    return '${(diff.inDays / 7).round()}w ago';
   }
 
   @override
@@ -1784,7 +1784,7 @@ class _FavoriteBooksSection extends StatelessWidget {
           // ── Section header ──────────────────────────────────────────────
           Row(
             children: [
-              Text('LIBRI DEL CUORE', style: MarginaliaTextStyles.sectionTitle),
+              Text('FAVOURITE BOOKS', style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
               const SizedBox(width: 8),
@@ -1801,7 +1801,7 @@ class _FavoriteBooksSection extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    favBooks.isEmpty ? 'Scegli' : 'Modifica',
+                    favBooks.isEmpty ? 'Choose' : 'Edit',
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -2039,7 +2039,7 @@ class _EmptyFavBooks extends StatelessWidget {
                 size: 22, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 8),
             Text(
-              'Scegli i tuoi sei libri preferiti',
+              'Choose your six favourite books',
               style: GoogleFonts.manrope(
                 fontSize: 12.5,
                 color: MarginaliaColors.inkMuted,
@@ -2147,7 +2147,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
               child: Row(
                 children: [
                   const Text(
-                    'Libri del cuore',
+                    'Favourite books',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -2182,7 +2182,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                   ? Padding(
                       padding: const EdgeInsets.all(40),
                       child: Text(
-                        'Aggiungi libri alla tua libreria prima di scegliere i preferiti.',
+                        'Add books to your library before choosing favourites.',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.manrope(
                           fontSize: 13.5,
@@ -2312,7 +2312,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                               strokeWidth: 1.5,
                               color: Color(0xFFF1EEE7)))
                       : const Text(
-                          'Salva',
+                          'Save',
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w700)),
                 ),

@@ -152,7 +152,7 @@ class _PollCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final candidates = data['jam_poll_candidates'] as List? ?? [];
-    final title = data['title'] as String? ?? 'Sondaggio';
+    final title = data['title'] as String? ?? 'Poll';
     final endsAt = DateTime.tryParse(data['ends_at'] as String? ?? '');
     final isExpired = endsAt != null && DateTime.now().isAfter(endsAt);
     final closed = _isClosed || isExpired;
@@ -230,7 +230,7 @@ class _PollCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(18),
               child: Text(
-                'Nessun highlight ancora. Aggiungi il tuo!',
+                'No highlights yet. Add yours!',
                 style: GoogleFonts.manrope(fontSize: 13, color: MarginaliaColors.inkMuted),
               ),
             )
@@ -328,7 +328,7 @@ class _PollCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onSubmitCandidate,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Aggiungi il tuo highlight'),
+                label: const Text('Add your highlight'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: MarginaliaColors.primary,
                   side: const BorderSide(color: MarginaliaColors.rule),
@@ -358,12 +358,12 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.how_to_vote_outlined, size: 56, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
-              'Nessun sondaggio ancora',
+              'No polls yet',
               style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
-              'Crea un sondaggio per votare il miglior highlight della settimana.',
+              'Create a poll to vote on the best highlight of the week.',
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
             ),
@@ -371,7 +371,7 @@ class _EmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Crea sondaggio'),
+              label: const Text('Create poll'),
             ),
           ],
         ),
@@ -392,7 +392,7 @@ class _CreatePollSheet extends ConsumerStatefulWidget {
 }
 
 class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
-  final _titleCtrl = TextEditingController(text: 'Highlight della settimana');
+  final _titleCtrl = TextEditingController(text: 'Highlight of the week');
   DateTime _endsAt = DateTime.now().add(const Duration(days: 7));
   bool _loading = false;
 
@@ -445,13 +445,13 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Nuovo sondaggio',
+            'New poll',
             style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: _titleCtrl,
-            decoration: const InputDecoration(hintText: 'Titolo sondaggio *', prefixIcon: Icon(Icons.how_to_vote_outlined)),
+            decoration: const InputDecoration(hintText: 'Poll title *', prefixIcon: Icon(Icons.how_to_vote_outlined)),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 14),
@@ -467,7 +467,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
             },
             icon: const Icon(Icons.calendar_today_outlined, size: 16),
             label: Text(
-              'Scade il: ${_endsAt.day}/${_endsAt.month}/${_endsAt.year}',
+              'Ends on: ${_endsAt.day}/${_endsAt.month}/${_endsAt.year}',
               style: GoogleFonts.manrope(fontSize: 14),
             ),
           ),
@@ -478,7 +478,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
               onPressed: _loading ? null : _submit,
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Crea'),
+                  : const Text('Create'),
             ),
           ),
         ],
@@ -527,7 +527,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Scegli il tuo highlight',
+            'Choose your highlight',
             style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
           ),
           const SizedBox(height: 16),
@@ -573,7 +573,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
               onPressed: (_loading || _selectedHighlightContent == null) ? null : _submit,
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Aggiungi al sondaggio'),
+                  : const Text('Add to poll'),
             ),
           ),
         ],

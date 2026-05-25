@@ -95,7 +95,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                           color: MarginaliaColors.inkFaint, size: 40),
                       const SizedBox(height: 16),
                       Text(
-                        'Errore nel caricamento',
+                        'Error loading',
                         style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -225,11 +225,11 @@ class _ConversationCard extends StatelessWidget {
     String? avatarUrl;
 
     if (isGroup) {
-      displayName = conversation['group_name'] as String? ?? 'Gruppo';
+      displayName = conversation['group_name'] as String? ?? 'Group';
       avatarUrl = conversation['group_avatar_url'] as String?;
     } else {
       final otherMember = members.isNotEmpty ? members.first : null;
-      displayName = otherMember?['display_name'] as String? ?? 'Utente';
+      displayName = otherMember?['display_name'] as String? ?? 'User';
       avatarUrl = otherMember?['avatar_url'] as String?;
     }
 
@@ -252,7 +252,7 @@ class _ConversationCard extends StatelessWidget {
     }
 
     // Last message preview
-    String lastPreview = 'Nessun messaggio';
+    String lastPreview = 'No messages';
     String timeLabel = '';
 
     if (lastMessage != null) {
@@ -525,7 +525,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Inizia a scrivere a un lettore\no crea un gruppo di lettura.',
+              'Start a conversation with a reader\nor create a reading group.',
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 color: MarginaliaColors.inkMuted,
@@ -584,8 +584,8 @@ class _NewConversationSheet extends StatelessWidget {
               // Direct message option
               _SheetOption(
                 icon: Icons.person_outline,
-                title: 'Messaggio diretto',
-                subtitle: 'Scrivi a un lettore',
+                title: 'Direct message',
+                subtitle: 'Send a message to a reader',
                 onTap: () {
                   Navigator.pop(context);
                   showModalBottomSheet<void>(
@@ -603,8 +603,8 @@ class _NewConversationSheet extends StatelessWidget {
               // Group option
               _SheetOption(
                 icon: Icons.group_outlined,
-                title: 'Crea gruppo',
-                subtitle: 'Crea una chat di gruppo',
+                title: 'Create group',
+                subtitle: 'Start a group chat',
                 onTap: () {
                   Navigator.pop(context);
                   showModalBottomSheet<void>(
@@ -734,7 +734,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Errore nella ricerca';
+        _error = 'Search error';
         _loading = false;
       });
     }
@@ -749,7 +749,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text('Error: $e'),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -782,7 +782,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Messaggio diretto',
+                  'Direct message',
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -799,7 +799,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                     color: MarginaliaColors.ink,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Cerca utenti…',
+                    hintText: 'Search users…',
                     prefixIcon: const Icon(Icons.search_outlined, size: 20),
                     suffixIcon: _loading
                         ? const Padding(
@@ -834,7 +834,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                 : _results.isEmpty && _searchController.text.isNotEmpty && !_loading
                     ? Center(
                         child: Text(
-                          'Nessun utente trovato',
+                          'No users found',
                           style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,
@@ -847,7 +847,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                         itemBuilder: (context, index) {
                           final user = _results[index];
                           final name =
-                              user['display_name'] as String? ?? 'Utente';
+                              user['display_name'] as String? ?? 'User';
                           final username = user['username'] as String? ?? '';
                           final avatarUrl = user['avatar_url'] as String?;
                           final userId = user['id'] as String? ?? '';
@@ -959,13 +959,13 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Inserisci un nome per il gruppo.')),
+        const SnackBar(content: Text('Enter a name for the group.')),
       );
       return;
     }
     if (_selectedUsers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aggiungi almeno un partecipante.')),
+        const SnackBar(content: Text('Add at least one participant.')),
       );
       return;
     }
@@ -983,7 +983,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
       setState(() => _creating = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e')),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     }
@@ -1018,7 +1018,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Nuovo gruppo',
+                  'New group',
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -1036,7 +1036,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     color: MarginaliaColors.ink,
                   ),
                   decoration: const InputDecoration(
-                    hintText: 'Nome del gruppo…',
+                    hintText: 'Group name…',
                     prefixIcon: Icon(Icons.group_outlined, size: 20),
                   ),
                 ),
@@ -1051,7 +1051,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     color: MarginaliaColors.ink,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Cerca utenti da aggiungere…',
+                    hintText: 'Search users to add…',
                     prefixIcon: const Icon(Icons.person_add_outlined, size: 20),
                     suffixIcon: _searchLoading
                         ? const Padding(
@@ -1076,7 +1076,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     spacing: 8,
                     runSpacing: 6,
                     children: _selectedUsers.map((user) {
-                      final name = user['display_name'] as String? ?? 'Utente';
+                      final name = user['display_name'] as String? ?? 'User';
                       return Chip(
                         label: Text(name),
                         onDeleted: () => _toggleUser(user),
@@ -1103,7 +1103,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
             child: _searchResults.isEmpty && _searchController.text.isEmpty
                 ? Center(
                     child: Text(
-                      'Cerca un utente per aggiungerlo',
+                      'Search for a user to add',
                       style: GoogleFonts.manrope(
                         color: MarginaliaColors.inkFaint,
                         fontSize: 13,
@@ -1113,7 +1113,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                 : _searchResults.isEmpty && _searchController.text.isNotEmpty && !_searchLoading
                     ? Center(
                         child: Text(
-                          'Nessun utente trovato',
+                          'No users found',
                           style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,
@@ -1126,7 +1126,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                         itemBuilder: (context, index) {
                           final user = _searchResults[index];
                           final name =
-                              user['display_name'] as String? ?? 'Utente';
+                              user['display_name'] as String? ?? 'User';
                           final username = user['username'] as String? ?? '';
                           final avatarUrl = user['avatar_url'] as String?;
                           final initial =
@@ -1190,7 +1190,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Crea gruppo'),
+                    : const Text('Create group'),
               ),
             ),
           ),

@@ -43,7 +43,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
           IconButton(
             icon: const Icon(Icons.add, color: MarginaliaColors.primary),
             onPressed: _showCreateSheet,
-            tooltip: 'Crea sfida',
+            tooltip: 'Create challenge',
           ),
         ],
       ),
@@ -285,12 +285,12 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.emoji_events_outlined, size: 56, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
-              'Nessuna sfida attiva',
+              'No active challenges',
               style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
-              'Crea una sfida condivisa e motiva i tuoi compagni di lettura.',
+              'Create a shared challenge and motivate your reading companions.',
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
             ),
@@ -298,7 +298,7 @@ class _EmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Crea sfida'),
+              label: const Text('Create challenge'),
             ),
           ],
         ),
@@ -380,19 +380,19 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Crea sfida',
+              'Create challenge',
               style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _titleCtrl,
-              decoration: const InputDecoration(hintText: 'Nome sfida *', prefixIcon: Icon(Icons.emoji_events_outlined)),
+              decoration: const InputDecoration(hintText: 'Challenge name *', prefixIcon: Icon(Icons.emoji_events_outlined)),
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _descCtrl,
-              decoration: const InputDecoration(hintText: 'Descrizione (opzionale)'),
+              decoration: const InputDecoration(hintText: 'Description (optional)'),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -405,7 +405,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Obiettivo', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text('Goal', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       Row(
                         children: [
@@ -431,15 +431,15 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Unità', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text('Unit', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         value: _unit,
                         decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
                         items: const [
-                          DropdownMenuItem(value: 'books', child: Text('Libri')),
-                          DropdownMenuItem(value: 'highlights', child: Text('Highlight')),
-                          DropdownMenuItem(value: 'chapters', child: Text('Capitoli')),
+                          DropdownMenuItem(value: 'books', child: Text('Books')),
+                          DropdownMenuItem(value: 'highlights', child: Text('Highlights')),
+                          DropdownMenuItem(value: 'chapters', child: Text('Chapters')),
                         ],
                         onChanged: (v) => setState(() => _unit = v ?? 'books'),
                       ),
@@ -464,8 +464,8 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
               icon: const Icon(Icons.calendar_today_outlined, size: 16),
               label: Text(
                 _deadline != null
-                    ? 'Scadenza: ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'
-                    : 'Imposta scadenza (opzionale)',
+                    ? 'Deadline: ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'
+                    : 'Set deadline (optional)',
                 style: GoogleFonts.manrope(fontSize: 14),
               ),
             ),
@@ -476,7 +476,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                 onPressed: _loading ? null : _submit,
                 child: _loading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Crea'),
+                    : const Text('Create'),
               ),
             ),
           ],

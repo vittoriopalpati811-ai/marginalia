@@ -143,8 +143,8 @@ class AmazonSyncService {
       // Amazon changed their DOM — invalidate cache so next attempt re-fetches
       // the latest script from Supabase.
       invalidateScriptCache();
-      throw Exception('Amazon ha aggiornato il suo sito. Riprova tra qualche minuto — '
-          'stiamo già lavorando al fix.');
+      throw Exception('Amazon has updated their site. Please try again in a few minutes — '
+          'we are already working on a fix.');
     }
 
     final List<dynamic> parsed = jsonDecode(jsonStr) as List<dynamic>;

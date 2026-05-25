@@ -36,38 +36,38 @@ WidgetHighlight _mockHighlight() {
 
   String greeting;
   if (hour >= 5 && hour < 12) {
-    greeting = 'Buongiorno';
+    greeting = 'Good morning';
   } else if (hour >= 12 && hour < 17) {
-    greeting = 'Buon pomeriggio';
+    greeting = 'Good afternoon';
   } else if (hour >= 17 && hour < 21) {
-    greeting = 'Buona sera';
+    greeting = 'Good evening';
   } else {
-    greeting = 'Buona notte';
+    greeting = 'Good night';
   }
 
   // A curated set of placeholder highlights that look great in the preview
   const previews = [
     (
       text:
-          "Non si leggono i libri per finirli, ma per abitarli — per trovare in essi un'altra casa.",
-      book: 'Come un romanzo',
+          "Books are not read to be finished, but to be inhabited — to find in them another home.",
+      book: 'Like a Novel',
       author: 'Daniel Pennac',
     ),
     (
       text:
-          'Un lettore vive mille vite prima di morire. Chi non legge ne vive solo una.',
+          'A reader lives a thousand lives before he dies. The man who never reads lives only one.',
       book: 'A Dance with Dragons',
       author: 'George R.R. Martin',
     ),
     (
       text:
-          'Ogni libro è un mondo. Apri la copertina e sei già altrove.',
-      book: 'La storia infinita',
+          'Every book is a world. Open the cover and you are already somewhere else.',
+      book: 'The Neverending Story',
       author: 'Michael Ende',
     ),
     (
       text:
-          'Le parole giuste al momento giusto possono cambiare tutto.',
+          'The right words at the right moment can change everything.',
       book: 'The Alchemist',
       author: 'Paulo Coelho',
     ),
@@ -111,9 +111,9 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
     final now = DateTime.now();
     final timeStr = DateFormat('HH:mm').format(now);
     // Build localised date string without requiring locale init
-    final weekdays = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
-    final months  = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-                     'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    final months  = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
     final dateStr = '${weekdays[now.weekday - 1]} ${now.day} ${months[now.month - 1]}';
 
     return Scaffold(
@@ -123,7 +123,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Anteprima widget',
+          'Widget preview',
           style: GoogleFonts.manrope(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -145,13 +145,13 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
           child: CircularProgressIndicator(color: Colors.white54),
         ),
         error: (_, __) => const Center(
-          child: Text('Errore nel caricamento',
+          child: Text('Error loading',
               style: TextStyle(color: Colors.white54)),
         ),
         data: (highlight) {
           if (highlight == null) {
             return const Center(
-              child: Text('Nessun highlight disponibile',
+              child: Text('No highlight available',
                   style: TextStyle(color: Colors.white54)),
             );
           }
@@ -754,8 +754,8 @@ class _BottomBar extends StatelessWidget {
               ),
               child: Text(
                 pushed
-                    ? 'Widget aggiornato ✓'
-                    : 'Invia al widget iOS',
+                    ? 'Widget updated ✓'
+                    : 'Send to iOS widget',
                 style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

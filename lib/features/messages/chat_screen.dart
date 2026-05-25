@@ -173,7 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore nell\'invio: $e'),
+            content: Text('Send error: $e'),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -204,7 +204,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore upload: $e')),
+          SnackBar(content: Text('Upload error: $e')),
         );
       }
     } finally {
@@ -226,7 +226,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore invio GIF: $e')),
+          SnackBar(content: Text('GIF send error: $e')),
         );
       }
     } finally {
@@ -334,7 +334,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           color: MarginaliaColors.inkFaint, size: 40),
                       const SizedBox(height: 16),
                       Text(
-                        'Impossibile caricare i messaggi',
+                        'Unable to load messages',
                         style: GoogleFonts.manrope(
                           color: MarginaliaColors.inkMuted,
                           fontSize: 15,
@@ -345,7 +345,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         onPressed: () => ref.invalidate(
                             _messagesProvider(widget.conversationId)),
                         child: Text(
-                          'Riprova',
+                          'Retry',
                           style: GoogleFonts.manrope(
                             color: MarginaliaColors.primary,
                             fontWeight: FontWeight.w600,
@@ -447,7 +447,7 @@ class _MessageBubble extends StatelessWidget {
     final content = message['content'] as String?;
     final imageUrl = message['image_url'] as String?;
     final sender = message['sender'] as Map<String, dynamic>? ?? {};
-    final senderName = sender['display_name'] as String? ?? 'Utente';
+    final senderName = sender['display_name'] as String? ?? 'User';
     final senderAvatar = sender['avatar_url'] as String?;
     final createdAt = message['created_at'] as String?;
     final timeLabel = _formatTime(DateTime.tryParse(createdAt ?? ''));
@@ -687,13 +687,13 @@ class _DateSeparator extends StatelessWidget {
     String label;
     final diff = now.difference(dt);
     if (diff.inDays == 0) {
-      label = 'Oggi';
+      label = 'Today';
     } else if (diff.inDays == 1) {
-      label = 'Ieri';
+      label = 'Yesterday';
     } else if (diff.inDays < 7) {
       const days = [
-        'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì',
-        'Venerdì', 'Sabato', 'Domenica'
+        'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+        'Friday', 'Saturday', 'Sunday'
       ];
       label = days[dt.weekday - 1];
     } else {
@@ -762,7 +762,7 @@ class _EmptyChatState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Nessun messaggio',
+              'No messages',
               style: GoogleFonts.ebGaramond(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -771,7 +771,7 @@ class _EmptyChatState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Inizia la conversazione\nscrivendo il primo messaggio.',
+              'Start the conversation\nby sending the first message.',
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 13,
@@ -853,8 +853,8 @@ class _MessageInputBar extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 hintText: uploadingMedia
-                    ? 'Caricamento…'
-                    : 'Scrivi un messaggio…',
+                    ? 'Loading…'
+                    : 'Write a message…',
                 hintStyle: GoogleFonts.manrope(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
