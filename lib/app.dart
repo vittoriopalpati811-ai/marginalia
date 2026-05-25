@@ -517,15 +517,7 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
                 ..[15] = 1.0
                 ..[12] = cx * (1 - s)  // translate to keep centre fixed
                 ..[13] = cy * (1 - s);
-              return BackdropFilter(
-                filter: ImageFilter.compose(
-                  // inner runs first: magnify background content
-                  inner: ImageFilter.matrix(matrix),
-                  // outer runs second: frosted-glass blur on magnified pixels
-                  outer: ImageFilter.blur(sigmaX: 22, sigmaY: 22,
-                      tileMode: TileMode.mirror),
-                ),
-                child: Stack(
+              final navStack = Stack(
               children: [
                 // ── Glass body ─────────────────────────────────────────
                 Container(
@@ -708,8 +700,19 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
                   ),
                 ),
               ],
-            ),         // Stack
-          );           // BackdropFilter (return)
+            );         // Stack
+          // ImageFilter.compose + ImageFilter.matrix are not supported in
+          // Flutter's HTML renderer — skip BackdropFilter on web to prevent
+          // the transparent-overlay artifact that washes out the whole UI.
+          if (kIsWeb) return navStack;
+          return BackdropFilter(
+            filter: ImageFilter.compose(
+              inner: ImageFilter.matrix(matrix),
+              outer: ImageFilter.blur(sigmaX: 22, sigmaY: 22,
+                  tileMode: TileMode.mirror),
+            ),
+            child: navStack,
+          );
         },             // LayoutBuilder builder
       ),               // LayoutBuilder
     ),                 // ClipRRect
