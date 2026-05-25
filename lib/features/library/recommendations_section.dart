@@ -70,13 +70,11 @@ class BookRecommendation {
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
+// NOT autoDispose: we want this cached indefinitely across tab navigation.
+// The only way recommendations re-fetch is via ref.invalidate(), which
+// library_screen.dart calls exclusively after a real My Clippings import.
 final libraryRecommendationsProvider =
-    FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
-  // Keep recommendations alive for 1 hour.
-  // This provider is only invalidated after a real file import — not on
-  // every pull-to-refresh — so AI calls are not wasted.
-  final link = ref.keepAlive();
-  Future.delayed(const Duration(hours: 1), link.close);
+    FutureProvider<List<BookRecommendation>>((ref) async {
 
   // ── 1. Collect highlights grouped by book ──────────────────────────────────
 
