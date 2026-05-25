@@ -612,5 +612,110 @@
   "@notificationsEmptyBody": {},
 
   "notificationsMarkAllRead": "Segna tutto come letto",
-  "@notificationsMarkAllRead": {}
+  "@notificationsMarkAllRead": {},
+
+  "libraryPickedForYou": "SCELTO PER TE",
+  "@libraryPickedForYou": {},
+
+  "libraryRecent": "RECENTI",
+  "@libraryRecent": {},
+
+  "libraryRead": "Leggi",
+  "@libraryRead": {},
+
+  "libraryViewAll": "{count, plural, =1{Vedi 1 libro} other{Vedi tutti {count} libri}}",
+  "@libraryViewAll": { "placeholders": { "count": { "type": "int" } } },
+
+  "libraryHide": "Comprimi",
+  "@libraryHide": {},
+
+  "librarySignInToImport": "Accedi per importare i tuoi highlight.",
+  "@librarySignInToImport": {},
+
+  "librarySignIn": "Accedi",
+  "@librarySignIn": {},
+
+  "libraryClearReimportTitle": "Svuota e reimporta?",
+  "@libraryClearReimportTitle": {},
+
+  "libraryClearReimportBody": "Tutti i tuoi highlight e libri verranno eliminati, poi reimportati dal file selezionato. Utile per correggere problemi di codifica da importazioni precedenti.",
+  "@libraryClearReimportBody": {},
+
+  "libraryClearAction": "Svuota e reimporta",
+  "@libraryClearAction": {},
+
+  "libraryImportPartial": "{count} highlight importati ({errors} errori).",
+  "@libraryImportPartial": { "placeholders": { "count": { "type": "int" }, "errors": { "type": "int" } } },
+
+  "libraryImportSuccess": "{highlights} highlight da {books} libri.",
+  "@libraryImportSuccess": { "placeholders": { "highlights": { "type": "int" }, "books": { "type": "int" } } },
+
+  "libraryImportNone": "Nessun nuovo highlight ({count} già presenti).",
+  "@libraryImportNone": { "placeholders": { "count": { "type": "int" } } },
+
+  "recsTitle": "LIBRI CONSIGLIATI",
+  "@recsTitle": {},
+
+  "recsTagline": "Selezionati da Marginalia, solo per te",
+  "@recsTagline": {},
+
+  "recsSubtitle": "Selezionati in base ai tuoi highlight.",
+  "@recsSubtitle": {},
+
+  "recsSubtitleWeather": "Selezionati in base ai tuoi highlight e al meteo di oggi.",
+  "@recsSubtitleWeather": {},
+
+  "recsSubtitleActivity": "Selezionati in base ai tuoi highlight e alla tua attività recente.",
+  "@recsSubtitleActivity": {},
+
+  "recsSubtitleBoth": "Selezionati in base ai tuoi highlight, meteo e attività recente.",
+  "@recsSubtitleBoth": {},
+
+  "recsEmpty": "Importa i tuoi highlight Kindle per ricevere suggerimenti personalizzati in base ai tuoi temi di lettura.",
+  "@recsEmpty": {},
+
+  "recsLoading": "Marginalia sta analizzando i tuoi highlight…",
+  "@recsLoading": {},
+
+  "recsFallback": "Consigliato in base ai tuoi gusti di lettura.",
+  "@recsFallback": {},
+
+  "bookMyNotes": "LE MIE NOTE",
+  "@bookMyNotes": {},
+
+  "bookNotesHint": "Scrivi le tue note personali su questo libro…",
+  "@bookNotesHint": {},
+
+  "bookNotesSaved": "Note salvate",
+  "@bookNotesSaved": {},
+
+  "bookBuyOnAmazon": "Acquista su Amazon",
+  "@bookBuyOnAmazon": {},
+
+  "bookAmazonEarningsHint": "~€0,70 a vendita · Amazon Associates",
+  "@bookAmazonEarningsHint": {},
+
+  "libraryFilterAll": "Tutti",
+  "@libraryFilterAll": {},
+
+  "libraryFilterFavorites": "Preferiti",
+  "@libraryFilterFavorites": {},
+
+  "greetingEarlyMorning": "Così presto!",
+  "@greetingEarlyMorning": {},
+
+  "greetingMorning": "Buongiorno",
+  "@greetingMorning": {},
+
+  "greetingBreak": "Prenditi una pausa",
+  "@greetingBreak": {},
+
+  "greetingAfternoon": "Buon pomeriggio",
+  "@greetingAfternoon": {},
+
+  "greetingEvening": "Buona sera",
+  "@greetingEvening": {},
+
+  "greetingNight": "Buonanotte",
+  "@greetingNight": {}
 }

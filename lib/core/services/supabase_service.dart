@@ -318,6 +318,49 @@ class SupabaseService {
         .maybeSingle();
   }
 
+  // ─── Book notes ───────────────────────────────────────────────────────────
+
+  /// Fetches the personal note for a recommended book, or null if none.
+  Future<String?> fetchBookNote({
+    required String title,
+    required String author,
+  }) async {
+    final uid = userId;
+    if (uid == null) return null;
+    try {
+      final res = await _client
+          .from('book_notes')
+          .select('notes')
+          .eq('user_id', uid)
+          .eq('book_title', title)
+          .eq('book_author', author)
+          .maybeSingle();
+      return res?['notes'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Saves (upserts) a personal note for a recommended book.
+  Future<void> saveBookNote({
+    required String title,
+    required String author,
+    required String notes,
+  }) async {
+    final uid = userId;
+    if (uid == null) return;
+    await _client.from('book_notes').upsert(
+      {
+        'user_id':     uid,
+        'book_title':  title,
+        'book_author': author,
+        'notes':       notes,
+        'updated_at':  DateTime.now().toIso8601String(),
+      },
+      onConflict: 'user_id,book_title,book_author',
+    );
+  }
+
   /// Delete all highlights and books for the current user.
   /// Used by "force reimport" to clear corrupted data before re-upload.
   Future<void> deleteAllUserData() async {

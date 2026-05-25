@@ -1,31 +1,39 @@
 // ─── Book recommendations section ────────────────────────────────────────────
 //
-// Shared widget used by both LibraryScreen and MyProfileScreen.
+// Shared widget used by LibraryScreen (and optionally MyProfileScreen).
 //
 // Public surface:
 //   BookRecommendation              — data class
-//   libraryRecommendationsProvider  — FutureProvider (Edge Function + Claude AI)
+//   libraryRecommendationsProvider  — FutureProvider (Edge Function + AI)
 //   LibraryRecommendationsSection   — drop-in ConsumerWidget
 //
 // How it works:
-//   1. Group all user highlights by book (title + author from embedded join).
+//   1. Group all user highlights by book (title + author).
 //   2. Take the 20 most recently active distinct books.
-//   3. Send to the `recommend-books` Supabase Edge Function:
+//   3. Call the `recommend-books` Supabase Edge Function:
 //        • book title, author, up to 4 highlights each as reading context
 //        • full list of existing titles to exclude from suggestions
-//   4. The Edge Function fetches Open Library plots and asks Claude Haiku
-//      for 5 personalised recommendations with Italian explanations.
-//   5. Display each recommendation with an AI-written reason.
+//        • optional: weather, health context
+//   4. Display each recommendation with an AI-written reason.
+//   5. Tap a card → book detail sheet with personal notes + Amazon buy link.
+//
+// Caching:
+//   The provider uses keepAlive() for 1 hour. It is intentionally NOT
+//   invalidated on pull-to-refresh (see library_screen.dart) — only
+//   after a real My Clippings import so AI calls are not wasted.
 
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
@@ -35,6 +43,15 @@ import '../../core/providers/health_provider.dart';
 
 // Re-export so library_screen can import just this file if needed
 export '../../core/providers/auth_provider.dart' show myDisplayNameProvider;
+
+// ─── Amazon Associates referral tag ──────────────────────────────────────────
+//
+// Register at https://programma-affiliazione.amazon.it/ to get your own tag.
+// Replace the value below with your Associates tag (format: yourname-21).
+// Every purchase made through this link earns you ~4% commission (~€0.60-0.80
+// per book sold at average Italian book prices of €15-20).
+
+const _amazonTag = 'marginaliaapp-21';
 
 // ─── Book recommendation data class ──────────────────────────────────────────
 
@@ -48,29 +65,22 @@ class BookRecommendation {
   final String title;
   final String author;
   final String year;
-  final String reason; // AI-generated personalised explanation (Italian)
+  final String reason; // AI-generated personalised explanation
 }
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 final libraryRecommendationsProvider =
     FutureProvider.autoDispose<List<BookRecommendation>>((ref) async {
-  // Cache recommendations for 1 hour — avoids re-calling Gemini on every
-  // screen transition and prevents hitting the 15 RPM free-tier limit.
+  // Keep recommendations alive for 1 hour.
+  // This provider is only invalidated after a real file import — not on
+  // every pull-to-refresh — so AI calls are not wasted.
   final link = ref.keepAlive();
   Future.delayed(const Duration(hours: 1), link.close);
-  // ── 1. Collect highlights grouped by book ──────────────────────────────────
-  //
-  // We fetch all highlights ordered by added_at DESC (Supabase) so that
-  // "most recent book" = first distinct book_id encountered.
-  //
-  // For each book we keep:
-  //   • title + author   (from embedded books() join)
-  //   • up to 4 highlight texts (reading context for Claude)
 
-  // bookId → { title, author, highlights[] }
+  // ── 1. Collect highlights grouped by book ──────────────────────────────────
+
   final Map<String, Map<String, dynamic>> bookMap = {};
-  // Ordered list of distinct book IDs (insertion order = recency)
   final List<String> orderedBookIds = [];
 
   if (kIsWeb) {
@@ -102,7 +112,6 @@ final libraryRecommendationsProvider =
           orderedBookIds.add(bookId);
         }
 
-        // Keep up to 4 highlights per book
         final highlights = bookMap[bookId]!['highlights'] as List<String>;
         if (highlights.length < 4 && content.isNotEmpty) {
           highlights.add(content);
@@ -113,10 +122,10 @@ final libraryRecommendationsProvider =
       return [];
     }
   } else {
-    // Native (Isar): no embedded join, use book ID + title from booksProvider
-    final all    = await ref.read(allHighlightsProvider.future);
-    final books  = ref.read(booksProvider).value ?? [];
-    final bookById = { for (final b in books) b.supabaseId: b };
+    // Native (Isar): no embedded join — use book ID + title from booksProvider.
+    final all   = await ref.read(allHighlightsProvider.future);
+    final books = ref.read(booksProvider).value ?? [];
+    final bookById = {for (final b in books) b.supabaseId: b};
 
     for (final h in all) {
       final bookId = h.bookId.toString();
@@ -141,12 +150,9 @@ final libraryRecommendationsProvider =
   if (orderedBookIds.isEmpty) return [];
 
   // ── 2. Build request payload ───────────────────────────────────────────────
-  //
-  // Take the 20 most recently active books as the primary reading context.
-  // Pass the full list of titles to the Edge Function for exclusion.
 
-  final recentIds   = orderedBookIds.take(20).toList();
-  final allTitles   = orderedBookIds
+  final recentIds  = orderedBookIds.take(20).toList();
+  final allTitles  = orderedBookIds
       .map((id) => bookMap[id]!['title'] as String)
       .toList();
 
@@ -161,22 +167,15 @@ final libraryRecommendationsProvider =
 
   debugPrint('[Recs] calling recommend-books with ${booksPayload.length} books');
 
-  // ── 3. Collect user name ───────────────────────────────────────────────────
+  // ── 3. Collect optional context (weather + health) ────────────────────────
 
-  final userName = ref.read(myDisplayNameProvider).asData?.value ?? '';
-
-  // ── 4. Collect context: weather + health ──────────────────────────────────
-  //
-  // These are optional — if unavailable the Edge Function still works.
-  // Weather enriches the Gemini prompt so it can mention seasonal resonance.
-  // Health data (when available on iOS) adds lifestyle context to suggestions.
-
-  final weather     = ref.read(weatherProvider).asData?.value;
-  final healthSnap  = ref.read(healthSnapshotProvider).asData?.value;
+  final userName   = ref.read(myDisplayNameProvider).asData?.value ?? '';
+  final weather    = ref.read(weatherProvider).asData?.value;
+  final healthSnap = ref.read(healthSnapshotProvider).asData?.value;
 
   final contextPayload = <String, dynamic>{
     if (weather != null) ...{
-      'weather':     weather.widgetParam,       // 'sunny', 'rain', …
+      'weather':     weather.widgetParam,
       'weatherCity': weather.cityName,
       'weatherTemp': weather.temperatureRounded,
     },
@@ -189,9 +188,7 @@ final libraryRecommendationsProvider =
     },
   };
 
-  debugPrint('[Recs] context payload: $contextPayload');
-
-  // ── 5. Invoke Edge Function ────────────────────────────────────────────────
+  // ── 4. Invoke Edge Function ────────────────────────────────────────────────
 
   final service = ref.read(supabaseServiceProvider);
   late final Map<String, dynamic> responseBody;
@@ -212,7 +209,6 @@ final libraryRecommendationsProvider =
       return [];
     }
 
-    // result.data is already decoded by supabase_flutter
     if (result.data is Map<String, dynamic>) {
       responseBody = result.data as Map<String, dynamic>;
     } else if (result.data is String) {
@@ -226,7 +222,7 @@ final libraryRecommendationsProvider =
     return [];
   }
 
-  // ── 6. Parse recommendations ───────────────────────────────────────────────
+  // ── 5. Parse ───────────────────────────────────────────────────────────────
 
   final rawList = responseBody['recommendations'] as List<dynamic>?;
   if (rawList == null || rawList.isEmpty) {
@@ -258,69 +254,71 @@ class LibraryRecommendationsSection extends ConsumerWidget {
     final async = ref.watch(libraryRecommendationsProvider);
 
     return async.when(
-      loading: () => const _RecommendationsSkeleton(),
+      loading: () => _RecommendationsSkeleton(),
       error: (e, _) {
         debugPrint('[Recs] UI error: $e');
         return const SizedBox.shrink();
       },
       data: (books) {
         if (books.isEmpty) {
-          return const _RecommendationsHint(
-            "Importa i tuoi highlight Kindle per ricevere suggerimenti"
-            " personalizzati basati sui tuoi temi di lettura.",
-          );
+          return _RecommendationsHint(context.l10n.recsEmpty);
         }
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _sectionHeader(),
+              _SectionHeader(),
               const SizedBox(height: 6),
               _RecommendationsSubtitle(),
               const SizedBox(height: 16),
               ...books.asMap().entries.map(
-                    (e) => _RecommendationCard(rec: e.value, index: e.key),
-                  ),
+                (e) => _RecommendationCard(rec: e.value, index: e.key),
+              ),
             ],
           ),
         );
       },
     );
   }
+}
 
-  static Widget _sectionHeader() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('LIBRI CONSIGLIATI',
-                  style: MarginaliaTextStyles.sectionTitle),
-              const SizedBox(width: 12),
-              const Expanded(
-                child:
-                    Divider(color: MarginaliaColors.ruleFaint, height: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            'Recommended by Marginalia for you (trust us, we know you well)',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: MarginaliaColors.sienna,
-              height: 1.3,
+// ─── Section header (shared by loaded / empty / skeleton states) ──────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(context.l10n.recsTitle,
+                style: MarginaliaTextStyles.sectionTitle),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
             ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text(
+          context.l10n.recsTagline,
+          style: GoogleFonts.ebGaramond(
+            fontSize: 13,
+            fontStyle: FontStyle.italic,
+            color: MarginaliaColors.sienna,
+            height: 1.3,
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }
 
 // ─── Dynamic subtitle ─────────────────────────────────────────────────────────
-//
-// Base: "Selezionati da Marginalia in base ai tuoi highlight."
-// + meteo se disponibile, + attività fisica se disponibile (iOS + HealthKit).
 
 class _RecommendationsSubtitle extends ConsumerWidget {
   const _RecommendationsSubtitle();
@@ -331,19 +329,19 @@ class _RecommendationsSubtitle extends ConsumerWidget {
     final hasActivity = ref.watch(lastWorkoutLabelProvider) != null ||
         ref.watch(stepCountLabelProvider) != null;
 
-    final String suffix;
+    final String text;
     if (hasWeather && hasActivity) {
-      suffix = ', today\'s weather and your recent physical activity';
+      text = context.l10n.recsSubtitleBoth;
     } else if (hasWeather) {
-      suffix = ' and today\'s weather';
+      text = context.l10n.recsSubtitleWeather;
     } else if (hasActivity) {
-      suffix = ' and your recent physical activity';
+      text = context.l10n.recsSubtitleActivity;
     } else {
-      suffix = '';
+      text = context.l10n.recsSubtitle;
     }
 
     return Text(
-      'Selected by Marginalia based on your highlights$suffix.',
+      text,
       style: GoogleFonts.manrope(
         fontSize: 11,
         color: MarginaliaColors.inkFaint,
@@ -353,7 +351,7 @@ class _RecommendationsSubtitle extends ConsumerWidget {
   }
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
+// ─── Card (tappable) ──────────────────────────────────────────────────────────
 
 class _RecommendationCard extends StatelessWidget {
   const _RecommendationCard({required this.rec, required this.index});
@@ -366,71 +364,375 @@ class _RecommendationCard extends StatelessWidget {
         .where((s) => s.isNotEmpty && s != '—')
         .join(' · ');
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          Text(
-            rec.title,
-            style: GoogleFonts.manrope(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: MarginaliaColors.ink,
-              height: 1.3,
-              letterSpacing: -0.2,
+    return GestureDetector(
+      onTap: () => _openSheet(context),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+          boxShadow: const [
+            BoxShadow(
+                color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    rec.title,
+                    style: GoogleFonts.manrope(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: MarginaliaColors.ink,
+                      height: 1.3,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.chevron_right_rounded,
+                    size: 18, color: MarginaliaColors.inkFaint),
+              ],
             ),
-          ),
-          if (meta.isNotEmpty) ...[
-            const SizedBox(height: 5),
+            if (meta.isNotEmpty) ...[
+              const SizedBox(height: 5),
+              Text(
+                meta,
+                style: GoogleFonts.manrope(
+                  fontSize: 11,
+                  color: MarginaliaColors.inkMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Container(height: 0.7, color: MarginaliaColors.ruleFaint),
+            const SizedBox(height: 10),
             Text(
-              meta,
-              style: GoogleFonts.manrope(
-                fontSize: 11,
-                color: MarginaliaColors.inkMuted,
-                fontWeight: FontWeight.w500,
+              rec.reason.isNotEmpty
+                  ? rec.reason
+                  : context.l10n.recsFallback,
+              style: GoogleFonts.ebGaramond(
+                fontSize: 14,
+                height: 1.65,
+                color: rec.reason.isNotEmpty
+                    ? MarginaliaColors.ink
+                    : MarginaliaColors.inkFaint,
+                fontStyle: FontStyle.italic,
               ),
             ),
           ],
-          const SizedBox(height: 10),
-          Container(height: 0.7, color: MarginaliaColors.ruleFaint),
-          const SizedBox(height: 10),
-          // AI reason
-          Text(
-            rec.reason.isNotEmpty
-                ? rec.reason
-                : 'Consigliato in base ai tuoi gusti di lettura.',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 14,
-              height: 1.65,
-              color: rec.reason.isNotEmpty
-                  ? MarginaliaColors.ink
-                  : MarginaliaColors.inkFaint,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
+        ),
       ),
     )
         .animate(delay: (index * 80).ms)
         .fadeIn(duration: 400.ms, curve: Curves.easeOut)
         .slideY(begin: 0.04, end: 0, duration: 400.ms, curve: Curves.easeOut);
   }
+
+  void _openSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _BookDetailSheet(rec: rec),
+    );
+  }
 }
 
-// ─── Hint widget (empty state / error state) ──────────────────────────────────
+// ─── Book detail bottom sheet ──────────────────────────────────────────────────
+
+class _BookDetailSheet extends StatefulWidget {
+  const _BookDetailSheet({required this.rec});
+  final BookRecommendation rec;
+
+  @override
+  State<_BookDetailSheet> createState() => _BookDetailSheetState();
+}
+
+class _BookDetailSheetState extends State<_BookDetailSheet> {
+  late final TextEditingController _notesCtrl;
+  bool _saving = false;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesCtrl = TextEditingController();
+    _loadNote();
+  }
+
+  @override
+  void dispose() {
+    // Auto-save when sheet closes (if there are unsaved notes)
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadNote() async {
+    // Find a SupabaseService from the nearest ProviderScope ancestor.
+    // We can't use ref here (StatefulWidget), so we use a direct Supabase call.
+    try {
+      // Read the provider via a ProviderContainer if available, else skip.
+      // The simplest approach: access Supabase directly via the client singleton.
+      final supabase = ProviderScope.containerOf(context, listen: false);
+      // ignore: invalid_use_of_internal_member
+      final service = supabase.read(supabaseServiceProvider);
+      final note = await service.fetchBookNote(
+        title: widget.rec.title,
+        author: widget.rec.author,
+      );
+      if (mounted) {
+        _notesCtrl.text = note ?? '';
+        setState(() => _loaded = true);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
+  }
+
+  Future<void> _saveNote() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      final supabase = ProviderScope.containerOf(context, listen: false);
+      // ignore: invalid_use_of_internal_member
+      final service = supabase.read(supabaseServiceProvider);
+      await service.saveBookNote(
+        title:  widget.rec.title,
+        author: widget.rec.author,
+        notes:  _notesCtrl.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.bookNotesSaved),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (_) {
+      /* silent */
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  void _openAmazon() async {
+    final query = Uri.encodeQueryComponent('${widget.rec.title} ${widget.rec.author}');
+    final url   = Uri.parse(
+        'https://www.amazon.it/s?k=$query&tag=$_amazonTag');
+    if (await canLaunchUrl(url)) await launchUrl(url);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rec    = widget.rec;
+    final meta   = [rec.author, rec.year]
+        .where((s) => s.isNotEmpty && s != '—')
+        .join(' · ');
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: MarginaliaColors.surfaceElevated,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, bottom + 32),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Drag handle ───────────────────────────────────────────────
+            Center(
+              child: Container(
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.rule,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Book title & meta ──────────────────────────────────────────
+            Text(
+              rec.title,
+              style: GoogleFonts.manrope(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: MarginaliaColors.ink,
+                height: 1.2,
+                letterSpacing: -0.5,
+              ),
+            ),
+            if (meta.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                meta,
+                style: GoogleFonts.manrope(
+                  fontSize: 13,
+                  color: MarginaliaColors.inkMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // ── AI reason ─────────────────────────────────────────────────
+            if (rec.reason.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.siennaFaint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  rec.reason,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 15,
+                    height: 1.65,
+                    color: MarginaliaColors.sienna,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 24),
+
+            // ── My notes ──────────────────────────────────────────────────
+            Row(
+              children: [
+                Text(context.l10n.bookMyNotes,
+                    style: MarginaliaTextStyles.sectionTitle),
+                const SizedBox(width: 12),
+                const Expanded(
+                    child:
+                        Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _notesCtrl,
+              minLines: 3,
+              maxLines: 8,
+              enabled: _loaded,
+              textCapitalization: TextCapitalization.sentences,
+              style: GoogleFonts.manrope(
+                fontSize: 14,
+                height: 1.6,
+                color: MarginaliaColors.ink,
+              ),
+              decoration: InputDecoration(
+                hintText: context.l10n.bookNotesHint,
+                hintStyle: GoogleFonts.manrope(
+                  fontSize: 14,
+                  color: MarginaliaColors.inkFaint,
+                ),
+                filled: true,
+                fillColor: MarginaliaColors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: MarginaliaColors.rule, width: 0.8),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      BorderSide(color: MarginaliaColors.rule, width: 0.8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: MarginaliaColors.primary, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _saving ? null : _saveNote,
+                style: FilledButton.styleFrom(
+                  backgroundColor: MarginaliaColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        context.l10n.save,
+                        style: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Amazon buy link ────────────────────────────────────────────
+            Row(
+              children: [
+                Text(context.l10n.bookBuyOnAmazon.toUpperCase(),
+                    style: MarginaliaTextStyles.sectionTitle),
+                const SizedBox(width: 12),
+                const Expanded(
+                    child:
+                        Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _openAmazon,
+                icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+                label: Text(context.l10n.bookBuyOnAmazon),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF232F3E), // Amazon dark
+                  side: const BorderSide(color: Color(0xFF232F3E), width: 1),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  textStyle: GoogleFonts.manrope(
+                      fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.bookAmazonEarningsHint,
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: MarginaliaColors.inkFaint,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Hint widget (empty state) ────────────────────────────────────────────────
 
 class _RecommendationsHint extends StatelessWidget {
   const _RecommendationsHint(this.message);
@@ -443,27 +745,7 @@ class _RecommendationsHint extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text('LIBRI CONSIGLIATI',
-                  style: MarginaliaTextStyles.sectionTitle),
-              const SizedBox(width: 12),
-              const Expanded(
-                child:
-                    Divider(color: MarginaliaColors.ruleFaint, height: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            'Recommended by Marginalia for you (trust us, we know you well)',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: MarginaliaColors.sienna,
-              height: 1.3,
-            ),
-          ),
+          _SectionHeader(),
           const SizedBox(height: 10),
           Text(
             message,
@@ -491,30 +773,10 @@ class _RecommendationsSkeleton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text('LIBRI CONSIGLIATI',
-                  style: MarginaliaTextStyles.sectionTitle),
-              const SizedBox(width: 12),
-              const Expanded(
-                child:
-                    Divider(color: MarginaliaColors.ruleFaint, height: 1),
-              ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Text(
-            'Recommended by Marginalia for you (trust us, we know you well)',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: MarginaliaColors.sienna,
-              height: 1.3,
-            ),
-          ),
+          _SectionHeader(),
           const SizedBox(height: 8),
           Text(
-            'Marginalia sta analizzando i tuoi highlight…',
+            context.l10n.recsLoading,
             style: GoogleFonts.manrope(
               fontSize: 11,
               color: MarginaliaColors.inkFaint,

@@ -71,7 +71,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
       body: RefreshIndicator(
-        onRefresh: () async => _invalidateAfterImport(),
+        onRefresh: () async => _refreshLibrary(),
         color: MarginaliaColors.sienna,
         backgroundColor: MarginaliaColors.surfaceElevated,
         displacement: 60,
@@ -228,8 +228,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         children: [
                           Text(
                             _showAllBooks
-                                ? 'Hide'
-                                : 'View all ${allBooks.length} books',
+                                ? context.l10n.libraryHide
+                                : context.l10n.libraryViewAll(allBooks.length),
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -288,9 +288,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (!supabase.isAuthenticated) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Sign in to import your highlights.'),
+          content: Text(context.l10n.librarySignInToImport),
           action: SnackBarAction(
-            label: 'Sign in',
+            label: context.l10n.librarySignIn,
             textColor: Colors.white,
             onPressed: () => context.push('/auth'),
           ),
@@ -313,14 +313,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           backgroundColor: MarginaliaColors.surfaceElevated,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20)),
-          title: const Text('Clear and reimport?',
+          title: Text(context.l10n.libraryClearReimportTitle,
               style:
-                  TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
-          content: const Text(
-            'All your highlights and books will be deleted from Supabase, '
-            'then reimported from the selected file.\n\n'
-            'Useful to fix corrupted characters from previous imports.',
-            style: TextStyle(
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+          content: Text(
+            context.l10n.libraryClearReimportBody,
+            style: const TextStyle(
                 color: MarginaliaColors.inkMuted,
                 fontSize: 14,
                 height: 1.5),
@@ -328,13 +326,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFB54848)),
-              child: const Text('Clear and reimport'),
+              child: Text(context.l10n.libraryClearAction),
             ),
           ],
         ),
@@ -378,12 +376,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
       if (mounted) {
         final msg = importResult.firstError != null
-            ? 'Partial import — ${importResult.highlightsAdded} highlights, '
-                '${importResult.highlightsFailed} errors.\n${importResult.firstError}'
+            ? context.l10n.libraryImportPartial(
+                importResult.highlightsAdded, importResult.highlightsFailed)
             : importResult.highlightsAdded > 0
-                ? '${importResult.highlightsAdded} highlights imported from '
-                    '${importResult.booksAdded} books.'
-                : 'No new highlights (${importResult.highlightsDeduplicated} already present).';
+                ? context.l10n.libraryImportSuccess(
+                    importResult.highlightsAdded, importResult.booksAdded)
+                : context.l10n.libraryImportNone(
+                    importResult.highlightsDeduplicated);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -402,11 +401,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     }
   }
 
+  /// Full refresh after a real My Clippings import — also busts the
+  /// recommendations cache so the AI re-analyzes the new highlights.
   void _invalidateAfterImport() {
     ref.invalidate(booksProvider);
     ref.invalidate(dailyHighlightProvider);
     ref.invalidate(allHighlightsProvider);
     ref.invalidate(libraryRecommendationsProvider);
+  }
+
+  /// Pull-to-refresh: refresh books/highlights data only.
+  /// Recommendations are NOT invalidated — they only update after a real import.
+  void _refreshLibrary() {
+    ref.invalidate(booksProvider);
+    ref.invalidate(dailyHighlightProvider);
+    ref.invalidate(allHighlightsProvider);
   }
 
   // ─── Demo data ───────────────────────────────────────────────────────────────
@@ -427,12 +436,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       _invalidateAfterImport();
       if (mounted) {
         final msg = result.firstError != null
-            ? 'Partial import — ${result.booksAdded} books, '
-                '${result.highlightsAdded} highlights.\nError: ${result.firstError}'
+            ? context.l10n.libraryImportPartial(
+                result.highlightsAdded, result.highlightsFailed)
             : result.highlightsAdded > 0
-                ? 'Demo loaded: ${result.highlightsAdded} highlights from '
-                    '${result.booksAdded} books.'
-                : 'Demo data is already present.';
+                ? context.l10n.libraryImportSuccess(
+                    result.highlightsAdded, result.booksAdded)
+                : context.l10n.libraryImportNone(
+                    result.highlightsDeduplicated);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -450,24 +460,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       if (mounted) setState(() => _isImporting = false);
     }
   }
-}
-
-// ─── Greeting utility ─────────────────────────────────────────────────────────
-
-String contextualGreeting(String? name, {int? hour}) {
-  final h = hour ?? DateTime.now().hour;
-  final String base;
-  if (h < 6)       base = 'Up so early';
-  else if (h < 12) base = 'Good morning';
-  else if (h < 13) base = 'Take a break';
-  else if (h < 18) base = 'Good afternoon';
-  else if (h < 21) base = 'Good evening';
-  else             base = 'Good night';
-
-  final trimmed = name?.trim() ?? '';
-  if (trimmed.isEmpty) return base;
-  final suffix = h < 6 ? ', $trimmed?' : ', $trimmed';
-  return '$base$suffix';
 }
 
 // myDisplayNameProvider lives in auth_provider.dart (shared with other screens)
@@ -490,6 +482,21 @@ class _EditorialHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
+
+    // Localized contextual greeting
+    final h = DateTime.now().hour;
+    final String greetingBase;
+    if (h < 6)       greetingBase = context.l10n.greetingEarlyMorning;
+    else if (h < 12) greetingBase = context.l10n.greetingMorning;
+    else if (h < 13) greetingBase = context.l10n.greetingBreak;
+    else if (h < 18) greetingBase = context.l10n.greetingAfternoon;
+    else if (h < 21) greetingBase = context.l10n.greetingEvening;
+    else             greetingBase = context.l10n.greetingNight;
+    final trimmed = userName?.trim() ?? '';
+    final greeting = trimmed.isEmpty
+        ? greetingBase
+        : '$greetingBase, $trimmed${h < 6 ? '?' : ''}';
+
     return Padding(
       padding: EdgeInsets.fromLTRB(24, top + 14, 16, 0),
       child: Column(
@@ -537,7 +544,7 @@ class _EditorialHeader extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            contextualGreeting(userName),
+            greeting,
             style: MarginaliaTextStyles.label.copyWith(
               color: MarginaliaColors.inkFaint,
               letterSpacing: 0.2,
@@ -576,7 +583,7 @@ class _DailyCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('PICKED FOR YOU',
+                Text(context.l10n.libraryPickedForYou,
                     style: MarginaliaTextStyles.sectionTitle),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -614,7 +621,7 @@ class _DailyCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Read',
+                  context.l10n.libraryRead,
                   style: MarginaliaTextStyles.label.copyWith(
                     color: MarginaliaColors.sienna,
                     fontWeight: FontWeight.w600,
@@ -657,7 +664,7 @@ class _RecentHighlightsStrip extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
           child: Row(
             children: [
-              Text('RECENT', style: MarginaliaTextStyles.sectionTitle),
+              Text(context.l10n.libraryRecent, style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(
                 child: Divider(
@@ -786,14 +793,14 @@ class _FilterChips extends StatelessWidget {
     return Row(
       children: [
         _Chip(
-          label:  'All',
+          label:  context.l10n.libraryFilterAll,
           icon:   Icons.auto_stories_outlined,
           active: selected == _LibraryFilter.all,
           onTap:  () => onSelect(_LibraryFilter.all),
         ),
         const SizedBox(width: 8),
         _Chip(
-          label:  'Favorites',
+          label:  context.l10n.libraryFilterFavorites,
           icon:   Icons.bookmark_outline,
           active: selected == _LibraryFilter.favorites,
           onTap:  () => onSelect(_LibraryFilter.favorites),
