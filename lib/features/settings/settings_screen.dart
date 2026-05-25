@@ -428,7 +428,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 icon: Icons.privacy_tip_outlined,
                 label: 'Privacy Policy',
                 onTap: () async {
-                  final uri = Uri.parse('https://marginalia.app/privacy');
+                  final uri = Uri.parse('https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
                   if (await canLaunchUrl(uri)) await launchUrl(uri);
                 },
                 trailing: const Icon(Icons.open_in_new,

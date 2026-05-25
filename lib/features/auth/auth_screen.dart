@@ -370,7 +370,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () async {
                                     final uri = Uri.parse(
-                                        'https://marginalia.app/privacy');
+                                        'https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
                                     if (await canLaunchUrl(uri)) {
                                       await launchUrl(uri);
                                     }

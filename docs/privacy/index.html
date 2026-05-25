@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy · Marginalia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #FAFAF8;
+      --surface:   #F5F2EC;
+      --border:    #E8E3DA;
+      --ink:       #1C1A17;
+      --ink-muted: #6B6560;
+      --ink-faint: #A8A29C;
+      --amber:     #8B7355;
+      --amber-lt:  #C4A882;
+      --red:       #B54848;
+      --radius:    14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(160deg, #3D2B1F 0%, #2A1F16 60%, #1C140E 100%);
+      padding: 64px 24px 52px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(196,168,130,0.18) 0%, transparent 70%);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(196,168,130,0.15);
+      border: 1px solid rgba(196,168,130,0.3);
+      border-radius: 24px;
+      padding: 6px 14px;
+      margin-bottom: 22px;
+      position: relative;
+    }
+    .badge-m {
+      font-family: 'Lora', serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: #C4A882;
+      letter-spacing: 0.5px;
+    }
+    .badge-dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(196,168,130,0.5);
+    }
+    .badge-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(196,168,130,0.7);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+    header h1 {
+      font-family: 'Lora', serif;
+      font-size: clamp(28px, 5vw, 40px);
+      font-weight: 600;
+      color: #F1EEE7;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      position: relative;
+    }
+    header p {
+      margin-top: 12px;
+      font-size: 14px;
+      color: rgba(241,238,231,0.5);
+      position: relative;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Intro card ── */
+    .intro {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin: 40px 0 32px;
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 16px;
+      color: var(--ink-muted);
+      line-height: 1.75;
+    }
+    .intro strong {
+      font-style: normal;
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    /* ── Quick summary ── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .summary-icon {
+      font-size: 20px;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .summary-text {
+      font-size: 13px;
+      color: var(--ink-muted);
+      line-height: 1.5;
+    }
+    .summary-text strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+
+    /* ── Section ── */
+    section {
+      margin-bottom: 40px;
+    }
+    section h2 {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.2px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    section h2 span.num {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-faint);
+      letter-spacing: 0.5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 7px;
+    }
+    section p {
+      font-size: 15px;
+      color: var(--ink-muted);
+      margin-bottom: 12px;
+      line-height: 1.75;
+    }
+    section p:last-child { margin-bottom: 0; }
+    section a {
+      color: var(--amber);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    section a:hover { color: var(--ink); }
+
+    /* ── Data table ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .data-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      padding: 8px 12px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      line-height: 1.55;
+      color: var(--ink-muted);
+    }
+    .data-table td:first-child {
+      font-weight: 500;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 5px;
+      margin-top: 4px;
+    }
+    .tag-req  { background: #FEF3C7; color: #92400E; }
+    .tag-opt  { background: #ECFDF5; color: #065F46; }
+    .tag-tech { background: #EFF6FF; color: #1E40AF; }
+
+    /* ── Rights box ── */
+    .rights {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .right-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .right-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .right-text { font-size: 14px; color: var(--ink-muted); line-height: 1.5; }
+    .right-text strong { display: block; color: var(--ink); font-weight: 600; font-size: 14px; }
+
+    /* ── Contact ── */
+    .contact-box {
+      background: linear-gradient(135deg, #3D2B1F 0%, #2A1F16 100%);
+      border-radius: var(--radius);
+      padding: 28px 28px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .contact-box p {
+      font-size: 14px;
+      color: rgba(241,238,231,0.6);
+      margin-bottom: 12px;
+    }
+    .contact-box a {
+      display: inline-block;
+      background: rgba(196,168,130,0.15);
+      border: 1px solid rgba(196,168,130,0.35);
+      color: #C4A882;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 22px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .contact-box a:hover { background: rgba(196,168,130,0.25); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--ink-faint);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--amber); text-decoration: none; }
+
+    @media (max-width: 480px) {
+      header { padding: 48px 20px 40px; }
+      .summary { grid-template-columns: 1fr; }
+      .rights  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">
+    <span class="badge-m">M</span>
+    <span class="badge-dot"></span>
+    <span class="badge-label">Marginalia</span>
+  </div>
+  <h1>Privacy Policy</h1>
+  <p>Last updated: May 2026 &nbsp;·&nbsp; Effective immediately</p>
+</header>
+
+<div class="container">
+
+  <div class="intro">
+    Marginalia is a personal reading app. Your highlights are yours.
+    We collect only what is strictly necessary to make the app work,
+    we never sell your data, and we never will.
+    <br /><br />
+    This policy explains exactly what we collect, why, and
+    <strong>how to delete everything with one tap.</strong>
+  </div>
+
+  <!-- Quick summary -->
+  <div class="summary">
+    <div class="summary-card">
+      <span class="summary-icon">🔒</span>
+      <div class="summary-text">
+        <strong>No tracking</strong>
+        We use no advertising SDKs or third-party analytics.
+      </div>
+    </div>
+    <div class="summary-card">
+      <span class="summary-icon">🚫</span>
+      <div class="summary-text">
+        <strong>Not sold</strong>
+        Your data is never sold or shared with advertisers.
+      </div>
+    </div>
+    <div class="summary-card">
+      <span class="summary-icon">🗑</span>
+      <div class="summary-text">
+        <strong>Delete anytime</strong>
+        One tap in Settings deletes your account and all data.
+      </div>
+    </div>
+    <div class="summary-card">
+      <span class="summary-icon">📴</span>
+      <div class="summary-text">
+        <strong>Offline-first</strong>
+        Your highlights are stored on-device. Network is optional.
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Who we are -->
+  <section>
+    <h2><span class="num">01</span> Who we are</h2>
+    <p>
+      Marginalia is an independent iOS app developed by Vittorio Palpati,
+      based in Italy. Questions can be directed to
+      <a href="mailto:vittoriopalpati811@gmail.com">vittoriopalpati811@gmail.com</a>.
+    </p>
+    <p>
+      As the app is distributed to users in the European Union, we comply fully
+      with the General Data Protection Regulation (GDPR) and, where applicable,
+      the Italian Personal Data Protection Code.
+    </p>
+  </section>
+
+  <!-- 2. Data we collect -->
+  <section>
+    <h2><span class="num">02</span> Data we collect</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Purpose</th>
+          <th>Storage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Email address</td>
+          <td>Account authentication only</td>
+          <td>Supabase (EU)<br><span class="tag tag-req">Required</span></td>
+        </tr>
+        <tr>
+          <td>Display name</td>
+          <td>Shown in your public profile and Jam groups</td>
+          <td>Supabase (EU)<br><span class="tag tag-req">Required</span></td>
+        </tr>
+        <tr>
+          <td>Kindle highlights</td>
+          <td>Core feature — surfacing and rediscovering your reading</td>
+          <td>On-device + Supabase (EU)<br><span class="tag tag-req">Required</span></td>
+        </tr>
+        <tr>
+          <td>Step count &amp; workout type</td>
+          <td>Personalise the daily AI-selected highlight (e.g. energetic quote after a workout)</td>
+          <td>On-device only, never uploaded<br><span class="tag tag-opt">Optional</span></td>
+        </tr>
+        <tr>
+          <td>Menstrual cycle phase</td>
+          <td>Further personalise the daily highlight if the user enables this</td>
+          <td>On-device only, never uploaded<br><span class="tag tag-opt">Optional</span></td>
+        </tr>
+        <tr>
+          <td>Location (city-level)</td>
+          <td>Show weather in the home screen widget</td>
+          <td>On-device only, sent to Open-Meteo API (no account)<br><span class="tag tag-opt">Optional</span></td>
+        </tr>
+        <tr>
+          <td>App interaction data</td>
+          <td>None — we have no analytics SDK</td>
+          <td>Not collected<br><span class="tag tag-tech">N/A</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      Health data (steps, workouts, cycle) is read exclusively from Apple HealthKit
+      on your device. It is used only to select a contextually relevant highlight in
+      the moment and is <strong>never stored on our servers or shared with any third party.</strong>
+    </p>
+  </section>
+
+  <!-- 3. Third-party services -->
+  <section>
+    <h2><span class="num">03</span> Third-party services we use</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Purpose</th>
+          <th>Privacy policy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Supabase</td>
+          <td>Database &amp; authentication (servers in EU)</td>
+          <td><a href="https://supabase.com/privacy" target="_blank" rel="noopener">supabase.com/privacy</a></td>
+        </tr>
+        <tr>
+          <td>Groq</td>
+          <td>AI selection of daily highlight — receives anonymised highlight text, no personal data</td>
+          <td><a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener">groq.com/privacy-policy</a></td>
+        </tr>
+        <tr>
+          <td>Open-Meteo</td>
+          <td>Weather data for the widget (no account, no cookies)</td>
+          <td><a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">open-meteo.com/en/terms</a></td>
+        </tr>
+        <tr>
+          <td>Amazon Kindle</td>
+          <td>Optional sync via your existing Amazon account in an in-app browser. We never see your Amazon credentials.</td>
+          <td><a href="https://www.amazon.com/gp/help/customer/display.html?nodeId=468496" target="_blank" rel="noopener">amazon.com/privacy</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4. Legal basis -->
+  <section>
+    <h2><span class="num">04</span> Legal basis (GDPR Art. 6)</h2>
+    <p>
+      We process your data on the following legal bases:
+    </p>
+    <p>
+      <strong>Contract (Art. 6.1.b)</strong> — email address and highlights are
+      necessary to provide the service you signed up for.
+    </p>
+    <p>
+      <strong>Consent (Art. 6.1.a &amp; Art. 9.2.a)</strong> — health data
+      (steps, workouts, cycle phase) is only processed if you explicitly grant
+      HealthKit permission on your device. You can revoke this at any time in
+      iOS Settings → Privacy &amp; Security → Health.
+    </p>
+    <p>
+      <strong>Legitimate interest (Art. 6.1.f)</strong> — city-level weather
+      via Open-Meteo to provide contextual widget content, with no persistent
+      identifier attached.
+    </p>
+  </section>
+
+  <!-- 5. Data retention -->
+  <section>
+    <h2><span class="num">05</span> Data retention</h2>
+    <p>
+      Your data is kept for as long as your account exists. When you delete your
+      account (Settings → Privacy &amp; Data → Delete Account), all data is
+      permanently and irreversibly deleted from our servers within 30 days,
+      including your highlights, profile, and Jam activity.
+    </p>
+    <p>
+      On-device data (Isar database) is removed immediately when you uninstall the app.
+    </p>
+  </section>
+
+  <!-- 6. Your rights -->
+  <section>
+    <h2><span class="num">06</span> Your rights</h2>
+    <div class="rights">
+      <div class="right-item">
+        <span class="right-icon">👁</span>
+        <div class="right-text">
+          <strong>Access</strong>
+          Request a copy of all data we hold about you.
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">✏️</span>
+        <div class="right-text">
+          <strong>Rectification</strong>
+          Correct inaccurate personal data via Settings → Edit Profile.
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">🗑</span>
+        <div class="right-text">
+          <strong>Erasure</strong>
+          Delete your account and all data: Settings → Privacy &amp; Data → Delete Account.
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">📦</span>
+        <div class="right-text">
+          <strong>Portability</strong>
+          Export all your highlights as Markdown: Settings → Export to Markdown.
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">🚫</span>
+        <div class="right-text">
+          <strong>Objection</strong>
+          Opt out of any processing based on legitimate interest at any time.
+        </div>
+      </div>
+      <div class="right-item">
+        <span class="right-icon">⏸</span>
+        <div class="right-text">
+          <strong>Restriction</strong>
+          Request that we restrict processing of your data while a dispute is pending.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Children -->
+  <section>
+    <h2><span class="num">07</span> Children</h2>
+    <p>
+      Marginalia is not directed at children under 13. We do not knowingly collect
+      personal data from anyone under 13. If you believe a child has provided us
+      with personal data, please contact us and we will delete it immediately.
+    </p>
+  </section>
+
+  <!-- 8. Changes -->
+  <section>
+    <h2><span class="num">08</span> Changes to this policy</h2>
+    <p>
+      If we make material changes to this policy, we will notify you within the app
+      before the change takes effect. Continued use of the app after notification
+      constitutes acceptance of the updated policy.
+    </p>
+  </section>
+
+  <!-- Contact -->
+  <div class="contact-box">
+    <p>Questions, data requests, or complaints</p>
+    <a href="mailto:vittoriopalpati811@gmail.com">vittoriopalpati811@gmail.com</a>
+  </div>
+
+</div>
+
+<footer>
+  © 2026 Marginalia &nbsp;·&nbsp;
+  <a href="/">Home</a>
+</footer>
+
+</body>
+</html>
