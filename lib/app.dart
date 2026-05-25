@@ -701,18 +701,18 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
                 ),
               ],
             );         // Stack
-          // ImageFilter.compose + ImageFilter.matrix are not supported in
-          // Flutter's HTML renderer — skip BackdropFilter on web to prevent
-          // the transparent-overlay artifact that washes out the whole UI.
-          if (kIsWeb) return navStack;
-          return BackdropFilter(
-            filter: ImageFilter.compose(
-              inner: ImageFilter.matrix(matrix),
-              outer: ImageFilter.blur(sigmaX: 22, sigmaY: 22,
-                  tileMode: TileMode.mirror),
-            ),
-            child: navStack,
-          );
+          // ImageFilter.matrix (magnification) is not supported in Flutter's
+          // HTML renderer and causes a full-app transparent-overlay artifact.
+          // On web, fall back to a plain blur — still frosted glass, no magnify.
+          final filter = kIsWeb
+              ? ImageFilter.blur(sigmaX: 18, sigmaY: 18,
+                  tileMode: TileMode.mirror)
+              : ImageFilter.compose(
+                  inner: ImageFilter.matrix(matrix),
+                  outer: ImageFilter.blur(sigmaX: 22, sigmaY: 22,
+                      tileMode: TileMode.mirror),
+                );
+          return BackdropFilter(filter: filter, child: navStack);
         },             // LayoutBuilder builder
       ),               // LayoutBuilder
     ),                 // ClipRRect
