@@ -80,7 +80,9 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
           const SizedBox(height: 8),
 
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            // Comfortable inner gutter so the "15" doesn't kiss the left
+            // border and the "Libri" suffix doesn't kiss the right.
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
@@ -105,6 +107,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   context.l10n.onboardingGoalSuffix,
                   style: GoogleFonts.manrope(

@@ -188,7 +188,9 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
 
             // ── Manual ISBN entry ──────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              // Match _SearchPill's roomy gutter so icon + placeholder + button
+              // breathe inside the box.
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
@@ -298,7 +300,9 @@ class _SearchPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      // Comfortable inner gutter so the placeholder text doesn't sit
+      // flush against the left/right of the pill.
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
@@ -307,7 +311,7 @@ class _SearchPill extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, size: 18, color: MarginaliaColors.inkMuted),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: TextField(
               controller: controller,

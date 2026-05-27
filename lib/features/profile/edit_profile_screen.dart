@@ -138,11 +138,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   // ── Photo helpers ────────────────────────────────────────────────────────────
 
   Future<void> _pickAvatar() async {
-    final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-    if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
-    final file = r.files.first;
+    if (_uploadingAvatar) return;
+    // Flip the spinner BEFORE awaiting pickFiles: on web, withData:true
+    // can block 1-3s reading a 5-10MB iPhone photo, with no visible
+    // feedback otherwise (the iOS file sheet has already dismissed).
     setState(() => _uploadingAvatar = true);
     try {
+      final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+      if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
+      final file = r.files.first;
       final url = await ref.read(supabaseServiceProvider).uploadAvatar(
             file.bytes!,
             (file.extension ?? 'jpg').toLowerCase(),
@@ -166,11 +170,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _pickCover() async {
-    final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-    if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
-    final file = r.files.first;
+    if (_uploadingCover) return;
     setState(() => _uploadingCover = true);
     try {
+      final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+      if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
+      final file = r.files.first;
       final url = await ref.read(supabaseServiceProvider).uploadCover(
             file.bytes!,
             (file.extension ?? 'jpg').toLowerCase(),

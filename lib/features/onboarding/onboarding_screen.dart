@@ -75,10 +75,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Step 4 — Avatar
   Uint8List? _avatarBytes;
   String? _avatarExt;
+  bool _pickingAvatar = false;
 
   // Step 5 — Cover
   Uint8List? _coverBytes;
   String? _coverExt;
+  bool _pickingCover = false;
 
   // Step 6 — Reading goal
   final _goalCtrl = TextEditingController(text: '15');
@@ -278,37 +280,57 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   // ── Step 4: Pick avatar ──────────────────────────────────────────────────────
+  //
+  // On web, `withData: true` reads the entire file into a Uint8List
+  // synchronously after the user picks. iPhone photos can be 5-10 MB, which
+  // blocks for 1-3 seconds with no visible feedback (the iOS file sheet has
+  // already dismissed). We surface a loading state so the user understands
+  // the wait, and guard against double-taps while the read is in flight.
 
   Future<void> _pickAvatar() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.bytes == null) return;
-    final ext = (file.extension ?? 'jpg').toLowerCase();
-    setState(() {
-      _avatarBytes = file.bytes;
-      _avatarExt = ext;
-    });
+    if (_pickingAvatar) return;
+    setState(() => _pickingAvatar = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null) return;
+      final ext = (file.extension ?? 'jpg').toLowerCase();
+      if (!mounted) return;
+      setState(() {
+        _avatarBytes = file.bytes;
+        _avatarExt = ext;
+      });
+    } finally {
+      if (mounted) setState(() => _pickingAvatar = false);
+    }
   }
 
   // ── Step 5: Pick cover ───────────────────────────────────────────────────────
 
   Future<void> _pickCover() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.bytes == null) return;
-    final ext = (file.extension ?? 'jpg').toLowerCase();
-    setState(() {
-      _coverBytes = file.bytes;
-      _coverExt = ext;
-    });
+    if (_pickingCover) return;
+    setState(() => _pickingCover = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      if (file.bytes == null) return;
+      final ext = (file.extension ?? 'jpg').toLowerCase();
+      if (!mounted) return;
+      setState(() {
+        _coverBytes = file.bytes;
+        _coverExt = ext;
+      });
+    } finally {
+      if (mounted) setState(() => _pickingCover = false);
+    }
   }
 
   // ── Step 6: Complete ─────────────────────────────────────────────────────────
@@ -455,12 +477,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   _AvatarStep(
                     avatarBytes: _avatarBytes,
+                    picking:     _pickingAvatar,
                     onPickAvatar: _pickAvatar,
                     onContinue: _next,
                     onSkip: _next,
                   ),
                   _CoverStep(
                     coverBytes: _coverBytes,
+                    picking:    _pickingCover,
                     onPickCover: _pickCover,
                     onContinue: _next,
                     onSkip: _next,
@@ -1401,12 +1425,14 @@ class _NameStep extends StatelessWidget {
 class _AvatarStep extends StatelessWidget {
   const _AvatarStep({
     required this.avatarBytes,
+    required this.picking,
     required this.onPickAvatar,
     required this.onContinue,
     required this.onSkip,
   });
 
-  final Uint8List? avatarBytes;
+  final Uint8List?   avatarBytes;
+  final bool         picking;
   final VoidCallback onPickAvatar;
   final VoidCallback onContinue;
   final VoidCallback onSkip;
@@ -1444,31 +1470,58 @@ class _AvatarStep extends StatelessWidget {
           // Avatar circle
           Center(
             child: GestureDetector(
-              onTap: onPickAvatar,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: MarginaliaColors.primaryFaint,
-                  border: Border.all(
-                    color: MarginaliaColors.primary,
-                    width: 2,
-                  ),
-                  image: avatarBytes != null
-                      ? DecorationImage(
-                          image: MemoryImage(avatarBytes!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: avatarBytes == null
-                    ? const Icon(
-                        Icons.person,
-                        size: 64,
+              onTap: picking ? null : onPickAvatar,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: MarginaliaColors.primaryFaint,
+                      border: Border.all(
                         color: MarginaliaColors.primary,
-                      )
-                    : null,
+                        width: 2,
+                      ),
+                      image: avatarBytes != null
+                          ? DecorationImage(
+                              image: MemoryImage(avatarBytes!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: avatarBytes == null
+                        ? const Icon(
+                            Icons.person,
+                            size: 64,
+                            color: MarginaliaColors.primary,
+                          )
+                        : null,
+                  ),
+                  // While picking, dim the circle and overlay a spinner so
+                  // the user sees that the (potentially slow) file read is
+                  // happening in our app, not stuck on iOS.
+                  if (picking)
+                    Container(
+                      width: 160,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withOpacity(0.32),
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 300.ms).scale(
@@ -1483,7 +1536,7 @@ class _AvatarStep extends StatelessWidget {
           // Pick button
           Center(
             child: OutlinedButton.icon(
-              onPressed: onPickAvatar,
+              onPressed: picking ? null : onPickAvatar,
               icon: const Icon(Icons.photo_library_outlined, size: 18),
               label: Text(
                 context.l10n.onboardingAvatarPick,
@@ -1542,12 +1595,14 @@ class _AvatarStep extends StatelessWidget {
 class _CoverStep extends StatelessWidget {
   const _CoverStep({
     required this.coverBytes,
+    required this.picking,
     required this.onPickCover,
     required this.onContinue,
     required this.onSkip,
   });
 
-  final Uint8List? coverBytes;
+  final Uint8List?   coverBytes;
+  final bool         picking;
   final VoidCallback onPickCover;
   final VoidCallback onContinue;
   final VoidCallback onSkip;
@@ -1584,46 +1639,69 @@ class _CoverStep extends StatelessWidget {
 
           // Cover placeholder — 16:7 aspect ratio
           GestureDetector(
-            onTap: onPickCover,
+            onTap: picking ? null : onPickCover,
             child: AspectRatio(
               aspectRatio: 16 / 7,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: MarginaliaColors.primaryFaint,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: MarginaliaColors.primary,
-                    width: 1.5,
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.primaryFaint,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: MarginaliaColors.primary,
+                        width: 1.5,
+                      ),
+                      image: coverBytes != null
+                          ? DecorationImage(
+                              image: MemoryImage(coverBytes!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: coverBytes == null
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.image_outlined,
+                                  size: 36,
+                                  color: MarginaliaColors.primary.withAlpha(160),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  context.l10n.onboardingCoverPlaceholder,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 13,
+                                    color: MarginaliaColors.primary.withAlpha(160),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : null,
                   ),
-                  image: coverBytes != null
-                      ? DecorationImage(
-                          image: MemoryImage(coverBytes!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: coverBytes == null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.image_outlined,
-                              size: 36,
-                              color: MarginaliaColors.primary.withAlpha(160),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              context.l10n.onboardingCoverPlaceholder,
-                              style: GoogleFonts.manrope(
-                                fontSize: 13,
-                                color: MarginaliaColors.primary.withAlpha(160),
-                              ),
-                            ),
-                          ],
+                  if (picking)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.32),
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                      )
-                    : null,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 30,
+                            height: 30,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 300.ms),
@@ -1632,7 +1710,7 @@ class _CoverStep extends StatelessWidget {
 
           Center(
             child: OutlinedButton.icon(
-              onPressed: onPickCover,
+              onPressed: picking ? null : onPickCover,
               icon: const Icon(Icons.photo_library_outlined, size: 18),
               label: Text(
                 context.l10n.onboardingCoverPick,

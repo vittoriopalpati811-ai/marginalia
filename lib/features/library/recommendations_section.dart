@@ -261,14 +261,18 @@ class LibraryRecommendationsSection extends ConsumerWidget {
         if (books.isEmpty) {
           return _RecommendationsHint(context.l10n.recsEmpty);
         }
+        // NOTE: previously rendered _RecommendationsSubtitle here too, but
+        // its copy ("Selezionati in base ai tuoi highlight") was visually
+        // redundant with _SectionHeader's tagline ("Selezionati da
+        // Marginalia, solo per te"), and on certain devices the two lines
+        // appeared stacked/duplicated like a render ghost. One tagline is
+        // enough — context comes from the section title above it.
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _SectionHeader(),
-              const SizedBox(height: 6),
-              _RecommendationsSubtitle(),
               const SizedBox(height: 16),
               ...books.asMap().entries.map(
                 (e) => _RecommendationCard(rec: e.value, index: e.key),
@@ -312,39 +316,6 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ─── Dynamic subtitle ─────────────────────────────────────────────────────────
-
-class _RecommendationsSubtitle extends ConsumerWidget {
-  const _RecommendationsSubtitle();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hasWeather  = ref.watch(weatherProvider).asData?.value != null;
-    final hasActivity = ref.watch(lastWorkoutLabelProvider) != null ||
-        ref.watch(stepCountLabelProvider) != null;
-
-    final String text;
-    if (hasWeather && hasActivity) {
-      text = context.l10n.recsSubtitleBoth;
-    } else if (hasWeather) {
-      text = context.l10n.recsSubtitleWeather;
-    } else if (hasActivity) {
-      text = context.l10n.recsSubtitleActivity;
-    } else {
-      text = context.l10n.recsSubtitle;
-    }
-
-    return Text(
-      text,
-      style: GoogleFonts.manrope(
-        fontSize: 11,
-        color: MarginaliaColors.inkFaint,
-        height: 1.4,
-      ),
     );
   }
 }
@@ -413,17 +384,19 @@ class _RecommendationCard extends StatelessWidget {
             const SizedBox(height: 10),
             Container(height: 0.7, color: MarginaliaColors.ruleFaint),
             const SizedBox(height: 10),
+            // Reason is the main body of each card — keep it upright.
+            // Italic was reserved for short decorative captions (the green
+            // tagline above the section) and felt too heavy as paragraph copy.
             Text(
               rec.reason.isNotEmpty
                   ? rec.reason
                   : context.l10n.recsFallback,
               style: GoogleFonts.ebGaramond(
                 fontSize: 14,
-                height: 1.65,
+                height: 1.6,
                 color: rec.reason.isNotEmpty
                     ? MarginaliaColors.ink
                     : MarginaliaColors.inkFaint,
-                fontStyle: FontStyle.italic,
               ),
             ),
           ],
