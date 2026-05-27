@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:marginalia/generated/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -348,21 +349,19 @@ class _ScaffoldWithNav extends StatelessWidget {
   final Widget child;
   final String routePath;
 
-  // Meta-app icon vocabulary, labels removed.
-  //   Home     → Instagram's angular house (Material Icons.home_outlined)
-  //   Library  → editorial open-book (Material Icons.auto_stories)
-  //   Jam      → WhatsApp Communities (Material Icons.groups, the 3-person cluster)
-  //   Messages → Instagram DM paper-airplane (CupertinoIcons.paperplane)
-  //   Profile  → Instagram profile silhouette inside a circle
-  //             (CupertinoIcons.person_crop_circle)
-  // `label` is kept on the record but not rendered, in case we want to
-  // re-enable text labels (or use them for accessibility tooltips) later.
-  static const _tabs = [
-    (path: '/home',     icon: Icons.home_outlined,                  activeIcon: Icons.home,                              label: 'Home'),
-    (path: '/',         icon: Icons.auto_stories_outlined,          activeIcon: Icons.auto_stories,                      label: 'Library'),
-    (path: '/social',   icon: Icons.groups_outlined,                activeIcon: Icons.groups,                            label: 'Jam'),
-    (path: '/messages', icon: CupertinoIcons.paperplane,            activeIcon: CupertinoIcons.paperplane_fill,          label: 'Messages'),
-    (path: '/profile',  icon: CupertinoIcons.person_crop_circle,    activeIcon: CupertinoIcons.person_crop_circle_fill,  label: 'Profile'),
+  // Phosphor Icons in Regular weight for inactive + Fill for active.
+  // Thicker strokes + rounded line caps match the visual reference the
+  // user provided (house with rounded outline, paper-plane-tilt, etc.)
+  // and read much stronger than Material's hairline outlined glyphs.
+  //
+  // `label` is kept on the record but not rendered; Semantics() below
+  // exposes it for VoiceOver/TalkBack.
+  static final _tabs = <_Tab>[
+    (path: '/home',     icon: PhosphorIconsRegular.house,           activeIcon: PhosphorIconsFill.house,           label: 'Home'),
+    (path: '/',         icon: PhosphorIconsRegular.bookOpen,        activeIcon: PhosphorIconsFill.bookOpen,        label: 'Library'),
+    (path: '/social',   icon: PhosphorIconsRegular.usersThree,      activeIcon: PhosphorIconsFill.usersThree,      label: 'Jam'),
+    (path: '/messages', icon: PhosphorIconsRegular.paperPlaneTilt,  activeIcon: PhosphorIconsFill.paperPlaneTilt,  label: 'Messages'),
+    (path: '/profile',  icon: PhosphorIconsRegular.userCircle,      activeIcon: PhosphorIconsFill.userCircle,      label: 'Profile'),
   ];
 
   @override

@@ -14,6 +14,13 @@
 //     3. Complete the ACTIVATION CHECKLIST in health_service.dart.
 
 // ─── Data classes (re-exported from web stub for type consistency) ────────────
+//
+// The stub block below references HealthSnapshot directly, so we need
+// to *import* it in addition to re-exporting it. Without the import,
+// `flutter analyze` flagged "Undefined name 'HealthSnapshot'" and the
+// native build would fail.
+
+import 'health_service_web.dart' show HealthSnapshot;
 
 export 'health_service_web.dart'
     show WorkoutActivity, CyclePhase, HealthSnapshot;

@@ -64,6 +64,12 @@ dependencies:
   # glyphs fall back to empty .notdef boxes.
   cupertino_icons: ^1.0.8
 
+  # Phosphor Icons — provides the thick-stroke rounded-corner outline
+  # style the user requested as a brand for the navbar and post toolbar
+  # (matches the visual reference: house, paper-plane-tilt, magnifying
+  # glass, etc.). Tree-shaken at build time so only used glyphs ship.
+  phosphor_flutter: ^2.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

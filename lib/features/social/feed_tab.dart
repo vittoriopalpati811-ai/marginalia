@@ -2,8 +2,8 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -1333,8 +1333,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
                   child: Icon(
-                    Icons.more_horiz,
-                    size: 20,
+                    PhosphorIconsRegular.dotsThree,
+                    size: 22,
                     color: isOwner
                         ? MarginaliaColors.inkMuted
                         : MarginaliaColors.inkFaint,
@@ -1440,8 +1440,10 @@ class _PostCardState extends ConsumerState<_PostCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        _liked ? Icons.favorite : Icons.favorite_border,
-                        size: 16,
+                        _liked
+                            ? PhosphorIconsFill.heart
+                            : PhosphorIconsRegular.heart,
+                        size: 17,
                         color: _liked
                             ? MarginaliaColors.sienna
                             : MarginaliaColors.inkFaint,
@@ -1474,13 +1476,12 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Instagram's comment glyph: circular speech bubble with
-                      // a small tail at the bottom-left. mode_comment_outlined
-                      // matches it closely; chat_bubble_outline (rectangular)
-                      // didn't.
-                      const Icon(
-                        Icons.mode_comment_outlined,
-                        size: 17,
+                      // Phosphor's chat bubble — same thick-stroke vocabulary
+                      // as the navbar icons, much closer to the user's
+                      // visual reference than Material's hairline outlined.
+                      Icon(
+                        PhosphorIconsRegular.chatCircle,
+                        size: 18,
                         color: MarginaliaColors.inkFaint,
                       ),
                       const SizedBox(width: 5),
@@ -2048,7 +2049,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                   strokeWidth: 1.5, color: Colors.white),
                             ),
                           )
-                        : const Icon(CupertinoIcons.paperplane_fill,
+                        : Icon(PhosphorIconsFill.paperPlaneTilt,
                             size: 15, color: Colors.white),
                   ),
                 ),
@@ -2260,9 +2261,9 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                           children: [
                             Icon(
                               _liked
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              size: 14,
+                                  ? PhosphorIconsFill.heart
+                                  : PhosphorIconsRegular.heart,
+                              size: 15,
                               color: _liked
                                   ? MarginaliaColors.sienna
                                   : MarginaliaColors.inkFaint,
