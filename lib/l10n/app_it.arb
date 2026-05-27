@@ -821,6 +821,84 @@
   "onboardingCurrentlyReadingNext": "Avanti",
   "@onboardingCurrentlyReadingNext": {},
 
+  "statsTitle": "Le tue statistiche",
+  "@statsTitle": {},
+
+  "statsGoalSection": "OBIETTIVO {year}",
+  "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },
+
+  "statsGoalProgress": "{done} di {target} libri",
+  "@statsGoalProgress": { "placeholders": { "done": { "type": "int" }, "target": { "type": "int" } } },
+
+  "statsGoalEditCta": "Modifica obiettivo",
+  "@statsGoalEditCta": {},
+
+  "statsGoalSetCta": "Imposta obiettivo",
+  "@statsGoalSetCta": {},
+
+  "statsOverviewSection": "PANORAMICA",
+  "@statsOverviewSection": {},
+
+  "statsStreak": "Streak di lettura",
+  "@statsStreak": {},
+
+  "statsStreakDays": "{count, plural, =0{Nessuna streak} =1{1 giorno} other{{count} giorni}}",
+  "@statsStreakDays": { "placeholders": { "count": { "type": "int" } } },
+
+  "statsThisMonth": "Questo mese",
+  "@statsThisMonth": {},
+
+  "statsThisMonthMinutes": "{count} min letti",
+  "@statsThisMonthMinutes": { "placeholders": { "count": { "type": "int" } } },
+
+  "statsThisYear": "Quest'anno",
+  "@statsThisYear": {},
+
+  "statsThisYearBooks": "{count} libri finiti",
+  "@statsThisYearBooks": { "placeholders": { "count": { "type": "int" } } },
+
+  "statsMonthlySection": "LETTURA — ULTIMI 12 MESI",
+  "@statsMonthlySection": {},
+
+  "statsRecentSection": "SESSIONI RECENTI",
+  "@statsRecentSection": {},
+
+  "statsAddSession": "Aggiungi sessione",
+  "@statsAddSession": {},
+
+  "statsEmpty": "Nessuna sessione ancora. Tocca il + per registrare la prima.",
+  "@statsEmpty": {},
+
+  "statsAddTitle": "Registra una sessione di lettura",
+  "@statsAddTitle": {},
+
+  "statsAddBookTitle": "Titolo libro",
+  "@statsAddBookTitle": {},
+
+  "statsAddBookAuthor": "Autore (opzionale)",
+  "@statsAddBookAuthor": {},
+
+  "statsAddMinutes": "Minuti letti",
+  "@statsAddMinutes": {},
+
+  "statsAddPages": "Pagine lette (opzionale)",
+  "@statsAddPages": {},
+
+  "statsAddDate": "Data",
+  "@statsAddDate": {},
+
+  "statsAddSaveCta": "Registra sessione",
+  "@statsAddSaveCta": {},
+
+  "statsErrorSaving": "Impossibile salvare la sessione. Riprova.",
+  "@statsErrorSaving": {},
+
+  "statsGoalEditTitle": "Obiettivo annuale di lettura",
+  "@statsGoalEditTitle": {},
+
+  "statsGoalEditSaveCta": "Salva",
+  "@statsGoalEditSaveCta": {},
+
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
 

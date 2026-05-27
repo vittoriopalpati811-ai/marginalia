@@ -32,6 +32,7 @@ import 'features/profile/user_profile_screen.dart';
 import 'features/profile/my_profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/settings/settings_screen.dart';
+import 'features/stats/stats_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
@@ -203,6 +204,11 @@ final router = GoRouter(
       path: '/account',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _modalPage(const SettingsScreen(), state),
+    ),
+    GoRoute(
+      path: '/stats',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) => _pushPage(const StatsScreen(), state),
     ),
     GoRoute(
       path: '/edit-profile',

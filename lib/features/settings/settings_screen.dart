@@ -800,6 +800,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.bar_chart_outlined,
+                  color: MarginaliaColors.primary),
+              title: Text(context.l10n.statsTitle),
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/stats');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.sync_outlined,
                   color: MarginaliaColors.primary),
               title: Text(context.l10n.settingsSyncWithKindle),
