@@ -153,10 +153,31 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       if (email.isEmpty || !email.contains('@')) return;
                       setS(() => sending = true);
                       try {
+                        // IMPORTANT: use the HTTPS deploy URL, NOT the custom
+                        // marginalia:// scheme. Custom schemes only work on
+                        // iOS/Android natively with the app installed; in any
+                        // browser (desktop, iPhone Safari without app) they
+                        // open about:blank.
+                        //
+                        // The HTTPS URL works everywhere: the web app picks
+                        // up the recovery hash and fires AuthChangeEvent.
+                        // passwordRecovery → router pushes /reset-password.
+                        //
+                        // For iOS app builds, configure Universal Links so
+                        // this same HTTPS URL opens the app directly instead
+                        // of Safari.
                         await Supabase.instance.client.auth
                             .resetPasswordForEmail(
                           email,
-                          redirectTo: 'marginalia://reset-password',
+                          // Bare URL — Supabase appends its own hash
+                          // fragment (#access_token=...&type=recovery).
+                          // The app boots, supabase_flutter parses the
+                          // fragment, fires AuthChangeEvent.passwordRecovery,
+                          // and our listener in app.dart pushes
+                          // /reset-password. Don't add a hash here or the
+                          // two hashes collide and break the parse.
+                          redirectTo:
+                              'https://vittoriopalpati811-ai.github.io/marginalia/app.html',
                         );
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
