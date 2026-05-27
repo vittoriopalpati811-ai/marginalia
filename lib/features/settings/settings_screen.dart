@@ -1189,7 +1189,7 @@ class _EmptySharedHighlights extends StatelessWidget {
             const SizedBox(height: 14),
             TextButton(
               onPressed: onShare,
-              child: const Text('Go to Jams'),
+              child: Text(context.l10n.editProfileGoToJams),
             ),
           ],
         ),

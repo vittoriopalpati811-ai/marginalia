@@ -902,10 +902,10 @@ class _EmptyJams extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3)),
             const SizedBox(height: 10),
-            const Text(
-              'Create a Jam or\njoin a friend\'s reading circle.',
+            Text(
+              context.l10n.jamNoJamsBody,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                   color: MarginaliaColors.inkMuted,
                   height: 1.6,
                   fontSize: 14),
@@ -914,13 +914,13 @@ class _EmptyJams extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreateJam,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Create your first Jam'),
+              label: Text(context.l10n.jamCreateFirst),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: onJoinJam,
               icon: const Icon(Icons.link_outlined, size: 18),
-              label: const Text('Join with code'),
+              label: Text(context.l10n.jamJoinWithCode),
               style: OutlinedButton.styleFrom(
                 foregroundColor: MarginaliaColors.sienna,
                 side: const BorderSide(color: MarginaliaColors.sienna),
@@ -953,10 +953,10 @@ class _UnauthenticatedState extends StatelessWidget {
             decoration: MarginaliaDecorations.gradientHeader,
             child: SafeArea(
               bottom: false,
-              child: const Padding(
-                padding: EdgeInsets.fromLTRB(20, 20, 20, 32),
-                child: Text('Social',
-                    style: TextStyle(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                child: Text(context.l10n.socialTitle,
+                    style: const TextStyle(
                         color: Color(0xFFF1EEE7),
                         fontSize: 28,
                         fontWeight: FontWeight.w800,

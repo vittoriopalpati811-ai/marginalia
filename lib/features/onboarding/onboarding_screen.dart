@@ -931,8 +931,18 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
     });
     try {
       await op();
-    } catch (_) {
-      if (mounted) setState(() => _socialError = context.l10n.authOauthFailed);
+    } catch (e) {
+      if (!mounted) return;
+      // Specific case: provider not enabled in Supabase dashboard.
+      // Until Google OAuth credentials are configured, give the user a
+      // helpful nudge instead of a generic "sign-in failed".
+      final msg = e.toString().toLowerCase();
+      final isProviderNotEnabled = msg.contains('provider is not enabled') ||
+          msg.contains('unsupported provider') ||
+          msg.contains('provider_not_enabled');
+      setState(() => _socialError = isProviderNotEnabled
+          ? context.l10n.authProviderNotEnabled
+          : context.l10n.authOauthFailed);
     } finally {
       if (mounted) setState(() => _socialLoading = false);
     }

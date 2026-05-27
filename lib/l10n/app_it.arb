@@ -653,6 +653,12 @@
   "libraryImportNone": "Nessun nuovo highlight ({count} già presenti).",
   "@libraryImportNone": { "placeholders": { "count": { "type": "int" } } },
 
+  "libraryImportRecsHint": "Aggiorno le tue raccomandazioni AI in base ai nuovi highlight…",
+  "@libraryImportRecsHint": {},
+
+  "libraryImportError": "Errore importazione: {message}",
+  "@libraryImportError": { "placeholders": { "message": { "type": "String" } } },
+
   "recsTitle": "LIBRI CONSIGLIATI",
   "@recsTitle": {},
 
@@ -821,6 +827,27 @@
   "onboardingCurrentlyReadingNext": "Avanti",
   "@onboardingCurrentlyReadingNext": {},
 
+  "onboardingScanBarcode": "Scansiona il codice a barre",
+  "@onboardingScanBarcode": {},
+
+  "onboardingScanWebUnsupported": "La scansione è disponibile sull'app iPhone. Per ora inserisci il codice qui sotto.",
+  "@onboardingScanWebUnsupported": {},
+
+  "onboardingIsbnHint": "Codice del libro (ISBN, es. 978...)",
+  "@onboardingIsbnHint": {},
+
+  "onboardingIsbnLookup": "Trova",
+  "@onboardingIsbnLookup": {},
+
+  "onboardingIsbnLookingUp": "Cerco il libro…",
+  "@onboardingIsbnLookingUp": {},
+
+  "onboardingIsbnNotFound": "Nessun libro trovato con questo codice.",
+  "@onboardingIsbnNotFound": {},
+
+  "onboardingIsbnInvalid": "Inserisci un codice valido di 10 o 13 cifre.",
+  "@onboardingIsbnInvalid": {},
+
   "statsTitle": "Le tue statistiche",
   "@statsTitle": {},
 
@@ -923,6 +950,60 @@
   "editProfilePreviewLabel": "Anteprima",
   "@editProfilePreviewLabel": {},
 
+  "jamNoJamsBody": "Crea una Jam o\nunisciti al circolo di un amico.",
+  "@jamNoJamsBody": {},
+
+  "jamCreateFirst": "Crea la tua prima Jam",
+  "@jamCreateFirst": {},
+
+  "jamJoinWithCode": "Entra con codice",
+  "@jamJoinWithCode": {},
+
+  "jamProposeBook": "Proponi un libro",
+  "@jamProposeBook": {},
+
+  "jamCreateChallenge": "Crea sfida",
+  "@jamCreateChallenge": {},
+
+  "jamCreatePoll": "Crea sondaggio",
+  "@jamCreatePoll": {},
+
+  "jamAddYourHighlight": "Aggiungi il tuo highlight",
+  "@jamAddYourHighlight": {},
+
+  "jamChallengeBooks": "Libri",
+  "@jamChallengeBooks": {},
+
+  "jamChallengeHighlights": "Highlight",
+  "@jamChallengeHighlights": {},
+
+  "jamChallengeChapters": "Capitoli",
+  "@jamChallengeChapters": {},
+
+  "socialTitle": "Social",
+  "@socialTitle": {},
+
+  "messagesEnterGroupName": "Inserisci un nome per il gruppo.",
+  "@messagesEnterGroupName": {},
+
+  "messagesAddParticipant": "Aggiungi almeno un partecipante.",
+  "@messagesAddParticipant": {},
+
+  "editProfileGoToJams": "Vai alle Jam",
+  "@editProfileGoToJams": {},
+
+  "amazonGoToManualImport": "Importazione manuale",
+  "@amazonGoToManualImport": {},
+
+  "amazonGoToLibrary": "Vai alla libreria",
+  "@amazonGoToLibrary": {},
+
+  "amazonRetry": "Riprova",
+  "@amazonRetry": {},
+
+  "highlightCopiedToClipboard": "Highlight copiato negli appunti",
+  "@highlightCopiedToClipboard": {},
+
   "jamDiscussionTitle": "Discussione",
   "@jamDiscussionTitle": {},
 
@@ -976,6 +1057,9 @@
 
   "authOauthFailed": "Accesso non riuscito. Prova un altro metodo.",
   "@authOauthFailed": {},
+
+  "authProviderNotEnabled": "Login con Google non ancora configurato. Per ora usa l'email.",
+  "@authProviderNotEnabled": {},
 
   "authPhoneOtpFailed": "Verifica codice non riuscita. Riprova.",
   "@authPhoneOtpFailed": {},

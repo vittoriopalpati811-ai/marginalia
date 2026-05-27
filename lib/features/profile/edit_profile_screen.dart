@@ -200,7 +200,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final username = _usernameCtrl.text.trim().toLowerCase();
     if (username.isNotEmpty && _usernameAvailable == false) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username unavailable, please choose another.')),
+        SnackBar(content: Text(context.l10n.editProfileUsernameUnavailable)),
       );
       return;
     }

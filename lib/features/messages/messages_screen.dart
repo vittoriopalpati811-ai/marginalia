@@ -959,13 +959,13 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a name for the group.')),
+        SnackBar(content: Text(context.l10n.messagesEnterGroupName)),
       );
       return;
     }
     if (_selectedUsers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add at least one participant.')),
+        SnackBar(content: Text(context.l10n.messagesAddParticipant)),
       );
       return;
     }

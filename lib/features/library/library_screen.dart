@@ -365,18 +365,37 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     importResult.highlightsAdded, importResult.booksAdded)
                 : context.l10n.libraryImportNone(
                     importResult.highlightsDeduplicated);
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Text(msg),
             duration: Duration(
                 seconds: importResult.firstError != null ? 15 : 4),
           ),
         );
+        // If new highlights actually landed, queue a second snackbar telling
+        // the user the AI is regenerating their recs. The library
+        // recommendations provider was already invalidated above by
+        // `_invalidateAfterImport()`, so the next paint shows the
+        // "Marginalia is analyzing your highlights…" skeleton automatically.
+        if (importResult.highlightsAdded > 0) {
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (!mounted) return;
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(context.l10n.libraryImportRecsHint),
+                duration: const Duration(seconds: 4),
+                backgroundColor: MarginaliaColors.primary,
+              ),
+            );
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Import error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.libraryImportError(e.toString()))),
+        );
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);

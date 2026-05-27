@@ -328,7 +328,7 @@ class _PollCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onSubmitCandidate,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add your highlight'),
+                label: Text(context.l10n.jamAddYourHighlight),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: MarginaliaColors.primary,
                   side: const BorderSide(color: MarginaliaColors.rule),
@@ -371,7 +371,7 @@ class _EmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Create poll'),
+              label: Text(context.l10n.jamCreatePoll),
             ),
           ],
         ),

@@ -170,7 +170,7 @@ class _WebNotSupported extends StatelessWidget {
             FilledButton.icon(
               onPressed: () => context.go('/profile'),
               icon: const Icon(Icons.upload_file_outlined),
-              label: const Text('Go to Manual Import'),
+              label: Text(context.l10n.amazonGoToManualImport),
               style: FilledButton.styleFrom(
                 backgroundColor: MarginaliaColors.accent,
               ),
@@ -238,7 +238,7 @@ class _DoneOverlay extends StatelessWidget {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: onClose,
-              child: const Text('Go to library'),
+              child: Text(context.l10n.amazonGoToLibrary),
             ),
           ],
         ),
@@ -283,7 +283,7 @@ class _ErrorOverlay extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.l10n.amazonRetry),
             ),
           ],
         ),

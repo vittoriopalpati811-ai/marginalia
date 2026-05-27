@@ -316,7 +316,7 @@ class _EmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Propose a book'),
+              label: Text(context.l10n.jamProposeBook),
             ),
           ],
         ),

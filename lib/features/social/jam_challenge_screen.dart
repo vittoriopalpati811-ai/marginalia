@@ -298,7 +298,7 @@ class _EmptyState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Create challenge'),
+              label: Text(context.l10n.jamCreateChallenge),
             ),
           ],
         ),
@@ -436,10 +436,10 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                       DropdownButtonFormField<String>(
                         value: _unit,
                         decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
-                        items: const [
-                          DropdownMenuItem(value: 'books', child: Text('Books')),
-                          DropdownMenuItem(value: 'highlights', child: Text('Highlights')),
-                          DropdownMenuItem(value: 'chapters', child: Text('Chapters')),
+                        items: [
+                          DropdownMenuItem(value: 'books', child: Text(context.l10n.jamChallengeBooks)),
+                          DropdownMenuItem(value: 'highlights', child: Text(context.l10n.jamChallengeHighlights)),
+                          DropdownMenuItem(value: 'chapters', child: Text(context.l10n.jamChallengeChapters)),
                         ],
                         onChanged: (v) => setState(() => _unit = v ?? 'books'),
                       ),
