@@ -13,6 +13,7 @@ import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'followers_screen.dart';
+import 'posts_timeline.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
 import '../library/recommendations_section.dart';
@@ -369,15 +370,16 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                       child: Text(
-                        'You haven\'t posted anything yet.',
+                        context.l10n.feedMyPostsNoPostsYet,
                         style: GoogleFonts.manrope(
                           color: MarginaliaColors.inkMuted, fontSize: 13),
                       ),
                     ),
                   )
                 : SliverToBoxAdapter(
-                    child: _PostsGrid(
+                    child: PostsTimeline(
                       posts: posts,
+                      profile: profileAsync.value,
                     ),
                   ),
           ),

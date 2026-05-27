@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
+import 'posts_timeline.dart';
 import 'profile_shared_widgets.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -350,7 +351,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         ),
                       )
                     : SliverToBoxAdapter(
-                        child: PostsGrid(posts: posts),
+                        child: PostsTimeline(
+                          posts: posts,
+                          profile: profile,
+                        ),
                       ),
                 loading: () => const SliverToBoxAdapter(
                   child: Padding(

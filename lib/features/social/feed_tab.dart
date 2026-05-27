@@ -117,8 +117,25 @@ class FeedTab extends ConsumerWidget {
                 ? SliverToBoxAdapter(child: _EmptyFeed())
                 : SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _PostCard(post: posts[i], index: i),
+                      // Stable key per post — critical after a delete:
+                      // without it, the local _PostCardState (including
+                      // `_deleted = true`) leaks onto the next post that
+                      // slides into the same index → that post would
+                      // render as SizedBox.shrink, looking like a white
+                      // gap or, when the feed is short, like a blank
+                      // screen.
+                      (ctx, i) => _PostCard(
+                        key: ValueKey('post-${posts[i]['id']}'),
+                        post: posts[i],
+                        index: i,
+                      ),
                       childCount: posts.length,
+                      findChildIndexCallback: (key) {
+                        if (key is! ValueKey<String>) return null;
+                        final id = key.value.replaceFirst('post-', '');
+                        final idx = posts.indexWhere((p) => p['id'] == id);
+                        return idx >= 0 ? idx : null;
+                      },
                     ),
                   ),
           ),
