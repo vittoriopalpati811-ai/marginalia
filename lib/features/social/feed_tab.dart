@@ -2,6 +2,7 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -1473,9 +1474,13 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Instagram's comment glyph: circular speech bubble with
+                      // a small tail at the bottom-left. mode_comment_outlined
+                      // matches it closely; chat_bubble_outline (rectangular)
+                      // didn't.
                       const Icon(
-                        Icons.chat_bubble_outline,
-                        size: 16,
+                        Icons.mode_comment_outlined,
+                        size: 17,
                         color: MarginaliaColors.inkFaint,
                       ),
                       const SizedBox(width: 5),
@@ -2043,8 +2048,8 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                   strokeWidth: 1.5, color: Colors.white),
                             ),
                           )
-                        : const Icon(Icons.send_rounded,
-                            size: 16, color: Colors.white),
+                        : const Icon(CupertinoIcons.paperplane_fill,
+                            size: 15, color: Colors.white),
                   ),
                 ),
               ],

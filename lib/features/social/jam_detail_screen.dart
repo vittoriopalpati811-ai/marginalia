@@ -1470,7 +1470,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                     padding:
                                         const EdgeInsets.only(left: 8),
                                     child: _CountChip(
-                                      icon: Icons.chat_bubble_outline,
+                                      icon: Icons.mode_comment_outlined,
                                       count: c.length,
                                     ),
                                   ),
