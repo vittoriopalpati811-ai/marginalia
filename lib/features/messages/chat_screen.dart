@@ -9,6 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/unread_messages_provider.dart';
 import 'giphy_picker.dart';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -48,10 +49,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _subscribeRealtime();
-      // Mark messages as read when the chat opens
-      ref.read(supabaseServiceProvider).markConversationRead(widget.conversationId);
+      // Mark messages as read AND invalidate the inbox so the nav badge
+      // + bold "unread" styling on the conversation tile disappear
+      // immediately. Without the invalidate, the server-side last_read_at
+      // updates but the cached inbox state lags until the next pull-to-
+      // refresh — the user reported having to swipe down to clear the
+      // red dot.
+      await ref
+          .read(supabaseServiceProvider)
+          .markConversationRead(widget.conversationId);
+      if (!mounted) return;
+      ref.invalidate(conversationsProvider);
     });
   }
 
@@ -97,6 +107,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             if (mounted) {
               setState(() => _localMessages.add(incoming));
               _scrollToBottom();
+              // The user is actively reading this chat, so mark the
+              // message as read immediately and refresh the inbox.
+              // Without this, the nav badge lights up for a message
+              // already on screen, until they leave and re-enter.
+              svc.markConversationRead(widget.conversationId).then((_) {
+                if (mounted) ref.invalidate(conversationsProvider);
+              });
             }
           },
         )
