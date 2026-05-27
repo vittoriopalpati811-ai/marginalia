@@ -45,7 +45,10 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 // ─── Transition helpers ───────────────────────────────────────────────────────
 
-/// Push transition: shared axis horizontal (slide + fade, Material motion spec).
+/// Push transition: cinematic horizontal shared axis with deep easeOutQuart.
+/// Background fillColor matches the scaffold to avoid the white-flash that
+/// occurs when Material's default fill leaks through during the transition.
+/// Airbnb-style: motion settles into rest rather than bouncing.
 CustomTransitionPage<void> _pushPage(Widget child, GoRouterState state) {
   return CustomTransitionPage<void>(
     key: state.pageKey,
@@ -53,9 +56,14 @@ CustomTransitionPage<void> _pushPage(Widget child, GoRouterState state) {
     transitionDuration: const Duration(milliseconds: 380),
     reverseTransitionDuration: const Duration(milliseconds: 320),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Wrap the Material curves to deepen them
+      final eased = CurvedAnimation(
+          parent: animation, curve: Curves.easeOutQuart);
+      final easedSecondary = CurvedAnimation(
+          parent: secondaryAnimation, curve: Curves.easeOutQuart);
       return SharedAxisTransition(
-        animation: animation,
-        secondaryAnimation: secondaryAnimation,
+        animation: eased,
+        secondaryAnimation: easedSecondary,
         transitionType: SharedAxisTransitionType.horizontal,
         fillColor: MarginaliaColors.background,
         child: child,

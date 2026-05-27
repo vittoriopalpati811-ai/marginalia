@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/motion/airbnb_motion.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/books_provider.dart';
@@ -682,8 +683,8 @@ class _RecentHighlightsStrip extends StatelessWidget {
             itemBuilder: (ctx, i) {
               final h           = highlights[i];
               final accentColor = _accentFor(h.color);
-              return GestureDetector(
-                onTap: () => onTap(h),
+              return PressableSpring(
+                onPressed: () => onTap(h),
                 child: Container(
                   width: 240,
                   margin: const EdgeInsets.only(right: 10),
@@ -884,8 +885,12 @@ class _BookGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    // PressableSpring → Airbnb-style press feedback (scale + spring restore).
+    // Hero → shared-element transition: the cover animates from this grid
+    // cell to the same Hero tag in BookDetailScreen.
+    // StaggeredListItem → cascade entrance (fade + slight slide-up).
+    final card = PressableSpring(
+      onPressed: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: MarginaliaColors.surface,
@@ -904,12 +909,24 @@ class _BookGridCard extends StatelessWidget {
           children: [
             Expanded(
               flex: 63,
-              child: BookEditorialCover(
-                title: book.title,
-                author: book.author,
-                borderRadius: const BorderRadius.only(
-                  topLeft:  Radius.circular(15),
-                  topRight: Radius.circular(15),
+              child: Hero(
+                tag: 'book-cover-${book.id}',
+                flightShuttleBuilder: (_, animation, __, ___, ____) =>
+                    FadeTransition(
+                  opacity: CurvedAnimation(
+                      parent: animation, curve: AirbnbMotion.enter),
+                  child: BookEditorialCover(
+                    title: book.title,
+                    author: book.author,
+                  ),
+                ),
+                child: BookEditorialCover(
+                  title: book.title,
+                  author: book.author,
+                  borderRadius: const BorderRadius.only(
+                    topLeft:  Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
                 ),
               ),
             ),
@@ -947,10 +964,8 @@ class _BookGridCard extends StatelessWidget {
           ],
         ),
       ),
-    )
-        .animate(delay: (index * 55).ms)
-        .fadeIn(duration: 350.ms, curve: Curves.easeOut)
-        .slideY(begin: 0.04, end: 0, duration: 350.ms, curve: Curves.easeOut);
+    );
+    return StaggeredListItem(index: index, child: card);
   }
 }
 

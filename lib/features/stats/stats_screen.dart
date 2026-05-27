@@ -18,6 +18,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/motion/airbnb_motion.dart';
 import '../../core/providers/auth_provider.dart';
 
 // ─── Providers ─────────────────────────────────────────────────────────────
@@ -442,29 +443,38 @@ class _OverviewGrid extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _OverviewTile(
-            label: context.l10n.statsStreak,
-            value: context.l10n.statsStreakDays(streak),
-            big:   streak.toString(),
-            accent: MarginaliaColors.sienna,
+          child: StaggeredListItem(
+            index: 0,
+            child: _OverviewTile(
+              label: context.l10n.statsStreak,
+              value: context.l10n.statsStreakDays(streak),
+              big:   streak.toString(),
+              accent: MarginaliaColors.sienna,
+            ),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: _OverviewTile(
-            label: context.l10n.statsThisMonth,
-            value: context.l10n.statsThisMonthMinutes(monthMinutes),
-            big:   monthMinutes.toString(),
-            accent: MarginaliaColors.primary,
+          child: StaggeredListItem(
+            index: 1,
+            child: _OverviewTile(
+              label: context.l10n.statsThisMonth,
+              value: context.l10n.statsThisMonthMinutes(monthMinutes),
+              big:   monthMinutes.toString(),
+              accent: MarginaliaColors.primary,
+            ),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: _OverviewTile(
-            label: context.l10n.statsThisYear,
-            value: context.l10n.statsThisYearBooks(yearBooks),
-            big:   yearBooks.toString(),
-            accent: MarginaliaColors.siennaLight,
+          child: StaggeredListItem(
+            index: 2,
+            child: _OverviewTile(
+              label: context.l10n.statsThisYear,
+              value: context.l10n.statsThisYearBooks(yearBooks),
+              big:   yearBooks.toString(),
+              accent: MarginaliaColors.siennaLight,
+            ),
           ),
         ),
       ],
@@ -502,14 +512,17 @@ class _OverviewTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            big,
-            style: GoogleFonts.ebGaramond(
-              fontSize: 32,
-              fontWeight: FontWeight.w600,
-              color: accent,
-              height: 1,
-              letterSpacing: -0.6,
+          airbnbCrossFade(
+            child: Text(
+              big,
+              key: ValueKey(big),
+              style: GoogleFonts.ebGaramond(
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+                color: accent,
+                height: 1,
+                letterSpacing: -0.6,
+              ),
             ),
           ),
           const SizedBox(height: 6),

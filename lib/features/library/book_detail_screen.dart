@@ -45,14 +45,18 @@ class BookDetailScreen extends ConsumerWidget {
           body: Stack(
             children: [
               // ── Editorial hero cover ──────────────────────────────────────
+              // Hero tag must match the BookGridCard in library_screen.dart
               Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
                 height: 300,
-                child: BookEditorialCover(
-                  title: book.title,
-                  author: book.author,
+                child: Hero(
+                  tag: 'book-cover-${book.id}',
+                  child: BookEditorialCover(
+                    title: book.title,
+                    author: book.author,
+                  ),
                 ),
               ),
 
