@@ -58,6 +58,12 @@ dependencies:
   collection: ^1.18.0
   equatable: ^2.0.5
 
+  # CupertinoIcons font — required so the SF-Symbol-style icons in the
+  # bottom nav (CupertinoIcons.house, .book, .person_2, .paperplane,
+  # .person_crop_circle) actually render. Without this package the
+  # glyphs fall back to empty .notdef boxes.
+  cupertino_icons: ^1.0.8
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
