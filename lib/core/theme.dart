@@ -448,6 +448,24 @@ ThemeData buildMarginaliaTheme() {
           const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     ),
 
+    // ── Text selection ──────────────────────────────────────────────────────
+    // Without this, Flutter web renders the highlight as the primary matcha
+    // at ~40% opacity AND the drag handles at 100% opacity — producing the
+    // "two greens" effect the user reported (a soft matcha rectangle with
+    // dark matcha dots on top of it).
+    //
+    // We commit to the app's core metaphor: text selection IS a highlighter
+    // mark. The selection background is the same warm amber used for
+    // Kindle highlights elsewhere in the app, and the drag handles match
+    // it with a deeper ochre — same color story, full saturation, no more
+    // tone-on-tone matcha. The cursor stays matcha so it still reads as
+    // "the brand is acting on this field."
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor:          MarginaliaColors.primary,
+      selectionColor:       Color(0x99FFE066),   // highlighter amber @ ~60%
+      selectionHandleColor: Color(0xFFB07F0F),   // deep ochre — readable handles
+    ),
+
     // ── Buttons ─────────────────────────────────────────────────────────────
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
@@ -633,6 +651,15 @@ ThemeData buildMarginaliaDarkTheme() {
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     ),
+
+    // Same highlighter selection as light theme — but slightly stronger
+    // amber so it remains visible against the deep paper background.
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor:          MarginaliaColorsDark.primary,
+      selectionColor:       Color(0xB3FFE066),   // amber @ 70% for dark bg
+      selectionHandleColor: Color(0xFFD4A017),   // ochre handles
+    ),
+
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: MarginaliaColorsDark.primary,
