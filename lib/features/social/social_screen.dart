@@ -10,7 +10,6 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
-import '../../core/services/supabase_service.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'amici_tab.dart';
 
