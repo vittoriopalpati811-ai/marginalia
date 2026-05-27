@@ -19,10 +19,10 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Paper palette — warm parchment with deep graphite ink */
-      --paper:        #F8F4E9;
-      --paper-light:  #FCF9F0;
-      --paper-rule:   #E4DBC7;
+      /* Paper palette — almost-white parchment with deep graphite ink */
+      --paper:        #FCFAF4;
+      --paper-light:  #FFFEFA;
+      --paper-rule:   #EDE6D2;
       --ink:          #1A1814;
       --ink-muted:    #5C544A;
       --ink-faint:    #8E867A;
@@ -76,18 +76,22 @@
     }
     a:hover { color: var(--pencil); }
 
-    /* ── Top nav ───────────────────────────────────────────────────── */
+    /* ── Top nav ─────────────────────────────────────────────────────
+       Stacked: wordmark sits above the links and language pill,
+       both axes centered. Reads like a title block on a chapter page. */
     .topbar {
       max-width: 1100px;
       margin: 0 auto;
       padding: 26px 32px 0;
       display: flex;
-      align-items: baseline;
-      justify-content: space-between;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
       font-family: 'Bodoni Moda', Georgia, serif;
+      text-align: center;
     }
     .wordmark {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 500;
       font-style: italic;
       letter-spacing: -0.3px;
@@ -96,6 +100,9 @@
     }
     .topbar nav {
       display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 22px;
       font-size: 12px;
       font-family: 'EB Garamond', serif;
@@ -129,7 +136,9 @@
     }
     /* On mobile, the language switcher stays prominent */
     @media (max-width: 540px) {
-      .topbar nav { gap: 12px; }
+      .topbar { gap: 12px; padding-top: 22px; }
+      .wordmark { font-size: 22px; }
+      .topbar nav { gap: 14px; }
       .topbar nav > a { font-size: 11px; letter-spacing: 1.4px; }
     }
 
@@ -463,7 +472,10 @@
       .scribble-fallback { display: none; }
     }
 
-    /* Contact card */
+    /* Contact card
+       Symmetric L-corners on all four sides so the email reads as
+       perfectly centered (previously only TL+BR existed, which made
+       the eye perceive the address as off-axis). */
     .contact {
       margin: 96px auto 60px;
       max-width: 520px;
@@ -472,34 +484,33 @@
       border: 1px solid var(--paper-rule);
       position: relative;
     }
-    .contact::before, .contact::after {
-      content: '';
+    .contact .c-corner {
       position: absolute;
       width: 16px;
       height: 16px;
       border: 1px solid var(--matcha);
+      pointer-events: none;
     }
-    .contact::before {
-      top: -8px; left: -8px;
-      border-right: 0; border-bottom: 0;
-    }
-    .contact::after {
-      bottom: -8px; right: -8px;
-      border-left: 0; border-top: 0;
-    }
+    .contact .c-corner.tl { top: -8px;    left: -8px;  border-right: 0; border-bottom: 0; }
+    .contact .c-corner.tr { top: -8px;    right: -8px; border-left:  0; border-bottom: 0; }
+    .contact .c-corner.bl { bottom: -8px; left: -8px;  border-right: 0; border-top:    0; }
+    .contact .c-corner.br { bottom: -8px; right: -8px; border-left:  0; border-top:    0; }
     .contact p {
       font-style: italic;
       color: var(--ink-muted);
-      margin-bottom: 14px;
+      margin: 0 auto 18px;
       font-size: 17px;
+      max-width: 360px;
     }
     .contact a {
+      display: inline-block;
       font-family: 'Bodoni Moda', serif;
       font-style: italic;
-      font-size: 24px;
+      font-size: clamp(18px, 4.6vw, 24px);
       font-weight: 500;
       color: var(--matcha-dark);
       border-bottom-width: 1px;
+      word-break: break-all;
     }
 
     /* Footer */
@@ -861,6 +872,10 @@
 
       <!-- Contact -->
       <div class="contact">
+        <span class="c-corner tl"></span>
+        <span class="c-corner tr"></span>
+        <span class="c-corner bl"></span>
+        <span class="c-corner br"></span>
         <p>Questions, data requests, or complaints</p>
         <a href="mailto:vittoriopalpati811@gmail.com">vittoriopalpati811@gmail.com</a>
       </div>

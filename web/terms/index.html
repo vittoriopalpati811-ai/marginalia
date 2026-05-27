@@ -61,12 +61,14 @@
       margin: 0 auto;
       padding: 26px 32px 0;
       display: flex;
-      align-items: baseline;
-      justify-content: space-between;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
       font-family: 'Bodoni Moda', Georgia, serif;
+      text-align: center;
     }
     .wordmark {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 500;
       font-style: italic;
       letter-spacing: -0.3px;
@@ -75,6 +77,9 @@
     }
     .topbar nav {
       display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 22px;
       font-size: 12px;
       font-family: 'EB Garamond', serif;
@@ -86,6 +91,12 @@
       border: 0;
     }
     .topbar nav a:hover { color: var(--ink); }
+    @media (max-width: 540px) {
+      .topbar { gap: 12px; padding-top: 22px; }
+      .wordmark { font-size: 22px; }
+      .topbar nav { gap: 14px; }
+      .topbar nav > a { font-size: 11px; letter-spacing: 1.4px; }
+    }
 
     .hero {
       max-width: 1100px;
@@ -365,34 +376,33 @@
       border: 1px solid var(--paper-rule);
       position: relative;
     }
-    .contact::before, .contact::after {
-      content: '';
+    .contact .c-corner {
       position: absolute;
       width: 16px;
       height: 16px;
       border: 1px solid var(--matcha);
+      pointer-events: none;
     }
-    .contact::before {
-      top: -8px; left: -8px;
-      border-right: 0; border-bottom: 0;
-    }
-    .contact::after {
-      bottom: -8px; right: -8px;
-      border-left: 0; border-top: 0;
-    }
+    .contact .c-corner.tl { top: -8px;    left: -8px;  border-right: 0; border-bottom: 0; }
+    .contact .c-corner.tr { top: -8px;    right: -8px; border-left:  0; border-bottom: 0; }
+    .contact .c-corner.bl { bottom: -8px; left: -8px;  border-right: 0; border-top:    0; }
+    .contact .c-corner.br { bottom: -8px; right: -8px; border-left:  0; border-top:    0; }
     .contact p {
       font-style: italic;
       color: var(--ink-muted);
-      margin-bottom: 14px;
+      margin: 0 auto 18px;
       font-size: 17px;
+      max-width: 360px;
     }
     .contact a {
+      display: inline-block;
       font-family: 'Bodoni Moda', serif;
       font-style: italic;
-      font-size: 24px;
+      font-size: clamp(18px, 4.6vw, 24px);
       font-weight: 500;
       color: var(--matcha-dark);
       border-bottom-width: 1px;
+      word-break: break-all;
     }
 
     footer {
@@ -662,6 +672,10 @@
       </section>
 
       <div class="contact">
+        <span class="c-corner tl"></span>
+        <span class="c-corner tr"></span>
+        <span class="c-corner bl"></span>
+        <span class="c-corner br"></span>
         <p>Questions, withdrawal requests, or anything legal</p>
         <a href="mailto:vittoriopalpati811@gmail.com">vittoriopalpati811@gmail.com</a>
       </div>
