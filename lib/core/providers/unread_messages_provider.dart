@@ -13,6 +13,10 @@ import 'auth_provider.dart';
 /// this populated even when the user is not on the Messages tab, and
 /// the inbox preview otherwise served stale "Foto" text until pull-to-refresh.
 ///
+/// Re-runs whenever the signed-in user changes (so login refetches,
+/// logout clears) AND whenever inboxRealtimeProvider's channel state
+/// changes (so the realtime subscription stays alive).
+///
 /// Explicit FutureProvider<...> annotation breaks the type-inference cycle
 /// caused by inboxRealtimeProvider also referencing this provider via
 /// `ref.invalidate(conversationsProvider)`.
@@ -23,8 +27,10 @@ final FutureProvider<List<Map<String, dynamic>>> conversationsProvider =
   // anyone sends a message.
   ref.watch(inboxRealtimeProvider);
 
-  final svc = ref.watch(supabaseServiceProvider);
-  if (!svc.isAuthenticated) return [];
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return [];
+
+  final svc = ref.read(supabaseServiceProvider);
   return svc.fetchConversations();
 });
 
@@ -32,15 +38,25 @@ final FutureProvider<List<Map<String, dynamic>>> conversationsProvider =
 /// `messages` row INSERT, invalidates [conversationsProvider] so the
 /// inbox refetches with the latest message preview + unread state.
 ///
+/// Critically: this provider watches [currentUserProvider] (a Stream-
+/// backed provider that fires on every auth state change), NOT just
+/// `supabaseServiceProvider.isAuthenticated`. The previous version was
+/// constructed ONCE at app start, often before the user finished
+/// signing in. It saw `isAuthenticated == false`, returned early, and
+/// never re-ran when auth flipped — so the channel was never
+/// subscribed and the inbox stayed stale until manual refresh.
+///
 /// We don't filter the channel by conversation IDs because that list
 /// changes over time (new chats, new group invites); cheaper to just
 /// invalidate on every insert and let the RLS-aware fetch do the rest.
 final inboxRealtimeProvider = Provider<void>((ref) {
-  final svc = ref.watch(supabaseServiceProvider);
-  if (!svc.isAuthenticated) return;
+  // ref.watch on currentUserProvider triggers rebuild whenever the
+  // signed-in User? changes (login, logout, token refresh).
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return;
 
-  final uid = svc.userId;
-  if (uid == null) return;
+  final svc = ref.read(supabaseServiceProvider);
+  final uid = user.id;
 
   final channel = svc.client
       .channel('inbox:$uid')
@@ -58,10 +74,10 @@ final inboxRealtimeProvider = Provider<void>((ref) {
           ref.invalidate(conversationsProvider);
         },
       )
-      .subscribe((status, [_]) {
-        if (status == RealtimeSubscribeStatus.channelError) {
-          debugPrint('[inbox-realtime] channel error');
-        }
+      .subscribe((status, [error]) {
+        // Surface all status transitions so this is debuggable if it
+        // breaks again. Visible in the browser console / Xcode logs.
+        debugPrint('[inbox-realtime] status=$status error=$error');
       });
 
   ref.onDispose(() => channel.unsubscribe());
