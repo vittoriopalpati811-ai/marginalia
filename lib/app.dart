@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme.dart';
 import 'core/providers/locale_provider.dart';
+import 'core/providers/unread_messages_provider.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'core/providers/onboarding_provider.dart';
 import 'features/social/home_tab.dart';
@@ -433,7 +434,7 @@ class _DevStatusBar extends StatelessWidget {
 
 typedef _Tab = ({String path, IconData icon, IconData activeIcon, String label});
 
-class _LiquidGlassNavBar extends StatefulWidget {
+class _LiquidGlassNavBar extends ConsumerStatefulWidget {
   const _LiquidGlassNavBar({
     required this.selectedIndex,
     required this.tabs,
@@ -445,10 +446,10 @@ class _LiquidGlassNavBar extends StatefulWidget {
   final ValueChanged<int> onTap;
 
   @override
-  State<_LiquidGlassNavBar> createState() => _LiquidGlassNavBarState();
+  ConsumerState<_LiquidGlassNavBar> createState() => _LiquidGlassNavBarState();
 }
 
-class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
+class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
     with SingleTickerProviderStateMixin {
   late final AnimationController _bounceCtrl;
   late final Animation<double> _bounceAnim;
@@ -533,6 +534,14 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
           children: List.generate(widget.tabs.length, (i) {
             final active = i == widget.selectedIndex;
             final tab    = widget.tabs[i];
+            // Red dot top-left of the Messages icon when there are
+            // unread conversations. Watching the provider here keeps
+            // it alive across the whole shell so the badge updates
+            // even when the user is not on the Messages tab.
+            final isMessages = tab.path == '/messages';
+            final unreadCount = isMessages
+                ? ref.watch(unreadConversationsCountProvider)
+                : 0;
             return Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -542,22 +551,44 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        transitionBuilder: (child, anim) => ScaleTransition(
-                          scale: Tween<double>(begin: 0.82, end: 1.0).animate(
-                              CurvedAnimation(
-                                  parent: anim, curve: Curves.easeOutCubic)),
-                          child: FadeTransition(opacity: anim, child: child),
-                        ),
-                        child: Icon(
-                          active ? tab.activeIcon : tab.icon,
-                          key: ValueKey('${tab.path}_$active'),
-                          size: 24,
-                          color: active ? activeColor : inactiveColor,
-                        ),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, anim) => ScaleTransition(
+                              scale: Tween<double>(begin: 0.82, end: 1.0).animate(
+                                  CurvedAnimation(
+                                      parent: anim, curve: Curves.easeOutCubic)),
+                              child: FadeTransition(opacity: anim, child: child),
+                            ),
+                            child: Icon(
+                              active ? tab.activeIcon : tab.icon,
+                              key: ValueKey('${tab.path}_$active'),
+                              size: 24,
+                              color: active ? activeColor : inactiveColor,
+                            ),
+                          ),
+                          if (unreadCount > 0)
+                            Positioned(
+                              left: -4,
+                              top:  -2,
+                              child: Container(
+                                width:  9,
+                                height: 9,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE53935),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: surfaceColor,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       AnimatedDefaultTextStyle(

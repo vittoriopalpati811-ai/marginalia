@@ -206,7 +206,13 @@
     }
     .hero .meta span:first-child::before { content: none; margin: 0; }
 
-    /* Faint diagonal ornament behind the hero */
+    /* Faint diagonal ornament behind the hero.
+       z-index puts it strictly behind the eyebrow/h1/lede/meta so it
+       reads as a paper-grain detail, not as a stripe ON TOP of the
+       lede line. The > * z-index 1 promotes every direct hero child
+       above the ornament. */
+    .hero { z-index: 0; }
+    .hero > * { position: relative; z-index: 1; }
     .hero::after {
       content: '';
       position: absolute;
@@ -217,6 +223,8 @@
       background: linear-gradient(to right, transparent, var(--paper-rule), transparent);
       transform: rotate(-2deg);
       transform-origin: right;
+      z-index: 0;
+      pointer-events: none;
     }
 
     /* ── TOC (left rail, desktop) ──────────────────────────────────── */
@@ -560,14 +568,14 @@
 <body>
 
   <header class="topbar">
-    <a href="/" class="wordmark">Marginalia</a>
+    <a href="../" class="wordmark">Marginalia</a>
     <nav>
-      <a href="/">Home</a>
-      <a href="/privacy/">Privacy</a>
-      <a href="/terms/">Terms</a>
+      <a href="../">Home</a>
+      <a href="./">Privacy</a>
+      <a href="../terms/">Terms</a>
       <span class="lang-switch" aria-label="Language">
-        <a href="/privacy/" class="lang-active">EN</a>
-        <a href="/privacy/it/">IT</a>
+        <a href="./" class="lang-active">EN</a>
+        <a href="it/">IT</a>
       </span>
     </nav>
   </header>
@@ -885,8 +893,8 @@
 
   <footer>
     © 2026 Marginalia
-    <a href="/">Home</a>
-    <a href="/terms/">Terms</a>
+    <a href="../">Home</a>
+    <a href="../terms/">Terms</a>
     <a href="mailto:vittoriopalpati811@gmail.com">Contact</a>
   </footer>
 

@@ -180,6 +180,10 @@
       color: var(--matcha);
     }
     .hero .meta span:first-child::before { content: none; margin: 0; }
+    /* Diagonal ornament pushed behind hero content via z-index, so it
+       reads as background grain instead of a stripe over the lede. */
+    .hero { z-index: 0; }
+    .hero > * { position: relative; z-index: 1; }
     .hero::after {
       content: '';
       position: absolute;
@@ -190,6 +194,8 @@
       background: linear-gradient(to right, transparent, var(--paper-rule), transparent);
       transform: rotate(-2deg);
       transform-origin: right;
+      z-index: 0;
+      pointer-events: none;
     }
 
     .body-wrap {
@@ -504,14 +510,14 @@
 <body>
 
   <header class="topbar">
-    <a href="/" class="wordmark">Marginalia</a>
+    <a href="../../" class="wordmark">Marginalia</a>
     <nav>
-      <a href="/">Home</a>
-      <a href="/privacy/it/">Privacy</a>
-      <a href="/terms/">Termini</a>
+      <a href="../../">Home</a>
+      <a href="./">Privacy</a>
+      <a href="../../terms/">Termini</a>
       <span class="lang-switch" aria-label="Lingua">
-        <a href="/privacy/">EN</a>
-        <a href="/privacy/it/" class="lang-active">IT</a>
+        <a href="../">EN</a>
+        <a href="./" class="lang-active">IT</a>
       </span>
     </nav>
   </header>
@@ -836,8 +842,8 @@
 
   <footer>
     © 2026 Marginalia
-    <a href="/">Home</a>
-    <a href="/terms/">Termini</a>
+    <a href="../../">Home</a>
+    <a href="../../terms/">Termini</a>
     <a href="mailto:vittoriopalpati811@gmail.com">Contatti</a>
   </footer>
 

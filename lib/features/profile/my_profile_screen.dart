@@ -206,11 +206,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
           ),
 
-          // ── Very faint pattern tint (only where no card is on top) ──────
-          if (patKey != 'none')
-            CustomPaint(
-              painter: _PatternPainter(patKey, color: gp.a.withAlpha(14)),
-            ),
+          // (Full-page pattern overlay removed — it painted thousands of
+          // primitives behind every other widget on every frame, which
+          // hung the profile on iOS Safari WebView. The same pattern
+          // still renders inside the cover image below, where it belongs
+          // visually and where the canvas size is bounded.)
 
           // ── Scrollable content ───────────────────────────────────────────
           RefreshIndicator(
@@ -559,9 +559,19 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                 ),
 
-              // Pattern overlay
-              if (patternKey != 'none')
-                CustomPaint(painter: _PatternPainter(patternKey)),
+              // Pattern overlay — wrapped in RepaintBoundary so it doesn't
+              // re-paint on unrelated state changes, and IgnorePointer so
+              // it never absorbs touches that should reach the avatar.
+              if (patternKey.isNotEmpty && patternKey != 'none')
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        painter: _PatternPainter(patternKey),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
 

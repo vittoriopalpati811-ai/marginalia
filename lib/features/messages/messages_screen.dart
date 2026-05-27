@@ -6,16 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/unread_messages_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
-
-final conversationsProvider =
-    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final svc = ref.watch(supabaseServiceProvider);
-  if (!svc.isAuthenticated) return [];
-  return svc.fetchConversations();
-});
+// conversationsProvider lives in core/providers/unread_messages_provider.dart
+// so it can be shared with the bottom-nav unread badge.
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
