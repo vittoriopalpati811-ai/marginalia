@@ -298,6 +298,8 @@
   "commonProfile": "Profile",
   "commonScrivi": "Write",
   "homeFeedSubtitle": "Your reading feed",
+  "feedPublishLabel": "Publish",
+  "feedKeepHolding": "Keep holding!",
 
   "greetingEarlyMorning": "Up so early",
   "greetingMorning": "Good morning",

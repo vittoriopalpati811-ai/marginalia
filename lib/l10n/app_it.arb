@@ -776,6 +776,12 @@
   "homeFeedSubtitle": "Il tuo feed di lettura",
   "@homeFeedSubtitle": {},
 
+  "feedPublishLabel": "Pubblica",
+  "@feedPublishLabel": {},
+
+  "feedKeepHolding": "Continua a tenere!",
+  "@feedKeepHolding": {},
+
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
 

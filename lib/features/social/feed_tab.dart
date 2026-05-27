@@ -671,10 +671,12 @@ class _WordParticle {
   final Color color;
 }
 
-// ─── Hold-to-publish button ───────────────────────────────────────────────────
+// ─── Hold-to-publish button (Liftoff-style) ──────────────────────────────────
 //
-// Tieni premuto 2s → cerchio matcha esplode dal centro schermo (elasticOut) →
-// "Postato!" → post inviato. Rilasci prima → cerchio si ritira.
+// Long-press 1.8s → matcha circle ORIGINATES at the button position and
+// expands radially to fill the screen. Mid-hold the message changes to
+// "Continua a tenere!". When full, a checkmark + "Postato!" replaces it
+// and the post is sent. Release early → circle shrinks back to the button.
 
 class _HoldToPublishButton extends StatefulWidget {
   const _HoldToPublishButton({required this.enabled, required this.onComplete});
@@ -688,9 +690,10 @@ class _HoldToPublishButton extends StatefulWidget {
 class _HoldToPublishButtonState extends State<_HoldToPublishButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
+  final GlobalKey _buttonKey = GlobalKey();
   OverlayEntry? _overlay;
-  bool _holding    = false;
-  bool _completed  = false;
+  bool _holding   = false;
+  bool _completed = false;
 
   @override
   void initState() {
@@ -704,8 +707,8 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
   void _onAnimStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed && !_completed) {
       _completed = true;
-      // Trigger submit after a brief "Postato!" display
-      Future.delayed(const Duration(milliseconds: 1200), () {
+      // Brief "Postato!" display, then submit
+      Future.delayed(const Duration(milliseconds: 900), () {
         _removeOverlay();
         widget.onComplete();
       });
@@ -720,12 +723,31 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
     if (mounted) setState(() { _holding = false; _completed = false; });
   }
 
+  /// Returns the button's center position in global screen coordinates.
+  Offset _buttonCenter() {
+    final box = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) {
+      final size = MediaQuery.of(context).size;
+      return Offset(size.width / 2, size.height / 2);
+    }
+    final pos = box.localToGlobal(Offset.zero);
+    return pos + Offset(box.size.width / 2, box.size.height / 2);
+  }
+
   void _onHoldStart() {
     if (!widget.enabled || _holding) return;
     setState(() => _holding = true);
 
+    final origin = _buttonCenter();
+    final l10n   = context.l10n;
+
     _overlay = OverlayEntry(
-      builder: (_) => _HoldCircleOverlay(controller: _ctrl),
+      builder: (_) => _HoldCircleOverlay(
+        controller:    _ctrl,
+        origin:        origin,
+        keepHolding:   l10n.feedKeepHolding,
+        published:     l10n.feedPostPublished,
+      ),
     );
     Overlay.of(context).insert(_overlay!);
     _ctrl.forward(from: 0);
@@ -733,7 +755,7 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
 
   void _onHoldEnd() {
     if (!_holding || _completed) return;
-    // Released too early → shrink back
+    // Released early → shrink back
     _ctrl.reverse();
   }
 
@@ -748,6 +770,7 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: _buttonKey,
       onLongPressStart: (_) => _onHoldStart(),
       onLongPressEnd:   (_) => _onHoldEnd(),
       onLongPressCancel:    _onHoldEnd,
@@ -759,25 +782,30 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
                 ),
               )
           : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: widget.enabled
-              ? (_holding
-                  ? MarginaliaColors.sienna.withAlpha(180)
-                  : MarginaliaColors.sienna)
-              : MarginaliaColors.rule,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          'Publish',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        scale: _holding ? 0.92 : 1.0,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          decoration: BoxDecoration(
             color: widget.enabled
-                ? const Color(0xFFF2F5EA)
-                : MarginaliaColors.inkFaint,
+                ? (_holding
+                    ? MarginaliaColors.sienna.withAlpha(180)
+                    : MarginaliaColors.sienna)
+                : MarginaliaColors.rule,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            context.l10n.feedPublishLabel,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: widget.enabled
+                  ? const Color(0xFFF2F5EA)
+                  : MarginaliaColors.inkFaint,
+            ),
           ),
         ),
       ),
@@ -785,19 +813,39 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
   }
 }
 
-// ─── Full-screen hold circle overlay ─────────────────────────────────────────
+// ─── Full-screen hold circle overlay (Liftoff style) ─────────────────────────
+//
+// The matcha circle originates AT THE BUTTON (origin) and grows to cover
+// the whole screen. Three timed text phases:
+//   0–28%   → no text (just the growing circle)
+//   28–78%  → "Continua a tenere!" centered, fades in/out
+//   78–100% → checkmark + "Postato!" replaces it
 
 class _HoldCircleOverlay extends StatelessWidget {
-  const _HoldCircleOverlay({required this.controller});
+  const _HoldCircleOverlay({
+    required this.controller,
+    required this.origin,
+    required this.keepHolding,
+    required this.published,
+  });
+
   final AnimationController controller;
+  final Offset              origin;
+  final String              keepHolding;
+  final String              published;
 
   static const _matcha = Color(0xFF4A7A35);
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    // Large enough to cover every corner from the center
-    final maxR = size.longestSide * 0.85;
+
+    // Radius needed to reach the furthest screen corner from `origin`
+    final dx1 = origin.dx, dx2 = size.width  - origin.dx;
+    final dy1 = origin.dy, dy2 = size.height - origin.dy;
+    final maxX = dx1 > dx2 ? dx1 : dx2;
+    final maxY = dy1 > dy2 ? dy1 : dy2;
+    final maxR = math.sqrt(maxX * maxX + maxY * maxY) * 1.05; // small overshoot
 
     return Material(
       color: Colors.transparent,
@@ -805,63 +853,94 @@ class _HoldCircleOverlay extends StatelessWidget {
         child: AnimatedBuilder(
           animation: controller,
           builder: (_, __) {
-            // Phase 1 (0→1): expand with elasticOut bounce
+            // Smoother growth than elastic — fast at start, settles at end
             final expand = CurvedAnimation(
               parent: controller,
-              curve: const Interval(0.0, 0.75, curve: ElasticOutCurve(0.65)),
+              curve: const Interval(0.0, 0.92, curve: Curves.easeOutCubic),
             );
-            // Phase 2 (0.72→0.92): "Postato!" + checkmark fade in
-            final textFade = CurvedAnimation(
+            final keepFade = _bumpInterval(controller.value, 0.28, 0.55, 0.78);
+            final doneFade = CurvedAnimation(
               parent: controller,
-              curve: const Interval(0.72, 0.92, curve: Curves.easeOut),
-            );
+              curve: const Interval(0.80, 1.0, curve: Curves.easeOut),
+            ).value;
 
             final r = expand.value * maxR;
 
             return Stack(
-              alignment: Alignment.center,
               children: [
-                // Expanding matcha circle from center
-                Center(
-                  child: Container(
-                    width:  r * 2,
-                    height: r * 2,
-                    decoration: const BoxDecoration(
+                // Expanding matcha circle, anchored at button origin
+                Positioned(
+                  left: origin.dx - r,
+                  top:  origin.dy - r,
+                  width:  r * 2,
+                  height: r * 2,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
                       color: _matcha,
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
-                // "Postato!" + checkmark
-                Opacity(
-                  opacity: textFade.value,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.check_rounded,
-                        color: Colors.white,
-                        size: 56,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Postato!',
+
+                // Mid-hold encouragement
+                if (keepFade > 0.01)
+                  Center(
+                    child: Opacity(
+                      opacity: keepFade,
+                      child: Text(
+                        keepHolding,
+                        textAlign: TextAlign.center,
                         style: GoogleFonts.ebGaramond(
-                          fontSize: 36,
+                          fontSize: 30,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          letterSpacing: -0.5,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+
+                // Final confirmation
+                if (doneFade > 0.01)
+                  Center(
+                    child: Opacity(
+                      opacity: doneFade,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.check_rounded,
+                            color: Colors.white,
+                            size: 56,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            published,
+                            style: GoogleFonts.ebGaramond(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  /// Returns a triangular envelope: 0 at `start`, 1 at `peak`, 0 at `end`.
+  /// Used to fade text in and back out within a single animation phase.
+  double _bumpInterval(double t, double start, double peak, double end) {
+    if (t <= start || t >= end) return 0;
+    if (t <= peak) return ((t - start) / (peak - start)).clamp(0.0, 1.0);
+    return (1 - (t - peak) / (end - peak)).clamp(0.0, 1.0);
   }
 }
 
