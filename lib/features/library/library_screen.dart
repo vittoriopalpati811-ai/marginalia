@@ -21,6 +21,8 @@ import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
 import '../../core/providers/daily_highlight_provider.dart';
+import '../stats/stats_screen.dart'
+    show readingSessionsProvider, readingGoalProvider;
 
 // ─── Filter state ─────────────────────────────────────────────────────────────
 
@@ -354,6 +356,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final supabase = ref.read(supabaseServiceProvider);
       final service = ImportService(isar, userId, supabaseService: supabase);
       final importResult = await service.importClippingsText(rawText);
+      // After the highlights land, ask the server to re-derive reading
+      // sessions from them (one session per book per day, minutes
+      // estimated from highlight count). Non-blocking: if it fails,
+      // manual sessions still work and we just don't auto-populate the
+      // stats this round.
+      await supabase.inferReadingSessionsFromHighlights();
       _invalidateAfterImport();
 
       if (mounted) {
@@ -403,12 +411,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   /// Full refresh after a real My Clippings import — also busts the
-  /// recommendations cache so the AI re-analyzes the new highlights.
+  /// recommendations cache so the AI re-analyzes the new highlights,
+  /// AND the reading-sessions cache so the stats card refreshes with
+  /// the freshly-inferred sessions.
   void _invalidateAfterImport() {
     ref.invalidate(booksProvider);
     ref.invalidate(dailyHighlightProvider);
     ref.invalidate(allHighlightsProvider);
     ref.invalidate(libraryRecommendationsProvider);
+    ref.invalidate(readingSessionsProvider);
+    ref.invalidate(readingGoalProvider);
   }
 
   /// Pull-to-refresh: refresh books/highlights data only.
@@ -434,6 +446,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final supabase = ref.read(supabaseServiceProvider);
       final service = ImportService(isar, userId, supabaseService: supabase);
       final result  = await service.importClippingsText(rawText);
+      await supabase.inferReadingSessionsFromHighlights();
       _invalidateAfterImport();
       if (mounted) {
         final msg = result.firstError != null

@@ -155,6 +155,14 @@ class StatsScreen extends ConsumerWidget {
                 );
               },
             ),
+
+            const SizedBox(height: 28),
+
+            // ── Methodology footnote ─────────────────────────────────
+            // Reading time isn't exposed by Kindle, so any session we
+            // didn't create manually is estimated from highlight density.
+            // Showing the methodology builds trust + sets expectations.
+            const _MethodologyFooter(),
           ],
         ),
       ),
@@ -623,11 +631,13 @@ class _SessionTile extends StatelessWidget {
     required this.bookLabel,
     required this.minutes,
     this.pages,
+    this.inferred = false,
   });
   final String dateLabel;
   final String bookLabel;
   final int    minutes;
   final int?   pages;
+  final bool   inferred;
 
   factory _SessionTile.from(Map<String, dynamic> s) {
     final dateStr = s['session_date'] as String? ?? '';
@@ -643,6 +653,7 @@ class _SessionTile extends StatelessWidget {
       bookLabel: bookLabel,
       minutes:   ((s['minutes_read'] as num?) ?? 0).toInt(),
       pages:     (s['pages_read']    as num?)?.toInt(),
+      inferred:  (s['source'] as String?) == 'inferred',
     );
   }
 
@@ -688,14 +699,80 @@ class _SessionTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  pages != null ? '$minutes min · $pages pg' : '$minutes min',
-                  style: GoogleFonts.manrope(
-                    fontSize: 11,
-                    color: MarginaliaColors.inkMuted,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      pages != null ? '$minutes min · $pages pg' : '$minutes min',
+                      style: GoogleFonts.manrope(
+                        fontSize: 11,
+                        color: MarginaliaColors.inkMuted,
+                      ),
+                    ),
+                    if (inferred) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: MarginaliaColors.siennaFaint,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          context.l10n.statsInferredBadge.toUpperCase(),
+                          style: GoogleFonts.manrope(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: MarginaliaColors.sienna,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Methodology footer ─────────────────────────────────────────────────────
+
+class _MethodologyFooter extends StatelessWidget {
+  const _MethodologyFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: MarginaliaColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: MarginaliaColors.ruleFaint,
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: MarginaliaColors.inkFaint,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10n.statsMethodologyNote,
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                color: MarginaliaColors.inkMuted,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -782,6 +859,17 @@ class _AddSessionSheetState extends ConsumerState<_AddSessionSheet> {
               fontWeight: FontWeight.w600,
               color: MarginaliaColors.ink,
               letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Hint: discourage logging sessions for books that are already
+          // tracked automatically via highlight inference (migration 031).
+          Text(
+            context.l10n.statsAddHint,
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              color: MarginaliaColors.inkMuted,
+              height: 1.45,
             ),
           ),
           const SizedBox(height: 18),

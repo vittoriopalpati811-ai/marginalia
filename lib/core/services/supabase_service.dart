@@ -521,6 +521,28 @@ class SupabaseService {
     });
   }
 
+  /// Re-derives reading sessions from the user's highlights:
+  ///   • One session per (book, day-of-highlight)
+  ///   • Estimated minutes = clamp(highlight_count × 8, 10, 240)
+  ///   • Marked `source = 'inferred'` so the UI can label it "stimato"
+  ///   • Manual sessions for the same (book, date) are preserved
+  ///
+  /// Called automatically after every My Clippings import. Returns the
+  /// number of inferred sessions created (0 on error).
+  Future<int> inferReadingSessionsFromHighlights() async {
+    try {
+      final res = await _client.rpc('infer_reading_sessions_from_highlights');
+      if (res is int) return res;
+      if (res is num) return res.toInt();
+      return 0;
+    } catch (e) {
+      // Non-fatal: stats just won't be auto-populated this round.
+      // ignore: avoid_print
+      print('[inferReadingSessions] $e');
+      return 0;
+    }
+  }
+
   /// Lists the user's reading sessions, newest first.
   Future<List<Map<String, dynamic>>> fetchReadingSessions({int limit = 200}) async {
     final uid = userId;

@@ -924,6 +924,15 @@
   "statsAddTitle": "Registra una sessione di lettura",
   "@statsAddTitle": {},
 
+  "statsAddHint": "Aggiungi a mano solo i libri senza highlight su Kindle — per gli altri le sessioni vengono stimate in automatico.",
+  "@statsAddHint": {},
+
+  "statsInferredBadge": "Stimato",
+  "@statsInferredBadge": {},
+
+  "statsMethodologyNote": "Kindle non condivide il tempo di lettura. Quando importi gli highlight, contiamo una sessione per libro per ogni giorno in cui hai evidenziato qualcosa, e stimiamo i minuti come highlight × 8 (limitato fra 10 min e 4 ore). I valori marcati “Stimato” sono indicativi.",
+  "@statsMethodologyNote": {},
+
   "statsAddBookTitle": "Titolo libro",
   "@statsAddBookTitle": {},
 
