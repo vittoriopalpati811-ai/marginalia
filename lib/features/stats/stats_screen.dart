@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -132,7 +133,10 @@ class StatsScreen extends ConsumerWidget {
               loading: () => const _SkeletonCard(height: 160),
               error:   (_, __) => const SizedBox.shrink(),
               data: (sessions) => _MonthlyBarChart(
-                buckets: _monthlyMinutes(sessions),
+                buckets: _monthlyMinutes(
+                  sessions,
+                  Localizations.localeOf(context).toLanguageTag(),
+                ),
               ),
             ),
 
@@ -264,12 +268,11 @@ int _totalMinutesThisMonth(List<Map<String, dynamic>> sessions) {
 }
 
 /// Returns a list of 12 entries (oldest → newest), each `(label, minutes)`.
+/// Labels are locale-aware first letters of the month name (intl).
 List<({String label, int minutes})> _monthlyMinutes(
-    List<Map<String, dynamic>> sessions) {
-  const monthLabels = [
-    'J', 'F', 'M', 'A', 'M', 'G',
-    'L', 'A', 'S', 'O', 'N', 'D',
-  ];
+  List<Map<String, dynamic>> sessions,
+  String locale,
+) {
   final now = DateTime.now();
   final buckets = List<int>.filled(12, 0);
   // index = (year*12+month) - (now.year*12+now.month - 11)
@@ -285,10 +288,21 @@ List<({String label, int minutes})> _monthlyMinutes(
     buckets[idx] += ((s['minutes_read'] as num?) ?? 0).toInt();
   }
 
+  // Build labels in the user's locale. We use first 3 chars of MMM, which
+  // is unambiguous across IT/EN/etc and stays readable even on narrow bars.
+  String labelFor(int monthIndex) {
+    // monthIndex is 0-based; DateTime month is 1-based.
+    final d = DateTime(now.year, monthIndex + 1, 1);
+    final mmm = DateFormat.MMM(locale).format(d);
+    // Take first 3 letters, capitalize first only — looks cleaner under bars
+    final s = mmm.length >= 3 ? mmm.substring(0, 3) : mmm;
+    return s[0].toUpperCase() + s.substring(1).toLowerCase();
+  }
+
   return List.generate(12, (i) {
     // Position i = 11 is the current month; i = 0 is 11 months ago.
     final monthIdx = (now.month - 11 + i - 1 + 12) % 12;
-    return (label: monthLabels[monthIdx], minutes: buckets[i]);
+    return (label: labelFor(monthIdx), minutes: buckets[i]);
   });
 }
 
