@@ -348,15 +348,21 @@ class _ScaffoldWithNav extends StatelessWidget {
   final Widget child;
   final String routePath;
 
-  // iOS-style SF-Symbol-like icons (CupertinoIcons) so the navbar feels
-  // native on iPhone. Material icons looked Android-y next to the rest of
-  // the app's iOS chrome.
+  // Meta-app icon vocabulary, labels removed.
+  //   Home     → Instagram's angular house (Material Icons.home_outlined)
+  //   Library  → editorial open-book (Material Icons.auto_stories)
+  //   Jam      → WhatsApp Communities (Material Icons.groups, the 3-person cluster)
+  //   Messages → Instagram DM paper-airplane (CupertinoIcons.paperplane)
+  //   Profile  → Instagram profile silhouette inside a circle
+  //             (CupertinoIcons.person_crop_circle)
+  // `label` is kept on the record but not rendered, in case we want to
+  // re-enable text labels (or use them for accessibility tooltips) later.
   static const _tabs = [
-    (path: '/home',     icon: CupertinoIcons.house,         activeIcon: CupertinoIcons.house_fill,        label: 'Home'),
-    (path: '/',         icon: CupertinoIcons.book,          activeIcon: CupertinoIcons.book_fill,         label: 'Library'),
-    (path: '/social',   icon: CupertinoIcons.person_2,      activeIcon: CupertinoIcons.person_2_fill,     label: 'Jam'),
-    (path: '/messages', icon: CupertinoIcons.paperplane,    activeIcon: CupertinoIcons.paperplane_fill,   label: 'Messages'),
-    (path: '/profile',  icon: CupertinoIcons.person_crop_circle, activeIcon: CupertinoIcons.person_crop_circle_fill, label: 'Profile'),
+    (path: '/home',     icon: Icons.home_outlined,                  activeIcon: Icons.home,                              label: 'Home'),
+    (path: '/',         icon: Icons.auto_stories_outlined,          activeIcon: Icons.auto_stories,                      label: 'Library'),
+    (path: '/social',   icon: Icons.groups_outlined,                activeIcon: Icons.groups,                            label: 'Jam'),
+    (path: '/messages', icon: CupertinoIcons.paperplane,            activeIcon: CupertinoIcons.paperplane_fill,          label: 'Messages'),
+    (path: '/profile',  icon: CupertinoIcons.person_crop_circle,    activeIcon: CupertinoIcons.person_crop_circle_fill,  label: 'Profile'),
   ];
 
   @override
@@ -543,68 +549,66 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
                 ? ref.watch(unreadConversationsCountProvider)
                 : 0;
             return Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => widget.onTap(i),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            switchInCurve: Curves.easeOutCubic,
-                            switchOutCurve: Curves.easeInCubic,
-                            transitionBuilder: (child, anim) => ScaleTransition(
-                              scale: Tween<double>(begin: 0.82, end: 1.0).animate(
-                                  CurvedAnimation(
-                                      parent: anim, curve: Curves.easeOutCubic)),
-                              child: FadeTransition(opacity: anim, child: child),
+              child: Semantics(
+                // Keep the label accessible even though we no longer render it,
+                // so VoiceOver/TalkBack still announce each tab by name.
+                label: tab.label,
+                button: true,
+                selected: active,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => widget.onTap(i),
+                  child: Padding(
+                    // More vertical room now that text is gone, plus a bit
+                    // wider hit area for the larger icons.
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Center(
+                      child: SizedBox(
+                        // Fixed 28x28 box so the unread dot can sit at the
+                        // icon's own top-left corner instead of the tab's.
+                        width: 28,
+                        height: 28,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, anim) => ScaleTransition(
+                                scale: Tween<double>(begin: 0.82, end: 1.0).animate(
+                                    CurvedAnimation(
+                                        parent: anim, curve: Curves.easeOutCubic)),
+                                child: FadeTransition(opacity: anim, child: child),
+                              ),
+                              child: Icon(
+                                active ? tab.activeIcon : tab.icon,
+                                key: ValueKey('${tab.path}_$active'),
+                                size: 28,
+                                color: active ? activeColor : inactiveColor,
+                              ),
                             ),
-                            child: Icon(
-                              active ? tab.activeIcon : tab.icon,
-                              key: ValueKey('${tab.path}_$active'),
-                              size: 24,
-                              color: active ? activeColor : inactiveColor,
-                            ),
-                          ),
-                          if (unreadCount > 0)
-                            Positioned(
-                              left: -4,
-                              top:  -2,
-                              child: Container(
-                                width:  9,
-                                height: 9,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE53935),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: surfaceColor,
-                                    width: 1.5,
+                            if (unreadCount > 0)
+                              Positioned(
+                                left: -3,
+                                top:  -2,
+                                child: Container(
+                                  width:  10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE53935),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: surfaceColor,
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        style: GoogleFonts.manrope(
-                          fontSize: 10.5,
-                          fontWeight: active
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: active ? activeColor : inactiveColor,
-                          letterSpacing: 0,
+                          ],
                         ),
-                        child: Text(tab.label),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
