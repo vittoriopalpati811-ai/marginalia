@@ -117,13 +117,12 @@ class FeedTab extends ConsumerWidget {
                 ? SliverToBoxAdapter(child: _EmptyFeed())
                 : SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      // Stable key per post — critical after a delete:
-                      // without it, the local _PostCardState (including
-                      // `_deleted = true`) leaks onto the next post that
-                      // slides into the same index → that post would
-                      // render as SizedBox.shrink, looking like a white
-                      // gap or, when the feed is short, like a blank
-                      // screen.
+                      // Stable key per post — critical after a delete or
+                      // reorder: without it, _PostCardState (like/count
+                      // counters) would leak onto the post that slides
+                      // into the same index. findChildIndexCallback below
+                      // lets Flutter match the surviving cards by id so
+                      // the deleted one is the only widget unmounted.
                       (ctx, i) => _PostCard(
                         key: ValueKey('post-${posts[i]['id']}'),
                         post: posts[i],
@@ -1007,7 +1006,6 @@ class _PostCard extends ConsumerStatefulWidget {
 class _PostCardState extends ConsumerState<_PostCard> {
   late bool _liked;
   late int  _likesCount;
-  bool _deleted = false;
 
   @override
   void initState() {
@@ -1092,10 +1090,12 @@ class _PostCardState extends ConsumerState<_PostCard> {
               if (confirm == true && mounted) {
                 try {
                   await svc.deletePost(postId);
-                  if (mounted) {
-                    setState(() => _deleted = true);
-                    ref.invalidate(postsProvider);
-                  }
+                  // Provider-driven removal: refetch the list and let the
+                  // SliverChildBuilderDelegate's ValueKey + findChildIndexCallback
+                  // unmount this card naturally. No local `_deleted` flag —
+                  // an optimistic flag combined with the rebuild can leave
+                  // a zombie state and render a blank screen.
+                  ref.invalidate(postsProvider);
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context)
@@ -1219,8 +1219,6 @@ class _PostCardState extends ConsumerState<_PostCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_deleted) return const SizedBox.shrink();
-
     final post          = widget.post;
     final profile       = post['profile']    as Map?;
     final name          = profile?['display_name']         as String? ?? 'Reader';
