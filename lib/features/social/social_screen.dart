@@ -722,17 +722,15 @@ class _CreateJamFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 96),
-      child: FloatingActionButton.extended(
-        onPressed: onTap,
-        backgroundColor: MarginaliaColors.primary,
-        foregroundColor: const Color(0xFFF1EEE7),
-        elevation: 6,
-        icon: const Icon(Icons.add, size: 20),
-        label: Text(context.l10n.jamCreate,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      ),
+    // No bottom padding — nav bar is now a flat bar, not a floating pill.
+    return FloatingActionButton.extended(
+      onPressed: onTap,
+      backgroundColor: MarginaliaColors.primary,
+      foregroundColor: const Color(0xFFF1EEE7),
+      elevation: 6,
+      icon: const Icon(Icons.add, size: 20),
+      label: Text(context.l10n.jamCreate,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
     );
   }
 }

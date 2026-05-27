@@ -49,6 +49,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Login mode flag (toggled from "Hai già un account? Accedi")
   bool _loginMode = false;
 
+  // OAuth auto-advance: listens for AuthChangeEvent.signedIn so that the
+  // user returning from Google/Apple OAuth doesn't land back on the
+  // Welcome screen. Without this they'd have to tap "Start" again and
+  // navigate through the Auth step manually.
+  StreamSubscription<AuthState>? _authSub;
+  bool _handlingOAuthReturn = false;
+
   // Step 1 — Auth
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
@@ -84,7 +91,50 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _completing = false;
 
   @override
+  void initState() {
+    super.initState();
+
+    // When OAuth flow completes (Google etc.), Supabase fires a signedIn
+    // event with the new session. Auto-advance past Welcome+Auth to the
+    // next required step (Username if new user, Complete if returning).
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (!mounted) return;
+      if (data.event != AuthChangeEvent.signedIn) return;
+      if (_handlingOAuthReturn) return;
+      // Only act if we're still on a pre-auth step (Welcome=0 or Auth=1).
+      if (_step > 1) return;
+      _handlingOAuthReturn = true;
+      _advanceAfterOAuth();
+    });
+  }
+
+  Future<void> _advanceAfterOAuth() async {
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      final profile = await svc.fetchProfile();
+      final hasUsername =
+          (profile?['username'] as String?)?.isNotEmpty ?? false;
+      if (!mounted) return;
+      // Pre-fill display name from existing profile if any
+      final displayName = profile?['display_name'] as String? ?? '';
+      if (displayName.isNotEmpty && _nameCtrl.text.isEmpty) {
+        _nameCtrl.text = displayName;
+      }
+      // Returning user with full profile → straight to Complete
+      // New user → start with Username (step 2)
+      _goTo(hasUsername ? _kStepComplete : 2);
+    } catch (_) {
+      // If we can't load the profile, advance to Username step anyway so
+      // the user isn't stuck on Welcome.
+      if (mounted) _goTo(2);
+    } finally {
+      _handlingOAuthReturn = false;
+    }
+  }
+
+  @override
   void dispose() {
+    _authSub?.cancel();
     _pageController.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();

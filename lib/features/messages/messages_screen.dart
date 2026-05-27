@@ -33,15 +33,15 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 96),
-        child: FloatingActionButton(
-          onPressed: _showNewConversationSheet,
-          backgroundColor: MarginaliaColors.primary,
-          foregroundColor: Colors.white,
-          elevation: 6,
-          child: const Icon(Icons.edit_outlined, size: 22),
-        ),
+      // FAB sits at the standard position — no extra bottom padding now
+      // that the bottom nav is a flat bar (was 96px for the old floating
+      // glass pill, which pushed the FAB into the middle of the screen).
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showNewConversationSheet,
+        backgroundColor: MarginaliaColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        child: const Icon(Icons.edit_outlined, size: 22),
       ),
       body: Column(
         children: [

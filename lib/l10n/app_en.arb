@@ -299,7 +299,7 @@
   "commonScrivi": "Write",
   "homeFeedSubtitle": "Your reading feed",
   "feedPublishLabel": "Publish",
-  "feedKeepHolding": "Keep holding!",
+  "feedKeepHolding": "Hold your finger still!",
 
   "onboardingGoalTitle": "Set your {year} reading goal",
   "@onboardingGoalTitle": { "placeholders": { "year": { "type": "int" } } },
