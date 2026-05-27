@@ -377,6 +377,21 @@ class _ScaffoldWithNav extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
+        // Default layoutBuilder uses StackFit.loose, which lets the child
+        // shrink to its intrinsic size. On routes whose content is shorter
+        // than the viewport (empty feed, login splash, etc.) the body
+        // collapsed and the Scaffold pushed the bottomNavigationBar UP
+        // to sit right under it — landing the nav icons in the middle
+        // of the screen instead of at the bottom. StackFit.expand forces
+        // the child to fill the full body area so the nav stays anchored.
+        layoutBuilder: (currentChild, previousChildren) => Stack(
+          fit: StackFit.expand,
+          alignment: Alignment.center,
+          children: [
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        ),
         transitionBuilder: (child, animation) => FadeTransition(
           opacity: animation,
           child: child,
