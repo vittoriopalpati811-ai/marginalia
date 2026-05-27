@@ -367,45 +367,82 @@ class _ScaffoldWithNav extends StatelessWidget {
     final selectedIndex =
         _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
 
+    // Nuclear layout: previous attempts (StackFit.expand on AnimatedSwitcher,
+    // 100dvh + flt-glass-pane sizing) didn't fix the navbar-floating-
+    // mid-screen bug on Chrome iPhone simulator + real iOS Safari. The
+    // common failure mode is that Scaffold's bottomNavigationBar slot
+    // ends up sized to the route's intrinsic height rather than the
+    // viewport's, leaving the nav adrift somewhere in the middle.
+    //
+    // Solution: don't use the bottomNavigationBar slot at all. Drop the
+    // whole shell into a Stack with Positioned.fill for the body and
+    // Positioned bottom:0 for the navbar. The navbar is now *physically*
+    // anchored to the bottom of the available area, no matter what
+    // Flutter's intrinsic-size logic decides about the body.
+    // Reserved height for the overlay navbar — needed so route content
+     // gets a matching bottom inset and doesn't render UNDER the bar.
+     // 56 = icon block (12 pad + 28 icon + 12 pad) + 4 separator;
+     // add safe-area-bottom for iPhone home indicator clearance.
+    final navInset = 56 + MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      // Airbnb-clean: bottom nav is now a solid bar with a top hairline,
-      // not a floating pill — content does NOT extend behind it.
-      extendBody: false,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        // Default layoutBuilder uses StackFit.loose, which lets the child
-        // shrink to its intrinsic size. On routes whose content is shorter
-        // than the viewport (empty feed, login splash, etc.) the body
-        // collapsed and the Scaffold pushed the bottomNavigationBar UP
-        // to sit right under it — landing the nav icons in the middle
-        // of the screen instead of at the bottom. StackFit.expand forces
-        // the child to fill the full body area so the nav stays anchored.
-        layoutBuilder: (currentChild, previousChildren) => Stack(
-          fit: StackFit.expand,
-          alignment: Alignment.center,
-          children: [
-            ...previousChildren,
-            if (currentChild != null) currentChild,
-          ],
-        ),
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
-        child: KeyedSubtree(
-          key: ValueKey(routePath),
-          child: child,
-        ),
-      ),
-      bottomNavigationBar: _LiquidGlassNavBar(
-        selectedIndex: selectedIndex,
-        tabs: _tabs,
-        onTap: (i) {
-          HapticFeedback.lightImpact();
-          context.go(_tabs[i].path);
-        },
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          // ── Route content fills the full Scaffold area ──────────────
+          // MediaQuery override adds navInset to the bottom padding so
+          // any descendant that respects safe-area (SafeArea, Scaffold,
+          // SliverPadding via MediaQuery.removePadding patterns) keeps
+          // its content above the overlay navbar.
+          Positioned.fill(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                padding: MediaQuery.of(context).padding.copyWith(
+                  bottom: navInset,
+                ),
+                viewPadding: MediaQuery.of(context).viewPadding.copyWith(
+                  bottom: navInset,
+                ),
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                layoutBuilder: (currentChild, previousChildren) => Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                ),
+                transitionBuilder: (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
+                child: KeyedSubtree(
+                  key: ValueKey(routePath),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+
+          // ── Nav bar pinned to the bottom of the viewport ────────────
+          // Positioned bottom:0 GUARANTEES the bar is at the bottom of
+          // the Scaffold body's painting layer, regardless of what
+          // intrinsic-size logic the route's content does.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _LiquidGlassNavBar(
+              selectedIndex: selectedIndex,
+              tabs: _tabs,
+              onTap: (i) {
+                HapticFeedback.lightImpact();
+                context.go(_tabs[i].path);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
