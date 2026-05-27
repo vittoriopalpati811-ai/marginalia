@@ -948,9 +948,30 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
     }
   }
 
-  void _onGoogle() => _runSocial(
-        () => ref.read(supabaseServiceProvider).signInWithGoogle(),
-      );
+  Future<void> _onGoogle() async {
+    if (_socialLoading) return;
+    setState(() {
+      _socialLoading = true;
+      _socialError   = null;
+    });
+    final svc = ref.read(supabaseServiceProvider);
+    // Pre-flight: if Google OAuth isn't enabled in Supabase, calling
+    // signInWithOAuth would redirect the browser to a raw JSON error page
+    // on the Supabase domain ("Unsupported provider: provider is not
+    // enabled") — which the user has no way to dismiss. Detect that case
+    // here and show the friendly inline message instead.
+    final enabled = await svc.isOAuthProviderEnabled('google');
+    if (!mounted) return;
+    if (!enabled) {
+      setState(() {
+        _socialLoading = false;
+        _socialError   = context.l10n.authProviderNotEnabled;
+      });
+      return;
+    }
+    setState(() => _socialLoading = false);
+    await _runSocial(svc.signInWithGoogle);
+  }
 
   // Apple sign-in awaits Apple Developer enrollment (required for App Store
   // Rule 4.8 if you ship Google login). The wiring in SupabaseService is

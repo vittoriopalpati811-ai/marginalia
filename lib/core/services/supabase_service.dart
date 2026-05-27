@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
@@ -58,6 +59,42 @@ class SupabaseService {
       OAuthProvider.google,
       redirectTo: null,
     );
+  }
+
+  /// Pre-flight check: is the given OAuth provider actually configured in
+  /// the Supabase dashboard?
+  ///
+  /// Without this, calling `signInWithOAuth` for a provider whose credentials
+  /// haven't been entered yet redirects the browser to a Supabase JSON error
+  /// page ("Unsupported provider: provider is not enabled") — exposing the
+  /// raw JSON to the user. By hitting `/auth/v1/settings` first we can show
+  /// a friendly inline message and never navigate away.
+  ///
+  /// Returns `true` only if Supabase reports the provider as enabled.
+  /// On network failures we return `true` to fall back to the existing
+  /// behaviour (so a transient settings-endpoint hiccup doesn't block real
+  /// users who *do* have a configured provider).
+  Future<bool> isOAuthProviderEnabled(String provider) async {
+    try {
+      // _client.rest.url is the PostgREST endpoint, e.g.
+      //   https://<project>.supabase.co/rest/v1
+      // Strip the suffix to get the project root and append the auth path.
+      final restUrl = _client.rest.url.toString();
+      final base    = restUrl.replaceAll(RegExp(r'/rest/v1/?$'), '');
+      final url     = Uri.parse('$base/auth/v1/settings');
+      final apikey  = _client.rest.headers['apikey'] ?? '';
+      final resp    = await http
+          .get(url, headers: {'apikey': apikey})
+          .timeout(const Duration(seconds: 4));
+      if (resp.statusCode != 200) return true; // fall back — don't block
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final ext  = data['external'] as Map<String, dynamic>?;
+      final flag = ext?[provider];
+      // Supabase returns false when the provider has no credentials yet.
+      return flag is bool ? flag : true;
+    } catch (_) {
+      return true; // network error → assume enabled and let upstream surface
+    }
   }
 
   // ─── Phone OTP ────────────────────────────────────────────────────────────

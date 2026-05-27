@@ -140,7 +140,7 @@
   "paywallRestoreSuccess": "Purchase restored!",
   "paywallRestoreNone": "No purchases to restore.",
 
-  "onboardingWelcomeSubtitle": "Rediscover what you've read.",
+  "onboardingWelcomeSubtitle": "Rediscover what you've read. Talk it over with the readers who read it with you.",
   "onboardingStart": "Start →",
   "onboardingHaveAccount": "Already have an account? Sign in",
   "onboardingAuthCreateTitle": "Create your account",
@@ -329,6 +329,7 @@
   "onboardingIsbnInvalid": "Enter a valid 10- or 13-digit code.",
 
   "statsTitle": "Reading stats",
+  "profileDetailedStats": "Reading stats",
   "statsGoalSection": "{year} GOAL",
   "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },
   "statsGoalProgress": "{done} of {target} books",

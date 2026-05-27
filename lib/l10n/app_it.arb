@@ -390,7 +390,7 @@
   "paywallRestoreNone": "Nessun acquisto da ripristinare.",
   "@paywallRestoreNone": {},
 
-  "onboardingWelcomeSubtitle": "Riscopri quello che hai letto.",
+  "onboardingWelcomeSubtitle": "Riscopri quello che hai letto. Discutilo con chi lo sta leggendo con te.",
   "@onboardingWelcomeSubtitle": {},
 
   "onboardingStart": "Inizia →",
@@ -850,6 +850,9 @@
 
   "statsTitle": "Le tue statistiche",
   "@statsTitle": {},
+
+  "profileDetailedStats": "Statistiche di lettura",
+  "@profileDetailedStats": {},
 
   "statsGoalSection": "OBIETTIVO {year}",
   "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },

@@ -265,6 +265,45 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
             ),
           ),
 
+          // ── Detailed stats entry point ───────────────────────────────────
+          // Stats row above shows headline numbers; full breakdown
+          // (monthly chart, reading sessions, goal progress) lives at /stats.
+          // Without this entry, users only discover stats via Settings → buried.
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => context.push('/stats'),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.insights_outlined,
+                            size: 18, color: MarginaliaColors.sienna),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            context.l10n.profileDetailedStats,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: MarginaliaColors.ink,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios,
+                            size: 12, color: MarginaliaColors.inkFaint),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // ── Currently reading ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: profileAsync.when(
