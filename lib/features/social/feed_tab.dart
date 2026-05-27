@@ -996,7 +996,7 @@ class _RingPainter extends CustomPainter {
 // ─── Instagram-style post card ────────────────────────────────────────────────
 
 class _PostCard extends ConsumerStatefulWidget {
-  const _PostCard({required this.post, required this.index});
+  const _PostCard({super.key, required this.post, required this.index});
   final Map<String, dynamic> post;
   final int index;
 
