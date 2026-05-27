@@ -731,8 +731,8 @@ class _CreateJamFab extends StatelessWidget {
         foregroundColor: const Color(0xFFF1EEE7),
         elevation: 6,
         icon: const Icon(Icons.add, size: 20),
-        label: const Text('New Jam',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+        label: Text(context.l10n.jamCreate,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
       ),
     );
   }
@@ -805,7 +805,7 @@ class _CreateJamSheet extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: onConfirm,
-              child: const Text('Create Jam'),
+              child: Text(context.l10n.jamCreate),
             ),
           ),
         ],
@@ -842,9 +842,9 @@ class _JoinJamSheet extends StatelessWidget {
                     color: MarginaliaColors.sienna, size: 18),
               ),
               const SizedBox(width: 12),
-              const Text('Join a Jam',
-                  style:
-                      TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(context.l10n.jamJoinTitle,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: 24),
@@ -852,16 +852,16 @@ class _JoinJamSheet extends StatelessWidget {
             controller: controller,
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              hintText: 'Invite code (e.g. ABC123)',
-              prefixIcon: Icon(Icons.tag_outlined),
+            decoration: InputDecoration(
+              hintText: context.l10n.jamJoinHint,
+              prefixIcon: const Icon(Icons.tag_outlined),
             ),
           ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-                onPressed: onConfirm, child: const Text('Join')),
+                onPressed: onConfirm, child: Text(context.l10n.jamJoinCta)),
           ),
         ],
       ),

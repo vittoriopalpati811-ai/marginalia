@@ -899,6 +899,39 @@
   "statsGoalEditSaveCta": "Salva",
   "@statsGoalEditSaveCta": {},
 
+  "jamJoinTitle": "Unisciti a una Jam",
+  "@jamJoinTitle": {},
+
+  "jamJoinHint": "Codice invito (es. ABC123)",
+  "@jamJoinHint": {},
+
+  "jamJoinCta": "Entra",
+  "@jamJoinCta": {},
+
+  "jamInvalidCode": "Codice non valido.",
+  "@jamInvalidCode": {},
+
+  "editProfilePhotoUpdated": "Foto profilo aggiornata!",
+  "@editProfilePhotoUpdated": {},
+
+  "editProfileCoverUpdated": "Foto copertina aggiornata!",
+  "@editProfileCoverUpdated": {},
+
+  "editProfileUsernameUnavailable": "Username non disponibile, scegline un altro.",
+  "@editProfileUsernameUnavailable": {},
+
+  "editProfilePreviewLabel": "Anteprima",
+  "@editProfilePreviewLabel": {},
+
+  "jamDiscussionTitle": "Discussione",
+  "@jamDiscussionTitle": {},
+
+  "jamViewProfile": "Visualizza profilo",
+  "@jamViewProfile": {},
+
+  "jamExtractHighlights": "Estrai highlight ora",
+  "@jamExtractHighlights": {},
+
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
 

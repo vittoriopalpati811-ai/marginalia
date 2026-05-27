@@ -1015,12 +1015,12 @@ class _PostCardState extends ConsumerState<_PostCard> {
           items: [
             _MenuAction(
               icon: Icons.flag_outlined,
-              label: 'Segnala post',
+              label: context.l10n.feedReport,
               color: MarginaliaColors.inkMuted,
               onTap: () {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Post segnalato. Grazie!')),
+                  SnackBar(content: Text(context.l10n.feedReported)),
                 );
               },
             ),

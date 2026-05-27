@@ -812,7 +812,8 @@ class _MembersStrip extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-          child: Text('MEMBRI', style: MarginaliaTextStyles.sectionTitle),
+          child: Text(context.l10n.jamMembers.toUpperCase(),
+              style: MarginaliaTextStyles.sectionTitle),
         ),
         SizedBox(
           height: 88,

@@ -101,7 +101,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       body: profileAsync.when(
         data: (profile) {
           if (profile == null) {
-            return const Center(child: Text('Profilo non trovato.'));
+            return Center(child: Text(context.l10n.profileNotFound));
           }
           final name = profile['display_name'] as String? ?? 'User';
           final readingTitle = profile['currently_reading_title'] as String?;
@@ -245,7 +245,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                               ? OutlinedButton.icon(
                                   onPressed: () => _toggleFollow(true),
                                   icon: const Icon(Icons.check, size: 16),
-                                  label: const Text('Following'),
+                                  label: Text(context.l10n.profileFollowingButton),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: MarginaliaColors.inkMuted,
                                     side: const BorderSide(
@@ -260,7 +260,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                               : FilledButton.icon(
                                   onPressed: () => _toggleFollow(false),
                                   icon: const Icon(Icons.add, size: 16),
-                                  label: const Text('Follow'),
+                                  label: Text(context.l10n.profileFollowButton),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: MarginaliaColors.primary,
                                     foregroundColor: const Color(0xFFF1EEE7),
@@ -371,9 +371,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           child: CircularProgressIndicator(
               color: MarginaliaColors.sienna, strokeWidth: 1.5),
         ),
-        error: (_, __) => const Center(
-          child: Text('Error loading profile.',
-              style: TextStyle(color: MarginaliaColors.inkMuted)),
+        error: (_, __) => Center(
+          child: Text(context.l10n.profileErrorLoading,
+              style: const TextStyle(color: MarginaliaColors.inkMuted)),
         ),
       ),
     );

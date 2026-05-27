@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 
 // ─── Gradient presets (mirrors my_profile_screen.dart) ───────────────────────
@@ -151,7 +152,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       widget.onSaved();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto profilo aggiornata!')),
+          SnackBar(content: Text(context.l10n.editProfilePhotoUpdated)),
         );
       }
     } catch (e) {
@@ -179,7 +180,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       widget.onSaved();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto copertina aggiornata!')),
+          SnackBar(content: Text(context.l10n.editProfileCoverUpdated)),
         );
       }
     } catch (e) {

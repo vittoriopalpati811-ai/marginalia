@@ -5,6 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/services/amazon_sync_service.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/auth_provider.dart';
@@ -82,7 +83,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sync Kindle'),
+        title: Text(context.l10n.settingsKindleSync),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
@@ -96,7 +97,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
                 child: ElevatedButton.icon(
                   onPressed: () => _onPageFinished(AmazonSyncService.notebookUrl),
                   icon: const Icon(Icons.download_outlined),
-                  label: const Text('Estrai highlight ora'),
+                  label: Text(context.l10n.jamExtractHighlights),
                 ),
               ),
             )

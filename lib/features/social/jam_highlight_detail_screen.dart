@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 
 // Reactions per single jam_highlight
@@ -135,8 +136,8 @@ class _JamHighlightDetailScreenState
         backgroundColor: MarginaliaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text('Discussione',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(context.l10n.jamDiscussionTitle,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
       ),
       body: Column(
         children: [

@@ -348,6 +348,20 @@
   "statsGoalEditTitle": "Annual reading goal",
   "statsGoalEditSaveCta": "Save",
 
+  "jamJoinTitle": "Join a Jam",
+  "jamJoinHint": "Invite code (e.g. ABC123)",
+  "jamJoinCta": "Join",
+  "jamInvalidCode": "Invalid code.",
+
+  "editProfilePhotoUpdated": "Profile photo updated!",
+  "editProfileCoverUpdated": "Cover photo updated!",
+  "editProfileUsernameUnavailable": "Username unavailable, please choose another.",
+  "editProfilePreviewLabel": "Preview",
+
+  "jamDiscussionTitle": "Discussion",
+  "jamViewProfile": "View profile",
+  "jamExtractHighlights": "Extract highlights now",
+
   "greetingEarlyMorning": "Up so early",
   "greetingMorning": "Good morning",
   "greetingBreak": "Take a break",
