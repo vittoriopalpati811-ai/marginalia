@@ -615,7 +615,8 @@ class SupabaseService {
               // avatar_url added so stories row can show profile photos.
               .select(
                   'id, display_name, avatar_url, currently_reading_title, currently_reading_author')
-              .inFilter('id', ids) as List,
+              .inFilter('id', ids)
+              .filter('deleted_at', 'is', null) as List,
     );
   }
 
@@ -645,7 +646,8 @@ class SupabaseService {
               .from('profiles')
               .select(
                   'id, display_name, avatar_url, currently_reading_title, currently_reading_author')
-              .inFilter('id', ids) as List,
+              .inFilter('id', ids)
+              .filter('deleted_at', 'is', null) as List,
     );
   }
 
@@ -776,12 +778,19 @@ class SupabaseService {
 
   // ─── Other user profile ────────────────────────────────────────────────────
 
+  /// Returns null when the targetId is a soft-deleted account
+  /// (deleted_at IS NOT NULL). The profile row still exists so chat
+  /// history resolves, but the public profile page should treat the user
+  /// as gone — caller renders an "account no longer exists" empty state.
   Future<Map<String, dynamic>?> fetchPublicProfile(String targetId) async {
-    return await _client
+    final row = await _client
         .from('profiles')
         .select()
         .eq('id', targetId)
         .maybeSingle();
+    if (row == null) return null;
+    if (row['deleted_at'] != null) return null;
+    return row;
   }
 
   Future<Map<String, int>> fetchUserStats(String targetId) async {
@@ -1271,6 +1280,7 @@ class SupabaseService {
   // ─── User search ─────────────────────────────────────────────────────────────
 
   /// Full-text search on display_name and username fields.
+  /// Excludes soft-deleted accounts (deleted_at IS NOT NULL).
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     if (query.trim().isEmpty) return [];
     final q = query.trim();
@@ -1279,6 +1289,7 @@ class SupabaseService {
           .from('profiles')
           .select('id, display_name, username, avatar_url, bio')
           .or('display_name.ilike.%$q%,username.ilike.%$q%')
+          .filter('deleted_at', 'is', null)
           .neq('id', userId ?? '')
           .limit(30) as List,
     );

@@ -436,9 +436,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // Swatches
+                  // Swatches — each item carries its own label so scrolling
+                  // keeps colour + name aligned. Previously two parallel
+                  // ListViews each owned their own scroll offset, so dragging
+                  // the swatch row left the labels behind.
                   SizedBox(
-                    height: 52,
+                    height: 76,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -448,59 +451,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         final sel = g.key == _gradKey;
                         return GestureDetector(
                           onTap: () => setState(() => _gradKey = g.key),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            width: 52,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                  colors: g.colors,
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: sel ? Colors.white : Colors.transparent,
-                                width: 2.5,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                      colors: g.colors,
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: sel ? Colors.white : Colors.transparent,
+                                    width: 2.5,
+                                  ),
+                                  boxShadow: sel
+                                      ? [
+                                          BoxShadow(
+                                              color: g.a.withAlpha(90),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2))
+                                        ]
+                                      : null,
+                                ),
+                                child: sel
+                                    ? const Center(
+                                        child: Icon(Icons.check,
+                                            color: Colors.white, size: 16))
+                                    : null,
                               ),
-                              boxShadow: sel
-                                  ? [
-                                      BoxShadow(
-                                          color: g.a.withAlpha(90),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2))
-                                    ]
-                                  : null,
-                            ),
-                            child: sel
-                                ? const Center(
-                                    child: Icon(Icons.check,
-                                        color: Colors.white, size: 16))
-                                : null,
+                              const SizedBox(height: 6),
+                              SizedBox(
+                                width: 52,
+                                child: Text(g.label,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                                      color: sel
+                                          ? MarginaliaColors.ink
+                                          : MarginaliaColors.inkFaint,
+                                    )),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    height: 18,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemCount: _kGradients.length,
-                      itemBuilder: (_, i) {
-                        final g   = _kGradients[i];
-                        final sel = g.key == _gradKey;
-                        return SizedBox(
-                          width: 52,
-                          child: Text(g.label,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                                color: sel
-                                    ? MarginaliaColors.ink
-                                    : MarginaliaColors.inkFaint,
-                              )),
                         );
                       },
                     ),

@@ -129,7 +129,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final name = profile?['display_name'] as String? ?? 'Marginalia';
     final uid  = ref.read(supabaseServiceProvider).userId ?? '';
     Share.share(
-      '📚 Follow $name on Marginalia!\n\nhttps://marginalia.app/user/$uid',
+      'Segui $name su Marginalia.\n\nhttps://marginalia.app/user/$uid',
       subject: 'Marginalia Profile – $name',
     );
   }
@@ -825,23 +825,11 @@ class _CurrentlyReadingCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Container(
         decoration: MarginaliaDecorations.card(),
+        // Vertical padding replaces the height the left colour spine
+        // previously contributed, so the card keeps its 72px feel.
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
         child: Row(
           children: [
-            // Colour spine
-            Container(
-              width: 4,
-              height: 72,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    colors: gp.colors,
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter),
-                borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(14),
-                    bottomLeft: Radius.circular(14)),
-              ),
-            ),
-            const SizedBox(width: 14),
             const Icon(Icons.menu_book_outlined,
                 size: 20, color: MarginaliaColors.sienna),
             const SizedBox(width: 12),

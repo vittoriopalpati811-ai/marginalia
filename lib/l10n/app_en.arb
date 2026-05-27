@@ -161,7 +161,7 @@
   "onboardingCoverSubtitle": "Appears at the top of your profile.",
   "onboardingCoverPlaceholder": "Cover photo",
   "onboardingCoverPick": "Choose image",
-  "onboardingCompleteTitle": "All set! 🎉",
+  "onboardingCompleteTitle": "All set.",
   "onboardingCompleteBody": "Welcome to Marginalia, {username}",
   "@onboardingCompleteBody": {
     "placeholders": { "username": { "type": "String" } }
@@ -199,7 +199,7 @@
   "share": "Share",
   "copy": "Copy",
 
-  "paywallPurchaseSuccess": "Welcome to Marginalia Premium! 🎉",
+  "paywallPurchaseSuccess": "Welcome to Marginalia Premium.",
 
   "highlightNotFound": "Highlight not found.",
   "bookNotFound": "Book not found.",
@@ -330,6 +330,7 @@
 
   "statsTitle": "Reading stats",
   "profileDetailedStats": "Reading stats",
+  "accountDeleted": "Deleted account",
   "statsGoalSection": "{year} GOAL",
   "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },
   "statsGoalProgress": "{done} of {target} books",

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:animations/animations.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -346,12 +347,15 @@ class _ScaffoldWithNav extends StatelessWidget {
   final Widget child;
   final String routePath;
 
+  // iOS-style SF-Symbol-like icons (CupertinoIcons) so the navbar feels
+  // native on iPhone. Material icons looked Android-y next to the rest of
+  // the app's iOS chrome.
   static const _tabs = [
-    (path: '/home',     icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,     label: 'Home'),
-    (path: '/',         icon: Icons.auto_stories_outlined, activeIcon: Icons.auto_stories,     label: 'Library'),
-    (path: '/social',   icon: Icons.people_outline,        activeIcon: Icons.people_rounded,   label: 'Jam'),
-    (path: '/messages', icon: Icons.send_outlined,         activeIcon: Icons.send_rounded,     label: 'Messages'),
-    (path: '/profile',  icon: Icons.person_outline,        activeIcon: Icons.person_rounded,   label: 'Profile'),
+    (path: '/home',     icon: CupertinoIcons.house,         activeIcon: CupertinoIcons.house_fill,        label: 'Home'),
+    (path: '/',         icon: CupertinoIcons.book,          activeIcon: CupertinoIcons.book_fill,         label: 'Library'),
+    (path: '/social',   icon: CupertinoIcons.person_2,      activeIcon: CupertinoIcons.person_2_fill,     label: 'Jam'),
+    (path: '/messages', icon: CupertinoIcons.paperplane,    activeIcon: CupertinoIcons.paperplane_fill,   label: 'Messages'),
+    (path: '/profile',  icon: CupertinoIcons.person_crop_circle, activeIcon: CupertinoIcons.person_crop_circle_fill, label: 'Profile'),
   ];
 
   @override

@@ -229,8 +229,16 @@ class _ConversationCard extends StatelessWidget {
       avatarUrl = conversation['group_avatar_url'] as String?;
     } else {
       final otherMember = members.isNotEmpty ? members.first : null;
-      displayName = otherMember?['display_name'] as String? ?? 'User';
-      avatarUrl = otherMember?['avatar_url'] as String?;
+      // display_name == null/empty means the other person soft-deleted
+      // their account. Surface a clear tombstone label.
+      final rawName = otherMember?['display_name'] as String?;
+      if (rawName == null || rawName.isEmpty) {
+        displayName = context.l10n.accountDeleted;
+        avatarUrl   = null;
+      } else {
+        displayName = rawName;
+        avatarUrl   = otherMember?['avatar_url'] as String?;
+      }
     }
 
     // Unread = last message exists, NOT sent by me, newer than my last_read_at
@@ -261,7 +269,7 @@ class _ConversationCard extends StatelessWidget {
       if (content != null && content.isNotEmpty) {
         lastPreview = content;
       } else if (imageUrl != null) {
-        lastPreview = '📷 Immagine';
+        lastPreview = 'Foto';
       }
 
       final createdAt = lastMessage['created_at'] as String?;

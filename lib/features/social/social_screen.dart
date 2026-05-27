@@ -94,7 +94,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       return;
     }
     Share.share(
-      '📚 Join my Jam "$name" on Marginalia!\n\n'
+      'Join my Jam "$name" on Marginalia.\n\n'
       'Invite code: $code',
       subject: 'Marginalia Jam – $name',
     );

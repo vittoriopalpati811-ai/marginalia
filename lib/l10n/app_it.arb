@@ -453,7 +453,7 @@
   "onboardingCoverPick": "Scegli immagine",
   "@onboardingCoverPick": {},
 
-  "onboardingCompleteTitle": "Tutto pronto! 🎉",
+  "onboardingCompleteTitle": "Tutto pronto.",
   "@onboardingCompleteTitle": {},
 
   "onboardingCompleteBody": "Benvenuto in Marginalia, {username}",
@@ -537,7 +537,7 @@
   "copy": "Copia",
   "@copy": {},
 
-  "paywallPurchaseSuccess": "Benvenuto in Marginalia Premium! 🎉",
+  "paywallPurchaseSuccess": "Benvenuto in Marginalia Premium.",
   "@paywallPurchaseSuccess": {},
 
   "highlightNotFound": "Highlight non trovato.",
@@ -853,6 +853,9 @@
 
   "profileDetailedStats": "Statistiche di lettura",
   "@profileDetailedStats": {},
+
+  "accountDeleted": "Account eliminato",
+  "@accountDeleted": {"description": "Tombstone label shown in chats when a participant has deleted their account"},
 
   "statsGoalSection": "OBIETTIVO {year}",
   "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },

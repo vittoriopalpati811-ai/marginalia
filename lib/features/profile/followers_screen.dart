@@ -219,14 +219,24 @@ class _UserRow extends StatelessWidget {
         ),
       ),
       subtitle: reading != null && reading.isNotEmpty
-          ? Text(
-              '📖 $reading',
-              style: const TextStyle(
-                fontSize: 12,
-                color: MarginaliaColors.inkMuted,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.menu_book_outlined,
+                    size: 12, color: MarginaliaColors.inkFaint),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    reading,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: MarginaliaColors.inkMuted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             )
           : null,
       trailing: const Icon(

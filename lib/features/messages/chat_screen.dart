@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import 'giphy_picker.dart';
 
@@ -444,16 +445,23 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = message['content'] as String?;
-    final imageUrl = message['image_url'] as String?;
-    final sender = message['sender'] as Map<String, dynamic>? ?? {};
-    final senderName = sender['display_name'] as String? ?? 'User';
-    final senderAvatar = sender['avatar_url'] as String?;
-    final createdAt = message['created_at'] as String?;
-    final timeLabel = _formatTime(DateTime.tryParse(createdAt ?? ''));
+    final content    = message['content']   as String?;
+    final imageUrl   = message['image_url'] as String?;
+    final sender     = message['sender']    as Map<String, dynamic>? ?? {};
+    // Tombstone detection: when a profile is soft-deleted via
+    // delete_my_account() the display_name is nulled, leaving the row in
+    // place so chat history still resolves. We surface "Account eliminato"
+    // and a blank avatar instead of the literal "User" placeholder.
+    final isDeleted    = (sender['display_name'] as String?)?.isEmpty ?? true;
+    final senderName   = isDeleted
+        ? context.l10n.accountDeleted
+        : sender['display_name'] as String;
+    final senderAvatar = isDeleted ? null : sender['avatar_url'] as String?;
+    final createdAt    = message['created_at'] as String?;
+    final timeLabel    = _formatTime(DateTime.tryParse(createdAt ?? ''));
 
     final senderInitial =
-        senderName.isNotEmpty ? senderName[0].toUpperCase() : '?';
+        isDeleted ? '·' : senderName[0].toUpperCase();
     final avatarBg = MarginaliaDecorations.bookCoverColor(senderName);
 
     return Padding(
@@ -498,40 +506,47 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ),
                 ],
-                _BubbleContainer(
-                  isMe: isMe,
-                  isOptimistic: isOptimistic,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (imageUrl != null && imageUrl.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            imageUrl,
+                // Images and GIFs render WITHOUT the coloured bubble so the
+                // chat feels lighter and the media stands on its own (the
+                // bubble border read as visual clutter around imagery).
+                // Text still gets the bubble — and when a message carries
+                // both, the text bubble sits below the standalone image.
+                if (imageUrl != null && imageUrl.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(
+                        bottom: (content != null && content.isNotEmpty) ? 6 : 0),
+                    child: Opacity(
+                      opacity: isOptimistic ? 0.7 : 1.0,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(
+                          imageUrl,
+                          width: 220,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
                             width: 220,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              width: 220,
-                              height: 140,
-                              color: MarginaliaColors.surfaceElevated,
-                              child: const Icon(Icons.image_not_supported_outlined,
-                                  color: MarginaliaColors.inkFaint),
-                            ),
+                            height: 140,
+                            color: MarginaliaColors.surfaceElevated,
+                            child: const Icon(Icons.image_not_supported_outlined,
+                                color: MarginaliaColors.inkFaint),
                           ),
                         ),
-                      if (content != null && content.isNotEmpty)
-                        Text(
-                          content,
-                          style: GoogleFonts.manrope(
-                            fontSize: 14,
-                            color: isMe ? Colors.white : MarginaliaColors.ink,
-                            height: 1.45,
-                          ),
-                        ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
+                if (content != null && content.isNotEmpty)
+                  _BubbleContainer(
+                    isMe: isMe,
+                    isOptimistic: isOptimistic,
+                    child: Text(
+                      content,
+                      style: GoogleFonts.manrope(
+                        fontSize: 14,
+                        color: isMe ? Colors.white : MarginaliaColors.ink,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 3),
                 Row(
                   mainAxisSize: MainAxisSize.min,

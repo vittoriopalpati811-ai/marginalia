@@ -87,7 +87,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   Future<void> _shareInviteCode(String? code) async {
     final inviteCode = code ?? widget.jamId.substring(0, 8).toUpperCase();
     await Share.share(
-      'Join my Jam on Marginalia! 📚\n\n'
+      'Join my Jam on Marginalia.\n\n'
       'Code: $inviteCode\n\n'
       'Download the app: https://marginalia.app',
       subject: 'Join the Jam "${widget.jamName}"',
