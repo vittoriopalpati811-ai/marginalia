@@ -782,6 +782,45 @@
   "feedKeepHolding": "Continua a tenere!",
   "@feedKeepHolding": {},
 
+  "onboardingGoalTitle": "Imposta il tuo obiettivo di lettura {year}",
+  "@onboardingGoalTitle": { "placeholders": { "year": { "type": "int" } } },
+
+  "onboardingGoalSubtitle": "Quanti libri vuoi leggere quest'anno? (Tranquillo, puoi sempre cambiarlo!)",
+  "@onboardingGoalSubtitle": {},
+
+  "onboardingGoalFieldLabel": "Numero di libri",
+  "@onboardingGoalFieldLabel": {},
+
+  "onboardingGoalSuffix": "Libri",
+  "@onboardingGoalSuffix": {},
+
+  "onboardingGoalLow": "Un ritmo rilassato: meglio la qualità della quantità.",
+  "@onboardingGoalLow": {},
+
+  "onboardingGoalMedium": "Un buon obiettivo: circa un libro al mese.",
+  "@onboardingGoalMedium": {},
+
+  "onboardingGoalCommitted": "Hai grandi ambizioni! Vorresti leggere più libri al mese.",
+  "@onboardingGoalCommitted": {},
+
+  "onboardingGoalCta": "Imposta obiettivo",
+  "@onboardingGoalCta": {},
+
+  "onboardingGoalSkip": "Lo imposto dopo",
+  "@onboardingGoalSkip": {},
+
+  "onboardingCurrentlyReadingTitle": "Cosa stai leggendo?",
+  "@onboardingCurrentlyReadingTitle": {},
+
+  "onboardingCurrentlyReadingHint": "Cerca titolo o autore",
+  "@onboardingCurrentlyReadingHint": {},
+
+  "onboardingCurrentlyReadingNothing": "Non sto leggendo nulla al momento",
+  "@onboardingCurrentlyReadingNothing": {},
+
+  "onboardingCurrentlyReadingNext": "Avanti",
+  "@onboardingCurrentlyReadingNext": {},
+
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
 

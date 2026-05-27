@@ -361,6 +361,95 @@ class SupabaseService {
     );
   }
 
+  // ─── Reading goals ────────────────────────────────────────────────────────
+
+  /// Returns the user's reading goal for the given year, or null.
+  Future<int?> fetchReadingGoal({required int year}) async {
+    final uid = userId;
+    if (uid == null) return null;
+    try {
+      final res = await _client
+          .from('reading_goals')
+          .select('target_books')
+          .eq('user_id', uid)
+          .eq('year', year)
+          .maybeSingle();
+      return res?['target_books'] as int?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Upserts the user's reading goal for the given year.
+  Future<void> saveReadingGoal({
+    required int year,
+    required int targetBooks,
+  }) async {
+    final uid = userId;
+    if (uid == null) return;
+    await _client.from('reading_goals').upsert(
+      {
+        'user_id':      uid,
+        'year':         year,
+        'target_books': targetBooks,
+        'updated_at':   DateTime.now().toIso8601String(),
+      },
+      onConflict: 'user_id,year',
+    );
+  }
+
+  // ─── Reading sessions ─────────────────────────────────────────────────────
+
+  /// Inserts a reading session.
+  /// Either pass a `bookId` (preferred) or denormalized `title`/`author`.
+  Future<void> addReadingSession({
+    String? bookId,
+    String? title,
+    String? author,
+    required int minutes,
+    int? pages,
+    DateTime? sessionDate,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    String source = 'manual',
+    String? note,
+  }) async {
+    final uid = userId;
+    if (uid == null) return;
+    await _client.from('reading_sessions').insert({
+      'user_id':      uid,
+      'book_id':      bookId,
+      'book_title':   title,
+      'book_author':  author,
+      'session_date': (sessionDate ?? DateTime.now()).toIso8601String().split('T').first,
+      'started_at':   startedAt?.toIso8601String(),
+      'ended_at':     endedAt?.toIso8601String(),
+      'minutes_read': minutes,
+      'pages_read':   pages,
+      'source':       source,
+      'note':         note,
+    });
+  }
+
+  /// Lists the user's reading sessions, newest first.
+  Future<List<Map<String, dynamic>>> fetchReadingSessions({int limit = 200}) async {
+    final uid = userId;
+    if (uid == null) return [];
+    try {
+      final res = await _client
+          .from('reading_sessions')
+          .select('id, book_id, book_title, book_author, session_date, '
+              'started_at, ended_at, minutes_read, pages_read, source, note')
+          .eq('user_id', uid)
+          .order('session_date', ascending: false)
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return List<Map<String, dynamic>>.from(res as List);
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Delete all highlights and books for the current user.
   /// Used by "force reimport" to clear corrupted data before re-upload.
   Future<void> deleteAllUserData() async {

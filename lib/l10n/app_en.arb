@@ -301,6 +301,22 @@
   "feedPublishLabel": "Publish",
   "feedKeepHolding": "Keep holding!",
 
+  "onboardingGoalTitle": "Set your {year} reading goal",
+  "@onboardingGoalTitle": { "placeholders": { "year": { "type": "int" } } },
+  "onboardingGoalSubtitle": "How many books are you hoping to read this year? (Don't worry — you can always adjust this later!)",
+  "onboardingGoalFieldLabel": "Number of books",
+  "onboardingGoalSuffix": "Books",
+  "onboardingGoalLow": "A relaxed pace — quality over quantity.",
+  "onboardingGoalMedium": "A solid goal — about one book a month.",
+  "onboardingGoalCommitted": "You're committed! Hitting this goal would mean reading several books a month.",
+  "onboardingGoalCta": "Set goal",
+  "onboardingGoalSkip": "I'll set my goal later",
+
+  "onboardingCurrentlyReadingTitle": "What are you currently reading?",
+  "onboardingCurrentlyReadingHint": "Search book title or author",
+  "onboardingCurrentlyReadingNothing": "I'm not currently reading anything",
+  "onboardingCurrentlyReadingNext": "Next",
+
   "greetingEarlyMorning": "Up so early",
   "greetingMorning": "Good morning",
   "greetingBreak": "Take a break",
