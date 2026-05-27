@@ -292,28 +292,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    // Tagline ("Selezionati da Marginalia, solo per te") removed: the
+    // section title "LIBRI CONSIGLIATI" already says everything the user
+    // needs, and the italic green sub-line was reading as filler the
+    // user kept getting flagged in screenshots.
+    return Row(
       children: [
-        Row(
-          children: [
-            Text(context.l10n.recsTitle,
-                style: MarginaliaTextStyles.sectionTitle),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
-            ),
-          ],
-        ),
-        const SizedBox(height: 5),
-        Text(
-          context.l10n.recsTagline,
-          style: GoogleFonts.ebGaramond(
-            fontSize: 13,
-            fontStyle: FontStyle.italic,
-            color: MarginaliaColors.sienna,
-            height: 1.3,
-          ),
+        Text(context.l10n.recsTitle,
+            style: MarginaliaTextStyles.sectionTitle),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
         ),
       ],
     );

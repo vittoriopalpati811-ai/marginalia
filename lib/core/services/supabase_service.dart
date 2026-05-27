@@ -1373,14 +1373,24 @@ class SupabaseService {
   }
 
   /// Mark all messages in [conversationId] as read for the current user.
+  ///
+  /// Routes through the SECURITY DEFINER RPC `mark_conversation_read`
+  /// (migration 030) so the update bypasses the historical lack of an
+  /// UPDATE policy on conversation_members AND uses server-side now()
+  /// for the timestamp — both prerequisites for the nav badge to
+  /// actually clear without a manual refresh.
   Future<void> markConversationRead(String conversationId) async {
     try {
-      await _client
-          .from('conversation_members')
-          .update({'last_read_at': DateTime.now().toUtc().toIso8601String()})
-          .eq('conversation_id', conversationId)
-          .eq('user_id', userId!);
-    } catch (_) {}
+      await _client.rpc(
+        'mark_conversation_read',
+        params: {'p_conversation_id': conversationId},
+      );
+    } catch (e) {
+      // Swallow but log — the badge will just stay until the next
+      // pull-to-refresh in the rare case the RPC fails.
+      // ignore: avoid_print
+      print('[markConversationRead] $e');
+    }
   }
 
   /// Upload an image to the message-images bucket and return its public URL.
