@@ -426,9 +426,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _SettingsTile(
                 icon: Icons.privacy_tip_outlined,
-                label: 'Privacy Policy',
+                label: context.l10n.settingsPrivacyPolicy,
                 onTap: () async {
-                  final uri = Uri.parse('https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
+                  // Route to the localized privacy page based on the
+                  // user's current app locale.
+                  final isIt = Localizations.localeOf(context).languageCode == 'it';
+                  final url = isIt
+                      ? 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/it/'
+                      : 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/';
+                  final uri = Uri.parse(url);
                   if (await canLaunchUrl(uri)) await launchUrl(uri);
                 },
                 trailing: const Icon(Icons.open_in_new,
@@ -834,8 +840,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   size: 14, color: MarginaliaColors.inkFaint),
               onTap: () async {
                 Navigator.pop(ctx);
-                final uri = Uri.parse(
-                    'https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
+                final isIt = Localizations.localeOf(context).languageCode == 'it';
+                final uri = Uri.parse(isIt
+                    ? 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/it/'
+                    : 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
                 if (await canLaunchUrl(uri)) await launchUrl(uri);
               },
             ),

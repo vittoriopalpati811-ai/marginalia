@@ -1,49 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Marginalia — Privacy policy. What we collect, why, and how to delete it." />
+  <meta name="description" content="Marginalia — Informativa sulla privacy. Cosa raccogliamo, perché, e come eliminarlo." />
   <title>Privacy · Marginalia</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!--
-    Bodoni Moda  — display: high-contrast hairlines, gives legal text gravitas
-    EB Garamond  — body: brand continuity with the app
-    Caveat       — handwritten margin notes (the literal "marginalia")
-  -->
   <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,700;1,6..96,400;1,6..96,500;1,6..96,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Paper palette — warm parchment with deep graphite ink */
       --paper:        #F8F4E9;
       --paper-light:  #FCF9F0;
       --paper-rule:   #E4DBC7;
       --ink:          #1A1814;
       --ink-muted:    #5C544A;
       --ink-faint:    #8E867A;
-
-      /* Brand matcha */
       --matcha:       #4A7A35;
       --matcha-dark:  #355224;
-
-      /* Pencil-mark red for handwritten annotations + emphasis */
       --pencil:       #8B3A2E;
       --pencil-soft:  #B65A4C;
-
-      /* Ochre — page-edge yellowing, used sparingly */
       --ochre:        #A87E2C;
-
-      /* Layout */
-      --col:          640px;   /* main reading column */
-      --col-narrow:   560px;
-      --margin-w:     220px;   /* right marginalia column on desktop */
-
-      /* Type scale */
+      --col:          640px;
       --t-hero:       clamp(80px, 14vw, 160px);
       --t-sub:        clamp(20px, 2.4vw, 28px);
       --t-section:    clamp(28px, 3.4vw, 38px);
@@ -60,8 +42,6 @@
       background: var(--paper);
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-
-      /* Subtle paper grain — SVG noise data-URI, no extra HTTP */
       background-image:
         linear-gradient(180deg, var(--paper-light) 0%, var(--paper) 360px),
         url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.09  0 0 0 0 0.07  0 0 0 0.022 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
@@ -76,7 +56,6 @@
     }
     a:hover { color: var(--pencil); }
 
-    /* ── Top nav ───────────────────────────────────────────────────── */
     .topbar {
       max-width: 1100px;
       margin: 0 auto;
@@ -127,13 +106,11 @@
       background: var(--matcha);
       color: var(--paper-light);
     }
-    /* On mobile, the language switcher stays prominent */
     @media (max-width: 540px) {
       .topbar nav { gap: 12px; }
       .topbar nav > a { font-size: 11px; letter-spacing: 1.4px; }
     }
 
-    /* ── Hero ──────────────────────────────────────────────────────── */
     .hero {
       max-width: 1100px;
       margin: 0 auto;
@@ -196,8 +173,6 @@
       color: var(--matcha);
     }
     .hero .meta span:first-child::before { content: none; margin: 0; }
-
-    /* Faint diagonal ornament behind the hero */
     .hero::after {
       content: '';
       position: absolute;
@@ -210,16 +185,13 @@
       transform-origin: right;
     }
 
-    /* ── TOC (left rail, desktop) ──────────────────────────────────── */
     .body-wrap {
       max-width: 1100px;
       margin: 0 auto;
       padding: 0 32px;
       position: relative;
     }
-    .toc {
-      display: none;
-    }
+    .toc { display: none; }
     @media (min-width: 1024px) {
       .toc {
         display: block;
@@ -258,19 +230,16 @@
       .toc a {
         color: var(--ink-muted);
         border: 0;
-        transition: color .15s;
       }
       .toc a:hover { color: var(--pencil); }
     }
 
-    /* ── Main column ───────────────────────────────────────────────── */
     main {
       max-width: var(--col);
       margin: 0 auto;
       position: relative;
     }
 
-    /* Pull-quote at the top — the THESIS, before the formal sections */
     .thesis {
       font-family: 'Bodoni Moda', Georgia, serif;
       font-style: italic;
@@ -302,7 +271,6 @@
       text-underline-offset: 5px;
     }
 
-    /* Sections */
     section {
       margin: 64px 0;
       position: relative;
@@ -312,7 +280,6 @@
       font-family: 'Bodoni Moda', serif;
       font-style: italic;
       font-size: 14px;
-      letter-spacing: 0;
       color: var(--matcha);
       margin-bottom: 6px;
     }
@@ -349,7 +316,6 @@
       padding: 0 2px;
     }
 
-    /* Rights / data definition list — replaces the boring data table */
     .deflist {
       margin: 24px 0 8px;
       border-top: 1px solid var(--paper-rule);
@@ -408,11 +374,7 @@
       margin-top: 4px;
     }
 
-    /* Marginalia — the brand-true detail: handwritten annotations in
-       the margin. Hidden on narrow screens (collapses gracefully). */
-    .scribble {
-      display: none;
-    }
+    .scribble { display: none; }
     @media (min-width: 1024px) {
       .scribble {
         display: block;
@@ -438,15 +400,9 @@
         font-size: 24px;
         transform: rotate(45deg);
       }
-      .scribble.right-tilt {
-        transform: rotate(2.5deg);
-      }
-      .scribble.lower {
-        top: auto;
-        bottom: 0;
-      }
+      .scribble.right-tilt { transform: rotate(2.5deg); }
+      .scribble.lower { top: auto; bottom: 0; }
     }
-    /* On mobile, scribbles become inline italic asides */
     @media (max-width: 1023px) {
       .scribble-fallback {
         display: block;
@@ -463,7 +419,6 @@
       .scribble-fallback { display: none; }
     }
 
-    /* Contact card */
     .contact {
       margin: 96px auto 60px;
       max-width: 520px;
@@ -502,7 +457,6 @@
       border-bottom-width: 1px;
     }
 
-    /* Footer */
     footer {
       padding: 60px 32px 80px;
       text-align: center;
@@ -517,7 +471,6 @@
     }
     footer a:hover { color: var(--matcha-dark); }
 
-    /* ── Animations: single orchestrated page load ─────────────────── */
     @keyframes ink {
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -525,10 +478,6 @@
     @keyframes underscore {
       from { transform: scaleX(0); }
       to   { transform: scaleX(1); }
-    }
-    @keyframes scribble-in {
-      from { opacity: 0; transform: rotate(-3.5deg) translateX(20px); }
-      to   { opacity: 0.92; transform: rotate(-3.5deg) translateX(0); }
     }
     .hero .eyebrow { animation: ink .8s ease-out both; animation-delay: .05s; }
     .hero .eyebrow::before { transform-origin: left; animation: underscore .6s ease-out both; animation-delay: .15s; }
@@ -552,316 +501,323 @@
     <a href="/" class="wordmark">Marginalia</a>
     <nav>
       <a href="/">Home</a>
-      <a href="/privacy/">Privacy</a>
-      <a href="/terms/">Terms</a>
-      <span class="lang-switch" aria-label="Language">
-        <a href="/privacy/" class="lang-active">EN</a>
-        <a href="/privacy/it/">IT</a>
+      <a href="/privacy/it/">Privacy</a>
+      <a href="/terms/">Termini</a>
+      <span class="lang-switch" aria-label="Lingua">
+        <a href="/privacy/">EN</a>
+        <a href="/privacy/it/" class="lang-active">IT</a>
       </span>
     </nav>
   </header>
 
-  <!-- ───────── Hero ───────── -->
   <section class="hero">
-    <div class="eyebrow">Privacy policy</div>
+    <div class="eyebrow">Informativa sulla privacy</div>
     <h1>Privacy<span class="dot">.</span></h1>
     <p class="lede">
-      What we keep, what we don't, and the door we always leave open in case you change your mind.
+      Cosa conserviamo, cosa no, e la porta che lasciamo sempre aperta se cambi idea.
     </p>
     <div class="meta">
-      <span>Updated 27 May 2026</span>
+      <span>Aggiornata 27 maggio 2026</span>
       <span>v1.2</span>
-      <span>Plain language, GDPR-aligned</span>
+      <span>Linguaggio semplice, conforme GDPR</span>
     </div>
   </section>
 
-  <!-- ───────── Body ───────── -->
   <div class="body-wrap">
 
-    <!-- Sticky TOC (desktop only) -->
-    <aside class="toc" aria-label="Table of contents">
-      <div class="toc-title">Sections</div>
+    <aside class="toc" aria-label="Indice">
+      <div class="toc-title">Sezioni</div>
       <ol>
-        <li><a href="#who">Who we are</a></li>
-        <li><a href="#data">Data we collect</a></li>
-        <li><a href="#third">Third-party services</a></li>
-        <li><a href="#legal">Legal basis</a></li>
-        <li><a href="#retention">Retention</a></li>
-        <li><a href="#rights">Your rights</a></li>
-        <li><a href="#children">Children</a></li>
-        <li><a href="#changes">Changes</a></li>
+        <li><a href="#who">Chi siamo</a></li>
+        <li><a href="#data">Dati raccolti</a></li>
+        <li><a href="#third">Servizi terzi</a></li>
+        <li><a href="#legal">Base giuridica</a></li>
+        <li><a href="#retention">Conservazione</a></li>
+        <li><a href="#rights">I tuoi diritti</a></li>
+        <li><a href="#children">Minori</a></li>
+        <li><a href="#changes">Modifiche</a></li>
       </ol>
     </aside>
 
     <main>
 
       <p class="thesis">
-        Your reading life is not a dataset for sale. It is a private archive
-        we help you maintain — and we <span class="em">never sell it</span>
-        to advertisers, never trade it with brokers,
-        never train third-party models on it.
+        La tua vita di lettore non è un dataset in vendita. È un archivio privato
+        che ti aiutiamo a custodire — e <span class="em">non lo vendiamo mai</span>
+        agli inserzionisti, non lo scambiamo con data broker,
+        non lo usiamo per addestrare modelli di terzi.
       </p>
 
-      <!-- 1 ── Who we are ─────────────────────────────────────────── -->
+      <!-- 1 -->
       <section id="who">
         <span class="num">01.</span>
-        <h2>Who we are</h2>
+        <h2>Chi siamo</h2>
         <p class="first-p">
-          Marginalia is an independent iOS application designed and developed by
-          Vittorio Palpati, based in Italy. Questions, complaints, and curious
-          inquiries reach us at
+          Marginalia è un'applicazione iOS indipendente progettata e sviluppata
+          da Vittorio Palpati, con sede in Italia. Domande, reclami e
+          curiosità sono benvenuti a
           <a href="mailto:vittoriopalpati811@gmail.com">vittoriopalpati811@gmail.com</a>.
         </p>
         <p>
-          Because the app is distributed to users inside the European Union,
-          we comply fully with the <strong>General Data Protection Regulation</strong>
-          and, where applicable, the Italian Personal Data Protection Code.
+          Poiché l'app è distribuita a utenti dell'Unione Europea, siamo
+          pienamente conformi al <strong>Regolamento generale sulla protezione
+          dei dati (GDPR)</strong> e, ove applicabile, al Codice italiano in
+          materia di protezione dei dati personali.
         </p>
-        <div class="scribble-fallback">— GDPR is the floor, not the ceiling.</div>
-        <div class="scribble">GDPR is the floor, not the ceiling.</div>
+        <div class="scribble-fallback">— il GDPR è il pavimento, non il soffitto.</div>
+        <div class="scribble">il GDPR è il pavimento, non il soffitto.</div>
       </section>
 
-      <!-- 2 ── Data we collect ────────────────────────────────────── -->
+      <!-- 2 -->
       <section id="data">
         <span class="num">02.</span>
-        <h2>What we collect, and why</h2>
+        <h2>Cosa raccogliamo, e perché</h2>
         <p class="first-p">
-          The shortest version: just enough to let you sign in, store your highlights,
-          and personalise the daily one we surface. No advertising identifiers, no
-          tracking pixels, no analytics SDKs.
+          La versione breve: il minimo per farti accedere, conservare i tuoi
+          highlight e personalizzare quello che ti mostriamo ogni giorno.
+          Nessun identificativo pubblicitario, nessun pixel di tracciamento,
+          nessun SDK di analytics di terzi.
         </p>
 
         <div class="deflist">
           <div class="row">
             <div class="label">Email</div>
             <div class="value">
-              Authentication only. Never shared.
-              <br><span class="req">Required</span>
+              Solo per l'autenticazione. Mai condivisa.
+              <br><span class="req">Obbligatoria</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Display name</div>
+            <div class="label">Nome visualizzato</div>
             <div class="value">
-              Shown in your public profile and any reading "Jam" you join.
-              <br><span class="req">Required</span>
+              Mostrato nel tuo profilo pubblico e in qualunque "Jam"
+              (circolo di lettura) a cui partecipi.
+              <br><span class="req">Obbligatorio</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Kindle highlights</div>
+            <div class="label">Highlight di Kindle</div>
             <div class="value">
-              The core artefact. Surfaced and re-surfaced as the app's reason to exist.
-              <br><span class="req">Required</span>
+              Il cuore dell'app. Riproposti e riscoperti come unica ragione
+              d'esistere del prodotto.
+              <br><span class="req">Obbligatori</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Steps &amp; workouts</div>
+            <div class="label">Passi e allenamenti</div>
             <div class="value">
-              Used only to pick a fitting highlight (e.g. a quote about momentum after a run).
-              Read on-device; never uploaded.
-              <br><span class="opt">Optional</span>
+              Usati solo per scegliere un highlight adatto al momento
+              (es. una citazione sull'energia dopo una corsa).
+              Letti sul dispositivo; mai caricati sui nostri server.
+              <br><span class="opt">Opzionali</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Menstrual cycle phase</div>
+            <div class="label">Fase del ciclo mestruale</div>
             <div class="value">
-              Further personalises the daily highlight if — and only if — you enable it.
-              Stays on your device.
-              <br><span class="opt">Optional</span>
+              Affina la scelta dell'highlight del giorno se — e solo se —
+              dai esplicito consenso. Resta sul tuo dispositivo.
+              <br><span class="opt">Opzionale</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Location (city-level)</div>
+            <div class="label">Posizione (livello città)</div>
             <div class="value">
-              Powers the weather strip in the home-screen widget. Sent to Open-Meteo
-              without any account or identifier attached.
-              <br><span class="opt">Optional</span>
+              Alimenta la striscia meteo nel widget home. Inviata a
+              Open-Meteo senza alcun account o identificatore associato.
+              <br><span class="opt">Opzionale</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Anonymous usage events</div>
+            <div class="label">Eventi d'uso anonimi</div>
             <div class="value">
-              Aggregate feature taps, screen views, and crash reports —
-              used only to fix bugs and prioritise what to build next.
-              No name, no email, no IP. A random per-device identifier
-              that you can rotate from Settings.
-              <br><span class="opt">Optional · opt out anytime</span>
+              Tap aggregati sulle feature, schermate visitate, e crash report
+              — usati solo per correggere bug e capire cosa costruire dopo.
+              Niente nome, niente email, niente IP. Un identificatore casuale
+              per dispositivo, che puoi resettare dalle Impostazioni.
+              <br><span class="opt">Opzionali · puoi disattivarli</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Advertising identifiers</div>
+            <div class="label">Identificatori pubblicitari</div>
             <div class="value">
-              We don't collect any. No ad SDKs, no third-party tracking
-              pixels, no cross-app tracking.
-              <br><span class="na">Not collected</span>
+              Non li raccogliamo. Niente SDK pubblicitari, niente pixel di
+              tracciamento di terzi, niente tracking cross-app.
+              <br><span class="na">Non raccolti</span>
             </div>
           </div>
         </div>
 
         <p style="margin-top: 24px;">
-          Health data (steps, workouts, menstrual cycle) is read from Apple
-          HealthKit on your device, used in the moment to choose a highlight,
-          and then discarded. It <strong>never reaches our servers</strong>,
-          and it is never shared with anyone.
+          I dati sanitari (passi, allenamenti, ciclo mestruale) sono letti
+          da Apple HealthKit sul tuo dispositivo, usati nell'istante per
+          scegliere un highlight, e poi scartati. <strong>Non arrivano mai
+          ai nostri server</strong>, e non sono mai condivisi con nessuno.
         </p>
 
-        <div class="scribble-fallback">— anyway, health data stays on your phone. always.</div>
-        <div class="scribble right-tilt lower">anyway, health data stays on your phone. always.</div>
+        <div class="scribble-fallback">— comunque sia, i dati sanitari restano sul tuo telefono. sempre.</div>
+        <div class="scribble right-tilt lower">comunque sia, i dati sanitari restano sul tuo telefono. sempre.</div>
       </section>
 
-      <!-- 3 ── Third-party services ──────────────────────────────── -->
+      <!-- 3 -->
       <section id="third">
         <span class="num">03.</span>
-        <h2>Whom we work with</h2>
+        <h2>Con chi lavoriamo</h2>
         <p class="first-p">
-          A small, deliberately short list. Each one is named, what they receive
-          is named, and you can read their own policies in one click.
+          Una lista corta e dichiarata. Ogni fornitore è nominato, è chiaro
+          cosa riceve, e puoi leggere la sua informativa in un click.
         </p>
 
         <div class="deflist">
           <div class="row">
             <div class="label">Supabase</div>
             <div class="value">
-              Database and authentication, hosted in the EU.
+              Database e autenticazione, hostati in UE.
               <br><a href="https://supabase.com/privacy" target="_blank" rel="noopener">supabase.com/privacy</a>
             </div>
           </div>
           <div class="row">
             <div class="label">Anthropic</div>
             <div class="value">
-              AI selection of the daily highlight. Receives only the anonymised text of
-              your highlights — no email, no name, no identifier.
+              Selezione AI dell'highlight quotidiano. Riceve solo il testo
+              anonimizzato dei tuoi highlight — niente email, nome o
+              identificatore.
               <br><a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">anthropic.com/legal/privacy</a>
             </div>
           </div>
           <div class="row">
             <div class="label">Open-Meteo</div>
             <div class="value">
-              Weather for the widget. No account, no cookies.
+              Meteo per il widget. Senza account, senza cookie.
               <br><a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">open-meteo.com/en/terms</a>
             </div>
           </div>
           <div class="row">
             <div class="label">Amazon Kindle</div>
             <div class="value">
-              Optional highlight sync via your existing Amazon account in an in-app browser.
-              Your credentials are entered into Amazon's own page; we never see them.
+              Sync opzionale degli highlight tramite il tuo account Amazon
+              in un browser in-app. Le tue credenziali vengono inserite
+              nella pagina di Amazon stessa; noi non le vediamo mai.
               <br><a href="https://www.amazon.com/gp/help/customer/display.html?nodeId=468496" target="_blank" rel="noopener">amazon.com/privacy</a>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 4 ── Legal basis ───────────────────────────────────────── -->
+      <!-- 4 -->
       <section id="legal">
         <span class="num">04.</span>
-        <h2>Legal basis (GDPR Art. 6)</h2>
+        <h2>Base giuridica (GDPR art. 6)</h2>
         <p class="first-p">
-          We process your data on three separate grounds, never co-mingled.
+          Trattiamo i tuoi dati su tre basi distinte, mai sovrapposte.
         </p>
         <p>
-          <strong>Contract (Art. 6.1.b)</strong> — your email and your highlights are
-          necessary to provide the service you signed up for.
+          <strong>Contratto (art. 6.1.b)</strong> — la tua email e i tuoi
+          highlight sono necessari per fornirti il servizio per cui ti sei
+          iscritto.
         </p>
         <p>
-          <strong>Consent (Art. 6.1.a &amp; Art. 9.2.a)</strong> — health data is
-          processed only if you explicitly grant HealthKit permission on your device.
-          You can revoke this at any time in iOS Settings → Privacy &amp; Security → Health.
+          <strong>Consenso (art. 6.1.a e art. 9.2.a)</strong> — i dati
+          sanitari sono trattati solo se concedi esplicitamente il permesso
+          HealthKit sul dispositivo. Puoi revocarlo in qualunque momento da
+          Impostazioni iOS → Privacy e sicurezza → Salute.
         </p>
         <p>
-          <strong>Legitimate interest (Art. 6.1.f)</strong> — city-level weather via
-          Open-Meteo to provide contextual widget content, with no persistent
-          identifier attached.
+          <strong>Legittimo interesse (art. 6.1.f)</strong> — meteo a
+          livello città via Open-Meteo per arricchire il widget, senza
+          alcun identificatore persistente associato.
         </p>
       </section>
 
-      <!-- 5 ── Retention ─────────────────────────────────────────── -->
+      <!-- 5 -->
       <section id="retention">
         <span class="num">05.</span>
-        <h2>How long we keep it</h2>
+        <h2>Per quanto tempo li conserviamo</h2>
         <p class="first-p">
-          As long as your account exists, and not a day longer. When you
-          delete the account (Settings → Privacy &amp; Data → Delete account),
-          every row tied to you — highlights, profile, Jam activity, uploaded
-          images — is removed from the live database <strong>immediately</strong>.
+          Finché il tuo account esiste, e non un giorno di più. Quando elimini
+          l'account (Impostazioni → Privacy e dati → Elimina account), ogni
+          riga collegata a te — highlight, profilo, attività nelle Jam,
+          immagini caricate — viene rimossa dal database in
+          <strong>tempo reale</strong>.
         </p>
         <p>
-          Encrypted database backups held by our infrastructure provider
-          (Supabase) rotate out within <strong>30 days</strong>. After that
-          window, no copy of your data exists on our systems.
+          I backup criptati del database conservati dal nostro provider
+          infrastrutturale (Supabase) ruotano entro <strong>30 giorni</strong>.
+          Dopo quella finestra, nessuna copia dei tuoi dati esiste sui
+          nostri sistemi.
         </p>
         <p>
-          On-device data (the local Isar database) disappears the moment
-          you uninstall the app.
+          I dati sul dispositivo (database Isar locale) spariscono nel
+          momento in cui disinstalli l'app.
         </p>
-        <div class="scribble-fallback">— live data is gone in seconds; backups within 30 days.</div>
-        <div class="scribble lower">live data is gone in seconds; backups within 30 days.</div>
+        <div class="scribble-fallback">— i dati live spariscono in secondi; i backup entro 30 giorni.</div>
+        <div class="scribble lower">i dati live spariscono in secondi; i backup entro 30 giorni.</div>
       </section>
 
-      <!-- 6 ── Your rights ───────────────────────────────────────── -->
+      <!-- 6 -->
       <section id="rights">
         <span class="num">06.</span>
-        <h2>Your rights</h2>
+        <h2>I tuoi diritti</h2>
         <p class="first-p">
-          Six rights, each enforceable, each reachable from inside the app or by a
-          short email to us.
+          Sei diritti, ciascuno azionabile, ciascuno raggiungibile dall'app
+          o con una breve email a noi.
         </p>
         <div class="deflist">
           <div class="row">
-            <div class="label">Access</div>
-            <div class="value">Request a copy of all data we hold about you.</div>
+            <div class="label">Accesso</div>
+            <div class="value">Richiedi una copia di tutti i dati che abbiamo su di te.</div>
           </div>
           <div class="row">
-            <div class="label">Rectification</div>
-            <div class="value">Correct inaccurate personal data via Settings → Edit profile.</div>
+            <div class="label">Rettifica</div>
+            <div class="value">Correggi dati personali inesatti da Impostazioni → Modifica profilo.</div>
           </div>
           <div class="row">
-            <div class="label">Erasure</div>
+            <div class="label">Cancellazione</div>
             <div class="value">
-              Delete your account and all related data:
-              Settings → Privacy &amp; Data → Delete account.
+              Elimina l'account e tutti i dati correlati:
+              Impostazioni → Privacy e dati → Elimina account.
             </div>
           </div>
           <div class="row">
-            <div class="label">Portability</div>
-            <div class="value">Export every highlight as Markdown: Settings → Export.</div>
+            <div class="label">Portabilità</div>
+            <div class="value">Esporta ogni highlight in Markdown: Impostazioni → Esporta.</div>
           </div>
           <div class="row">
-            <div class="label">Objection</div>
-            <div class="value">Opt out of any processing based on legitimate interest, any time.</div>
+            <div class="label">Opposizione</div>
+            <div class="value">Disattiva qualunque trattamento basato sul legittimo interesse, in ogni momento.</div>
           </div>
           <div class="row">
-            <div class="label">Restriction</div>
-            <div class="value">Pause processing of your data while a dispute is pending.</div>
+            <div class="label">Limitazione</div>
+            <div class="value">Sospendi il trattamento dei tuoi dati mentre è in corso una contestazione.</div>
           </div>
         </div>
       </section>
 
-      <!-- 7 ── Children ──────────────────────────────────────────── -->
+      <!-- 7 -->
       <section id="children">
         <span class="num">07.</span>
-        <h2>Children</h2>
+        <h2>Minori</h2>
         <p class="first-p">
-          Marginalia is not directed at anyone under 13. We do not knowingly collect
-          personal data from children under that age. If you believe a child has
-          provided us with personal data, please write to us and we will delete it
-          immediately.
+          Marginalia non è rivolta a persone sotto i 13 anni. Non raccogliamo
+          consapevolmente dati personali di minori sotto questa età. Se ritieni
+          che un minore ci abbia fornito dati personali, scrivici e li
+          elimineremo immediatamente.
         </p>
       </section>
 
-      <!-- 8 ── Changes ───────────────────────────────────────────── -->
+      <!-- 8 -->
       <section id="changes">
         <span class="num">08.</span>
-        <h2>Changes to this policy</h2>
+        <h2>Modifiche a questa policy</h2>
         <p class="first-p">
-          If we make material changes, we will notify you inside the app before the
-          change takes effect. Continued use after notification constitutes acceptance
-          of the updated policy.
+          Se apportiamo modifiche sostanziali, ti avviseremo dentro all'app
+          prima che la modifica abbia effetto. L'uso continuato dopo la
+          notifica costituisce accettazione della nuova policy.
         </p>
       </section>
 
-      <!-- Contact -->
       <div class="contact">
-        <p>Questions, data requests, or complaints</p>
+        <p>Domande, richieste sui dati, reclami</p>
         <a href="mailto:vittoriopalpati811@gmail.com">vittoriopalpati811@gmail.com</a>
       </div>
 
@@ -871,8 +827,8 @@
   <footer>
     © 2026 Marginalia
     <a href="/">Home</a>
-    <a href="/terms/">Terms</a>
-    <a href="mailto:vittoriopalpati811@gmail.com">Contact</a>
+    <a href="/terms/">Termini</a>
+    <a href="mailto:vittoriopalpati811@gmail.com">Contatti</a>
   </footer>
 
 </body>
