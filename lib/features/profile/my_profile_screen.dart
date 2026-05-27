@@ -448,7 +448,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           ),
 
           // ── Bottom padding for nav bar ────────────────────────────────────
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ), // CustomScrollView
           ), // RefreshIndicator

@@ -18,7 +18,6 @@ import '../../core/services/onboarding_service.dart';
 import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
 import 'shared/social_auth_buttons.dart';
-import 'steps/phone_auth_sheet.dart';
 import 'steps/reading_goal_step.dart';
 import 'steps/currently_reading_step.dart';
 
@@ -889,22 +888,16 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
     }
   }
 
-  void _onApple() => _runSocial(
-        () => ref.read(supabaseServiceProvider).signInWithApple(),
-      );
-
   void _onGoogle() => _runSocial(
         () => ref.read(supabaseServiceProvider).signInWithGoogle(),
       );
 
-  Future<void> _onPhone() async {
-    final ok = await showPhoneAuthSheet(context);
-    // No further action needed — the auth state listener at the app root
-    // will pick up the new session and advance the user past onboarding.
-    if (ok != true && mounted) {
-      // user cancelled — leave them on this screen
-    }
-  }
+  // Apple sign-in awaits Apple Developer enrollment (required for App Store
+  // Rule 4.8 if you ship Google login). The wiring in SupabaseService is
+  // ready; only the UI button is hidden until then.
+  //
+  // Phone/SMS removed entirely — no Twilio dependency at launch. Will be
+  // reintroduced if/when an SMS provider becomes cost-effective.
 
   @override
   Widget build(BuildContext context) {
@@ -942,15 +935,11 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
 
           const SizedBox(height: 28),
 
-          // ── Social auth pills (staggered cascade) ────────────────────────
+          // ── Social auth (Google only for now) ────────────────────────────
           SocialAuthButtons(
             loading: _socialLoading,
-            appleLabel:  context.l10n.authContinueWithApple,
             googleLabel: context.l10n.authContinueWithGoogle,
-            phoneLabel:  context.l10n.authContinueWithPhone,
-            onApple:  _onApple,
             onGoogle: _onGoogle,
-            onPhone:  _onPhone,
           ),
 
           if (_socialError != null) ...[

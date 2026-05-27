@@ -367,7 +367,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
                 error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           );
         },

@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' show ImageFilter;
 
 import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
@@ -362,7 +360,9 @@ class _ScaffoldWithNav extends StatelessWidget {
         _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
 
     return Scaffold(
-      extendBody: true,
+      // Airbnb-clean: bottom nav is now a solid bar with a top hairline,
+      // not a floating pill — content does NOT extend behind it.
+      extendBody: false,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
         switchInCurve: Curves.easeOut,
@@ -490,323 +490,98 @@ class _LiquidGlassNavBarState extends State<_LiquidGlassNavBar>
     super.dispose();
   }
 
-  // Builds the glass pill content (icons + labels + decorative layers).
-  // Shared between web and native render paths.
-  Widget _buildNavStack({
-    required bool isDark,
-    required Color glassColor,
-    required Color activeColor,
-    required Color inactiveColor,
-    required Color indicatorColor,
-  }) {
-    return Stack(
-      children: [
-        // ── Glass body ───────────────────────────────────────────────
-        Container(
-          height: 66,
-          decoration: BoxDecoration(
-            color: glassColor,
-            borderRadius: BorderRadius.circular(38),
-            // Web: skip the soft 36px-blur shadow. iOS Safari can render
-            // high-blur box-shadows as a dark overlay that wraps the element.
-            // Native gets the full two-layer shadow.
-            boxShadow: kIsWeb
-                ? [
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withAlpha(60)
-                          : const Color(0xFF1C2A1C).withAlpha(18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withAlpha(110)
-                          : const Color(0xFF1C2A1C).withAlpha(32),
-                      blurRadius: 36,
-                      spreadRadius: -2,
-                      offset: const Offset(0, 12),
-                    ),
-                    BoxShadow(
-                      color: isDark
-                          ? Colors.black.withAlpha(55)
-                          : const Color(0xFF1C2A1C).withAlpha(12),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-          ),
-          child: Row(
-            children: List.generate(widget.tabs.length, (i) {
-              final active = i == widget.selectedIndex;
-              final tab = widget.tabs[i];
-              return Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => widget.onTap(i),
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottom = MediaQuery.of(context).padding.bottom;
+
+    // ── Airbnb-clean bottom nav ─────────────────────────────────────────
+    // Flat surface with a single hairline divider at the top, 5 evenly-
+    // spaced tab items below. No glass, no pill, no border ornamentation.
+    // Active state: filled icon + primary color + bold label. Inactive:
+    // outline icon + muted color + medium label.
+    final activeColor   = isDark ? Colors.white : MarginaliaColors.ink;
+    final inactiveColor = isDark
+        ? const Color(0xFF8E8E93)
+        : MarginaliaColors.inkMuted;
+    final surfaceColor  = isDark
+        ? const Color(0xFF1B1F1B)
+        : Colors.white;
+    final ruleColor     = isDark
+        ? Colors.white.withAlpha(20)
+        : MarginaliaColors.ruleFaint;
+
+    return AnimatedBuilder(
+      animation: _bounceAnim,
+      builder: (context, child) => Transform.scale(
+        scale: _bounceAnim.value,
+        alignment: Alignment.bottomCenter,
+        child: child,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          border: Border(top: BorderSide(color: ruleColor, width: 0.5)),
+        ),
+        padding: EdgeInsets.only(top: 6, bottom: bottom + 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(widget.tabs.length, (i) {
+            final active = i == widget.selectedIndex;
+            final tab    = widget.tabs[i];
+            return Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => widget.onTap(i),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeOutCubic,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: active
-                              ? indicatorColor
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(22),
-                          border: (i == 2)
-                              ? Border.all(
-                                  color: active
-                                      ? MarginaliaColors.primary
-                                      : MarginaliaColors.primary.withAlpha(100),
-                                  width: 1.8,
-                                )
-                              : null,
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        transitionBuilder: (child, anim) => ScaleTransition(
+                          scale: Tween<double>(begin: 0.82, end: 1.0).animate(
+                              CurvedAnimation(
+                                  parent: anim, curve: Curves.easeOutCubic)),
+                          child: FadeTransition(opacity: anim, child: child),
                         ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeInCubic,
-                          transitionBuilder: (child, anim) => ScaleTransition(
-                            scale: Tween<double>(begin: 0.80, end: 1.0).animate(
-                                CurvedAnimation(
-                                    parent: anim, curve: Curves.easeOutCubic)),
-                            child: FadeTransition(opacity: anim, child: child),
-                          ),
-                          child: Icon(
-                            active ? tab.activeIcon : tab.icon,
-                            key: ValueKey('${tab.path}_$active'),
-                            size: 22,
-                            color: active ? activeColor : inactiveColor,
-                          ),
+                        child: Icon(
+                          active ? tab.activeIcon : tab.icon,
+                          key: ValueKey('${tab.path}_$active'),
+                          size: 24,
+                          color: active ? activeColor : inactiveColor,
                         ),
                       ),
-                      const SizedBox(height: 1),
+                      const SizedBox(height: 4),
                       AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 180),
                         curve: Curves.easeOut,
                         style: GoogleFonts.manrope(
-                          fontSize: 9,
-                          fontWeight:
-                              active ? FontWeight.w700 : FontWeight.w500,
+                          fontSize: 10.5,
+                          fontWeight: active
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                           color: active ? activeColor : inactiveColor,
+                          letterSpacing: 0,
                         ),
                         child: Text(tab.label),
                       ),
                     ],
                   ),
                 ),
-              );
-            }),
-          ),
-        ),
-
-        // ── Layer 1: Outer border (bright top, dim bottom) ──────────
-        Positioned.fill(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: _GlassBorderPainter(isDark: isDark),
-            ),
-          ),
-        ),
-
-        // ── Layer 2: Top specular highlight ─────────────────────────
-        Positioned.fill(
-          child: IgnorePointer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.22, 0.50],
-                    colors: [
-                      Colors.white.withAlpha(isDark ? 32 : 55),
-                      Colors.white.withAlpha(isDark ? 8 : 16),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
               ),
-            ),
-          ),
+            );
+          }),
         ),
-
-        // ── Layer 3: Bottom depth darkening ─────────────────────────
-        Positioned.fill(
-          child: IgnorePointer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.55, 1.0],
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withAlpha(isDark ? 38 : 14),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // ── Layer 4: Centre-left internal shimmer ────────────────────
-        Positioned.fill(
-          child: IgnorePointer(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(-0.35, -0.9),
-                    radius: 0.55,
-                    colors: [
-                      Colors.white.withAlpha(isDark ? 18 : 30),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottom = MediaQuery.of(context).padding.bottom;
-
-    // Web: BackdropFilter (CSS backdrop-filter) blurs the ENTIRE page content
-    // in Flutter's HTML renderer — it applies to the full Flutter scene behind
-    // the element, not just the immediate background. Remove it on web and rely
-    // on a visually distinct glass color + specular border layers instead.
-    //
-    // Dark mode on web: FULLY OPAQUE color (no withAlpha) to rule out any
-    // iOS Safari compositing issue with semi-transparent containers.
-    // Color chosen to be clearly distinct from the #111411 background.
-    final glassColor = isDark
-        ? (kIsWeb
-            ? const Color(0xFF454D45) // fully opaque medium green-gray
-            : const Color(0xFF252C25).withAlpha(232)) // native: darker (blur provides lift)
-        : (kIsWeb
-            ? const Color(0xFFFAFAF8) // fully opaque near-white
-            : Colors.white.withAlpha(195));
-    final activeColor = MarginaliaColors.primary;
-    final inactiveColor = isDark
-        ? const Color(0xFF8E8E93)
-        : MarginaliaColors.inkFaint;
-    final indicatorColor = isDark
-        ? Colors.white.withAlpha(24)
-        : MarginaliaColors.primaryFaint;
-
-    final navStack = _buildNavStack(
-      isDark: isDark,
-      glassColor: glassColor,
-      activeColor: activeColor,
-      inactiveColor: inactiveColor,
-      indicatorColor: indicatorColor,
-    );
-
-    final bounceChild = kIsWeb
-        // ── Web: plain ClipRRect, no BackdropFilter ──────────────────────────
-        // Glass look comes from the semi-transparent glassColor + specular
-        // border layers in _buildNavStack. No blur — avoids blurring all
-        // page content which is what BackdropFilter does in HTML renderer.
-        ? ClipRRect(
-            borderRadius: BorderRadius.circular(38),
-            child: navStack,
-          )
-        // ── Native: ClipRRect → LayoutBuilder → matrix + blur ───────────────
-        // Full iOS 26-style liquid glass: 12% magnification + Gaussian blur.
-        : ClipRRect(
-            borderRadius: BorderRadius.circular(38),
-            child: LayoutBuilder(
-              builder: (context, pillConstraints) {
-                const s = 1.12;
-                final cx = pillConstraints.maxWidth / 2;
-                const cy = 33.0; // half of pill height 66
-                final matrix = Float64List(16)
-                  ..[0]  = s
-                  ..[5]  = s
-                  ..[10] = 1.0
-                  ..[15] = 1.0
-                  ..[12] = cx * (1 - s)
-                  ..[13] = cy * (1 - s);
-                return BackdropFilter(
-                  filter: ImageFilter.compose(
-                    inner: ImageFilter.matrix(matrix),
-                    outer: ImageFilter.blur(
-                        sigmaX: 22, sigmaY: 22, tileMode: TileMode.mirror),
-                  ),
-                  child: navStack,
-                );
-              },
-            ),
-          );
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 14),
-      child: AnimatedBuilder(
-        animation: _bounceAnim,
-        builder: (context, child) => Transform.scale(
-          scale: _bounceAnim.value,
-          alignment: Alignment.bottomCenter,
-          child: child,
-        ),
-        child: bounceChild,
       ),
     );
   }
 }
 
-// ─── Glass border painter (gradient: bright top arc → dim bottom arc) ─────────
-
-class _GlassBorderPainter extends CustomPainter {
-  const _GlassBorderPainter({required this.isDark});
-  final bool isDark;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const r = 38.0;
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0.5, 0.5, size.width - 1, size.height - 1),
-      const Radius.circular(r),
-    );
-
-    // Top-half: bright specular rim
-    final topPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        stops: const [0.0, 0.45, 0.55, 1.0],
-        colors: [
-          Colors.white.withAlpha(isDark ? 55 : 120),
-          Colors.white.withAlpha(isDark ? 30 : 70),
-          Colors.white.withAlpha(isDark ? 12 : 30),
-          Colors.white.withAlpha(isDark ? 6 : 12),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawRRect(rect, topPaint);
-  }
-
-  @override
-  bool shouldRepaint(_GlassBorderPainter old) => old.isDark != isDark;
-}
+// Old _GlassBorderPainter removed as part of the Airbnb-clean nav redesign.
 
 // ─── Localization config ──────────────────────────────────────────────────────
 

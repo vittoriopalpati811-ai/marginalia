@@ -127,35 +127,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
 
-            // ── "LA TUA LIBRERIA" header + filter chips ────────────────────
+            // ── Filter chips (Airbnb-clean: no section header here, the
+            //    screen-level hero title above already announces this) ──
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          context.l10n.libraryTitle.toUpperCase(),
-                          style: MarginaliaTextStyles.sectionTitle,
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Divider(
-                            color: MarginaliaColors.ruleFaint,
-                            height: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    _FilterChips(
-                      selected: filter,
-                      onSelect: (f) =>
-                          ref.read(_libraryFilterProvider.notifier).state = f,
-                    ),
-                  ],
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                child: _FilterChips(
+                  selected: filter,
+                  onSelect: (f) =>
+                      ref.read(_libraryFilterProvider.notifier).state = f,
                 ),
               ),
             ),
@@ -259,7 +239,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
 
             // ── Bottom padding for nav bar ─────────────────────────────────
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            // Bottom safety padding (nav bar is now solid, not floating)
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
       ),
@@ -498,28 +479,30 @@ class _EditorialHeader extends StatelessWidget {
         ? greetingBase
         : '$greetingBase, $trimmed${h < 6 ? '?' : ''}';
 
+    // Airbnb-clean header: small caption above + huge bold title below.
+    // The greeting is the eyebrow ("Buongiorno, Vittorio"), the title is
+    // the screen subject ("La tua libreria"). No divider — whitespace
+    // does the separating instead.
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, top + 14, 16, 0),
+      padding: EdgeInsets.fromLTRB(24, top + 20, 12, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Eyebrow / greeting
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
-                  'Marginalia',
-                  style: MarginaliaTextStyles.bookTitleLarge.copyWith(
-                    fontSize: 30,
-                    color: MarginaliaColors.primary,
-                    letterSpacing: -0.8,
-                    fontWeight: FontWeight.w600,
+                  greeting,
+                  style: MarginaliaTextStyles.subtitle.copyWith(
+                    fontSize: 13,
+                    color: MarginaliaColors.inkMuted,
                   ),
                 ),
               ),
               if (isImporting)
                 const Padding(
-                  padding: EdgeInsets.only(top: 4, right: 8),
+                  padding: EdgeInsets.only(right: 12),
                   child: SizedBox(
                     width: 16,
                     height: 16,
@@ -533,9 +516,10 @@ class _EditorialHeader extends StatelessWidget {
                 GestureDetector(
                   onLongPress: onForceReimport,
                   child: IconButton(
-                    icon: const Icon(Icons.upload_file_outlined),
-                    color: MarginaliaColors.inkFaint,
-                    iconSize: 20,
+                    icon: const Icon(Icons.add_rounded),
+                    color: MarginaliaColors.ink,
+                    iconSize: 24,
+                    splashRadius: 22,
                     tooltip:
                         'Import · Long press to reimport from scratch',
                     onPressed: onImport,
@@ -543,17 +527,13 @@ class _EditorialHeader extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
+
+          // Hero title — Airbnb-spec 28pt bold
           Text(
-            greeting,
-            style: MarginaliaTextStyles.label.copyWith(
-              color: MarginaliaColors.inkFaint,
-              letterSpacing: 0.2,
-              fontSize: 12,
-            ),
+            context.l10n.libraryTitle,
+            style: MarginaliaTextStyles.heroTitle,
           ),
-          const SizedBox(height: 16),
-          Container(height: 0.8, color: MarginaliaColors.ruleFaint),
         ],
       ),
     );
@@ -573,73 +553,71 @@ class _DailyCard extends StatelessWidget {
     final text =
         content.length > 260 ? '${content.substring(0, 260)}…' : content;
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(context.l10n.libraryPickedForYou,
-                    style: MarginaliaTextStyles.sectionTitle),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
-                ),
-              ],
+    // Airbnb-clean daily card: section eyebrow over a quiet-card with
+    // a generous quote area. No dividers — whitespace and shadow only.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section eyebrow (small caps, light)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 10),
+            child: Text(
+              context.l10n.libraryPickedForYou,
+              style: MarginaliaTextStyles.sectionTitle,
             ),
-            const SizedBox(height: 12),
-            Container(height: 0.8, color: MarginaliaColors.rule),
-            const SizedBox(height: 20),
-            Text(
-              '"',
-              style: MarginaliaTextStyles.quoteDecor.copyWith(
-                fontSize: 64,
-                height: 0.5,
-                color: MarginaliaColors.siennaFaint,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              text,
-              style: MarginaliaTextStyles.highlightBody.copyWith(
-                fontSize: 19,
-                height: 1.82,
-                color: MarginaliaColors.ink,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                      height: 0.8,
-                      color: MarginaliaColors.ruleFaint),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  context.l10n.libraryRead,
-                  style: MarginaliaTextStyles.label.copyWith(
-                    color: MarginaliaColors.sienna,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
+          ),
+          PressableSpring(
+            onPressed: onTap,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+              decoration: MarginaliaDecorations.quietCard(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '"',
+                    style: MarginaliaTextStyles.quoteDecor.copyWith(
+                      fontSize: 56,
+                      height: 0.5,
+                      color: MarginaliaColors.siennaFaint,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 10,
-                  color: MarginaliaColors.sienna,
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    text,
+                    style: MarginaliaTextStyles.highlightBody.copyWith(
+                      fontSize: 18,
+                      height: 1.65,
+                      color: MarginaliaColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        context.l10n.libraryRead,
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: MarginaliaColors.sienna,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: MarginaliaColors.sienna,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 28),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -662,16 +640,10 @@ class _RecentHighlightsStrip extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-          child: Row(
-            children: [
-              Text(context.l10n.libraryRecent, style: MarginaliaTextStyles.sectionTitle),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Divider(
-                    color: MarginaliaColors.ruleFaint, height: 1),
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(24, 28, 20, 12),
+          child: Text(
+            context.l10n.libraryRecent,
+            style: MarginaliaTextStyles.sectionTitle,
           ),
         ),
         SizedBox(
@@ -688,19 +660,7 @@ class _RecentHighlightsStrip extends StatelessWidget {
                 child: Container(
                   width: 240,
                   margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    color: MarginaliaColors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: MarginaliaColors.rule),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x0C261E1D),
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
+                  decoration: MarginaliaDecorations.quietCard(radius: 16),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: Stack(
@@ -892,18 +852,7 @@ class _BookGridCard extends StatelessWidget {
     final card = PressableSpring(
       onPressed: onTap,
       child: Container(
-        decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarginaliaColors.rule),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x10261E1D),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
+        decoration: MarginaliaDecorations.quietCard(radius: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

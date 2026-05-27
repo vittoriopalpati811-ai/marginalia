@@ -141,7 +141,7 @@ class FeedTab extends ConsumerWidget {
           ),
 
           // ── Bottom padding (above nav bar) ───────────────────────────────
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );

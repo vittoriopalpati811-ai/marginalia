@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ─── Palette ─────────────────────────────────────────────────────────────────
+// ─── Palette — Airbnb-clean (refined 2026-05-27) ───────────────────────────
 //
-// Marginalia — Airbnb-inspired redesign, matcha green accent.
-//
-// Neutrals tinted toward matcha green (hue ~140°) at very low chroma (≈0.006)
-// so the page "breathes" green without announcing it.
-// Cards: pure white on the tinted background — classic Airbnb lift.
-// Primary stays #3A6624 (deep matcha), unchanged from the original.
+// Design intent:
+//   • Background: warm off-white, barely tinted green — gives the page a
+//     calm, "paper" feel without announcing brand color.
+//   • Surfaces: pure white cards with NO border — depth comes from a single
+//     subtle shadow (Airbnb's signature lift).
+//   • Type ink: graphite, never pure black, tinted slightly green.
+//   • Accent: deep matcha for primary CTAs (the green is the brand promise).
 
 class MarginaliaColors {
-  // Backgrounds
-  static const background      = Color(0xFFF8FAF8); // near-white, subtly green
+  // Backgrounds — warm, paper-like
+  static const background      = Color(0xFFFAFAF7); // warm off-white, "paper"
   static const surface         = Color(0xFFFFFFFF); // pure white cards
-  static const surfaceElevated = Color(0xFFF1F5F1); // recessed, input fills
+  static const surfaceElevated = Color(0xFFF2F2EF); // recessed inputs, chip bg
 
-  // Text — Airbnb-style dark (#1C221C ≈ #222 tinted green)
-  static const ink      = Color(0xFF1C221C);
-  static const inkMuted = Color(0xFF6B7268); // #717171 tinted green
-  static const inkFaint = Color(0xFF9BA598); // light secondary
+  // Text hierarchy — graphite tinted green, never pure black
+  static const ink      = Color(0xFF1B1F1B); // hero text
+  static const inkMuted = Color(0xFF6F756E); // body / secondary (Airbnb-spec #717171 tinted green)
+  static const inkFaint = Color(0xFFB0B5AE); // tertiary / hints
 
-  // Matcha accent (keep)
+  // Matcha accent — the brand color
   static const sienna      = Color(0xFF4A7A35);
   static const siennaLight = Color(0xFF6A9E52);
   static const siennaFaint = Color(0xFFE4EFD9);
@@ -31,9 +32,9 @@ class MarginaliaColors {
   static const primaryDark  = Color(0xFF254D16);
   static const primaryFaint = Color(0xFFE8F3E1);
 
-  // Borders — Airbnb's #DDDDDD tinted green
-  static const rule      = Color(0xFFE1E5E0);
-  static const ruleFaint = Color(0xFFECEFEB);
+  // Borders / rules — used SPARINGLY. Airbnb avoids borders; prefer shadow.
+  static const rule      = Color(0xFFE6E6E1);
+  static const ruleFaint = Color(0xFFEFEFEC);
 
   // Kindle highlight tints (unchanged)
   static const highlightAmber     = Color(0xFFFFF3C4);
@@ -147,6 +148,50 @@ class MarginaliaTextStyles {
         letterSpacing: 1.0,
       );
 
+  // ── Airbnb-clean hierarchy ──────────────────────────────────────────────
+  //
+  // Use these for new layouts. The contrast steps follow Airbnb's
+  // scale: hero (28-32) → section (20-22) → body (14-15) → label (11-12).
+
+  /// Screen-level hero title. e.g. "Your library", "Reading stats".
+  /// Bold sans, tight tracking, almost-black ink. NO subtitle below this
+  /// without 4-8px of breathing room.
+  static TextStyle get heroTitle => GoogleFonts.manrope(
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        color: MarginaliaColors.ink,
+        letterSpacing: -0.6,
+        height: 1.15,
+      );
+
+  /// Section title within a screen. e.g. "Picked for you", "Recent".
+  /// Bold sans, dark, tighter than hero.
+  static TextStyle get sectionTitleClean => GoogleFonts.manrope(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+        color: MarginaliaColors.ink,
+        letterSpacing: -0.3,
+        height: 1.25,
+      );
+
+  /// Subtitle / supporting text under a hero or section title.
+  static TextStyle get subtitle => GoogleFonts.manrope(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: MarginaliaColors.inkMuted,
+        letterSpacing: 0,
+        height: 1.45,
+      );
+
+  /// Body copy — default reading size, used for most paragraphs.
+  static TextStyle get body => GoogleFonts.manrope(
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+        color: MarginaliaColors.ink,
+        letterSpacing: -0.1,
+        height: 1.45,
+      );
+
   // ── Wordmark ─────────────────────────────────────────────────────────────
 
   static TextStyle get wordmark => GoogleFonts.manrope(
@@ -202,6 +247,22 @@ class MarginaliaDecorations {
             blurRadius: 20,
             spreadRadius: 0,
             offset: Offset(0, 6),
+          ),
+        ],
+      );
+
+  /// Quiet card — even lower elevation, used for inline list items where
+  /// you want gentle separation without competing with the screen content.
+  /// Single very-soft shadow, no border, 14px radius default.
+  static BoxDecoration quietCard({Color? color, double radius = 14}) => BoxDecoration(
+        color: color ?? MarginaliaColors.surface,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000), // ~3% opacity
+            blurRadius: 14,
+            spreadRadius: 0,
+            offset: Offset(0, 2),
           ),
         ],
       );

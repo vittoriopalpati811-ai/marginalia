@@ -1,10 +1,8 @@
 // ─── Social auth buttons (shared) ──────────────────────────────────────────
 //
-// Three full-width pill buttons (Apple / Google / Phone) used at the top of
-// the auth step. Visual style follows Apple's "Sign in with Apple"
-// Human Interface Guidelines: black pill, white SF Pro–ish label, brand mark
-// on the left. Google uses the white-background variant per their brand
-// guide. Phone uses the Marginalia matcha primary.
+// Currently only Google. Apple and Phone are temporarily disabled —
+// Apple awaits Apple Developer enrollment, Phone removed entirely to
+// avoid SMS provider costs at launch.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,69 +13,29 @@ import '../../../core/theme.dart';
 class SocialAuthButtons extends StatelessWidget {
   const SocialAuthButtons({
     super.key,
-    required this.onApple,
     required this.onGoogle,
-    required this.onPhone,
-    required this.appleLabel,
     required this.googleLabel,
-    required this.phoneLabel,
     this.loading = false,
   });
 
-  final VoidCallback onApple;
   final VoidCallback onGoogle;
-  final VoidCallback onPhone;
-  final String       appleLabel;
   final String       googleLabel;
-  final String       phoneLabel;
   final bool         loading;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 1. Apple — black pill, white text + apple mark
-        StaggeredListItem(
-          index: 0,
-          child: _AuthPill(
-            onPressed: loading ? null : onApple,
-            background: Colors.black,
-            foreground: Colors.white,
-            iconBuilder: () => const _AppleMark(),
-            label: appleLabel,
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // 2. Google — white pill with subtle border, brand mark
-        StaggeredListItem(
-          index: 1,
-          child: _AuthPill(
-            onPressed: loading ? null : onGoogle,
-            background: Colors.white,
-            foreground: const Color(0xFF1F1F1F),
-            border: MarginaliaColors.rule,
-            iconBuilder: () => const _GoogleMark(),
-            label: googleLabel,
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // 3. Phone — matcha primary pill
-        StaggeredListItem(
-          index: 2,
-          child: _AuthPill(
-            onPressed: loading ? null : onPhone,
-            background: MarginaliaColors.primary,
-            foreground: Colors.white,
-            iconBuilder: () => const Icon(
-              Icons.phone_iphone_rounded,
-              size: 19, color: Colors.white,
-            ),
-            label: phoneLabel,
-          ),
-        ),
-      ],
+    // Single Google pill — white-background per Google's brand guide,
+    // with the multicolor G mark on the leading edge.
+    return StaggeredListItem(
+      index: 0,
+      child: _AuthPill(
+        onPressed: loading ? null : onGoogle,
+        background: Colors.white,
+        foreground: const Color(0xFF1F1F1F),
+        border: MarginaliaColors.rule,
+        iconBuilder: () => const _GoogleMark(),
+        label: googleLabel,
+      ),
     );
   }
 }
@@ -142,15 +100,6 @@ class _AuthPill extends StatelessWidget {
 }
 
 // ─── Brand marks (inline SVG-equivalent via shapes) ─────────────────────────
-
-class _AppleMark extends StatelessWidget {
-  const _AppleMark();
-  @override
-  Widget build(BuildContext context) {
-    // Use the system glyph; iOS renders the proper Apple logo for it.
-    return const Icon(Icons.apple, size: 20, color: Colors.white);
-  }
-}
 
 class _GoogleMark extends StatelessWidget {
   const _GoogleMark();
