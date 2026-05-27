@@ -330,6 +330,17 @@
 
   "statsTitle": "Reading stats",
   "profileDetailedStats": "Reading stats",
+  "profileReadingSection": "Your reading",
+  "profileSeeAll": "See all",
+  "profileReadingEmpty": "Start logging sessions to see your progress.",
+  "profileStatsBooks": "Books",
+  "profileStatsStreak": "Day streak",
+  "profileStatsThisMonth": "This month",
+  "profileStatsGoalReached": "Goal reached",
+  "profileStatsGoalRemaining": "{count} to go",
+  "@profileStatsGoalRemaining": {
+    "placeholders": {"count": {"type": "int"}}
+  },
   "accountDeleted": "Deleted account",
   "statsGoalSection": "{year} GOAL",
   "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },

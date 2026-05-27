@@ -854,6 +854,25 @@
   "profileDetailedStats": "Statistiche di lettura",
   "@profileDetailedStats": {},
 
+  "profileReadingSection": "La tua lettura",
+  "@profileReadingSection": {},
+  "profileSeeAll": "Vedi tutto",
+  "@profileSeeAll": {},
+  "profileReadingEmpty": "Inizia a registrare le tue sessioni per vedere i progressi.",
+  "@profileReadingEmpty": {},
+  "profileStatsBooks": "Libri",
+  "@profileStatsBooks": {},
+  "profileStatsStreak": "Giorni di fila",
+  "@profileStatsStreak": {},
+  "profileStatsThisMonth": "Questo mese",
+  "@profileStatsThisMonth": {},
+  "profileStatsGoalReached": "Obiettivo raggiunto",
+  "@profileStatsGoalReached": {},
+  "profileStatsGoalRemaining": "{count} ancora",
+  "@profileStatsGoalRemaining": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+
   "accountDeleted": "Account eliminato",
   "@accountDeleted": {"description": "Tombstone label shown in chats when a participant has deleted their account"},
 
