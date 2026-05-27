@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import 'feed_tab.dart'; // FeedTab, CreatePostSheet, postsProvider, feedProvider
 
 class HomeTab extends ConsumerWidget {
@@ -68,7 +69,7 @@ class _HomeHeader extends StatelessWidget {
                   Text('Marginalia', style: MarginaliaTextStyles.wordmarkLight),
                   const SizedBox(height: 4),
                   Text(
-                    'Il tuo feed di lettura',
+                    context.l10n.homeFeedSubtitle,
                     style: GoogleFonts.manrope(
                       color: const Color(0xFFF1EEE7).withAlpha(140),
                       fontSize: 12,
@@ -92,15 +93,15 @@ class _HomeHeader extends StatelessWidget {
                     color: const Color(0xFFF1EEE7).withAlpha(50),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.edit_outlined,
+                    const Icon(Icons.edit_outlined,
                         size: 15, color: Color(0xFFF1EEE7)),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
-                      'Scrivi',
-                      style: TextStyle(
+                      context.l10n.commonScrivi,
+                      style: const TextStyle(
                         color: Color(0xFFF1EEE7),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

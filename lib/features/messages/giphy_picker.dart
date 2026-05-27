@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 // ─── Tenor v1 — public key, no registration required ─────────────────────────
 //
@@ -261,7 +262,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                           onPressed: _hasSearched
                               ? () => _search(_searchController.text)
                               : _fetchTrending,
-                          child: const Text('Riprova'),
+                          child: Text(context.l10n.retry),
                         ),
                       ],
                     ),

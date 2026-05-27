@@ -476,20 +476,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Show a loading snackbar while preparing the export
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              SizedBox(
+              const SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.white),
               ),
-              SizedBox(width: 12),
-              Text('Preparing file…'),
+              const SizedBox(width: 12),
+              Text(context.l10n.settingsPreparingFile),
             ],
           ),
-          duration: Duration(seconds: 5),
+          duration: const Duration(seconds: 5),
         ),
       );
     }
@@ -605,23 +605,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete account?',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text(
-          'This will permanently delete your account, all your highlights, '
-          'books, and Jam memberships. This action cannot be undone.',
-          style: TextStyle(height: 1.5),
+        title: Text(context.l10n.settingsDeleteAccountTitle,
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(
+          context.l10n.settingsDeleteAccountBody,
+          style: const TextStyle(height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFB54848)),
-            child: const Text('Delete permanently'),
+            child: Text(context.l10n.settingsDeleteAccountConfirm),
           ),
         ],
       ),
@@ -637,7 +636,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting account: $e')),
+          SnackBar(content: Text(context.l10n.settingsDeleteAccountError(e.toString()))),
         );
       }
     }
@@ -683,24 +682,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Edit profile',
-                style: TextStyle(
+            Text(context.l10n.settingsEditProfileTitle,
+                style: const TextStyle(
                     fontSize: 18, fontWeight: FontWeight.w700,
                     letterSpacing: -0.4)),
             const SizedBox(height: 20),
             TextField(
               controller: nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Display name',
-                prefixIcon: Icon(Icons.person_outline),
-                labelText: 'Name',
+              decoration: InputDecoration(
+                hintText: context.l10n.editProfileDisplayName,
+                prefixIcon: const Icon(Icons.person_outline),
+                labelText: context.l10n.editProfileName,
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'CURRENTLY READING',
-              style: TextStyle(
+            Text(
+              context.l10n.editProfileCurrentlyReadingLabel,
+              style: const TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
                 color: MarginaliaColors.inkMuted,
@@ -711,18 +710,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             TextField(
               controller: titleController,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Book title',
-                prefixIcon: Icon(Icons.menu_book_outlined),
+              decoration: InputDecoration(
+                hintText: context.l10n.editProfileBookTitleHint,
+                prefixIcon: const Icon(Icons.menu_book_outlined),
               ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: authorController,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Author (optional)',
-                prefixIcon: Icon(Icons.person_outline),
+              decoration: InputDecoration(
+                hintText: context.l10n.editProfileAuthorHint,
+                prefixIcon: const Icon(Icons.person_outline),
               ),
             ),
             const SizedBox(height: 20),
@@ -747,12 +746,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   } catch (e) {
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(content: Text('Error: $e')));
+                          SnackBar(content: Text(context.l10n.feedErrorPrefix(e.toString()))));
                     }
                   }
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
-                child: const Text('Save'),
+                child: Text(context.l10n.save),
               ),
             ),
           ],
@@ -794,7 +793,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.edit_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Edit profile'),
+              title: Text(context.l10n.profileEditProfile),
               onTap: () {
                 Navigator.pop(ctx);
                 _showEditProfileSheet(context, ref, profile);
@@ -803,7 +802,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.sync_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Sync with Kindle'),
+              title: Text(context.l10n.settingsSyncWithKindle),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/sync/kindle');
@@ -812,7 +811,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.upload_file_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Import My Clippings.txt'),
+              title: Text(context.l10n.settingsImportClippings),
               onTap: () {
                 Navigator.pop(ctx);
                 context.go('/');
@@ -821,7 +820,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.privacy_tip_outlined,
                   color: MarginaliaColors.primary),
-              title: const Text('Privacy Policy'),
+              title: Text(context.l10n.settingsPrivacyPolicy),
               trailing: const Icon(Icons.open_in_new,
                   size: 14, color: MarginaliaColors.inkFaint),
               onTap: () async {
@@ -835,8 +834,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.logout_outlined,
                   color: Color(0xFFB54848)),
-              title: const Text('Sign out',
-                  style: TextStyle(color: Color(0xFFB54848))),
+              title: Text(context.l10n.settingsSignOut,
+                  style: const TextStyle(color: Color(0xFFB54848))),
               onTap: () async {
                 Navigator.pop(ctx);
                 await ref.read(supabaseServiceProvider).signOut();

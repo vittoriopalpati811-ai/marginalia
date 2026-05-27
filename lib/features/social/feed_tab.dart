@@ -501,13 +501,13 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: MarginaliaColors.rule),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.image_outlined, size: 16,
+                      const Icon(Icons.image_outlined, size: 16,
                           color: MarginaliaColors.inkMuted),
-                      SizedBox(width: 6),
-                      Text('Foto', style: TextStyle(
+                      const SizedBox(width: 6),
+                      Text(context.l10n.feedPhoto, style: const TextStyle(
                         fontSize: 12,
                         color: MarginaliaColors.inkMuted,
                         fontWeight: FontWeight.w500,
@@ -753,9 +753,9 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
       onLongPressCancel:    _onHoldEnd,
       onTap: widget.enabled
           ? () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tieni premuto per pubblicare'),
-                  duration: Duration(seconds: 1),
+                SnackBar(
+                  content: Text(context.l10n.feedHoldToPublishToast),
+                  duration: const Duration(seconds: 1),
                 ),
               )
           : null,
@@ -969,7 +969,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
           ),
           _MenuAction(
             icon: Icons.delete_outline,
-            label: 'Delete post',
+            label: context.l10n.feedDeletePost,
             color: const Color(0xFFDC2626),
             onTap: () async {
               Navigator.pop(ctx);
@@ -978,17 +978,17 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 context: context,
                 builder: (_) => AlertDialog(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Delete post'),
-                  content: const Text('Are you sure you want to delete this post? This action cannot be undone.'),
+                  title: Text(context.l10n.feedDeleteConfirmTitle),
+                  content: Text(context.l10n.feedDeleteConfirmBody),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
+                      child: Text(context.l10n.cancel),
                     ),
                     FilledButton(
                       style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Delete'),
+                      child: Text(context.l10n.feedDeleteAction),
                     ),
                   ],
                 ),
@@ -1003,7 +1003,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text('Error: $e')));
+                        .showSnackBar(SnackBar(content: Text(context.l10n.feedErrorPrefix(e.toString()))));
                   }
                 }
               }
@@ -1023,20 +1023,20 @@ class _PostCardState extends ConsumerState<_PostCard> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Edit post'),
+          title: Text(context.l10n.feedEdit),
           content: TextField(
             controller: ctrl,
             maxLines: 6,
             maxLength: 1000,
-            decoration: const InputDecoration(
-              hintText: 'Write something…',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: context.l10n.feedWritePost,
+              border: const OutlineInputBorder(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               onPressed: saving
@@ -1053,7 +1053,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                         setS(() => saving = false);
                         if (ctx.mounted) {
                           ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(content: Text('Error: $e')));
+                              .showSnackBar(SnackBar(content: Text(context.l10n.feedErrorPrefix(e.toString()))));
                         }
                       }
                     },
@@ -1062,7 +1062,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       width: 16, height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Save'),
+                  : Text(context.l10n.feedSaveAction),
             ),
           ],
         ),

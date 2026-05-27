@@ -701,6 +701,81 @@
   "libraryFilterFavorites": "Preferiti",
   "@libraryFilterFavorites": {},
 
+  "feedPhoto": "Foto",
+  "@feedPhoto": {},
+
+  "feedHoldToPublishToast": "Tieni premuto per pubblicare",
+  "@feedHoldToPublishToast": {},
+
+  "feedDeleteAction": "Elimina",
+  "@feedDeleteAction": {},
+
+  "feedEditAction": "Modifica",
+  "@feedEditAction": {},
+
+  "feedSaveAction": "Salva",
+  "@feedSaveAction": {},
+
+  "feedErrorPrefix": "Errore: {message}",
+  "@feedErrorPrefix": { "placeholders": { "message": { "type": "String" } } },
+
+  "settingsDeleteAccountTitle": "Eliminare l'account?",
+  "@settingsDeleteAccountTitle": {},
+
+  "settingsDeleteAccountBody": "Eliminerai definitivamente il tuo account, tutti i tuoi highlight, i libri e le iscrizioni alle Jam. Questa azione è irreversibile.",
+  "@settingsDeleteAccountBody": {},
+
+  "settingsDeleteAccountConfirm": "Elimina definitivamente",
+  "@settingsDeleteAccountConfirm": {},
+
+  "settingsDeleteAccountError": "Errore eliminazione account: {message}",
+  "@settingsDeleteAccountError": { "placeholders": { "message": { "type": "String" } } },
+
+  "settingsPreparingFile": "Preparazione file…",
+  "@settingsPreparingFile": {},
+
+  "settingsEditProfileTitle": "Modifica profilo",
+  "@settingsEditProfileTitle": {},
+
+  "settingsSyncWithKindle": "Sincronizza con Kindle",
+  "@settingsSyncWithKindle": {},
+
+  "settingsImportClippings": "Importa My Clippings.txt",
+  "@settingsImportClippings": {},
+
+  "settingsPrivacyPolicy": "Informativa Privacy",
+  "@settingsPrivacyPolicy": {},
+
+  "settingsResetOnboarding": "Reset onboarding (debug)",
+  "@settingsResetOnboarding": {},
+
+  "editProfileDisplayName": "Nome visibile",
+  "@editProfileDisplayName": {},
+
+  "editProfileName": "Nome",
+  "@editProfileName": {},
+
+  "editProfileCurrentlyReadingLabel": "IN LETTURA",
+  "@editProfileCurrentlyReadingLabel": {},
+
+  "editProfileBookTitleHint": "Titolo libro",
+  "@editProfileBookTitleHint": {},
+
+  "editProfileAuthorHint": "Autore (opzionale)",
+  "@editProfileAuthorHint": {},
+
+  "commonRetry": "Riprova",
+  "@commonRetry": {},
+
+  "commonProfile": "Profilo",
+  "@commonProfile": {},
+
+  "commonScrivi": "Scrivi",
+  "@commonScrivi": {},
+
+  "homeFeedSubtitle": "Il tuo feed di lettura",
+  "@homeFeedSubtitle": {},
+
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
 

@@ -106,7 +106,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                       TextButton(
                         onPressed: () => ref.invalidate(conversationsProvider),
                         child: Text(
-                          'Riprova',
+                          context.l10n.retry,
                           style: GoogleFonts.manrope(
                             color: MarginaliaColors.primary,
                             fontWeight: FontWeight.w600,

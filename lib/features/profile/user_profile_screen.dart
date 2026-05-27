@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import 'profile_shared_widgets.dart';
 
@@ -393,13 +394,13 @@ class _StatsRow extends StatelessWidget {
       decoration: MarginaliaDecorations.card(),
       child: Row(
         children: [
-          _StatBox(label: 'Highlight', value: stats['highlights'] ?? 0),
+          _StatBox(label: context.l10n.profileHighlightsStat, value: stats['highlights'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Condivisi', value: stats['shared'] ?? 0),
+          _StatBox(label: context.l10n.profileSharedStat, value: stats['shared'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Following', value: stats['following'] ?? 0),
+          _StatBox(label: context.l10n.profileFollowing, value: stats['following'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Followers', value: stats['followers'] ?? 0),
+          _StatBox(label: context.l10n.profileFollowers, value: stats['followers'] ?? 0),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0, duration: 350.ms);
