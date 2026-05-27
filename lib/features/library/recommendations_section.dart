@@ -34,7 +34,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
-import '../../core/models/highlight.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';

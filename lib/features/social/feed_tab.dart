@@ -961,38 +961,6 @@ class _HoldCircleOverlay extends StatelessWidget {
   }
 }
 
-// ─── [LEGACY — kept for reference, no longer used] ────────────────────────────
-class _RingPainter extends CustomPainter {
-  const _RingPainter({required this.progress, required this.color});
-  final double progress;
-  final Color  color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width  / 2;
-    final cy = size.height / 2;
-    final r  = (size.shortestSide / 2) - 3;
-    canvas.drawCircle(
-      Offset(cx, cy), r,
-      Paint()..color = color.withAlpha(40)..style = PaintingStyle.stroke..strokeWidth = 3,
-    );
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      -1.5707963, // -π/2 = 12 o'clock
-      progress * 6.2831853, // full circle = 2π
-      false,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
-}
-
 // ─── Instagram-style post card ────────────────────────────────────────────────
 
 class _PostCard extends ConsumerStatefulWidget {

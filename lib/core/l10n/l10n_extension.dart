@@ -9,5 +9,5 @@ import 'package:marginalia/generated/app_localizations.dart';
 //   flutter pub get && flutter gen-l10n
 
 extension AppLocalizationsX on BuildContext {
-  AppLocalizations get l10n => AppLocalizations.of(this)!;
+  AppLocalizations get l10n => AppLocalizations.of(this);
 }

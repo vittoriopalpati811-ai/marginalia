@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
-import '../models/jam.dart';
 
 // Thin wrapper around Supabase client. Encapsulates table names and RLS
 // assumptions so screens don't need to know the schema.

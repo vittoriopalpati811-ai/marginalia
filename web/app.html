@@ -15,14 +15,28 @@
   <link rel="icon" href="favicon.png">
   <title>Marginalia</title>
   <style>
-    html { height: -webkit-fill-available; }
-    body {
-      margin: 0; padding: 0;
-      width: 100%; height: 100%;
+    /* The triple stack (height fixed + dvh + -webkit-fill-available) covers
+       every Safari quirk: dvh handles the dynamic URL-bar resize, the
+       webkit fallback handles iOS < 16, and the explicit height ensures
+       Flutter's MediaQuery reports the FULL visible viewport (not the
+       shorter "with URL bar" value), so the Scaffold sizes correctly and
+       the bottom nav bar stays anchored to the actual bottom edge. */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100vh;        /* fallback for very old browsers */
+      height: 100dvh;       /* dynamic viewport height — adjusts as URL bar collapses */
       min-height: -webkit-fill-available;
       overflow: hidden;
       background-color: #F9F8F5;
       font-family: -apple-system, sans-serif;
+    }
+    /* Flutter mounts its render surface here — same height rules. */
+    flutter-view, flt-glass-pane {
+      width: 100% !important;
+      height: 100dvh !important;
+      min-height: -webkit-fill-available;
     }
     #loading {
       position: fixed; inset: 0;
