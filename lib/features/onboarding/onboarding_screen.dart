@@ -15,7 +15,10 @@ import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
+import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
+import 'shared/social_auth_buttons.dart';
+import 'steps/phone_auth_sheet.dart';
 import 'steps/reading_goal_step.dart';
 import 'steps/currently_reading_step.dart';
 
@@ -722,109 +725,126 @@ class _WelcomeStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Airbnb-style staggered entrance: logo → wordmark → subtitle → CTA → login
+    // link, each ~50 ms apart with deep easeOutQuart fade + slight slideY.
+    // Press feedback via PressableSpring on the primary CTA.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Logo icon
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: MarginaliaColors.primaryFaint,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: MarginaliaColors.primary.withAlpha(40),
-                width: 1.5,
+          StaggeredListItem(
+            index: 0,
+            duration: AirbnbMotion.longForm,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: MarginaliaColors.primaryFaint,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: MarginaliaColors.primary.withAlpha(40),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.auto_stories,
+                size: 48,
+                color: MarginaliaColors.primary,
               ),
             ),
-            child: const Icon(
-              Icons.auto_stories,
-              size: 48,
-              color: MarginaliaColors.primary,
-            ),
-          )
-              .animate()
-              .fadeIn(duration: 500.ms, curve: Curves.easeOut)
-              .scale(begin: const Offset(0.85, 0.85), end: const Offset(1, 1), duration: 500.ms),
+          ),
 
           const SizedBox(height: 28),
 
-          // Title
-          Text(
-            'Marginalia',
-            style: GoogleFonts.ebGaramond(
-              fontSize: 48,
-              fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
-              letterSpacing: -1.0,
-              height: 1,
+          StaggeredListItem(
+            index: 1,
+            child: Text(
+              'Marginalia',
+              style: GoogleFonts.ebGaramond(
+                fontSize: 48,
+                fontWeight: FontWeight.w600,
+                color: MarginaliaColors.ink,
+                letterSpacing: -1.0,
+                height: 1,
+              ),
             ),
-          )
-              .animate()
-              .fadeIn(delay: 100.ms, duration: 400.ms, curve: Curves.easeOut),
+          ),
 
           const SizedBox(height: 10),
 
-          // Subtitle
-          Text(
-            context.l10n.onboardingWelcomeSubtitle,
-            style: GoogleFonts.manrope(
-              fontSize: 15,
-              color: MarginaliaColors.inkMuted,
-              fontWeight: FontWeight.w400,
+          StaggeredListItem(
+            index: 2,
+            child: Text(
+              context.l10n.onboardingWelcomeSubtitle,
+              style: GoogleFonts.manrope(
+                fontSize: 15,
+                color: MarginaliaColors.inkMuted,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          )
-              .animate()
-              .fadeIn(delay: 180.ms, duration: 400.ms, curve: Curves.easeOut),
+          ),
 
           const SizedBox(height: 52),
 
-          // CTA button
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: FilledButton(
+          StaggeredListItem(
+            index: 3,
+            child: PressableSpring(
               onPressed: onStart,
-              child: Text(
-                context.l10n.onboardingStart,
-                style: GoogleFonts.manrope(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              child: Container(
+                width: double.infinity,
+                height: 54,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.primary,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Text(
+                  context.l10n.onboardingStart,
+                  style: GoogleFonts.manrope(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
-          )
-              .animate()
-              .fadeIn(delay: 260.ms, duration: 400.ms, curve: Curves.easeOut)
-              .slideY(begin: 0.1, end: 0, delay: 260.ms, duration: 400.ms),
+          ),
 
           const SizedBox(height: 16),
 
-          // Login link
-          TextButton(
-            onPressed: onLogin,
-            child: Text(
-              context.l10n.onboardingHaveAccount,
-              style: GoogleFonts.manrope(
-                fontSize: 14,
-                color: MarginaliaColors.inkMuted,
-                fontWeight: FontWeight.w500,
+          StaggeredListItem(
+            index: 4,
+            child: TextButton(
+              onPressed: onLogin,
+              child: Text(
+                context.l10n.onboardingHaveAccount,
+                style: GoogleFonts.manrope(
+                  fontSize: 14,
+                  color: MarginaliaColors.inkMuted,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          )
-              .animate()
-              .fadeIn(delay: 320.ms, duration: 400.ms),
+          ),
         ],
       ),
     );
   }
 }
 
-// ─── Step 1: Auth ────────────────────────────────────────────────────────────
+// ─── Step 1: Auth (social-first, mandatory) ──────────────────────────────────
+//
+// Layout (Airbnb-style — social buttons first, email collapsible below):
+//   - Editorial heading + subtitle
+//   - 3 social pills (Apple / Google / Phone) — staggered cascade entrance
+//   - "oppure" divider
+//   - "Continua con email" toggle → reveals email/password block
+//
+// There is no "skip" option here: account creation is required to continue
+// past this screen. The router-level OnboardingScreen owns the only way out.
 
-class _AuthStep extends StatelessWidget {
+class _AuthStep extends ConsumerStatefulWidget {
   const _AuthStep({
     required this.loginMode,
     required this.emailCtrl,
@@ -846,6 +866,47 @@ class _AuthStep extends StatelessWidget {
   final VoidCallback onSubmit;
 
   @override
+  ConsumerState<_AuthStep> createState() => _AuthStepState();
+}
+
+class _AuthStepState extends ConsumerState<_AuthStep> {
+  bool _emailExpanded = false;
+  bool _socialLoading = false;
+  String? _socialError;
+
+  Future<void> _runSocial(Future<dynamic> Function() op) async {
+    if (_socialLoading) return;
+    setState(() {
+      _socialLoading = true;
+      _socialError   = null;
+    });
+    try {
+      await op();
+    } catch (_) {
+      if (mounted) setState(() => _socialError = context.l10n.authOauthFailed);
+    } finally {
+      if (mounted) setState(() => _socialLoading = false);
+    }
+  }
+
+  void _onApple() => _runSocial(
+        () => ref.read(supabaseServiceProvider).signInWithApple(),
+      );
+
+  void _onGoogle() => _runSocial(
+        () => ref.read(supabaseServiceProvider).signInWithGoogle(),
+      );
+
+  Future<void> _onPhone() async {
+    final ok = await showPhoneAuthSheet(context);
+    // No further action needed — the auth state listener at the app root
+    // will pick up the new session and advance the user past onboarding.
+    if (ok != true && mounted) {
+      // user cancelled — leave them on this screen
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
@@ -854,97 +915,188 @@ class _AuthStep extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
 
+          // ── Editorial heading ────────────────────────────────────────────
           Text(
-            loginMode ? context.l10n.onboardingAuthLoginTitle : context.l10n.onboardingAuthCreateTitle,
+            widget.loginMode
+                ? context.l10n.onboardingAuthLoginTitle
+                : context.l10n.onboardingAuthCreateTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 30,
               fontWeight: FontWeight.w600,
               color: MarginaliaColors.ink,
               letterSpacing: -0.5,
             ),
-          ).animate().fadeIn(duration: 250.ms),
+          ).animate().fadeIn(duration: AirbnbMotion.standard, curve: AirbnbMotion.enter),
 
           const SizedBox(height: 6),
 
           Text(
-            loginMode
+            widget.loginMode
                 ? context.l10n.onboardingAuthLoginSubtitle
                 : context.l10n.onboardingAuthCreateSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
               color: MarginaliaColors.inkMuted,
             ),
-          ).animate().fadeIn(delay: 50.ms, duration: 250.ms),
-
-          const SizedBox(height: 32),
-
-          // Email field
-          TextField(
-            controller: emailCtrl,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              hintText: context.l10n.authEmail,
-              prefixIcon: const Icon(Icons.email_outlined),
-            ),
-          ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
-
-          const SizedBox(height: 14),
-
-          // Password field
-          TextField(
-            controller: passwordCtrl,
-            obscureText: obscurePassword,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => onSubmit(),
-            decoration: InputDecoration(
-              hintText: context.l10n.authPassword,
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                onPressed: onToggleObscure,
-              ),
-            ),
-          ).animate().fadeIn(delay: 120.ms, duration: 250.ms),
-
-          // Error
-          if (error != null) ...[
-            const SizedBox(height: 14),
-            _ErrorBanner(message: error!),
-          ],
+          ).animate().fadeIn(delay: 60.ms, duration: AirbnbMotion.standard),
 
           const SizedBox(height: 28),
 
-          // Submit button
-          SizedBox(
-            height: 52,
-            child: FilledButton(
-              onPressed: loading ? null : onSubmit,
-              child: loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+          // ── Social auth pills (staggered cascade) ────────────────────────
+          SocialAuthButtons(
+            loading: _socialLoading,
+            appleLabel:  context.l10n.authContinueWithApple,
+            googleLabel: context.l10n.authContinueWithGoogle,
+            phoneLabel:  context.l10n.authContinueWithPhone,
+            onApple:  _onApple,
+            onGoogle: _onGoogle,
+            onPhone:  _onPhone,
+          ),
+
+          if (_socialError != null) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _socialError!),
+          ],
+
+          const SizedBox(height: 22),
+
+          // ── "oppure" divider ─────────────────────────────────────────────
+          Row(
+            children: [
+              const Expanded(child: Divider(color: MarginaliaColors.rule, height: 1)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  context.l10n.authOrDivider,
+                  style: GoogleFonts.manrope(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: MarginaliaColors.inkFaint,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider(color: MarginaliaColors.rule, height: 1)),
+            ],
+          ).animate().fadeIn(delay: 220.ms, duration: AirbnbMotion.standard),
+
+          const SizedBox(height: 14),
+
+          // ── Email toggle / form ──────────────────────────────────────────
+          AnimatedSize(
+            duration: AirbnbMotion.standard,
+            curve: AirbnbMotion.enter,
+            child: _emailExpanded
+                ? _EmailForm(
+                    emailCtrl: widget.emailCtrl,
+                    passwordCtrl: widget.passwordCtrl,
+                    obscurePassword: widget.obscurePassword,
+                    onToggleObscure: widget.onToggleObscure,
+                    loading: widget.loading,
+                    error: widget.error,
+                    onSubmit: widget.onSubmit,
+                  )
+                : Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.email_outlined, size: 18),
+                      label: Text(context.l10n.authContinueWithEmail),
+                      style: TextButton.styleFrom(
+                        foregroundColor: MarginaliaColors.ink,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                    )
-                  : Text(
-                      context.l10n.onboardingContinue,
-                      style: GoogleFonts.manrope(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      onPressed: () => setState(() => _emailExpanded = true),
                     ),
-            ),
-          ).animate().fadeIn(delay: 160.ms, duration: 250.ms),
+                  ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _EmailForm extends StatelessWidget {
+  const _EmailForm({
+    required this.emailCtrl,
+    required this.passwordCtrl,
+    required this.obscurePassword,
+    required this.onToggleObscure,
+    required this.loading,
+    required this.error,
+    required this.onSubmit,
+  });
+
+  final TextEditingController emailCtrl;
+  final TextEditingController passwordCtrl;
+  final bool                  obscurePassword;
+  final VoidCallback          onToggleObscure;
+  final bool                  loading;
+  final String?               error;
+  final VoidCallback          onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 10),
+        TextField(
+          controller: emailCtrl,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            hintText: context.l10n.authEmail,
+            prefixIcon: const Icon(Icons.email_outlined),
+          ),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: passwordCtrl,
+          obscureText: obscurePassword,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => onSubmit(),
+          decoration: InputDecoration(
+            hintText: context.l10n.authPassword,
+            prefixIcon: const Icon(Icons.lock_outline),
+            suffixIcon: IconButton(
+              icon: Icon(
+                obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+              ),
+              onPressed: onToggleObscure,
+            ),
+          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 14),
+          _ErrorBanner(message: error!),
+        ],
+        const SizedBox(height: 20),
+        SizedBox(
+          height: 52,
+          child: FilledButton(
+            onPressed: loading ? null : onSubmit,
+            child: loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    context.l10n.onboardingContinue,
+                    style: GoogleFonts.manrope(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }

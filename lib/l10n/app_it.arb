@@ -932,6 +932,54 @@
   "jamExtractHighlights": "Estrai highlight ora",
   "@jamExtractHighlights": {},
 
+  "authContinueWithApple": "Continua con Apple",
+  "@authContinueWithApple": {},
+
+  "authContinueWithGoogle": "Continua con Google",
+  "@authContinueWithGoogle": {},
+
+  "authContinueWithPhone": "Continua con numero di telefono",
+  "@authContinueWithPhone": {},
+
+  "authContinueWithEmail": "Continua con email",
+  "@authContinueWithEmail": {},
+
+  "authOrDivider": "oppure",
+  "@authOrDivider": {},
+
+  "authPhoneTitle": "Inserisci il tuo numero",
+  "@authPhoneTitle": {},
+
+  "authPhoneSubtitle": "Ti invieremo un codice di verifica.",
+  "@authPhoneSubtitle": {},
+
+  "authPhonePlaceholder": "+39 333 1234567",
+  "@authPhonePlaceholder": {},
+
+  "authPhoneSend": "Invia codice",
+  "@authPhoneSend": {},
+
+  "authPhoneInvalid": "Inserisci un numero valido (es. +39 333 1234567).",
+  "@authPhoneInvalid": {},
+
+  "authPhoneCodeTitle": "Inserisci il codice",
+  "@authPhoneCodeTitle": {},
+
+  "authPhoneCodeSubtitle": "Abbiamo inviato un codice a 6 cifre a {phone}.",
+  "@authPhoneCodeSubtitle": { "placeholders": { "phone": { "type": "String" } } },
+
+  "authPhoneCodeVerify": "Verifica",
+  "@authPhoneCodeVerify": {},
+
+  "authPhoneCodeResend": "Reinvia codice",
+  "@authPhoneCodeResend": {},
+
+  "authOauthFailed": "Accesso non riuscito. Prova un altro metodo.",
+  "@authOauthFailed": {},
+
+  "authPhoneOtpFailed": "Verifica codice non riuscita. Riprova.",
+  "@authPhoneOtpFailed": {},
+
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
 

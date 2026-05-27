@@ -386,10 +386,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       const SizedBox(height: 12),
                     ],
 
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: Text(context.l10n.authContinueWithoutAccount),
-                    ),
+                    // Account creation is mandatory — no anonymous bypass.
+                    // (Previously a "Continue without account" link lived
+                    // here; removed 2026-05-27.)
                   ],
                 ),
               ),

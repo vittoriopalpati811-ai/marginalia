@@ -31,6 +31,59 @@ class SupabaseService {
 
   Future<void> signOut() => _client.auth.signOut();
 
+  // ─── OAuth providers ──────────────────────────────────────────────────────
+  //
+  // Apple & Google are configured in the Supabase dashboard
+  // (Authentication → Providers). signInWithOAuth opens the provider's
+  // consent page; on web it redirects, on iOS it uses the in-app browser.
+  // The session is restored automatically via the deep-link / redirect URL.
+  //
+  // For native iOS, also set the URL scheme `io.supabase.flutter` in
+  // ios/Runner/Info.plist (CFBundleURLSchemes). The web build uses the
+  // current origin as the redirect.
+
+  /// Initiates Sign in with Apple. Returns true if the redirect started.
+  Future<bool> signInWithApple() {
+    return _client.auth.signInWithOAuth(
+      OAuthProvider.apple,
+      // On web, return to the same page (Supabase parses the hash).
+      // On native, the SDK handles deep-link redirect automatically.
+      redirectTo: null,
+    );
+  }
+
+  /// Initiates Sign in with Google.
+  Future<bool> signInWithGoogle() {
+    return _client.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: null,
+    );
+  }
+
+  // ─── Phone OTP ────────────────────────────────────────────────────────────
+  //
+  // Two-step: send the OTP, then verify it. Requires an SMS provider
+  // (Twilio / MessageBird / etc.) configured in Supabase
+  // Authentication → Phone Auth.
+
+  /// Sends a one-time code via SMS to the given E.164 phone number
+  /// (e.g. "+391234567890").
+  Future<void> sendPhoneOtp(String phoneE164) {
+    return _client.auth.signInWithOtp(phone: phoneE164);
+  }
+
+  /// Verifies the SMS code and signs the user in.
+  Future<AuthResponse> verifyPhoneOtp({
+    required String phoneE164,
+    required String token,
+  }) {
+    return _client.auth.verifyOTP(
+      type: OtpType.sms,
+      phone: phoneE164,
+      token: token,
+    );
+  }
+
   /// Permanently deletes the current user's account and all their data.
   /// Calls the delete_my_account() RPC (migration 025) which cascades
   /// deletes through FK relationships in auth.users, then signs out.
