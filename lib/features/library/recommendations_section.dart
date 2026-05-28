@@ -699,22 +699,32 @@ class _RecommendationsHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionHeader(),
-          const SizedBox(height: 10),
-          Text(
-            message,
-            style: GoogleFonts.manrope(
-              fontSize: 12,
-              color: MarginaliaColors.inkFaint,
-              height: 1.5,
+    // RepaintBoundary isolates this widget's paint layer from siblings.
+    // Without it, the html web renderer was leaving a diagonal cascade of
+    // paint residue from the slide-X animations on adjacent cards
+    // (each ghost line getting progressively fainter + horizontally
+    // offset). The "ho letto 40 libri" empty-state copy was the most
+    // visible victim — its trailing wrapped line stacked 6-7 times.
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionHeader(),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              style: GoogleFonts.manrope(
+                fontSize: 12,
+                color: MarginaliaColors.inkFaint,
+                height: 1.5,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

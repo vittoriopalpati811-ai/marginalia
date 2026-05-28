@@ -377,22 +377,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     builder: (_) => const WidgetPreviewScreen(),
                   ),
                 ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: MarginaliaColors.primaryFaint,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    'AI',
-                    style: TextStyle(
-                      color: MarginaliaColors.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
               ),
               const _SettingsTile(
                 icon: Icons.info_outline,
@@ -577,7 +561,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             _DataRow(
               icon: Icons.favorite_border,
-              title: 'Health data (steps, workouts, cycle)',
+              title: 'Health data (steps, workouts, menstrual cycle)',
               body: 'Processed on-device only to personalise your daily '
                   'highlight. Never uploaded.',
             ),
