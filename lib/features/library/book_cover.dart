@@ -1,48 +1,63 @@
-import 'dart:math' as math;
+// ─── Marginalia Editions cover system ────────────────────────────────────────
+//
+// Designed top-down to read as a *series* — every book in the library is a
+// volume of "Marginalia Editions". Constants imprint at the top, tripartite
+// grid (imprint → middle → author), Bodoni Moda + Manrope across the board,
+// 14-colour palette curated to feel like a single publisher's catalogue.
+//
+// Six variants share that scaffold but execute very different visual moves:
+//
+//   1. Spine       — pure typography, two horizontal rules
+//   2. Disc        — flat colour + large disc bleeding off one corner
+//   3. Banner      — top band in a paler tone + giant fade-out numeral
+//   4. Silhouette  — one organic shape (leaf / eye / arch / mountain)
+//   5. Frame       — double inset rectangle, centred title + ornament
+//   6. Numeral     — Vignelli-style massive book number, title in small caps
+//
+// Selection is deterministic from `title.hashCode ^ (author.hashCode << 1)`
+// so the same book gets the same cover across devices and reinstalls, but
+// two books with the same first letter still differ.
+//
+// No external API calls. CustomPaint for shapes, Text widgets for type.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ─── Colour palettes ──────────────────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 
 class _Palette {
-  const _Palette({
-    required this.base,
-    required this.accent,
-    required this.text,
-  });
-  final Color base;
-  final Color accent;
-  final Color text;
+  const _Palette(this.bg, this.fg, this.label);
+  final Color  bg;
+  final Color  fg;
+  final String label; // for debugging only
 }
 
-const _kPalettes = <_Palette>[
-  // ── Editorial darks (original 8) — for the "Penguin Classics" mood ────
-  _Palette(base: Color(0xFF1A3A2A), accent: Color(0xFF6DB88A), text: Color(0xFFF2EDE4)), // 0  Forest
-  _Palette(base: Color(0xFF3A1A1A), accent: Color(0xFFC98D8D), text: Color(0xFFF2EDE4)), // 1  Burgundy
-  _Palette(base: Color(0xFF1A2A3A), accent: Color(0xFF8DAEC9), text: Color(0xFFF2EDE4)), // 2  Navy
-  _Palette(base: Color(0xFF3A2A0A), accent: Color(0xFFC9A84C), text: Color(0xFFF2EDE4)), // 3  Amber
-  _Palette(base: Color(0xFF24243A), accent: Color(0xFF9B9BD4), text: Color(0xFFF2EDE4)), // 4  Slate
-  _Palette(base: Color(0xFF3A1F0A), accent: Color(0xFFC97A4C), text: Color(0xFFF2EDE4)), // 5  Terracotta
-  _Palette(base: Color(0xFF2A0A3A), accent: Color(0xFFA84CC9), text: Color(0xFFF2EDE4)), // 6  Plum
-  _Palette(base: Color(0xFF0A3A2A), accent: Color(0xFF4CC9A8), text: Color(0xFFF2EDE4)), // 7  Emerald
+const _kInkCream  = Color(0xFFF5EFE0);
+const _kInkInk    = Color(0xFF1B1814);
 
-  // ── Vibrant solids (new 8) — for the "Standards Manual / Nickel Boys"
-  //    mood: large flat color block + cream text + small accent shape ───
-  _Palette(base: Color(0xFFB54B3A), accent: Color(0xFFE9D9C7), text: Color(0xFFF2EDE4)), // 8  Vermillion
-  _Palette(base: Color(0xFFD89D2C), accent: Color(0xFF1B1814), text: Color(0xFF1B1814)), // 9  Saffron-on-cream
-  _Palette(base: Color(0xFF4A7A35), accent: Color(0xFFF5EFE0), text: Color(0xFFF5EFE0)), // 10 Matcha
-  _Palette(base: Color(0xFFEB6FA5), accent: Color(0xFF231F1A), text: Color(0xFFFCF7F0)), // 11 Coral-pink
-  _Palette(base: Color(0xFF2B5F9E), accent: Color(0xFFFFD23F), text: Color(0xFFF2EDE4)), // 12 Cobalt
-  _Palette(base: Color(0xFF0F5C56), accent: Color(0xFFE8D5A0), text: Color(0xFFF5EFE0)), // 13 Petrol
-  _Palette(base: Color(0xFFF2C94C), accent: Color(0xFF1B1814), text: Color(0xFF1B1814)), // 14 Yellow on ink
-  _Palette(base: Color(0xFFEDE7DE), accent: Color(0xFFB54B3A), text: Color(0xFF1B1814)), // 15 Bone (light cover)
+const _kPalettes = <_Palette>[
+  // G1 — Saturated solids (cream text)
+  _Palette(Color(0xFFC2392A), _kInkCream, 'Vermillion'),
+  _Palette(Color(0xFFD9A41C), _kInkInk,   'Saffron'),    // intentionally ink-on-yellow
+  _Palette(Color(0xFF2A5DA4), _kInkCream, 'Cobalt'),
+  _Palette(Color(0xFF0F5C56), _kInkCream, 'Petrol'),
+  _Palette(Color(0xFF6D1F3E), _kInkCream, 'Plum'),
+  _Palette(Color(0xFFB57F2D), _kInkCream, 'Ochre'),
+  _Palette(Color(0xFF2E5230), _kInkCream, 'Forest'),
+  _Palette(Color(0xFF1B1814), _kInkCream, 'Ink'),
+  // G2 — Pale-but-bold (ink text)
+  _Palette(Color(0xFFECE5D7), _kInkInk,   'Bone'),
+  _Palette(Color(0xFFE8DFC8), _kInkInk,   'Linen'),
+  _Palette(Color(0xFFB8C7A5), _kInkInk,   'Sage'),
+  _Palette(Color(0xFFE8B89F), _kInkInk,   'Coral'),
+  _Palette(Color(0xFFB8C5CC), _kInkInk,   'Mist'),
+  _Palette(Color(0xFFE8D38E), _kInkInk,   'Sunbutter'),
 ];
 
 // ─── Public widget ────────────────────────────────────────────────────────────
 
 /// Deterministic editorial book cover — no network, no async.
-/// Hash is derived entirely from [title] so covers are stable across builds.
+/// Variant + palette + edition number derive from `title` and `author`.
 class BookEditorialCover extends StatelessWidget {
   const BookEditorialCover({
     super.key,
@@ -51,492 +66,231 @@ class BookEditorialCover extends StatelessWidget {
     this.borderRadius = BorderRadius.zero,
   });
 
-  final String title;
-  final String author;
+  final String       title;
+  final String       author;
   final BorderRadius borderRadius;
 
   @override
   Widget build(BuildContext context) {
-    // Mix title + author hash so two books with the same first letter
-    // don't clump into the same palette/style. xor scatters bits well.
-    final hash    = (title.hashCode ^ (author.hashCode << 1)).abs();
-    final palette = _kPalettes[hash % _kPalettes.length];
-    final style   = (hash >> 3) % 7;       // 7 styles now
-    final initial = title.isNotEmpty ? title[0].toUpperCase() : '?';
+    final hash      = (title.hashCode ^ (author.hashCode << 1)).abs();
+    final palette   = _kPalettes[hash % _kPalettes.length];
+    final variant   = (hash >> 4) % 6;
+    // 3-digit "edition number" pinned by hash. Pad to 3 chars so all books
+    // look like they belong to the same catalogue ("042", "317", "008").
+    final editionNo = (hash % 999 + 1).toString().padLeft(3, '0');
 
     final Widget cover;
-    switch (style) {
+    switch (variant) {
       case 0:
-        cover = _PenguinCover(palette: palette, initial: initial, title: title, author: author);
+        cover = _SpineVariant(p: palette, title: title, author: author, no: editionNo);
       case 1:
-        cover = _NordicCover(palette: palette, initial: initial, title: title, author: author);
+        cover = _DiscVariant(p: palette, title: title, author: author, no: editionNo, hash: hash);
       case 2:
-        cover = _SwissCover(palette: palette, initial: initial, title: title, author: author);
+        cover = _BannerVariant(p: palette, title: title, author: author, no: editionNo);
       case 3:
-        cover = _DiagonalCover(palette: palette, initial: initial, title: title, author: author);
+        cover = _SilhouetteVariant(p: palette, title: title, author: author, no: editionNo, hash: hash);
       case 4:
-        cover = _FrameCover(palette: palette, initial: initial, title: title, author: author);
-      case 5:
-        // "Standards Manual" style — flat colour + offset accent disc.
-        cover = _DiscCover(palette: palette, title: title, author: author, hash: hash);
+        cover = _FrameVariant(p: palette, title: title, author: author, no: editionNo);
       default:
-        // "Nickel Boys" style — flat colour + small silhouette accent.
-        cover = _BlockCover(palette: palette, title: title, author: author, hash: hash);
+        cover = _NumeralVariant(p: palette, title: title, author: author, no: editionNo);
     }
 
     return ClipRRect(borderRadius: borderRadius, child: cover);
   }
 }
 
-// ─── Style 0 — Penguin (three horizontal bands + circle initial) ──────────────
+// ─── Shared chrome (imprint + author + rule) ─────────────────────────────────
+//
+// Every variant uses the same top-imprint and bottom-author treatment so the
+// library reads as a coherent series. Pass `scale` so the same widget works
+// at 80×120 (grid) and 200×300 (detail) without recalculating sizes
+// per variant.
 
-class _PenguinCover extends StatelessWidget {
-  const _PenguinCover({
-    required this.palette,
-    required this.initial,
+class _Imprint extends StatelessWidget {
+  const _Imprint({required this.p, required this.no, this.scale = 1.0});
+  final _Palette p;
+  final String   no;
+  final double   scale;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'MARGINALIA EDITIONS · $no',
+      maxLines: 1,
+      overflow: TextOverflow.clip,
+      style: GoogleFonts.manrope(
+        fontSize: 8 * scale,
+        fontWeight: FontWeight.w800,
+        color: p.fg.withAlpha(180),
+        letterSpacing: 1.8 * scale,
+        height: 1,
+      ),
+    );
+  }
+}
+
+class _AuthorLine extends StatelessWidget {
+  const _AuthorLine({
+    required this.p,
+    required this.author,
+    this.scale = 1.0,
+    this.align = TextAlign.left,
+  });
+  final _Palette  p;
+  final String    author;
+  final double    scale;
+  final TextAlign align;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _spreadCaps(_lastName(author)),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: align,
+      style: GoogleFonts.manrope(
+        fontSize: 8.5 * scale,
+        fontWeight: FontWeight.w700,
+        color: p.fg,
+        letterSpacing: 2.4 * scale,
+        height: 1,
+      ),
+    );
+  }
+}
+
+class _ThinRule extends StatelessWidget {
+  const _ThinRule({required this.p});
+  final _Palette p;
+
+  @override
+  Widget build(BuildContext context) => Container(height: 0.7, color: p.fg.withAlpha(120));
+}
+
+// ─── Variant 1 — Spine (pure type) ────────────────────────────────────────────
+
+class _SpineVariant extends StatelessWidget {
+  const _SpineVariant({
+    required this.p,
     required this.title,
     required this.author,
+    required this.no,
   });
-  final _Palette palette;
-  final String initial;
-  final String title;
-  final String author;
+  final _Palette p;
+  final String   title;
+  final String   author;
+  final String   no;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (_, c) {
-      final h       = c.maxHeight;
-      final w       = c.maxWidth;
-      final topH    = h * 0.30;
-      final midH    = h * 0.40;
-      final botH    = h - topH - midH;
-      final circleR = math.min(w, midH) * 0.33;
+      final scale = (c.maxHeight / 240).clamp(0.55, 1.4);
+      final pad   = 14.0 * scale;
+      return Container(
+        color: p.bg,
+        padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _Imprint(p: p, no: no, scale: scale),
+            SizedBox(height: 6 * scale),
+            _ThinRule(p: p),
+            const Spacer(),
+            Text(
+              title,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.bodoniModa(
+                fontSize: 17 * scale,
+                fontWeight: FontWeight.w500,
+                fontStyle: FontStyle.italic,
+                color: p.fg,
+                height: 1.16,
+                letterSpacing: -0.2,
+              ),
+            ),
+            SizedBox(height: 6 * scale),
+            const Spacer(),
+            _ThinRule(p: p),
+            SizedBox(height: 8 * scale),
+            _AuthorLine(p: p, author: author, scale: scale),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+// ─── Variant 2 — Disc (giant flat disc bleeding off corner) ──────────────────
+
+class _DiscVariant extends StatelessWidget {
+  const _DiscVariant({
+    required this.p,
+    required this.title,
+    required this.author,
+    required this.no,
+    required this.hash,
+  });
+  final _Palette p;
+  final String   title;
+  final String   author;
+  final String   no;
+  final int      hash;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (_, c) {
+      final w     = c.maxWidth;
+      final h     = c.maxHeight;
+      final scale = (h / 240).clamp(0.55, 1.4);
+      final pad   = 14.0 * scale;
+      final r     = h * 0.42; // disc radius
+
+      // Disc corner: 0 TL, 1 TR, 2 BL, 3 BR
+      final corner = hash % 4;
+      late double left, top;
+      switch (corner) {
+        case 0: left = -r * 0.55; top = -r * 0.40; break;
+        case 1: left = w - r * 1.45; top = -r * 0.45; break;
+        case 2: left = -r * 0.60; top = h - r * 1.60; break;
+        default: left = w - r * 1.40; top = h - r * 1.50;
+      }
 
       return Stack(children: [
-        // ── bands
-        Positioned(top: 0,              left: 0, right: 0, height: topH, child: Container(color: palette.base)),
-        Positioned(top: topH,           left: 0, right: 0, height: midH, child: Container(color: palette.accent)),
-        Positioned(top: topH + midH,   left: 0, right: 0, height: botH, child: Container(color: palette.base)),
-
-        // ── thin rules
-        Positioned(top: topH - 1,      left: 0, right: 0, height: 2,
-          child: Container(color: palette.text.withAlpha(60))),
-        Positioned(top: topH + midH - 1, left: 0, right: 0, height: 2,
-          child: Container(color: palette.text.withAlpha(60))),
-
-        // ── circle + initial in middle band
+        Container(color: p.bg),
         Positioned(
-          top:  topH + midH * 0.5 - circleR,
-          left: w * 0.5 - circleR,
-          width: circleR * 2,
-          height: circleR * 2,
+          left: left,
+          top:  top,
+          width:  r * 2,
+          height: r * 2,
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: palette.base,
-              border: Border.all(color: palette.text.withAlpha(100), width: 1.2),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initial,
-              style: GoogleFonts.ebGaramond(
-                fontSize: circleR * 0.95,
-                fontWeight: FontWeight.w600,
-                color: palette.text,
-                height: 1,
-              ),
+              color: p.fg.withAlpha(225),
             ),
           ),
         ),
-
-        // ── title in top band
-        Positioned(
-          top: 0, height: topH, left: 10, right: 10,
-          child: Center(
-            child: Text(
-              title.toUpperCase(),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(
-                fontSize: math.min(10.0, topH * 0.20),
-                fontWeight: FontWeight.w700,
-                color: palette.text,
-                letterSpacing: 1.4,
-                height: 1.3,
-              ),
-            ),
-          ),
-        ),
-
-        // ── author in bottom band
-        Positioned(
-          bottom: 0, height: botH, left: 10, right: 10,
-          child: Center(
-            child: Text(
-              _lastName(author).toUpperCase(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(
-                fontSize: math.min(8.0, botH * 0.18),
-                fontWeight: FontWeight.w500,
-                color: palette.text.withAlpha(160),
-                letterSpacing: 2.0,
-              ),
-            ),
-          ),
-        ),
-      ]);
-    });
-  }
-}
-
-// ─── Style 1 — Nordic (large faint initial + editorial title) ─────────────────
-
-class _NordicCover extends StatelessWidget {
-  const _NordicCover({
-    required this.palette,
-    required this.initial,
-    required this.title,
-    required this.author,
-  });
-  final _Palette palette;
-  final String initial;
-  final String title;
-  final String author;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (_, c) {
-      final h = c.maxHeight;
-      return Stack(children: [
-        // Dark base
-        Container(color: palette.base),
-
-        // Giant faint initial — bleeds off left edge intentionally
-        Positioned(
-          top: h * 0.04,
-          left: -h * 0.06,
-          child: Text(
-            initial,
-            style: GoogleFonts.ebGaramond(
-              fontSize: h * 0.72,
-              color: palette.accent.withAlpha(30),
-              height: 1,
-            ),
-          ),
-        ),
-
-        // Accent rule
-        Positioned(
-          top: h * 0.44, left: 14, right: 14, height: 1,
-          child: Container(color: palette.accent.withAlpha(150)),
-        ),
-
-        // Title below rule
-        Positioned(
-          top: h * 0.48, left: 14, right: 14,
-          child: Text(
-            title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.ebGaramond(
-              fontSize: 14,
-              fontStyle: FontStyle.italic,
-              color: palette.text,
-              height: 1.45,
-            ),
-          ),
-        ),
-
-        // Author bottom-left
-        Positioned(
-          bottom: 13, left: 14, right: 14,
-          child: Text(
-            _lastName(author).toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
-              fontSize: 8,
-              fontWeight: FontWeight.w600,
-              color: palette.accent,
-              letterSpacing: 2.2,
-            ),
-          ),
-        ),
-      ]);
-    });
-  }
-}
-
-// ─── Style 2 — Swiss (top dark block + bold title + dot-grid texture) ─────────
-
-class _SwissCover extends StatelessWidget {
-  const _SwissCover({
-    required this.palette,
-    required this.initial,
-    required this.title,
-    required this.author,
-  });
-  final _Palette palette;
-  final String initial;
-  final String title;
-  final String author;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (_, c) {
-      final h   = c.maxHeight;
-      final w   = c.maxWidth;
-      final topH = h * 0.42;
-
-      return Stack(children: [
-        // Light bottom background (warm cream tint)
-        Container(color: _lightenedBg(palette.accent)),
-
-        // Dark top block
-        Positioned(
-          top: 0, left: 0, right: 0, height: topH,
-          child: Container(color: palette.base),
-        ),
-
-        // Accent rule at break
-        Positioned(
-          top: topH, left: 0, right: 0, height: 3,
-          child: Container(color: palette.accent),
-        ),
-
-        // Title in the dark top block
-        Positioned(
-          top: 10, left: 12, right: 10,
-          child: Text(
-            title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: palette.text,
-              height: 1.18,
-              letterSpacing: -0.3,
-            ),
-          ),
-        ),
-
-        // Big faint initial watermark in bottom half
-        Positioned(
-          top: topH + 4, left: 6,
-          child: Text(
-            initial,
-            style: GoogleFonts.ebGaramond(
-              fontSize: h * 0.34,
-              color: palette.base.withAlpha(22),
-              height: 1,
-            ),
-          ),
-        ),
-
-        // Dot-grid texture — bottom-right corner
-        Positioned(
-          bottom: 20, right: 10,
-          child: SizedBox(
-            width: math.min(w * 0.35, 40),
-            height: math.min(h * 0.18, 40),
-            child: CustomPaint(
-              painter: _DotGridPainter(color: palette.base.withAlpha(35)),
-            ),
-          ),
-        ),
-
-        // Author bottom-right
-        Positioned(
-          bottom: 11, right: 12,
-          child: Text(
-            _lastName(author).toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: GoogleFonts.manrope(
-              fontSize: 8,
-              fontWeight: FontWeight.w700,
-              color: palette.base.withAlpha(130),
-              letterSpacing: 1.8,
-            ),
-          ),
-        ),
-      ]);
-    });
-  }
-
-  // Pastel-light accent as cover bg
-  static Color _lightenedBg(Color accent) {
-    final r = (accent.red   * 0.10 + 236).round().clamp(0, 255);
-    final g = (accent.green * 0.10 + 230).round().clamp(0, 255);
-    final b = (accent.blue  * 0.10 + 224).round().clamp(0, 255);
-    return Color.fromARGB(255, r, g, b);
-  }
-}
-
-// ─── Style 3 — Diagonal (triangle CustomPainter + large initial) ─────────────
-
-class _DiagonalCover extends StatelessWidget {
-  const _DiagonalCover({
-    required this.palette,
-    required this.initial,
-    required this.title,
-    required this.author,
-  });
-  final _Palette palette;
-  final String initial;
-  final String title;
-  final String author;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (_, c) {
-      final h = c.maxHeight;
-      return Stack(children: [
-        // Dark base
-        Container(color: palette.base),
-
-        // Diagonal accent triangle (bottom-right)
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _DiagPainter(color: palette.accent.withAlpha(185)),
-          ),
-        ),
-
-        // Large initial — top-left
-        Positioned(
-          top: 4, left: 6,
-          child: Text(
-            initial,
-            style: GoogleFonts.ebGaramond(
-              fontSize: h * 0.40,
-              fontWeight: FontWeight.w600,
-              color: palette.text.withAlpha(215),
-              height: 1,
-            ),
-          ),
-        ),
-
-        // Title above footer
-        Positioned(
-          bottom: 34, left: 12, right: 12,
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.ebGaramond(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: palette.text,
-              height: 1.38,
-            ),
-          ),
-        ),
-
-        // Author at very bottom
-        Positioned(
-          bottom: 12, left: 12, right: 12,
-          child: Text(
-            _lastName(author).toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
-              fontSize: 7.5,
-              fontWeight: FontWeight.w600,
-              color: palette.text.withAlpha(150),
-              letterSpacing: 2.0,
-            ),
-          ),
-        ),
-      ]);
-    });
-  }
-}
-
-// ─── Style 4 — Frame (double inset RRect border + centered Garamond title) ────
-
-class _FrameCover extends StatelessWidget {
-  const _FrameCover({
-    required this.palette,
-    required this.initial,
-    required this.title,
-    required this.author,
-  });
-  final _Palette palette;
-  final String initial;
-  final String title;
-  final String author;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (_, c) {
-      final h = c.maxHeight;
-      return Stack(children: [
-        // Dark base
-        Container(color: palette.base),
-
-        // Faint giant initial — bottom center
-        Positioned(
-          bottom: -h * 0.06, left: 0, right: 0,
-          child: Center(
-            child: Text(
-              initial,
-              style: GoogleFonts.ebGaramond(
-                fontSize: h * 0.58,
-                color: palette.accent.withAlpha(18),
-                height: 1,
-              ),
-            ),
-          ),
-        ),
-
-        // Double inset frame
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _FramePainter(color: palette.accent.withAlpha(160)),
-          ),
-        ),
-
-        // Centered content
-        Positioned(
-          top: 0, bottom: 0, left: 16, right: 16,
+        Padding(
+          padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _Imprint(p: p, no: no, scale: scale),
+              const Spacer(),
               Text(
                 title,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.ebGaramond(
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  color: palette.text,
-                  height: 1.50,
-                ),
-              ),
-              const SizedBox(height: 9),
-              Container(
-                width: 28, height: 1,
-                color: palette.accent.withAlpha(180),
-              ),
-              const SizedBox(height: 9),
-              Text(
-                _lastName(author).toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.manrope(
-                  fontSize: 7.5,
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 18 * scale,
                   fontWeight: FontWeight.w600,
-                  color: palette.accent,
-                  letterSpacing: 2.2,
+                  color: p.fg,
+                  height: 1.12,
+                  letterSpacing: -0.4,
                 ),
               ),
+              SizedBox(height: 10 * scale),
+              _AuthorLine(p: p, author: author, scale: scale),
             ],
           ),
         ),
@@ -545,25 +299,307 @@ class _FrameCover extends StatelessWidget {
   }
 }
 
-// ─── Custom painters ──────────────────────────────────────────────────────────
+// ─── Variant 3 — Banner (top band + faded numeral) ───────────────────────────
 
-class _DiagPainter extends CustomPainter {
-  const _DiagPainter({required this.color});
+class _BannerVariant extends StatelessWidget {
+  const _BannerVariant({
+    required this.p,
+    required this.title,
+    required this.author,
+    required this.no,
+  });
+  final _Palette p;
+  final String   title;
+  final String   author;
+  final String   no;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (_, c) {
+      final h       = c.maxHeight;
+      final scale   = (h / 240).clamp(0.55, 1.4);
+      final pad     = 14.0 * scale;
+      final bandH   = h * 0.32;
+      final bandClr = _lightenBg(p.bg, p.fg);
+
+      return Stack(children: [
+        Container(color: p.bg),
+        Positioned(
+          top: 0, left: 0, right: 0, height: bandH,
+          child: Container(color: bandClr),
+        ),
+
+        // Faded edition number in lower 2/3
+        Positioned(
+          top: bandH + (h - bandH) * 0.10,
+          left: 0, right: 0,
+          child: Center(
+            child: Text(
+              no,
+              style: GoogleFonts.bodoniModa(
+                fontSize: h * 0.42,
+                fontWeight: FontWeight.w400,
+                color: p.fg.withAlpha(28),
+                height: 1,
+              ),
+            ),
+          ),
+        ),
+
+        Padding(
+          padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Imprint sits inside the top band — ink colour for contrast.
+              Text(
+                'MARGINALIA EDITIONS · $no',
+                maxLines: 1,
+                style: GoogleFonts.manrope(
+                  fontSize: 8 * scale,
+                  fontWeight: FontWeight.w800,
+                  color: _kInkInk.withAlpha(170),
+                  letterSpacing: 1.8 * scale,
+                  height: 1,
+                ),
+              ),
+              SizedBox(height: 6 * scale),
+              SizedBox(
+                height: bandH - pad - 10 * scale,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 18 * scale,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      color: _kInkInk,
+                      height: 1.14,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              _ThinRule(p: p),
+              SizedBox(height: 8 * scale),
+              _AuthorLine(p: p, author: author, scale: scale),
+            ],
+          ),
+        ),
+      ]);
+    });
+  }
+}
+
+// ─── Variant 4 — Silhouette (one organic white shape) ────────────────────────
+
+class _SilhouetteVariant extends StatelessWidget {
+  const _SilhouetteVariant({
+    required this.p,
+    required this.title,
+    required this.author,
+    required this.no,
+    required this.hash,
+  });
+  final _Palette p;
+  final String   title;
+  final String   author;
+  final String   no;
+  final int      hash;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (_, c) {
+      final h     = c.maxHeight;
+      final scale = (h / 240).clamp(0.55, 1.4);
+      final pad   = 14.0 * scale;
+      final shapeIdx = hash % 4;
+
+      return Stack(children: [
+        Container(color: p.bg),
+
+        // The hero shape sits in the central middle 50% area.
+        Positioned(
+          top: h * 0.22, left: 0, right: 0, height: h * 0.50,
+          child: CustomPaint(painter: _SilhouettePainter(
+            color: p.fg.withAlpha(230),
+            shapeIdx: shapeIdx,
+          )),
+        ),
+
+        Padding(
+          padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Imprint(p: p, no: no, scale: scale),
+              const Spacer(),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 16 * scale,
+                  fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                  color: p.fg,
+                  height: 1.16,
+                ),
+              ),
+              SizedBox(height: 8 * scale),
+              _AuthorLine(p: p, author: author, scale: scale),
+            ],
+          ),
+        ),
+      ]);
+    });
+  }
+}
+
+class _SilhouettePainter extends CustomPainter {
+  const _SilhouettePainter({required this.color, required this.shapeIdx});
   final Color color;
+  final int   shapeIdx;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final path  = Path()
-      ..moveTo(size.width, size.height * 0.38)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(path, paint);
+    final paint = Paint()..color = color..isAntiAlias = true;
+    final w = size.width;
+    final h = size.height;
+
+    final path = Path();
+    switch (shapeIdx) {
+      case 0: // Leaf (vertical almond, like a sycamore key)
+        final cx = w / 2;
+        path
+          ..moveTo(cx, 0)
+          ..quadraticBezierTo(w * 0.95, h * 0.50, cx, h)
+          ..quadraticBezierTo(w * 0.05, h * 0.50, cx, 0)
+          ..close();
+        canvas.drawPath(path, paint);
+        // Center vein
+        final vein = Paint()
+          ..color = Colors.transparent
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0;
+        canvas.drawLine(Offset(cx, h * 0.06), Offset(cx, h * 0.94), vein);
+        break;
+
+      case 1: // Eye / almond shape, horizontal
+        final cy = h / 2;
+        path
+          ..moveTo(0, cy)
+          ..quadraticBezierTo(w * 0.5, -h * 0.10, w, cy)
+          ..quadraticBezierTo(w * 0.5, h * 1.10, 0, cy)
+          ..close();
+        canvas.drawPath(path, paint);
+        // Iris
+        canvas.drawCircle(Offset(w * 0.5, cy), h * 0.18, Paint()..color = Colors.transparent);
+        break;
+
+      case 2: // Doorway / archway
+        final left  = w * 0.25;
+        final right = w * 0.75;
+        final base  = h * 0.95;
+        final top   = h * 0.18;
+        path
+          ..moveTo(left, base)
+          ..lineTo(left, h * 0.42)
+          ..quadraticBezierTo(left, top, w / 2, top)
+          ..quadraticBezierTo(right, top, right, h * 0.42)
+          ..lineTo(right, base)
+          ..close();
+        canvas.drawPath(path, paint);
+        break;
+
+      default: // Mountain — two overlapping triangles
+        path
+          ..moveTo(w * 0.05, h * 0.85)
+          ..lineTo(w * 0.42, h * 0.18)
+          ..lineTo(w * 0.62, h * 0.55)
+          ..lineTo(w * 0.95, h * 0.85)
+          ..close();
+        canvas.drawPath(path, paint);
+        // smaller foothill
+        final p2 = Path()
+          ..moveTo(w * 0.30, h * 0.85)
+          ..lineTo(w * 0.55, h * 0.42)
+          ..lineTo(w * 0.78, h * 0.85)
+          ..close();
+        canvas.drawPath(p2, paint..color = color.withAlpha(160));
+    }
   }
 
   @override
-  bool shouldRepaint(_DiagPainter old) => old.color != color;
+  bool shouldRepaint(_SilhouettePainter old) =>
+      old.color != color || old.shapeIdx != shapeIdx;
+}
+
+// ─── Variant 5 — Frame (double inset, centred title, ornament) ───────────────
+
+class _FrameVariant extends StatelessWidget {
+  const _FrameVariant({
+    required this.p,
+    required this.title,
+    required this.author,
+    required this.no,
+  });
+  final _Palette p;
+  final String   title;
+  final String   author;
+  final String   no;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (_, c) {
+      final h     = c.maxHeight;
+      final scale = (h / 240).clamp(0.55, 1.4);
+
+      return Stack(children: [
+        Container(color: p.bg),
+        Positioned.fill(
+          child: CustomPaint(painter: _FramePainter(color: p.fg.withAlpha(150))),
+        ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 18 * scale, vertical: 18 * scale),
+          child: Column(
+            children: [
+              _Imprint(p: p, no: no, scale: scale),
+              const Spacer(),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 17 * scale,
+                  fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                  color: p.fg,
+                  height: 1.20,
+                ),
+              ),
+              SizedBox(height: 8 * scale),
+              Text(
+                '·',
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 16 * scale,
+                  color: p.fg.withAlpha(200),
+                ),
+              ),
+              SizedBox(height: 6 * scale),
+              _AuthorLine(p: p, author: author, scale: scale, align: TextAlign.center),
+              const Spacer(),
+            ],
+          ),
+        ),
+      ]);
+    });
+  }
 }
 
 class _FramePainter extends CustomPainter {
@@ -576,19 +612,11 @@ class _FramePainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTRB(7, 7, size.width - 7, size.height - 7),
-        const Radius.circular(3),
-      ),
-      paint,
+    canvas.drawRect(
+      Rect.fromLTRB(7, 7, size.width - 7, size.height - 7), paint,
     );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTRB(12, 12, size.width - 12, size.height - 12),
-        const Radius.circular(2),
-      ),
-      paint,
+    canvas.drawRect(
+      Rect.fromLTRB(11, 11, size.width - 11, size.height - 11), paint,
     );
   }
 
@@ -596,182 +624,78 @@ class _FramePainter extends CustomPainter {
   bool shouldRepaint(_FramePainter old) => old.color != color;
 }
 
-class _DotGridPainter extends CustomPainter {
-  const _DotGridPainter({required this.color});
-  final Color color;
+// ─── Variant 6 — Numeral (Vignelli subway-sign book number) ──────────────────
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint   = Paint()..color = color;
-    const spacing = 7.0;
-    const r       = 1.4;
-    for (var x = r; x < size.width; x += spacing) {
-      for (var y = r; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), r, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DotGridPainter old) => old.color != color;
-}
-
-// ─── Style 5 — Disc (flat colour + large offset disc, "Standards Manual") ────
-
-class _DiscCover extends StatelessWidget {
-  const _DiscCover({
-    required this.palette,
+class _NumeralVariant extends StatelessWidget {
+  const _NumeralVariant({
+    required this.p,
     required this.title,
     required this.author,
-    required this.hash,
+    required this.no,
   });
-  final _Palette palette;
-  final String title;
-  final String author;
-  final int hash;
+  final _Palette p;
+  final String   title;
+  final String   author;
+  final String   no;
 
   @override
   Widget build(BuildContext context) {
-    // Disc position scattered by hash so every book lands the disc somewhere
-    // distinctive — bleeding off the top, bottom, left or right edge.
-    final corner = hash % 4;
     return LayoutBuilder(builder: (_, c) {
-      final w = c.maxWidth;
-      final h = c.maxHeight;
-      final discSize = h * 0.62;
+      final h     = c.maxHeight;
+      final scale = (h / 240).clamp(0.55, 1.4);
+      final pad   = 14.0 * scale;
 
-      late double left, top;
-      switch (corner) {
-        case 0: left = -discSize * 0.28; top = -discSize * 0.20; break; // top-left
-        case 1: left = w - discSize * 0.72; top = -discSize * 0.25; break; // top-right
-        case 2: left = -discSize * 0.30; top = h - discSize * 0.70; break; // bottom-left
-        default: left = w - discSize * 0.70; top = h - discSize * 0.75;     // bottom-right
-      }
-
-      return Stack(children: [
-        Container(color: palette.base),
-
-        // Big offset disc — the literal "Lem" / Standards Manual move.
-        Positioned(
-          left: left,
-          top:  top,
-          width:  discSize,
-          height: discSize,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: palette.accent,
+      return Container(
+        color: p.bg,
+        padding: EdgeInsets.fromLTRB(pad, pad, pad, pad),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top: imprint + title in small caps
+            _Imprint(p: p, no: no, scale: scale),
+            SizedBox(height: 6 * scale),
+            _ThinRule(p: p),
+            SizedBox(height: 8 * scale),
+            Text(
+              title.toUpperCase(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.manrope(
+                fontSize: 9.5 * scale,
+                fontWeight: FontWeight.w800,
+                color: p.fg,
+                letterSpacing: 1.2 * scale,
+                height: 1.3,
+              ),
             ),
-          ),
-        ),
 
-        // Title — top-left
-        Positioned(
-          top: 14, left: 14, right: 14,
-          child: Text(
-            title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: palette.text,
-              height: 1.15,
-              letterSpacing: -0.4,
+            // The number takes the centre
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Text(
+                    no,
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 180,
+                      fontWeight: FontWeight.w500,
+                      color: p.fg,
+                      height: 1,
+                      letterSpacing: -6,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+
+            // Bottom: rule + author
+            SizedBox(height: 8 * scale),
+            _ThinRule(p: p),
+            SizedBox(height: 8 * scale),
+            _AuthorLine(p: p, author: author, scale: scale),
+          ],
         ),
-
-        // Author — bottom
-        Positioned(
-          bottom: 12, left: 14, right: 14,
-          child: Text(
-            _lastName(author).toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
-              fontSize: 8,
-              fontWeight: FontWeight.w700,
-              color: palette.text.withAlpha(190),
-              letterSpacing: 2.4,
-            ),
-          ),
-        ),
-      ]);
-    });
-  }
-}
-
-// ─── Style 6 — Block (flat colour + cut horizon block, "Nickel Boys") ────────
-
-class _BlockCover extends StatelessWidget {
-  const _BlockCover({
-    required this.palette,
-    required this.title,
-    required this.author,
-    required this.hash,
-  });
-  final _Palette palette;
-  final String title;
-  final String author;
-  final int hash;
-
-  @override
-  Widget build(BuildContext context) {
-    // The "block" cuts the cover into two flat zones at a random horizon
-    // line — book becomes a piece of architecture instead of a typography
-    // exercise. Variation by hash so books in the same palette differ.
-    final horizon = 0.30 + ((hash >> 7) % 35) * 0.01; // 0.30 .. 0.65
-
-    return LayoutBuilder(builder: (_, c) {
-      final h = c.maxHeight;
-      final topH = h * horizon;
-
-      return Stack(children: [
-        // Top band = accent (the punchy colour)
-        Positioned(
-          top: 0, left: 0, right: 0, height: topH,
-          child: Container(color: palette.accent),
-        ),
-        // Bottom band = base
-        Positioned(
-          top: topH, left: 0, right: 0, bottom: 0,
-          child: Container(color: palette.base),
-        ),
-
-        // Title sits in the bottom (base) band, large editorial Garamond.
-        Positioned(
-          top: topH + 14, left: 14, right: 14,
-          child: Text(
-            title,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.ebGaramond(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
-              color: palette.text,
-              height: 1.22,
-            ),
-          ),
-        ),
-
-        // Author bottom, tiny + spaced — like a publisher imprint.
-        Positioned(
-          bottom: 11, left: 14, right: 14,
-          child: Text(
-            _lastName(author).toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.manrope(
-              fontSize: 8,
-              fontWeight: FontWeight.w600,
-              color: palette.text.withAlpha(180),
-              letterSpacing: 2.2,
-            ),
-          ),
-        ),
-      ]);
+      );
     });
   }
 }
@@ -779,6 +703,27 @@ class _BlockCover extends StatelessWidget {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 String _lastName(String author) {
-  final parts = author.trim().split(' ');
-  return parts.isEmpty ? author : parts.last;
+  final parts = author.trim().split(RegExp(r'\s+'));
+  if (parts.isEmpty || parts.first.isEmpty) return author;
+  return parts.last;
+}
+
+/// Spreads a name out in caps with single-space tracking — typical
+/// publisher-imprint treatment of an author surname on a Penguin spine.
+String _spreadCaps(String s) {
+  final clean = s.toUpperCase();
+  return clean.split('').join(' ');
+}
+
+/// Mixes the background colour toward the text colour so the banner / band
+/// reads as a softer version of the hero, never a totally separate hue.
+Color _lightenBg(Color bg, Color fg) {
+  // If fg is cream, lighten toward cream; if fg is ink, deepen toward ink.
+  final t = 0.78; // how strongly we move toward fg
+  return Color.fromARGB(
+    255,
+    (bg.red   * (1 - t) + fg.red   * t).round().clamp(0, 255),
+    (bg.green * (1 - t) + fg.green * t).round().clamp(0, 255),
+    (bg.blue  * (1 - t) + fg.blue  * t).round().clamp(0, 255),
+  );
 }
