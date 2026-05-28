@@ -305,9 +305,11 @@ int _totalMinutesThisMonth(List<Map<String, dynamic>> sessions) {
   return total;
 }
 
-/// Returns a list of 12 entries (oldest → newest), each `(label, minutes)`.
-/// Labels are locale-aware first letters of the month name (intl).
-List<({String label, int minutes})> _monthlyMinutes(
+/// Returns a list of 12 entries (oldest → newest). `label` is the short
+/// 3-letter abbreviation shown under each bar; `fullLabel` is the full
+/// month name shown in the tap-tooltip ("Dicembre", "December"…).
+/// Both are locale-aware via intl.
+List<({String label, String fullLabel, int minutes})> _monthlyMinutes(
   List<Map<String, dynamic>> sessions,
   String locale,
 ) {
@@ -326,21 +328,33 @@ List<({String label, int minutes})> _monthlyMinutes(
     buckets[idx] += ((s['minutes_read'] as num?) ?? 0).toInt();
   }
 
-  // Build labels in the user's locale. We use first 3 chars of MMM, which
-  // is unambiguous across IT/EN/etc and stays readable even on narrow bars.
-  String labelFor(int monthIndex) {
-    // monthIndex is 0-based; DateTime month is 1-based.
+  // Short label — first 3 chars of locale's MMM, capitalised. Unambiguous
+  // across IT/EN/etc and stays readable on narrow bars.
+  String shortLabelFor(int monthIndex) {
     final d = DateTime(now.year, monthIndex + 1, 1);
     final mmm = DateFormat.MMM(locale).format(d);
-    // Take first 3 letters, capitalize first only — looks cleaner under bars
     final s = mmm.length >= 3 ? mmm.substring(0, 3) : mmm;
     return s[0].toUpperCase() + s.substring(1).toLowerCase();
+  }
+
+  // Full label — used in the tap tooltip. We want "Dicembre" not "DICEMBRE",
+  // so we lowercase then re-capitalise the first letter, regardless of
+  // what intl returns for the locale.
+  String fullLabelFor(int monthIndex) {
+    final d = DateTime(now.year, monthIndex + 1, 1);
+    final mmmm = DateFormat.MMMM(locale).format(d);
+    if (mmmm.isEmpty) return mmmm;
+    return mmmm[0].toUpperCase() + mmmm.substring(1).toLowerCase();
   }
 
   return List.generate(12, (i) {
     // Position i = 11 is the current month; i = 0 is 11 months ago.
     final monthIdx = (now.month - 11 + i - 1 + 12) % 12;
-    return (label: labelFor(monthIdx), minutes: buckets[i]);
+    return (
+      label: shortLabelFor(monthIdx),
+      fullLabel: fullLabelFor(monthIdx),
+      minutes: buckets[i],
+    );
   });
 }
 
@@ -594,63 +608,542 @@ class _OverviewTile extends StatelessWidget {
   }
 }
 
-class _MonthlyBarChart extends StatelessWidget {
+// ─── Monthly bar chart ──────────────────────────────────────────────────────
+//
+// Three jobs:
+//   1. Explain the chart. The first version showed bars and nothing else —
+//      no axis, no total, no peak — so screenshots looked like generic
+//      dashboard chart-#3. Now the header tells you the headline numbers
+//      directly: total hours in the last 12 months on the left, peak month
+//      on the right, both set in italic Garamond like a book frontispiece.
+//   2. Tap-to-reveal value. Each bar is a GestureDetector; the parent card
+//      is also a GestureDetector that resets selection. Tapping a bar
+//      shows a small pill above it with the full month name + minutes.
+//      Tap the same bar again or anywhere else and it dismisses.
+//   3. Designed for sharing. The whole card is meant to look like a page
+//      from a personal reading ledger — cream paper, EB Garamond italics
+//      for the meaningful words (hours, peak month), Manrope small-caps
+//      only for the quiet captions. The kind of thing someone screenshots
+//      and posts on Instagram because it looks like a printed object,
+//      not a screen.
+
+class _MonthlyBarChart extends StatefulWidget {
   const _MonthlyBarChart({required this.buckets});
-  final List<({String label, int minutes})> buckets;
+  final List<({String label, String fullLabel, int minutes})> buckets;
+
+  @override
+  State<_MonthlyBarChart> createState() => _MonthlyBarChartState();
+}
+
+class _MonthlyBarChartState extends State<_MonthlyBarChart> {
+  int? _selected;
+
+  // 312 → "5h 12m"; 47 → "47 min"; 0 → "0 min". Universal "h"/"m" suffixes
+  // work in both IT and EN, so no l10n round-trip needed.
+  static String _humanize(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  void _toggle(int i) {
+    setState(() => _selected = _selected == i ? null : i);
+  }
+
+  void _dismiss() {
+    if (_selected != null) setState(() => _selected = null);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final maxValue = buckets
-        .map((b) => b.minutes)
-        .fold<int>(0, (a, b) => a > b ? a : b);
+    final b        = widget.buckets;
+    final maxValue = b.map((x) => x.minutes).fold<int>(0, (a, x) => a > x ? a : x);
+    final total    = b.fold<int>(0, (a, x) => a + x.minutes);
+    final peakIdx  = maxValue == 0 ? -1 : b.indexWhere((x) => x.minutes == maxValue);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
-      decoration: MarginaliaDecorations.card(),
-      child: SizedBox(
-        height: 130,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _dismiss,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
+        decoration: MarginaliaDecorations.card(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var i = 0; i < buckets.length; i++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
+            // ── Headline: total time + peak month ─────────────────────
+            _ChartHeadline(
+              total:     _humanize(total),
+              peakName:  peakIdx >= 0 ? b[peakIdx].fullLabel : null,
+              peakValue: peakIdx >= 0 ? _humanize(b[peakIdx].minutes) : null,
+            ),
+
+            const SizedBox(height: 22),
+
+            // ── Bars + floating tooltip ───────────────────────────────
+            LayoutBuilder(builder: (ctx, c) {
+              final chartWidth   = c.maxWidth;
+              // tooltipZone reserves room for the pill+arrow (56 px) plus a
+              // 6 px cushion so the arrow doesn't kiss the tallest bar.
+              const tooltipZone  = 62.0;
+              const labelZone    = 22.0; // bar label (italic month abbr)
+              const totalHeight  = 184.0;
+              final  maxBarH     = totalHeight - tooltipZone - labelZone;
+
+              double barHeight(int minutes) {
+                if (maxValue == 0) return 3;
+                return 3 + (minutes / maxValue) * maxBarH;
+              }
+
+              final selBarHeight = _selected == null
+                  ? 0.0
+                  : barHeight(b[_selected!].minutes);
+
+              return SizedBox(
+                height: totalHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Bars row, anchored to bottom (above the label zone).
+                    Positioned(
+                      top: tooltipZone,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          for (var i = 0; i < b.length; i++)
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _toggle(i),
+                                child: _BarColumn(
+                                  bucket:    b[i],
+                                  height:    barHeight(b[i].minutes),
+                                  selected:  _selected == i,
+                                  dimmed:    _selected != null && _selected != i,
+                                  index:     i,
+                                  labelZone: labelZone,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    // Floating tooltip — fades/slides in when a bar is tapped.
+                    if (_selected != null)
+                      _MonthTooltip(
+                        chartWidth:    chartWidth,
+                        barIndex:      _selected!,
+                        barCount:      b.length,
+                        tooltipZone:   tooltipZone,
+                        barHeight:     selBarHeight,
+                        labelZone:     labelZone,
+                        monthName:     b[_selected!].fullLabel,
+                        humanized:     _humanize(b[_selected!].minutes),
+                        rawMinutes:    b[_selected!].minutes,
+                      ),
+                  ],
+                ),
+              );
+            }),
+
+            const SizedBox(height: 12),
+
+            // ── Hairline + caption ────────────────────────────────────
+            const Divider(
+              height: 1,
+              thickness: 0.6,
+              color: MarginaliaColors.ruleFaint,
+            ),
+            const SizedBox(height: 10),
+            _ChartCaption(text: context.l10n.statsMonthlyTapHint),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Headline row ───────────────────────────────────────────────────────────
+class _ChartHeadline extends StatelessWidget {
+  const _ChartHeadline({
+    required this.total,
+    required this.peakName,
+    required this.peakValue,
+  });
+  final String total;
+  final String? peakName;
+  final String? peakValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left — total time (the "headline" stat).
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                total,
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 34,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w500,
+                  color: MarginaliaColors.ink,
+                  letterSpacing: -0.8,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                context.l10n.statsMonthlyTotalCaption,
+                style: GoogleFonts.manrope(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: MarginaliaColors.inkMuted,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Right — peak month (only when there's data).
+        if (peakName != null && peakValue != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                peakName!,
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 22,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w500,
+                  color: MarginaliaColors.primary,
+                  letterSpacing: -0.3,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${context.l10n.statsMonthlyPeakCaption.toLowerCase()} · $peakValue',
+                style: GoogleFonts.manrope(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: MarginaliaColors.inkMuted,
+                  letterSpacing: 0.6,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+// ─── Single bar column ──────────────────────────────────────────────────────
+class _BarColumn extends StatelessWidget {
+  const _BarColumn({
+    required this.bucket,
+    required this.height,
+    required this.selected,
+    required this.dimmed,
+    required this.index,
+    required this.labelZone,
+  });
+
+  final ({String label, String fullLabel, int minutes}) bucket;
+  final double height;
+  final bool   selected;
+  final bool   dimmed;
+  final int    index;
+  final double labelZone;
+
+  @override
+  Widget build(BuildContext context) {
+    // Subtle dual-tone fill — matcha lightens slightly at the top so each
+    // bar reads as a brush-stroke rather than a flat block. Dimmed bars
+    // (when another bar is selected) drop to a low-opacity tint so the
+    // selection clearly leads the eye.
+    final hasData = bucket.minutes > 0;
+    final fillTop = selected
+        ? MarginaliaColors.primaryDark
+        : (dimmed ? const Color(0x66B0B5AE) : MarginaliaColors.sienna);
+    final fillBottom = selected
+        ? MarginaliaColors.primary
+        : (dimmed ? const Color(0x66B0B5AE) : MarginaliaColors.primary);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        // The bar itself.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2.5),
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 320 + index * 18),
+            curve: Curves.easeOutQuart,
+            height: height,
+            decoration: BoxDecoration(
+              gradient: hasData
+                  ? LinearGradient(
+                      begin: Alignment.topCenter,
+                      end:   Alignment.bottomCenter,
+                      colors: [fillTop, fillBottom],
+                    )
+                  : null,
+              color: hasData ? null : MarginaliaColors.ruleFaint,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(3),
+              ),
+              boxShadow: selected
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 6,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Month label — italic lowercase, matches the editorial register
+        // of the headline. Selected month rises to the brand color.
+        SizedBox(
+          height: labelZone - 8,
+          child: Text(
+            bucket.label.toLowerCase(),
+            style: GoogleFonts.ebGaramond(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected
+                  ? MarginaliaColors.primary
+                  : (dimmed
+                      ? MarginaliaColors.inkFaint
+                      : MarginaliaColors.inkMuted),
+              height: 1.0,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Floating tooltip pill ──────────────────────────────────────────────────
+//
+// Sits at the top of the chart Stack inside the reserved tooltipZone.
+// Horizontally centred on the selected bar, but clamped so it never spills
+// past the card's edges. A small triangle below the pill points down at
+// the bar's X — the bar itself gets a darker treatment + shadow so the
+// connection is visually obvious even though the arrow doesn't stretch
+// all the way down (which would be visually busy on short bars).
+class _MonthTooltip extends StatelessWidget {
+  const _MonthTooltip({
+    required this.chartWidth,
+    required this.barIndex,
+    required this.barCount,
+    required this.tooltipZone,
+    required this.barHeight,
+    required this.labelZone,
+    required this.monthName,
+    required this.humanized,
+    required this.rawMinutes,
+  });
+
+  final double chartWidth;
+  final int    barIndex;
+  final int    barCount;
+  final double tooltipZone;
+  final double barHeight;
+  final double labelZone;
+  final String monthName;
+  final String humanized;
+  final int    rawMinutes;
+
+  // Hardcoded sizes — the pill needs to fit in `tooltipZone` (60 px), so
+  // the title/value/padding stack adds up to ≤ tooltipZone - arrowSize.
+  static const _kPillWidth   = 132.0;
+  static const _kPillHeight  = 50.0;
+  static const _kArrowWidth  = 10.0;
+  static const _kArrowHeight = 6.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final colWidth  = chartWidth / barCount;
+    final barCentre = (barIndex + 0.5) * colWidth;
+    final leftClamp = (barCentre - _kPillWidth / 2)
+        .clamp(0.0, chartWidth - _kPillWidth);
+    final arrowDx   = (barCentre - leftClamp - _kArrowWidth / 2)
+        .clamp(8.0, _kPillWidth - _kArrowWidth - 8.0);
+
+    return Positioned(
+      left:  leftClamp,
+      width: _kPillWidth,
+      top:   0,
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutQuart,
+        tween: Tween(begin: 0, end: 1),
+        builder: (ctx, t, child) => Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, 4 * (1 - t)),
+            child: child,
+          ),
+        ),
+        child: SizedBox(
+          height: _kPillHeight + _kArrowHeight,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Pill body — sits at the top, fills the width.
+              Positioned(
+                top:    0,
+                left:   0,
+                right:  0,
+                height: _kPillHeight,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(12, 7, 12, 8),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0x231B1F1B),
+                      width: 0.8,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 14,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Bar
-                      AnimatedContainer(
-                        duration: Duration(milliseconds: 320 + i * 22),
-                        curve: Curves.easeOutCubic,
-                        height: maxValue == 0
-                            ? 4.0
-                            : 4.0 + (buckets[i].minutes / maxValue) * 92.0,
-                        decoration: BoxDecoration(
-                          color: buckets[i].minutes == 0
-                              ? MarginaliaColors.ruleFaint
-                              : MarginaliaColors.primary,
-                          borderRadius:
-                              const BorderRadius.vertical(top: Radius.circular(4)),
+                      Text(
+                        monthName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.ebGaramond(
+                          fontSize: 15,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w500,
+                          color: MarginaliaColors.ink,
+                          height: 1.05,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      // Month label
+                      const SizedBox(height: 2),
                       Text(
-                        buckets[i].label,
+                        rawMinutes == 0
+                            ? context.l10n.statsMonthlyNoReading
+                            : humanized,
                         style: GoogleFonts.manrope(
-                          fontSize: 9,
-                          color: MarginaliaColors.inkFaint,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: rawMinutes == 0
+                              ? MarginaliaColors.inkFaint
+                              : MarginaliaColors.primary,
+                          letterSpacing: 0.4,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-          ],
+
+              // Downward arrow — sits flush against the pill's bottom edge,
+              // X aligned with the selected bar (clamped so it stays under
+              // the pill body even when the pill itself is clamped to an
+              // edge).
+              Positioned(
+                left:   arrowDx,
+                top:    _kPillHeight - 0.6, // overlap pill border by 0.6
+                width:  _kArrowWidth,
+                height: _kArrowHeight,
+                child: CustomPaint(
+                  size: const Size(_kArrowWidth, _kArrowHeight),
+                  painter: _TooltipArrowPainter(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _TooltipArrowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fill = Paint()
+      ..color = MarginaliaColors.surface
+      ..style = PaintingStyle.fill;
+    final stroke = Paint()
+      ..color = const Color(0x231B1F1B)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+
+    canvas.drawPath(path, fill);
+
+    // Draw only the two slanted edges so the top edge blends into the pill.
+    final edge = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0);
+    canvas.drawPath(edge, stroke);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Caption under the chart ────────────────────────────────────────────────
+class _ChartCaption extends StatelessWidget {
+  const _ChartCaption({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          Icons.touch_app_outlined,
+          size: 13,
+          color: MarginaliaColors.inkFaint,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.ebGaramond(
+              fontSize: 12.5,
+              fontStyle: FontStyle.italic,
+              color: MarginaliaColors.inkFaint,
+              height: 1.3,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

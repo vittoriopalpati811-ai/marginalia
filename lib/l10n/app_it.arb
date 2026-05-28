@@ -912,6 +912,18 @@
   "statsMonthlySection": "LETTURA — ULTIMI 12 MESI",
   "@statsMonthlySection": {},
 
+  "statsMonthlyTotalCaption": "tempo di lettura · 12 mesi",
+  "@statsMonthlyTotalCaption": {},
+
+  "statsMonthlyPeakCaption": "mese più letto",
+  "@statsMonthlyPeakCaption": {},
+
+  "statsMonthlyTapHint": "Tocca una barra per i minuti del mese.",
+  "@statsMonthlyTapHint": {},
+
+  "statsMonthlyNoReading": "nessuna lettura",
+  "@statsMonthlyNoReading": {},
+
   "statsRecentSection": "SESSIONI RECENTI",
   "@statsRecentSection": {},
 
