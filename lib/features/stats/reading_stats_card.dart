@@ -16,6 +16,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/providers/auth_provider.dart';
+import '../../core/services/share_card_service.dart';
 import 'stats_screen.dart' show readingGoalProvider, readingSessionsProvider;
 
 class ReadingStatsCard extends ConsumerWidget {
@@ -77,6 +79,38 @@ class ReadingStatsCard extends ConsumerWidget {
                       ),
                     ),
                     const Spacer(),
+                    // Share-to-Instagram entry point. Tap stops the
+                    // outer InkWell from navigating to /stats so the
+                    // gesture lands on the share sheet instead.
+                    if (hasAnyData)
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () async {
+                          final name = ref
+                                  .read(myDisplayNameProvider)
+                                  .asData
+                                  ?.value ??
+                              'me';
+                          await ShareCardService.showStats(
+                            context,
+                            userName: name,
+                            booksThisYear: yearBooks,
+                            streakDays: streak,
+                            monthMinutes: monthMinutes,
+                            yearGoal: goal,
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 4),
+                          child: Icon(
+                            Icons.ios_share,
+                            size: 16,
+                            color: MarginaliaColors.sienna,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(width: 4),
                     Text(
                       context.l10n.profileSeeAll,
                       style: GoogleFonts.manrope(

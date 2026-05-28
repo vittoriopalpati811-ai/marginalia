@@ -17,46 +17,26 @@ class _Palette {
 }
 
 const _kPalettes = <_Palette>[
-  _Palette(                              // 0 Forest
-    base:   Color(0xFF1A3A2A),
-    accent: Color(0xFF6DB88A),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 1 Burgundy
-    base:   Color(0xFF3A1A1A),
-    accent: Color(0xFFC98D8D),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 2 Navy
-    base:   Color(0xFF1A2A3A),
-    accent: Color(0xFF8DAEC9),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 3 Amber
-    base:   Color(0xFF3A2A0A),
-    accent: Color(0xFFC9A84C),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 4 Slate
-    base:   Color(0xFF24243A),
-    accent: Color(0xFF9B9BD4),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 5 Terracotta
-    base:   Color(0xFF3A1F0A),
-    accent: Color(0xFFC97A4C),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 6 Plum
-    base:   Color(0xFF2A0A3A),
-    accent: Color(0xFFA84CC9),
-    text:   Color(0xFFF2EDE4),
-  ),
-  _Palette(                              // 7 Emerald
-    base:   Color(0xFF0A3A2A),
-    accent: Color(0xFF4CC9A8),
-    text:   Color(0xFFF2EDE4),
-  ),
+  // ── Editorial darks (original 8) — for the "Penguin Classics" mood ────
+  _Palette(base: Color(0xFF1A3A2A), accent: Color(0xFF6DB88A), text: Color(0xFFF2EDE4)), // 0  Forest
+  _Palette(base: Color(0xFF3A1A1A), accent: Color(0xFFC98D8D), text: Color(0xFFF2EDE4)), // 1  Burgundy
+  _Palette(base: Color(0xFF1A2A3A), accent: Color(0xFF8DAEC9), text: Color(0xFFF2EDE4)), // 2  Navy
+  _Palette(base: Color(0xFF3A2A0A), accent: Color(0xFFC9A84C), text: Color(0xFFF2EDE4)), // 3  Amber
+  _Palette(base: Color(0xFF24243A), accent: Color(0xFF9B9BD4), text: Color(0xFFF2EDE4)), // 4  Slate
+  _Palette(base: Color(0xFF3A1F0A), accent: Color(0xFFC97A4C), text: Color(0xFFF2EDE4)), // 5  Terracotta
+  _Palette(base: Color(0xFF2A0A3A), accent: Color(0xFFA84CC9), text: Color(0xFFF2EDE4)), // 6  Plum
+  _Palette(base: Color(0xFF0A3A2A), accent: Color(0xFF4CC9A8), text: Color(0xFFF2EDE4)), // 7  Emerald
+
+  // ── Vibrant solids (new 8) — for the "Standards Manual / Nickel Boys"
+  //    mood: large flat color block + cream text + small accent shape ───
+  _Palette(base: Color(0xFFB54B3A), accent: Color(0xFFE9D9C7), text: Color(0xFFF2EDE4)), // 8  Vermillion
+  _Palette(base: Color(0xFFD89D2C), accent: Color(0xFF1B1814), text: Color(0xFF1B1814)), // 9  Saffron-on-cream
+  _Palette(base: Color(0xFF4A7A35), accent: Color(0xFFF5EFE0), text: Color(0xFFF5EFE0)), // 10 Matcha
+  _Palette(base: Color(0xFFEB6FA5), accent: Color(0xFF231F1A), text: Color(0xFFFCF7F0)), // 11 Coral-pink
+  _Palette(base: Color(0xFF2B5F9E), accent: Color(0xFFFFD23F), text: Color(0xFFF2EDE4)), // 12 Cobalt
+  _Palette(base: Color(0xFF0F5C56), accent: Color(0xFFE8D5A0), text: Color(0xFFF5EFE0)), // 13 Petrol
+  _Palette(base: Color(0xFFF2C94C), accent: Color(0xFF1B1814), text: Color(0xFF1B1814)), // 14 Yellow on ink
+  _Palette(base: Color(0xFFEDE7DE), accent: Color(0xFFB54B3A), text: Color(0xFF1B1814)), // 15 Bone (light cover)
 ];
 
 // ─── Public widget ────────────────────────────────────────────────────────────
@@ -77,9 +57,11 @@ class BookEditorialCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hash    = title.hashCode.abs();
+    // Mix title + author hash so two books with the same first letter
+    // don't clump into the same palette/style. xor scatters bits well.
+    final hash    = (title.hashCode ^ (author.hashCode << 1)).abs();
     final palette = _kPalettes[hash % _kPalettes.length];
-    final style   = (hash >> 3) % 5;
+    final style   = (hash >> 3) % 7;       // 7 styles now
     final initial = title.isNotEmpty ? title[0].toUpperCase() : '?';
 
     final Widget cover;
@@ -92,8 +74,14 @@ class BookEditorialCover extends StatelessWidget {
         cover = _SwissCover(palette: palette, initial: initial, title: title, author: author);
       case 3:
         cover = _DiagonalCover(palette: palette, initial: initial, title: title, author: author);
-      default:
+      case 4:
         cover = _FrameCover(palette: palette, initial: initial, title: title, author: author);
+      case 5:
+        // "Standards Manual" style — flat colour + offset accent disc.
+        cover = _DiscCover(palette: palette, title: title, author: author, hash: hash);
+      default:
+        // "Nickel Boys" style — flat colour + small silhouette accent.
+        cover = _BlockCover(palette: palette, title: title, author: author, hash: hash);
     }
 
     return ClipRRect(borderRadius: borderRadius, child: cover);
@@ -626,6 +614,166 @@ class _DotGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DotGridPainter old) => old.color != color;
+}
+
+// ─── Style 5 — Disc (flat colour + large offset disc, "Standards Manual") ────
+
+class _DiscCover extends StatelessWidget {
+  const _DiscCover({
+    required this.palette,
+    required this.title,
+    required this.author,
+    required this.hash,
+  });
+  final _Palette palette;
+  final String title;
+  final String author;
+  final int hash;
+
+  @override
+  Widget build(BuildContext context) {
+    // Disc position scattered by hash so every book lands the disc somewhere
+    // distinctive — bleeding off the top, bottom, left or right edge.
+    final corner = hash % 4;
+    return LayoutBuilder(builder: (_, c) {
+      final w = c.maxWidth;
+      final h = c.maxHeight;
+      final discSize = h * 0.62;
+
+      late double left, top;
+      switch (corner) {
+        case 0: left = -discSize * 0.28; top = -discSize * 0.20; break; // top-left
+        case 1: left = w - discSize * 0.72; top = -discSize * 0.25; break; // top-right
+        case 2: left = -discSize * 0.30; top = h - discSize * 0.70; break; // bottom-left
+        default: left = w - discSize * 0.70; top = h - discSize * 0.75;     // bottom-right
+      }
+
+      return Stack(children: [
+        Container(color: palette.base),
+
+        // Big offset disc — the literal "Lem" / Standards Manual move.
+        Positioned(
+          left: left,
+          top:  top,
+          width:  discSize,
+          height: discSize,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: palette.accent,
+            ),
+          ),
+        ),
+
+        // Title — top-left
+        Positioned(
+          top: 14, left: 14, right: 14,
+          child: Text(
+            title,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: palette.text,
+              height: 1.15,
+              letterSpacing: -0.4,
+            ),
+          ),
+        ),
+
+        // Author — bottom
+        Positioned(
+          bottom: 12, left: 14, right: 14,
+          child: Text(
+            _lastName(author).toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.manrope(
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: palette.text.withAlpha(190),
+              letterSpacing: 2.4,
+            ),
+          ),
+        ),
+      ]);
+    });
+  }
+}
+
+// ─── Style 6 — Block (flat colour + cut horizon block, "Nickel Boys") ────────
+
+class _BlockCover extends StatelessWidget {
+  const _BlockCover({
+    required this.palette,
+    required this.title,
+    required this.author,
+    required this.hash,
+  });
+  final _Palette palette;
+  final String title;
+  final String author;
+  final int hash;
+
+  @override
+  Widget build(BuildContext context) {
+    // The "block" cuts the cover into two flat zones at a random horizon
+    // line — book becomes a piece of architecture instead of a typography
+    // exercise. Variation by hash so books in the same palette differ.
+    final horizon = 0.30 + ((hash >> 7) % 35) * 0.01; // 0.30 .. 0.65
+
+    return LayoutBuilder(builder: (_, c) {
+      final h = c.maxHeight;
+      final topH = h * horizon;
+
+      return Stack(children: [
+        // Top band = accent (the punchy colour)
+        Positioned(
+          top: 0, left: 0, right: 0, height: topH,
+          child: Container(color: palette.accent),
+        ),
+        // Bottom band = base
+        Positioned(
+          top: topH, left: 0, right: 0, bottom: 0,
+          child: Container(color: palette.base),
+        ),
+
+        // Title sits in the bottom (base) band, large editorial Garamond.
+        Positioned(
+          top: topH + 14, left: 14, right: 14,
+          child: Text(
+            title,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.ebGaramond(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.italic,
+              color: palette.text,
+              height: 1.22,
+            ),
+          ),
+        ),
+
+        // Author bottom, tiny + spaced — like a publisher imprint.
+        Positioned(
+          bottom: 11, left: 14, right: 14,
+          child: Text(
+            _lastName(author).toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.manrope(
+              fontSize: 8,
+              fontWeight: FontWeight.w600,
+              color: palette.text.withAlpha(180),
+              letterSpacing: 2.2,
+            ),
+          ),
+        ),
+      ]);
+    });
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

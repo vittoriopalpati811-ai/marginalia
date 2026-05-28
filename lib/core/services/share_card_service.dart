@@ -41,6 +41,33 @@ class ShareCardService {
       ),
     );
   }
+
+  /// Stats-mode share: a card showing books / streak / minutes + a
+  /// short headline, suitable for posting to Instagram stories
+  /// (4:5 aspect ratio, Marginalia branding watermark).
+  /// Reuses [_ShareSheet]'s capture+share pipeline; the difference is
+  /// only the rendered card content.
+  static Future<void> showStats(
+    BuildContext context, {
+    required String userName,
+    required int booksThisYear,
+    required int streakDays,
+    required int monthMinutes,
+    int? yearGoal,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ShareSheet.stats(
+        userName: userName,
+        booksThisYear: booksThisYear,
+        streakDays: streakDays,
+        monthMinutes: monthMinutes,
+        yearGoal: yearGoal,
+      ),
+    );
+  }
 }
 
 // ─── Bottom sheet ─────────────────────────────────────────────────────────────
@@ -51,12 +78,42 @@ class _ShareSheet extends StatefulWidget {
     this.bookTitle,
     this.bookAuthor,
     this.kindleColor,
-  });
+  })  : statsUserName  = null,
+        statsBooks     = null,
+        statsStreak    = null,
+        statsMinutes   = null,
+        statsYearGoal  = null;
+
+  const _ShareSheet.stats({
+    required String userName,
+    required int booksThisYear,
+    required int streakDays,
+    required int monthMinutes,
+    int? yearGoal,
+  })  : content       = '',
+        bookTitle     = null,
+        bookAuthor    = null,
+        kindleColor   = null,
+        statsUserName = userName,
+        statsBooks    = booksThisYear,
+        statsStreak   = streakDays,
+        statsMinutes  = monthMinutes,
+        statsYearGoal = yearGoal;
 
   final String content;
   final String? bookTitle;
   final String? bookAuthor;
   final String? kindleColor;
+
+  // Stats variant — when these are non-null, render _StatsShareCard
+  // instead of _ShareCard.
+  final String? statsUserName;
+  final int?    statsBooks;
+  final int?    statsStreak;
+  final int?    statsMinutes;
+  final int?    statsYearGoal;
+
+  bool get isStats => statsUserName != null;
 
   @override
   State<_ShareSheet> createState() => _ShareSheetState();
@@ -174,12 +231,20 @@ class _ShareSheetState extends State<_ShareSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: RepaintBoundary(
               key: _cardKey,
-              child: _ShareCard(
-                content: widget.content,
-                bookTitle: widget.bookTitle,
-                bookAuthor: widget.bookAuthor,
-                kindleColor: widget.kindleColor,
-              ),
+              child: widget.isStats
+                  ? _StatsShareCard(
+                      userName:      widget.statsUserName!,
+                      booksThisYear: widget.statsBooks!,
+                      streakDays:    widget.statsStreak!,
+                      monthMinutes:  widget.statsMinutes!,
+                      yearGoal:      widget.statsYearGoal,
+                    )
+                  : _ShareCard(
+                      content: widget.content,
+                      bookTitle: widget.bookTitle,
+                      bookAuthor: widget.bookAuthor,
+                      kindleColor: widget.kindleColor,
+                    ),
             ),
           )
               .animate()
@@ -427,6 +492,226 @@ class _ShareCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Stats share card ─────────────────────────────────────────────────────────
+//
+// Strava-style snapshot of the user's reading week: 3 big numbers + a
+// short headline, ready to drop into an Instagram story. 4:5 aspect
+// matches IG portrait. All deterministic — no network, no API costs.
+
+class _StatsShareCard extends StatelessWidget {
+  const _StatsShareCard({
+    required this.userName,
+    required this.booksThisYear,
+    required this.streakDays,
+    required this.monthMinutes,
+    this.yearGoal,
+  });
+
+  final String userName;
+  final int    booksThisYear;
+  final int    streakDays;
+  final int    monthMinutes;
+  final int?   yearGoal;
+
+  String _fmtMinutes(int m) {
+    if (m <= 0) return '0m';
+    final h = m ~/ 60;
+    final mm = m % 60;
+    if (h == 0) return '${mm}m';
+    if (mm == 0) return '${h}h';
+    return '${h}h ${mm}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 4 / 5,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1B2A1A), Color(0xFF2E4D24)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Stack(
+          children: [
+            // ── Decorative big M ───────────────────────────────────────
+            Positioned(
+              top: -30,
+              right: -20,
+              child: Text(
+                'M',
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 300,
+                  height: 0.8,
+                  color: const Color(0xFFF1EEE7).withAlpha(10),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+
+            // ── Wordmark + user ───────────────────────────────────────
+            Positioned(
+              top: 24,
+              left: 28,
+              right: 28,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'MARGINALIA',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFF1EEE7).withAlpha(160),
+                      letterSpacing: 3.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'La lettura di $userName',
+                    style: GoogleFonts.ebGaramond(
+                      fontSize: 18,
+                      fontStyle: FontStyle.italic,
+                      color: const Color(0xFFF1EEE7),
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Three big numbers ─────────────────────────────────────
+            Positioned(
+              top: 0, bottom: 0, left: 0, right: 0,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _BigStat(
+                      value: yearGoal != null
+                          ? '$booksThisYear/$yearGoal'
+                          : booksThisYear.toString(),
+                      label: 'LIBRI ${DateTime.now().year}',
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: _BigStat(
+                            value: streakDays.toString(),
+                            label: 'GIORNI DI FILA',
+                            smaller: true,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 60,
+                          color: const Color(0xFFF1EEE7).withAlpha(40),
+                        ),
+                        Expanded(
+                          child: _BigStat(
+                            value: _fmtMinutes(monthMinutes),
+                            label: 'QUESTO MESE',
+                            smaller: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Footer URL ────────────────────────────────────────────
+            Positioned(
+              bottom: 22,
+              left: 28,
+              right: 28,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'marginalia.app',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFF1EEE7).withAlpha(180),
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1EEE7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'M',
+                      style: GoogleFonts.ebGaramond(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1B2A1A),
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BigStat extends StatelessWidget {
+  const _BigStat({
+    required this.value,
+    required this.label,
+    this.smaller = false,
+  });
+  final String value;
+  final String label;
+  final bool   smaller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.ebGaramond(
+            fontSize: smaller ? 38 : 64,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFFF1EEE7),
+            letterSpacing: -1.5,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: smaller ? 9 : 11,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFFF1EEE7).withAlpha(150),
+            letterSpacing: 1.8,
+          ),
+        ),
+      ],
     );
   }
 }
