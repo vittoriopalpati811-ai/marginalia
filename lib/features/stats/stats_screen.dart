@@ -236,18 +236,18 @@ class StatsScreen extends ConsumerWidget {
 
 // ─── Derived metrics (pure functions) ──────────────────────────────────────
 
-/// Counts distinct books with at least one session in `year` AND pages_read
-/// either filled (we treat "any session with pages > 0" as progress toward
-/// completion). This is a soft heuristic — the user can later mark books as
-/// finished explicitly.
+/// Counts distinct books with at least one session — ALL TIME, no year
+/// filter. Inferred sessions inherit the Kindle highlight timestamp,
+/// which is often months or years stale; filtering by current calendar
+/// year was making freshly-imported libraries read as "0 books read"
+/// even when the user clearly had finished books from prior years.
+/// The annual goal stays a yearly target; the progress count is just
+/// more forgiving so the user sees their effort. `year` kept in the
+/// signature for call-site compatibility (it's ignored).
 int _countBooksFinishedThisYear(
     List<Map<String, dynamic>> sessions, int year) {
   final keys = <String>{};
   for (final s in sessions) {
-    final dateStr = s['session_date'] as String?;
-    if (dateStr == null) continue;
-    final d = DateTime.tryParse(dateStr);
-    if (d == null || d.year != year) continue;
     final id    = s['book_id']    as String?;
     final title = (s['book_title'] as String?)?.toLowerCase().trim();
     final key   = id ?? title ?? '';

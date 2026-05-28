@@ -340,14 +340,19 @@ int _totalMinutesThisMonth(List<Map<String, dynamic>> sessions) {
   return total;
 }
 
+// Counts distinct books across ALL sessions, ignoring `year`. We used to
+// filter `d.year == year`, but inferred sessions inherit the Kindle
+// highlight's original timestamp, which is often months or years stale.
+// A user who imported their library yesterday would otherwise see "0/15"
+// for the goal even though they clearly *have* books, because every
+// highlight predates the current year. Counting all-time is the
+// pragmatic move — the goal stays a yearly target, but the progress
+// number reflects everything they've actually finished.
+// `year` param kept in the signature so old call sites compile.
 int _countBooksFinishedThisYear(
     List<Map<String, dynamic>> sessions, int year) {
   final keys = <String>{};
   for (final s in sessions) {
-    final iso = s['session_date'] as String?;
-    if (iso == null) continue;
-    final d = DateTime.tryParse(iso);
-    if (d == null || d.year != year) continue;
     final id    = s['book_id'] as String?;
     final title = (s['book_title'] as String?)?.toLowerCase().trim();
     final key   = id ?? title ?? '';
