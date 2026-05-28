@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
@@ -206,12 +207,13 @@ class _SocialHeader extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // ── Left: search-person icon ────────────────────────────
+                // ── Left: clean magnifying glass (Phosphor) ────────────
                 _GlassIconButton(
                   onTap: onSearch,
-                  child: CustomPaint(
-                    size: const Size(26, 26),
-                    painter: _SearchPersonPainter(color: _cream),
+                  child: Icon(
+                    PhosphorIconsRegular.magnifyingGlass,
+                    color: _cream,
+                    size: 24,
                   ),
                 ),
 
@@ -370,7 +372,7 @@ class _BookAddPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final p = Paint()
       ..color = color
-      ..strokeWidth = 1.6
+      ..strokeWidth = 1.8
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
@@ -378,51 +380,57 @@ class _BookAddPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
+    // Book occupies the lower-left ~75% of the canvas so the floating
+    // "+" can sit clearly outside, top-right, like the user's reference.
     // ── Left page ─────────────────────────────────────────────────────
+    final bookLeft   = w * 0.10;
+    final bookRight  = w * 0.80;
+    final bookTop    = h * 0.28;
+    final bookBottom = h * 0.86;
+    final spineX     = (bookLeft + bookRight) / 2;
+
     final leftPage = Path()
-      ..moveTo(w * 0.50, h * 0.16)
+      ..moveTo(spineX, bookTop)
       ..cubicTo(
-        w * 0.38, h * 0.14,
-        w * 0.16, h * 0.20,
-        w * 0.12, h * 0.26,
+        spineX - (spineX - bookLeft) * 0.40, bookTop - h * 0.02,
+        bookLeft + (spineX - bookLeft) * 0.30, bookTop + h * 0.02,
+        bookLeft, bookTop + h * 0.04,
       )
-      ..lineTo(w * 0.12, h * 0.84)
+      ..lineTo(bookLeft, bookBottom - h * 0.04)
       ..cubicTo(
-        w * 0.16, h * 0.78,
-        w * 0.36, h * 0.74,
-        w * 0.50, h * 0.76,
+        bookLeft + (spineX - bookLeft) * 0.30, bookBottom - h * 0.06,
+        spineX - (spineX - bookLeft) * 0.40, bookBottom - h * 0.02,
+        spineX, bookBottom,
       )
       ..close();
     canvas.drawPath(leftPage, p);
 
     // ── Right page ────────────────────────────────────────────────────
     final rightPage = Path()
-      ..moveTo(w * 0.50, h * 0.16)
+      ..moveTo(spineX, bookTop)
       ..cubicTo(
-        w * 0.62, h * 0.14,
-        w * 0.84, h * 0.20,
-        w * 0.88, h * 0.26,
+        spineX + (bookRight - spineX) * 0.40, bookTop - h * 0.02,
+        bookRight - (bookRight - spineX) * 0.30, bookTop + h * 0.02,
+        bookRight, bookTop + h * 0.04,
       )
-      ..lineTo(w * 0.88, h * 0.84)
+      ..lineTo(bookRight, bookBottom - h * 0.04)
       ..cubicTo(
-        w * 0.84, h * 0.78,
-        w * 0.64, h * 0.74,
-        w * 0.50, h * 0.76,
+        bookRight - (bookRight - spineX) * 0.30, bookBottom - h * 0.06,
+        spineX + (bookRight - spineX) * 0.40, bookBottom - h * 0.02,
+        spineX, bookBottom,
       )
       ..close();
     canvas.drawPath(rightPage, p);
 
-    // ── Spine line ────────────────────────────────────────────────────
-    canvas.drawLine(Offset(w * 0.50, h * 0.16), Offset(w * 0.50, h * 0.76),
-        p..strokeWidth = 1.3);
-
-    // ── + badge (top-right area, inside right page) ───────────────────
-    final px = w * 0.72;
-    final py = h * 0.42;
-    final arm = w * 0.11;
-    p..strokeWidth = 1.7..strokeCap = StrokeCap.round;
-    canvas.drawLine(Offset(px - arm, py), Offset(px + arm, py), p); // horizontal
-    canvas.drawLine(Offset(px, py - arm), Offset(px, py + arm), p); // vertical
+    // ── Floating "+" badge in the top-right, *outside* the book ──────
+    // Matches the user's reference: small plus offset above the book's
+    // upper-right corner rather than embedded inside the page.
+    final px  = w * 0.88;
+    final py  = h * 0.18;
+    final arm = w * 0.085;
+    p..strokeWidth = 2.0;
+    canvas.drawLine(Offset(px - arm, py), Offset(px + arm, py), p);
+    canvas.drawLine(Offset(px, py - arm), Offset(px, py + arm), p);
   }
 
   @override
