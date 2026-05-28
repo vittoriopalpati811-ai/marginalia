@@ -76,12 +76,20 @@ class MarginaliaTextStyles {
   // ── Highlight content — EB Garamond italic ────────────────────────────────
 
   /// Large highlight body — hero detail screen.
+  // Roman, not italic. Garamond italic at body sizes (15-22pt) is
+  // visually dense and slows reading — italic is a *display* feature in
+  // editorial typography (titles, pull-quotes, attribution), not body
+  // copy. Highlights are the user's most-read content in the app, so
+  // they get the most legible setting: roman, slightly heavier weight
+  // (500 instead of 400) for better screen rendering, same generous
+  // line-height. The decorative quote-mark above the highlight carries
+  // the "literary" register on its own; the text itself just needs to
+  // be readable.
   static TextStyle get highlightBody => GoogleFonts.ebGaramond(
         fontSize: 22,
-        height: 1.82,
+        height: 1.78,
         color: MarginaliaColors.ink,
-        fontWeight: FontWeight.w400,
-        fontStyle: FontStyle.italic,
+        fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
       );
 
