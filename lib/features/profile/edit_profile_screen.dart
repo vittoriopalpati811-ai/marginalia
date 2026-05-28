@@ -144,8 +144,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     setState(() => _uploadingAvatar = true);
     try {
       final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-      if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
+      // Previously we returned silently here — that's exactly why the user
+      // reported "the avatar doesn't save": iOS Safari + file_picker sometimes
+      // returns a result with bytes == null (the picker UI dismisses but the
+      // FileReader never populated the buffer). Surface a clear error so the
+      // user knows to retry, ideally with a smaller image.
+      if (r == null || r.files.isEmpty) {
+        return; // user genuinely cancelled, no error
+      }
       final file = r.files.first;
+      if (file.bytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.editProfilePhotoReadFailed),
+              backgroundColor: const Color(0xFF8B2E2E),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
       final url = await ref.read(supabaseServiceProvider).uploadAvatar(
             file.bytes!,
             (file.extension ?? 'jpg').toLowerCase(),
@@ -159,9 +178,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         );
       }
     } catch (e) {
+      // ignore: avoid_print
+      print('[edit_profile] avatar upload error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.editProfilePhotoUpdateError}: $e'),
+            backgroundColor: const Color(0xFF8B2E2E),
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -173,8 +199,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     setState(() => _uploadingCover = true);
     try {
       final r = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
-      if (r == null || r.files.isEmpty || r.files.first.bytes == null) return;
+      if (r == null || r.files.isEmpty) {
+        return;
+      }
       final file = r.files.first;
+      if (file.bytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.editProfilePhotoReadFailed),
+              backgroundColor: const Color(0xFF8B2E2E),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
       final url = await ref.read(supabaseServiceProvider).uploadCover(
             file.bytes!,
             (file.extension ?? 'jpg').toLowerCase(),
@@ -188,9 +228,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         );
       }
     } catch (e) {
+      // ignore: avoid_print
+      print('[edit_profile] cover upload error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${context.l10n.editProfileCoverUpdateError}: $e'),
+            backgroundColor: const Color(0xFF8B2E2E),
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _uploadingCover = false);

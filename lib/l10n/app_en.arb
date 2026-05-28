@@ -382,6 +382,9 @@
 
   "editProfilePhotoUpdated": "Profile photo updated!",
   "editProfileCoverUpdated": "Cover photo updated!",
+  "editProfilePhotoReadFailed": "Couldn't read that photo. Try a smaller image (<5MB) or a different format.",
+  "editProfilePhotoUpdateError": "Photo upload error",
+  "editProfileCoverUpdateError": "Cover upload error",
   "editProfileUsernameUnavailable": "Username unavailable, please choose another.",
   "editProfilePreviewLabel": "Preview",
 

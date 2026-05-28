@@ -978,6 +978,15 @@
   "editProfileCoverUpdated": "Foto copertina aggiornata!",
   "@editProfileCoverUpdated": {},
 
+  "editProfilePhotoReadFailed": "Non sono riuscito a leggere la foto. Prova con un'immagine più piccola (<5MB) o un altro formato.",
+  "@editProfilePhotoReadFailed": {},
+
+  "editProfilePhotoUpdateError": "Errore caricamento foto",
+  "@editProfilePhotoUpdateError": {},
+
+  "editProfileCoverUpdateError": "Errore caricamento copertina",
+  "@editProfileCoverUpdateError": {},
+
   "editProfileUsernameUnavailable": "Username non disponibile, scegline un altro.",
   "@editProfileUsernameUnavailable": {},
 
