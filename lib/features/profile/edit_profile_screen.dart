@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -283,7 +284,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
     final gp  = _gpFor(_gradKey);
     final p   = widget.initialProfile;
     // _local* takes priority: updated immediately after upload without waiting
@@ -295,69 +295,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
+      // Slim cream app bar replaces the 200px green "preview hero" the user
+      // flagged as redundant ("quella è già visibile nella sezione
+      // personale dell'account"). The user's profile screen already shows
+      // the avatar + cover; this screen now reads as a settings form, not
+      // a second presentation of the same card.
+      appBar: AppBar(
+        backgroundColor: MarginaliaColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0.3,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          color: MarginaliaColors.ink,
+        ),
+        title: Text(
+          'Modifica profilo',
+          style: GoogleFonts.ebGaramond(
+            fontSize: 19,
+            fontWeight: FontWeight.w600,
+            color: MarginaliaColors.ink,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ),
       body: CustomScrollView(
         slivers: [
-          // ── Top hero (cover preview + avatar) ─────────────────────────────
+          // ── Photos row (avatar + cover) ───────────────────────────────────
+          // Compact, functional row at the top of the form — small circular
+          // avatar preview and a wider cover thumbnail, each with its own
+          // tap-to-pick affordance. Replaces the old immersive hero.
           SliverToBoxAdapter(
-            child: SizedBox(
-              height: 200 + top,
-              child: Stack(
-                fit: StackFit.expand,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Background (cover or gradient)
-                  if (coverUrl != null && coverUrl.isNotEmpty)
-                    Image.network(coverUrl, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _GradientBox(gp: gp, pat: _patKey))
-                  else
-                    _GradientBox(gp: gp, pat: _patKey),
-
-                  // Dim overlay
-                  Container(color: Colors.black.withAlpha(30)),
-
-                  // Back + title bar
-                  Positioned(
-                    top: top + 4,
-                    left: 8,
-                    right: 8,
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back_ios_new,
-                              color: Colors.white, size: 20),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Edit profile',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        // Change cover button
-                        _PhotoBtn(
-                          icon: Icons.image_outlined,
-                          label: 'Copertina',
-                          loading: _uploadingCover,
-                          onTap: _pickCover,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Avatar + change avatar button
-                  Positioned(
-                    left: 24,
-                    bottom: 16,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        // Avatar circle
-                        Container(
-                          width: 72,
-                          height: 72,
+                  _SectionLabel('FOTO'),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // ── Avatar preview (tappable) ───────────────────────
+                      GestureDetector(
+                        onTap: _uploadingAvatar ? null : _pickAvatar,
+                        child: Container(
+                          width: 64,
+                          height: 64,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -367,9 +351,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(36),
+                            borderRadius: BorderRadius.circular(32),
                             border: Border.all(
-                                color: Colors.white.withAlpha(70), width: 2.5),
+                                color: MarginaliaColors.rule, width: 1),
                           ),
                           child: _uploadingAvatar
                               ? const Center(
@@ -379,21 +363,81 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   ? ClipOval(
                                       child: Image.network(avatarUrl,
                                           fit: BoxFit.cover,
-                                          width: 72,
-                                          height: 72,
+                                          width: 64,
+                                          height: 64,
                                           errorBuilder: (_, __, ___) =>
                                               _InitialText(initial)))
                                   : _InitialText(initial),
                         ),
-                        const SizedBox(width: 10),
-                        _PhotoBtn(
-                          icon: Icons.account_circle_outlined,
-                          label: 'Foto',
-                          loading: _uploadingAvatar,
-                          onTap: _pickAvatar,
+                      ),
+                      const SizedBox(width: 12),
+                      // ── Cover preview (tappable, wider) ─────────────────
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _uploadingCover ? null : _pickCover,
+                          child: Container(
+                            height: 64,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: MarginaliaColors.rule, width: 1),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(11),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  if (coverUrl != null && coverUrl.isNotEmpty)
+                                    Image.network(coverUrl, fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) =>
+                                            _GradientBox(gp: gp, pat: _patKey))
+                                  else
+                                    _GradientBox(gp: gp, pat: _patKey),
+                                  if (_uploadingCover)
+                                    Container(
+                                      color: Colors.black.withAlpha(80),
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 1.5),
+                                      ),
+                                    )
+                                  else
+                                    Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withAlpha(110),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: const [
+                                            Icon(Icons.image_outlined,
+                                                size: 13,
+                                                color: Colors.white),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Copertina',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
