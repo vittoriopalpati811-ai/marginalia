@@ -24,31 +24,49 @@ import '../../core/providers/auth_provider.dart';
 
 // ─── Providers ─────────────────────────────────────────────────────────────
 //
-// Both providers watch currentUserProvider (a StreamProvider tied to
-// supabase.auth.onAuthStateChange) instead of supabaseServiceProvider.
-// The latter is a static reference that never re-emits — so on cold
-// boot the FutureProvider ran BEFORE auth restoration, returned
-// AsyncValue.loading, and stayed there forever because no listener
-// ever triggered a rebuild. Watching the user stream fixes that:
-//   • cold boot → user null → return empty (data state)
-//   • auth lands → user emits → provider re-runs → real fetch
-// Same root cause as the realtime inbox bug from commit f47d224.
+// Watch `currentUserProvider` (StreamProvider tied to onAuthStateChange)
+// so the providers re-run when auth restoration finishes — NOT the static
+// `supabaseServiceProvider` reference, which never re-emits.
+//
+// Defense in depth: hard 8-second timeout on every fetch + try/catch that
+// downgrades to an empty result. Without this, the user reported the
+// screen "loading forever or never" — typical of an iOS Safari WebSocket
+// stall that never returns. Timing out means "skeleton appears, then
+// fades to data within 8s no matter what" — never indefinite.
+
+const _kStatsFetchTimeout = Duration(seconds: 8);
 
 /// Annual reading goal for the current year (null if not set).
 final readingGoalProvider = FutureProvider<int?>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;
   final svc = ref.read(supabaseServiceProvider);
-  return svc.fetchReadingGoal(year: DateTime.now().year);
+  try {
+    return await svc
+        .fetchReadingGoal(year: DateTime.now().year)
+        .timeout(_kStatsFetchTimeout, onTimeout: () => null);
+  } catch (e) {
+    // ignore: avoid_print
+    print('[readingGoalProvider] $e');
+    return null;
+  }
 });
 
 /// All reading sessions for the current user, newest first.
 final readingSessionsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final user = ref.watch(currentUserProvider);
-  if (user == null) return [];
+  if (user == null) return const [];
   final svc = ref.read(supabaseServiceProvider);
-  return svc.fetchReadingSessions(limit: 500);
+  try {
+    return await svc
+        .fetchReadingSessions(limit: 500)
+        .timeout(_kStatsFetchTimeout, onTimeout: () => const []);
+  } catch (e) {
+    // ignore: avoid_print
+    print('[readingSessionsProvider] $e');
+    return const [];
+  }
 });
 
 // ─── Screen ────────────────────────────────────────────────────────────────
