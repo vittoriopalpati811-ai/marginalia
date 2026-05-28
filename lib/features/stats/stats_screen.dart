@@ -23,19 +23,31 @@ import '../../core/motion/airbnb_motion.dart';
 import '../../core/providers/auth_provider.dart';
 
 // ─── Providers ─────────────────────────────────────────────────────────────
+//
+// Both providers watch currentUserProvider (a StreamProvider tied to
+// supabase.auth.onAuthStateChange) instead of supabaseServiceProvider.
+// The latter is a static reference that never re-emits — so on cold
+// boot the FutureProvider ran BEFORE auth restoration, returned
+// AsyncValue.loading, and stayed there forever because no listener
+// ever triggered a rebuild. Watching the user stream fixes that:
+//   • cold boot → user null → return empty (data state)
+//   • auth lands → user emits → provider re-runs → real fetch
+// Same root cause as the realtime inbox bug from commit f47d224.
 
 /// Annual reading goal for the current year (null if not set).
 final readingGoalProvider = FutureProvider<int?>((ref) async {
-  final svc = ref.watch(supabaseServiceProvider);
-  if (!svc.isAuthenticated) return null;
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+  final svc = ref.read(supabaseServiceProvider);
   return svc.fetchReadingGoal(year: DateTime.now().year);
 });
 
 /// All reading sessions for the current user, newest first.
 final readingSessionsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final svc = ref.watch(supabaseServiceProvider);
-  if (!svc.isAuthenticated) return [];
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return [];
+  final svc = ref.read(supabaseServiceProvider);
   return svc.fetchReadingSessions(limit: 500);
 });
 
