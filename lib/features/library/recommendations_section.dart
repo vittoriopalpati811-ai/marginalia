@@ -67,13 +67,62 @@ class BookRecommendation {
   final String reason; // AI-generated personalised explanation
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+/// Why the recommendation list is empty (when it is). Used to render an
+/// actionable empty-state copy ("come back tomorrow" vs "import your
+/// highlights" vs "service unavailable") instead of one generic line that
+/// confuses every distinct failure into the same word soup.
+enum RecsEmptyReason {
+  ok,             // not empty — list has data
+  noBooks,        // user has no highlights yet
+  notAuth,        // not signed in
+  rateLimit,      // AI quota exhausted, retry later
+  aiError,        // AI errored (malformed JSON, transient)
+  aiEmpty,        // AI returned no picks (shouldn't happen, but defensible)
+  network,        // couldn't reach the edge function at all
+}
 
+/// Result wrapper so the UI can branch on the reason.
+class RecsResult {
+  const RecsResult({required this.list, required this.reason});
+  final List<BookRecommendation> list;
+  final RecsEmptyReason reason;
+
+  bool get isEmpty => list.isEmpty;
+}
+
+RecsEmptyReason _parseReason(String? raw) {
+  switch (raw) {
+    case 'ok':             return RecsEmptyReason.ok;
+    case 'no_books':       return RecsEmptyReason.noBooks;
+    case 'rate_limit':     return RecsEmptyReason.rateLimit;
+    case 'ai_error':       return RecsEmptyReason.aiError;
+    case 'ai_empty':       return RecsEmptyReason.aiEmpty;
+    case 'ai_unconfigured':return RecsEmptyReason.aiError;
+    default:               return RecsEmptyReason.aiError;
+  }
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+//
+// Watches `currentUserProvider` (not the static `supabaseServiceProvider`)
+// so the FutureProvider re-runs when auth restoration completes after a
+// cold start. Same fix we applied to the stats screen — without it, the
+// recs section would cache the "not authenticated" result before Supabase
+// finished restoring the session, and never re-fetch.
+//
 // NOT autoDispose: we want this cached indefinitely across tab navigation.
 // The only way recommendations re-fetch is via ref.invalidate(), which
-// library_screen.dart calls exclusively after a real My Clippings import.
+// library_screen.dart calls exclusively after a real My Clippings import,
+// or via the explicit "Riprova" button in the rate-limited empty state.
+
 final libraryRecommendationsProvider =
-    FutureProvider<List<BookRecommendation>>((ref) async {
+    FutureProvider<RecsResult>((ref) async {
+  // Re-emit when auth restoration completes.
+  final user = ref.watch(currentUserProvider);
+  if (user == null && kIsWeb) {
+    debugPrint('[Recs] not authenticated → empty');
+    return const RecsResult(list: [], reason: RecsEmptyReason.notAuth);
+  }
 
   // ── 1. Collect highlights grouped by book ──────────────────────────────────
 
@@ -82,10 +131,6 @@ final libraryRecommendationsProvider =
 
   if (kIsWeb) {
     final service = ref.read(supabaseServiceProvider);
-    if (!service.isAuthenticated) {
-      debugPrint('[Recs] not authenticated → empty');
-      return [];
-    }
     try {
       final data = await service.fetchHighlights();
       debugPrint('[Recs] fetchHighlights → ${data.length} rows');
@@ -116,7 +161,7 @@ final libraryRecommendationsProvider =
       }
     } catch (e, st) {
       debugPrint('[Recs] fetchHighlights error: $e\n$st');
-      return [];
+      return const RecsResult(list: [], reason: RecsEmptyReason.network);
     }
   } else {
     // Native (Isar): no embedded join — use book ID + title from booksProvider.
@@ -144,7 +189,9 @@ final libraryRecommendationsProvider =
   }
 
   debugPrint('[Recs] distinct books: ${orderedBookIds.length}');
-  if (orderedBookIds.isEmpty) return [];
+  if (orderedBookIds.isEmpty) {
+    return const RecsResult(list: [], reason: RecsEmptyReason.noBooks);
+  }
 
   // ── 2. Build request payload ───────────────────────────────────────────────
 
@@ -203,7 +250,7 @@ final libraryRecommendationsProvider =
 
     if (result.data == null) {
       debugPrint('[Recs] Edge Function returned null data');
-      return [];
+      return const RecsResult(list: [], reason: RecsEmptyReason.network);
     }
 
     if (result.data is Map<String, dynamic>) {
@@ -212,19 +259,26 @@ final libraryRecommendationsProvider =
       responseBody = jsonDecode(result.data as String) as Map<String, dynamic>;
     } else {
       debugPrint('[Recs] unexpected data type: ${result.data.runtimeType}');
-      return [];
+      return const RecsResult(list: [], reason: RecsEmptyReason.aiError);
     }
   } catch (e, st) {
     debugPrint('[Recs] Edge Function error: $e\n$st');
-    return [];
+    return const RecsResult(list: [], reason: RecsEmptyReason.network);
   }
 
   // ── 5. Parse ───────────────────────────────────────────────────────────────
 
+  final reason  = _parseReason(responseBody['reason'] as String?);
   final rawList = responseBody['recommendations'] as List<dynamic>?;
+
   if (rawList == null || rawList.isEmpty) {
-    debugPrint('[Recs] no recommendations in response');
-    return [];
+    debugPrint('[Recs] empty list, reason=$reason');
+    return RecsResult(
+      list: const [],
+      // If the server forgot to set reason but the list is empty, default
+      // to aiEmpty so the user gets a generic "no picks right now" copy.
+      reason: reason == RecsEmptyReason.ok ? RecsEmptyReason.aiEmpty : reason,
+    );
   }
 
   final recommendations = rawList.map((raw) {
@@ -238,13 +292,37 @@ final libraryRecommendationsProvider =
   }).where((r) => r.title.isNotEmpty).toList();
 
   debugPrint('[Recs] received ${recommendations.length} recommendations');
-  return recommendations;
+  return RecsResult(list: recommendations, reason: RecsEmptyReason.ok);
 });
 
 // ─── Section widget ───────────────────────────────────────────────────────────
 
 class LibraryRecommendationsSection extends ConsumerWidget {
   const LibraryRecommendationsSection({super.key});
+
+  /// Maps an empty reason to user-facing copy. The previous version
+  /// collapsed every failure into "Importa i tuoi highlight Kindle…" which
+  /// was actively misleading when (a) the user already had highlights and
+  /// (b) the AI was rate-limited or down. Each reason now gets the line
+  /// that matches reality.
+  String _copyFor(BuildContext context, RecsEmptyReason reason) {
+    switch (reason) {
+      case RecsEmptyReason.notAuth:
+        return 'Accedi al tuo account per ricevere consigli personalizzati.';
+      case RecsEmptyReason.noBooks:
+        return context.l10n.recsEmpty;
+      case RecsEmptyReason.rateLimit:
+        return 'Quota giornaliera del servizio AI esaurita. I consigli torneranno fra qualche ora — riprova più tardi.';
+      case RecsEmptyReason.aiEmpty:
+        return 'Nessun consiglio al momento. Riprova fra poco.';
+      case RecsEmptyReason.aiError:
+        return 'Il servizio di consigli non risponde. Tocca "Riprova" per ritentare.';
+      case RecsEmptyReason.network:
+        return 'Impossibile contattare il servizio. Controlla la connessione e riprova.';
+      case RecsEmptyReason.ok:
+        return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -254,18 +332,26 @@ class LibraryRecommendationsSection extends ConsumerWidget {
       loading: () => _RecommendationsSkeleton(),
       error: (e, _) {
         debugPrint('[Recs] UI error: $e');
-        return const SizedBox.shrink();
+        // Surface the error instead of pretending nothing happened.
+        return _RecommendationsHint(
+          'Il servizio di consigli non risponde. Tocca "Riprova" per ritentare.',
+          onRetry: () => ref.invalidate(libraryRecommendationsProvider),
+        );
       },
-      data: (books) {
-        if (books.isEmpty) {
-          return _RecommendationsHint(context.l10n.recsEmpty);
+      data: (result) {
+        if (result.isEmpty) {
+          // "noBooks" is the only empty state without a retry button — the
+          // user needs to import, not retry. Every other empty reason gets
+          // a Riprova affordance.
+          final canRetry = result.reason != RecsEmptyReason.noBooks &&
+              result.reason != RecsEmptyReason.notAuth;
+          return _RecommendationsHint(
+            _copyFor(context, result.reason),
+            onRetry: canRetry
+                ? () => ref.invalidate(libraryRecommendationsProvider)
+                : null,
+          );
         }
-        // NOTE: previously rendered _RecommendationsSubtitle here too, but
-        // its copy ("Selezionati in base ai tuoi highlight") was visually
-        // redundant with _SectionHeader's tagline ("Selezionati da
-        // Marginalia, solo per te"), and on certain devices the two lines
-        // appeared stacked/duplicated like a render ghost. One tagline is
-        // enough — context comes from the section title above it.
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
           child: Column(
@@ -273,7 +359,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
             children: [
               _SectionHeader(),
               const SizedBox(height: 16),
-              ...books.asMap().entries.map(
+              ...result.list.asMap().entries.map(
                 (e) => _RecommendationCard(rec: e.value, index: e.key),
               ),
             ],
@@ -694,8 +780,9 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
 // ─── Hint widget (empty state) ────────────────────────────────────────────────
 
 class _RecommendationsHint extends StatelessWidget {
-  const _RecommendationsHint(this.message);
+  const _RecommendationsHint(this.message, {this.onRetry});
   final String message;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -723,6 +810,36 @@ class _RecommendationsHint extends StatelessWidget {
                 height: 1.5,
               ),
             ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 12),
+              // Quiet text button — matches the editorial register of the
+              // empty-state copy (italic Garamond), not a full primary CTA.
+              // The user is being invited to retry, not pushed.
+              GestureDetector(
+                onTap: onRetry,
+                behavior: HitTestBehavior.opaque,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 14,
+                      color: MarginaliaColors.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Riprova',
+                      style: GoogleFonts.manrope(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: MarginaliaColors.primary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

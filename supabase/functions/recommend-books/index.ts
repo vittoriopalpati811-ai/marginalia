@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
   const userName: string = (body.userName ?? "").trim();
 
   if (books.length === 0) {
-    return json({ recommendations: [] });
+    return json({ recommendations: [], reason: "no_books" });
   }
 
   // ── 1. Fetch Open Library plots in parallel ──────────────────────────────
@@ -101,18 +101,29 @@ Deno.serve(async (req) => {
   const groqKey = Deno.env.get("GROQ_API_KEY");
   if (!groqKey) {
     console.error("GROQ_API_KEY not configured");
-    return json({ recommendations: [] });
+    return json({ recommendations: [], reason: "ai_unconfigured" });
   }
 
   let recommendations: Recommendation[];
   try {
     recommendations = await callGroq(groqKey, prompt);
   } catch (e) {
-    console.error("Groq API error:", e);
-    return json({ recommendations: [] });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("Groq API error:", msg);
+    // Surface rate-limit explicitly so the client can show "torna domani"
+    // instead of a generic empty state. Match on the HTTP code text the
+    // throw site interpolates: `Groq API 429: …`.
+    if (/\b429\b/.test(msg) || /rate.?limit/i.test(msg)) {
+      return json({ recommendations: [], reason: "rate_limit" });
+    }
+    return json({ recommendations: [], reason: "ai_error" });
   }
 
-  return json({ recommendations });
+  if (recommendations.length === 0) {
+    return json({ recommendations: [], reason: "ai_empty" });
+  }
+
+  return json({ recommendations, reason: "ok" });
 });
 
 // ─── Open Library ─────────────────────────────────────────────────────────────
@@ -232,21 +243,32 @@ ISTRUZIONI:
 - Scegli libri che risuonano con i temi, le idee e lo stile degli highlight.
 - Varia tra classici e contemporanei, italiani e stranieri.
 - ${reasonInstruction}
-- Rispondi SOLO con un array JSON valido, senza markdown, senza testo extra.
+- Rispondi SOLO con JSON valido nel formato sotto, senza markdown e senza testo extra. Usa esclusivamente virgolette dritte ("), mai virgolette tipografiche.
 
-[
-  {
-    "title": "Titolo",
-    "author": "Autore",
-    "year": "anno",
-    "reason": "Spiegazione personalizzata."
-  }
-]`;
+{
+  "recommendations": [
+    {
+      "title": "Titolo",
+      "author": "Autore",
+      "year": "anno",
+      "reason": "Spiegazione personalizzata."
+    }
+  ]
+}`;
 }
 
-// ─── Groq API (llama-3.3-70b-versatile — free tier) ──────────────────────────
+// ─── Groq API (llama-3.1-8b-instant — free tier) ─────────────────────────────
 //
-// Free limits: 30 RPM, 14 400 req/day (as of 2025)
+// Was llama-3.3-70b-versatile, which has a 100 K tokens-per-day cap on free.
+// One personalised recommendation request runs ~1.4 K tokens, so the 70B
+// model ran out of quota after ~70 calls/day — a single moderately active
+// user could exhaust the whole org's daily budget. Production logs showed
+// the 429 was being hit every afternoon ("Used 98935 / Limit 100000").
+//
+// 8B-instant has a much higher daily allowance (~500 K TPD as of 2026) and
+// is more than enough for short book recommendations — we're not asking
+// for chain-of-thought reasoning, just "pick 5 titles + write 1 sentence".
+// Quality regression is minimal; throughput improves ~7×.
 // Dashboard: https://console.groq.com
 
 async function callGroq(
@@ -260,10 +282,17 @@ async function callGroq(
       "authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.1-8b-instant",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1024,
       temperature: 0.7,
+      // Force the model to emit a syntactically valid JSON object. Without
+      // this the 8B model occasionally produces malformed JSON (smart-quote
+      // closure, trailing comma in a long string). Logs showed:
+      //   "Expected ',' or '}' after property value in JSON at position 221"
+      // json_object mode guarantees parseable JSON; we then unwrap the
+      // top-level "recommendations" key.
+      response_format: { type: "json_object" },
     }),
     signal: AbortSignal.timeout(30_000),
   });
@@ -276,12 +305,22 @@ async function callGroq(
   const data = await res.json();
   const rawText: string = data?.choices?.[0]?.message?.content ?? "";
 
+  // json_object mode returns parseable JSON directly. extractJson is kept
+  // as a safety net in case the model still wraps the answer in markdown.
   const extracted = extractJson(rawText);
   const parsed = JSON.parse(extracted);
 
-  if (!Array.isArray(parsed)) throw new Error("Response is not an array");
+  // Accept either {recommendations: [...]} (preferred) or a bare array
+  // (legacy / safety).
+  const list: unknown = Array.isArray(parsed)
+    ? parsed
+    : (parsed as { recommendations?: unknown[] }).recommendations;
 
-  return (parsed as Recommendation[]).slice(0, 5).map((r) => ({
+  if (!Array.isArray(list)) {
+    throw new Error("Response missing recommendations array");
+  }
+
+  return (list as Recommendation[]).slice(0, 5).map((r) => ({
     title:  String(r.title  ?? ""),
     author: String(r.author ?? ""),
     year:   String(r.year   ?? ""),
@@ -293,10 +332,17 @@ function extractJson(text: string): string {
   const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) return fenceMatch[1].trim();
 
-  const start = text.indexOf("[");
-  const end   = text.lastIndexOf("]");
-  if (start !== -1 && end !== -1 && end > start) {
-    return text.slice(start, end + 1);
+  // Prefer an object wrapper (`{...}`); fall back to a bare array (`[...]`)
+  // if the model emitted one despite the prompt.
+  const objStart = text.indexOf("{");
+  const objEnd   = text.lastIndexOf("}");
+  if (objStart !== -1 && objEnd > objStart) {
+    return text.slice(objStart, objEnd + 1);
+  }
+  const arrStart = text.indexOf("[");
+  const arrEnd   = text.lastIndexOf("]");
+  if (arrStart !== -1 && arrEnd > arrStart) {
+    return text.slice(arrStart, arrEnd + 1);
   }
   return text.trim();
 }
