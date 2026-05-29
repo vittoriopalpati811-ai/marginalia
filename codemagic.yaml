@@ -60,6 +60,18 @@ workflows:
       # is read by Codemagic to select the SDK. 3.22.0 ships Dart 3.4, which
       # satisfies pubspec's `sdk: ">=3.3.0 <4.0.0"`.
       flutter: "3.22.0"
+      # The `signing` group holds CERTIFICATE_PRIVATE_KEY — a stable RSA private
+      # key (PEM, `-----BEGIN RSA PRIVATE KEY-----`) added as a SECRET in
+      # Codemagic UI → App settings → Environment variables (group "signing").
+      # `app-store-connect fetch-signing-files --create` needs it to mint AND
+      # save the iOS distribution certificate; without it the step dies with
+      # "Cannot save Signing Certificates without certificate private key"
+      # (build #5, commit 28c636f, failed exactly there — all earlier steps,
+      # incl. Initialize keychain, passed). The key is generated ONCE and reused
+      # across every build: generating a fresh one per build would create a new
+      # distribution certificate each run and hit Apple's cert cap after 2-3.
+      groups:
+        - signing
       vars:
         BUNDLE_ID: io.marginalia.app
         # The numeric Apple ID (adam ID) of the Marginalia app record in
@@ -154,10 +166,15 @@ workflows:
         # `--create` makes whichever resources don't exist yet; the App Store
         # Connect API key is injected from integrations.app_store_connect.
         # `--type IOS_APP_STORE` requests an App Store profile (not dev/ad-hoc).
+        # `--certificate-key @env:CERTIFICATE_PRIVATE_KEY` hands the CLI the RSA
+        # private key (from the `signing` env group above) that the new
+        # distribution certificate is built on — required by `--create`, else
+        # "Cannot save Signing Certificates without certificate private key".
         script: |
           app-store-connect fetch-signing-files \
             "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
             --create
 
       - name: Add certificate to keychain
