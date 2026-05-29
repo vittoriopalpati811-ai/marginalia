@@ -74,6 +74,27 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!--
+	  Force the legacy Skia renderer instead of Impeller.
+
+	  Impeller is the DEFAULT iOS renderer in Flutter 3.22 and is a known
+	  cause of release-only (TestFlight/App Store, NOT debug) black screens
+	  on real devices — most often on shaders and BackdropFilter blur, which
+	  this app uses heavily in the frosted "liquid glass" bottom nav bar.
+	  The founder reported a fully black launch on TestFlight twice; after
+	  ruling out a thrown exception (the BootstrapErrorApp screen never
+	  appeared) and restructuring main() to paint a splash before any async
+	  init (so a startup HANG can no longer black-screen), an Impeller engine
+	  failure remained the other plausible cause. Skia is the battle-tested
+	  pre-3.x renderer and Flutter's officially documented fallback for
+	  Impeller-specific rendering bugs.
+
+	  If the app launches correctly with this set, Impeller can be re-enabled
+	  later (delete this key) once the specific failing effect is isolated —
+	  Skia costs some ProMotion smoothness but guarantees a visible frame.
+	-->
+	<key>FLTEnableImpeller</key>
+	<false/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Marginalia needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
 	<!--
