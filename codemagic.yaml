@@ -51,8 +51,16 @@ workflows:
       # xcode-project use-profiles) creates the distribution certificate and
       # the provisioning profile on first run. The App Store Connect API key
       # for those commands comes from `integrations.app_store_connect` above.
+      # Pin the Flutter SDK the runner installs. WITHOUT this key the
+      # mac_mini_m2 image uses its newest pre-installed Flutter (3.41.7),
+      # whose bundled flutter_localizations pins intl 0.20.2 and breaks
+      # `flutter pub get` against this repo's `intl: ^0.19.0` constraint
+      # (build #2, commit e95a691, failed exactly here at "Set up Flutter").
+      # A bare FLUTTER_VERSION var pins NOTHING — only `environment.flutter`
+      # is read by Codemagic to select the SDK. 3.22.0 ships Dart 3.4, which
+      # satisfies pubspec's `sdk: ">=3.3.0 <4.0.0"`.
+      flutter: "3.22.0"
       vars:
-        FLUTTER_VERSION: "3.22.0"
         BUNDLE_ID: io.marginalia.app
         # The numeric Apple ID (adam ID) of the Marginalia app record in
         # App Store Connect — NOT the developer account ID. Taken from the
