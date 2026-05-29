@@ -1004,8 +1004,14 @@ class _BookCell extends StatelessWidget {
     final title  = book['title']  as String? ?? '';
     final author = book['author'] as String? ?? '';
 
+    // Books in the profile library grid push to the same /book/:id route
+    // the main Library tab uses, so the user keeps the highlights-detail
+    // experience consistent across surfaces. `book['id']` is the Supabase
+    // UUID from `fetchMyBooks` (id, title, author).
+    final bookId = book['id'] as String? ?? '';
+
     final card = GestureDetector(
-      onTap: () {/* TODO: navigate to book detail */},
+      onTap: bookId.isEmpty ? null : () => context.push('/book/$bookId'),
       child: Container(
         decoration: MarginaliaDecorations.quietCard(radius: 10),
         child: Column(
@@ -2012,15 +2018,24 @@ class _FavBookTile extends StatelessWidget {
       _TileSize.medium => 11.5,
       _TileSize.small  => 9.5,
     };
+    // Title is now capped tighter on small/medium so the author byline below
+    // has a guaranteed row to itself. Previously only the large tile showed
+    // the author, which felt inconsistent — the user reported "i 6 preferiti
+    // non hanno tutti titolo e autore" after the geometric covers shipped.
     final int maxLines = switch (size) {
       _TileSize.large  => 3,
       _TileSize.medium => 2,
-      _TileSize.small  => 2,
+      _TileSize.small  => 1,
+    };
+    final double authorSize = switch (size) {
+      _TileSize.large  => 8.5,
+      _TileSize.medium => 7.5,
+      _TileSize.small  => 7.0,
     };
     final double gradH = switch (size) {
-      _TileSize.large  => 90.0,
-      _TileSize.medium => 72.0,
-      _TileSize.small  => 60.0,
+      _TileSize.large  => 96.0,
+      _TileSize.medium => 78.0,
+      _TileSize.small  => 64.0,
     };
 
     return ClipRRect(
@@ -2064,14 +2079,17 @@ class _FavBookTile extends StatelessWidget {
                   maxLines: maxLines,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (size == _TileSize.large && author.isNotEmpty) ...[
+                // Author byline — now shown on every size, not just large.
+                // Tighter font + slightly lower opacity on the smaller tiles
+                // so it stays a quiet secondary line under the title.
+                if (author.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(
                     author.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 8,
+                    style: TextStyle(
+                      fontSize: authorSize,
                       fontWeight: FontWeight.w600,
-                      color: Color(0x99EDE5D5),
+                      color: const Color(0x99EDE5D5),
                       letterSpacing: 0.5,
                     ),
                     maxLines: 1,
