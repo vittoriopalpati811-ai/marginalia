@@ -414,16 +414,21 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           ),
                         ),
                         // Grid (shrinkWrap inside SliverToBoxAdapter is fine for
-                        // the small number of books on a profile page)
+                        // the small number of books on a profile page).
+                        // Aspect 0.58 (was 0.62) because the cell now stacks
+                        // cover + title + author in a single card — the
+                        // labels take ~38% of the height, so the cards need
+                        // to be a bit taller for the cover to keep its
+                        // portrait proportions.
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                           child: GridView.count(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.62,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.58,
                             children: books
                                 .asMap()
                                 .entries
@@ -979,7 +984,15 @@ class _SpotlightCard extends StatelessWidget {
   }
 }
 
-// ─── Book cell (3-col grid) — uses editorial cover ────────────────────────────
+// ─── Book cell (3-col grid) — cover + title + author in a single card ────────
+//
+// User feedback on the geometric-cover redesign: in the profile grid the
+// shapes alone weren't enough to recognise a book at a glance. The library
+// view already pairs the cover with title + author below, and the profile
+// "LIBRARY" section should follow the same pattern — one card, cover on
+// top, title and author underneath. Without it the profile reads as
+// "anonymous art tiles," which is the opposite of what a library should
+// communicate.
 
 class _BookCell extends StatelessWidget {
   const _BookCell({required this.book, required this.index});
@@ -991,13 +1004,66 @@ class _BookCell extends StatelessWidget {
     final title  = book['title']  as String? ?? '';
     final author = book['author'] as String? ?? '';
 
-    return GestureDetector(
+    final card = GestureDetector(
       onTap: () {/* TODO: navigate to book detail */},
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: BookEditorialCover(title: title, author: author),
+      child: Container(
+        decoration: MarginaliaDecorations.quietCard(radius: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cover — takes the upper ~63% of the card. ClipRRect so the
+            // geometric art is rounded at the top corners only.
+            Expanded(
+              flex: 62,
+              child: BookEditorialCover(
+                title:  title,
+                author: author,
+                borderRadius: const BorderRadius.only(
+                  topLeft:  Radius.circular(9.4),
+                  topRight: Radius.circular(9.4),
+                ),
+              ),
+            ),
+            // Title + author — quiet, compact, never wraps to ridiculous
+            // heights. Same style family as the library card but scaled
+            // down for the smaller profile tile.
+            Expanded(
+              flex: 38,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: MarginaliaTextStyles.bookTitle.copyWith(
+                        fontSize: 10.5,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      author.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: MarginaliaTextStyles.bookAuthor.copyWith(
+                        fontSize: 8,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    )
+    );
+
+    return card
         .animate(delay: (index * 30).ms)
         .fadeIn(duration: 260.ms, curve: Curves.easeOut);
   }
