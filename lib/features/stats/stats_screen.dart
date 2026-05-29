@@ -793,8 +793,11 @@ class _ChartHeadline extends StatelessWidget {
                 total,
                 style: GoogleFonts.ebGaramond(
                   fontSize: 34,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500,
+                  // Roman, not italic — user feedback: italic numbers on the
+                  // stats card felt "decorative" rather than authoritative,
+                  // and the screenshot they shared felt the progress should
+                  // read like a tally, not a frontispiece.
+                  fontWeight: FontWeight.w600,
                   color: MarginaliaColors.ink,
                   letterSpacing: -0.8,
                   height: 1.0,
@@ -822,8 +825,8 @@ class _ChartHeadline extends StatelessWidget {
                 peakName!,
                 style: GoogleFonts.ebGaramond(
                   fontSize: 22,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500,
+                  // Roman, matching the headline total above.
+                  fontWeight: FontWeight.w600,
                   color: MarginaliaColors.primary,
                   letterSpacing: -0.3,
                   height: 1.1,
