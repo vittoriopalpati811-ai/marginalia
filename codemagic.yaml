@@ -107,10 +107,19 @@ workflows:
           # commit 2899d3c, died exactly here). Remove it; the real tests live
           # in test/parser/ and pass on their own.
           rm -f test/widget_test.dart
-          # --org io.marginalia makes the bundle id io.marginalia.marginalia;
-          # rewrite it to the canonical io.marginalia.app that the signing
-          # config above and the App Store Connect record both expect.
-          perl -pi -e 's/io\.marginalia\.marginalia/io.marginalia.app/g' ios/Runner.xcodeproj/project.pbxproj
+          # `flutter create` derives the bundle id's LAST segment from the build
+          # DIRECTORY name, not --org or the pubspec. On Codemagic the repo is
+          # cloned to /Users/builder/clone, so the generated id is
+          # io.marginalia.CLONE — NOT io.marginalia.marginalia (build #6, commit
+          # 665d63f: project.pbxproj read io.marginalia.clone while the App Store
+          # profile was for io.marginalia.app, so `xcode-project use-profiles`
+          # found no match → archive died "Runner requires a provisioning
+          # profile"). The old rewrite only matched io.marginalia.marginalia and
+          # was a silent no-op. Normalize WHATEVER that middle segment is to the
+          # canonical io.marginalia.app — RunnerTests target first (longer match),
+          # then the app target — so it matches the profile + ASC record.
+          perl -pi -e 's/io\.marginalia\.[A-Za-z0-9_]+\.RunnerTests/io.marginalia.app.RunnerTests/g' ios/Runner.xcodeproj/project.pbxproj
+          perl -pi -e 's/PRODUCT_BUNDLE_IDENTIFIER = io\.marginalia\.[A-Za-z0-9_]+;/PRODUCT_BUNDLE_IDENTIFIER = io.marginalia.app;/g' ios/Runner.xcodeproj/project.pbxproj
           echo "Bundle identifiers in project.pbxproj:"
           grep PRODUCT_BUNDLE_IDENTIFIER ios/Runner.xcodeproj/project.pbxproj
           # RevenueCat's purchases_flutter (^7.x) needs an iOS 13 minimum, but
