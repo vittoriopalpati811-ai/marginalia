@@ -72,10 +72,20 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON body" }, 400);
   }
 
-  const books: InputBook[] = (body.books ?? []).slice(0, 20);
-  const existingTitles: string[] = (body.existingTitles ?? []).map((t) =>
-    t.toLowerCase().trim()
-  );
+  // Why 8, not 20: llama-3.1-8b-instant has a tight tokens-per-minute cap
+  // (6 K TPM on the free tier). At 20 books × 4 highlight excerpts × 600-
+  // char plots, the prompt clocked in at ~5 K tokens — one request used
+  // 80%+ of the per-minute budget, and any refresh in the same minute
+  // 429'd. With 8 books × 2 excerpts × short plots we stay comfortably
+  // under 1.5 K tokens per request, leaving headroom for 3-4 invocations
+  // per minute. The 8 most-recent books still represent the user's
+  // current reading direction; the rest were diluting the signal anyway.
+  const books: InputBook[] = (body.books ?? []).slice(0, 8);
+  // Existing titles also capped — they're only used for "do not suggest"
+  // exclusion, so 30 is plenty (and we shorten them when listing).
+  const existingTitles: string[] = (body.existingTitles ?? [])
+    .map((t) => t.toLowerCase().trim())
+    .slice(0, 30);
   const userContext: Record<string, unknown> = body.context ?? {};
   const userName: string = (body.userName ?? "").trim();
 
@@ -144,7 +154,11 @@ async function fetchOpenLibraryPlot(
     const doc = data?.docs?.[0];
     if (!doc) return "";
 
-    if (doc.description) return extractText(doc.description).slice(0, 600);
+    // Plot summaries were 600 chars × 20 books = 12 K chars of pure plot
+    // text alone. With the 8B model's 6 K TPM limit that was untenable.
+    // 220 chars is one good sentence — enough for the model to know the
+    // book's mood and theme without bloating the prompt.
+    if (doc.description) return extractText(doc.description).slice(0, 220);
 
     const key = doc.key as string | undefined;
     if (!key) return "";
@@ -155,7 +169,7 @@ async function fetchOpenLibraryPlot(
     if (!worksRes.ok) return "";
 
     const works = await worksRes.json();
-    return extractText(works.description ?? "").slice(0, 600);
+    return extractText(works.description ?? "").slice(0, 220);
   } catch {
     return "";
   }
@@ -183,11 +197,13 @@ function buildPrompt(
 ): string {
   const bookList = books
     .map((b, i) => {
+      // Trimmed to 2 highlights × 100 chars (was 3 × 150) so the prompt
+      // fits inside the 6 K TPM budget of llama-3.1-8b-instant.
       const lines: string[] = [`${i + 1}. "${b.title}" di ${b.author}`];
       if (b.plot) lines.push(`   Trama: ${b.plot}`);
       if (b.highlights.length > 0) {
         lines.push(
-          `   Highlight: ${b.highlights.slice(0, 3).map((h) => `"${h.slice(0, 150)}"`).join(" | ")}`
+          `   Highlight: ${b.highlights.slice(0, 2).map((h) => `"${h.slice(0, 100)}"`).join(" | ")}`
         );
       }
       return lines.join("\n");
@@ -196,7 +212,7 @@ function buildPrompt(
 
   const exclusionNote =
     existingTitles.length > 0
-      ? `\n\nNon suggerire MAI questi titoli (${existingTitles.length} libri già in libreria): ${existingTitles.slice(0, 40).join(", ")}${existingTitles.length > 40 ? ", e altri…" : ""}.`
+      ? `\n\nNon suggerire titoli già nella sua libreria: ${existingTitles.slice(0, 25).join(", ")}.`
       : "";
 
   const contextParts: string[] = [];
