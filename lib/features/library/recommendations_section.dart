@@ -124,10 +124,26 @@ final libraryRecommendationsProvider =
     return const RecsResult(list: [], reason: RecsEmptyReason.notAuth);
   }
 
-  // ── 1. Collect highlights grouped by book ──────────────────────────────────
+  // ── 1. Collect the user's 100 most recent highlights, grouped by book ──────
+  //
+  // Earlier versions sent "up to 20 books with up to 4 highlights each"
+  // (80 highlights). The user asked us to use the 100 most recent
+  // highlights end-to-end — same idea, just framed by recency of the
+  // *highlight* rather than recency of the book. This gives the model
+  // a more faithful picture of what the user is reading right now,
+  // including books they touched only once or twice.
+  //
+  // Both backends already return highlights sorted by added_at DESC, so
+  // we just take the prefix of that stream until we hit 100 (or run out).
+  // The first time we see a book id we record its title + author; every
+  // subsequent highlight from that book appends. The natural order of
+  // book ids by recency-of-first-highlight becomes our `orderedBookIds`.
+
+  const highlightCap = 100;
 
   final Map<String, Map<String, dynamic>> bookMap = {};
   final List<String> orderedBookIds = [];
+  var highlightCount = 0;
 
   if (kIsWeb) {
     final service = ref.read(supabaseServiceProvider);
@@ -136,9 +152,10 @@ final libraryRecommendationsProvider =
       debugPrint('[Recs] fetchHighlights → ${data.length} rows');
 
       for (final h in data) {
+        if (highlightCount >= highlightCap) break;
         final bookId  = (h['book_id'] as String?)?.trim() ?? '';
         final content = (h['content'] as String?)?.trim() ?? '';
-        if (bookId.isEmpty) continue;
+        if (bookId.isEmpty || content.isEmpty) continue;
 
         if (!bookMap.containsKey(bookId)) {
           final booksEmbed = h['books'] as Map<String, dynamic>?;
@@ -154,23 +171,24 @@ final libraryRecommendationsProvider =
           orderedBookIds.add(bookId);
         }
 
-        final highlights = bookMap[bookId]!['highlights'] as List<String>;
-        if (highlights.length < 4 && content.isNotEmpty) {
-          highlights.add(content);
-        }
+        (bookMap[bookId]!['highlights'] as List<String>).add(content);
+        highlightCount++;
       }
     } catch (e, st) {
       debugPrint('[Recs] fetchHighlights error: $e\n$st');
       return const RecsResult(list: [], reason: RecsEmptyReason.network);
     }
   } else {
-    // Native (Isar): no embedded join — use book ID + title from booksProvider.
+    // Native (Isar): allHighlightsProvider already sorts by addedAt DESC.
     final all   = await ref.read(allHighlightsProvider.future);
     final books = ref.read(booksProvider).value ?? [];
     final bookById = {for (final b in books) b.supabaseId: b};
 
     for (final h in all) {
+      if (highlightCount >= highlightCap) break;
       final bookId = h.bookId.toString();
+      if (h.content.isEmpty) continue;
+
       if (!bookMap.containsKey(bookId)) {
         final book = bookById[bookId];
         if (book == null || book.title.isEmpty) continue;
@@ -181,26 +199,27 @@ final libraryRecommendationsProvider =
         };
         orderedBookIds.add(bookId);
       }
-      final highlights = bookMap[bookId]!['highlights'] as List<String>;
-      if (highlights.length < 4 && h.content.isNotEmpty) {
-        highlights.add(h.content);
-      }
+      (bookMap[bookId]!['highlights'] as List<String>).add(h.content);
+      highlightCount++;
     }
   }
 
-  debugPrint('[Recs] distinct books: ${orderedBookIds.length}');
+  debugPrint('[Recs] distinct books: ${orderedBookIds.length}, '
+      'highlights collected: $highlightCount');
   if (orderedBookIds.isEmpty) {
     return const RecsResult(list: [], reason: RecsEmptyReason.noBooks);
   }
 
   // ── 2. Build request payload ───────────────────────────────────────────────
 
-  final recentIds  = orderedBookIds.take(20).toList();
   final allTitles  = orderedBookIds
       .map((id) => bookMap[id]!['title'] as String)
       .toList();
 
-  final booksPayload = recentIds.map((id) {
+  // Send every book that contributed a highlight to the 100 — no .take()
+  // cap on the client side. The Edge Function applies its own books +
+  // per-book caps as a safety net.
+  final booksPayload = orderedBookIds.map((id) {
     final info = bookMap[id]!;
     return {
       'title':      info['title'] as String,

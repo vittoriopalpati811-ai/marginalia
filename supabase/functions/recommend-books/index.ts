@@ -72,17 +72,17 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON body" }, 400);
   }
 
-  // Why 8, not 20: llama-3.1-8b-instant has a tight tokens-per-minute cap
-  // (6 K TPM on the free tier). At 20 books × 4 highlight excerpts × 600-
-  // char plots, the prompt clocked in at ~5 K tokens — one request used
-  // 80%+ of the per-minute budget, and any refresh in the same minute
-  // 429'd. With 8 books × 2 excerpts × short plots we stay comfortably
-  // under 1.5 K tokens per request, leaving headroom for 3-4 invocations
-  // per minute. The 8 most-recent books still represent the user's
-  // current reading direction; the rest were diluting the signal anyway.
-  const books: InputBook[] = (body.books ?? []).slice(0, 8);
-  // Existing titles also capped — they're only used for "do not suggest"
-  // exclusion, so 30 is plenty (and we shorten them when listing).
+  // Caps tuned for llama-3.1-8b-instant's 6 K TPM ceiling.
+  //
+  // The client now sends the user's 100 most recent highlights, grouped
+  // by book. That can be anywhere from 5 books × 20 highlights (concentrated
+  // reader) to 100 books × 1 highlight (scattered reader). We cap to 14
+  // books × up to 8 highlight excerpts of 80 chars each — at the upper
+  // bound this is ~9 K chars / ~2.5 K tokens for the highlight payload,
+  // plus plot summaries only for books with sparse highlights. Total
+  // request ~3.5 K tokens, leaving ~2.5 K TPM headroom for two more
+  // invocations inside the same minute.
+  const books: InputBook[] = (body.books ?? []).slice(0, 14);
   const existingTitles: string[] = (body.existingTitles ?? [])
     .map((t) => t.toLowerCase().trim())
     .slice(0, 30);
@@ -93,10 +93,18 @@ Deno.serve(async (req) => {
     return json({ recommendations: [], reason: "no_books" });
   }
 
-  // ── 1. Fetch Open Library plots in parallel ──────────────────────────────
+  // ── 1. Fetch Open Library plots — only when we need the help ─────────────
+  //
+  // For books with ≥ 3 highlights, the highlights themselves are a much
+  // stronger mood signal than a generic Open Library summary, and the
+  // plot fetch costs both latency (up to 8 s per book) and tokens. So we
+  // skip the fetch in that case and let the highlights carry the signal.
 
   const withPlots = await Promise.all(
     books.map(async (book) => {
+      if (book.highlights.length >= 3) {
+        return { ...book, plot: "" };
+      }
       const plot = await fetchOpenLibraryPlot(book.title, book.author);
       return { ...book, plot };
     })
@@ -158,7 +166,7 @@ async function fetchOpenLibraryPlot(
     // text alone. With the 8B model's 6 K TPM limit that was untenable.
     // 220 chars is one good sentence — enough for the model to know the
     // book's mood and theme without bloating the prompt.
-    if (doc.description) return extractText(doc.description).slice(0, 220);
+    if (doc.description) return extractText(doc.description).slice(0, 180);
 
     const key = doc.key as string | undefined;
     if (!key) return "";
@@ -169,7 +177,7 @@ async function fetchOpenLibraryPlot(
     if (!worksRes.ok) return "";
 
     const works = await worksRes.json();
-    return extractText(works.description ?? "").slice(0, 220);
+    return extractText(works.description ?? "").slice(0, 180);
   } catch {
     return "";
   }
@@ -197,13 +205,14 @@ function buildPrompt(
 ): string {
   const bookList = books
     .map((b, i) => {
-      // Trimmed to 2 highlights × 100 chars (was 3 × 150) so the prompt
-      // fits inside the 6 K TPM budget of llama-3.1-8b-instant.
+      // Up to 8 highlights × 80 chars per book. The client already
+      // pre-selected the 100 most-recent highlights overall, so the
+      // server-side cap is a safety net rather than a primary trim.
       const lines: string[] = [`${i + 1}. "${b.title}" di ${b.author}`];
       if (b.plot) lines.push(`   Trama: ${b.plot}`);
       if (b.highlights.length > 0) {
         lines.push(
-          `   Highlight: ${b.highlights.slice(0, 2).map((h) => `"${h.slice(0, 100)}"`).join(" | ")}`
+          `   Highlight: ${b.highlights.slice(0, 8).map((h) => `"${h.slice(0, 80)}"`).join(" | ")}`
         );
       }
       return lines.join("\n");
