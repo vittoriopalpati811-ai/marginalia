@@ -275,23 +275,31 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
     super.initState();
     // Listen for passwordRecovery event (triggered when user opens the reset link).
     // When fired, navigate to the reset-password screen as soon as the router is ready.
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      if (data.event == AuthChangeEvent.passwordRecovery) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          router.push('/reset-password');
-        });
-      }
-      // TODO: register APNs device token when user signs in.
-      // Requires a platform plugin to retrieve the token (e.g. firebase_messaging
-      // without FirebaseApp, or flutter_apns_only). Once you have the token:
-      //
-      //   if (data.event == AuthChangeEvent.signedIn) {
-      //     final token = await YourPushPlugin.getToken();
-      //     if (token != null) {
-      //       ref.read(supabaseServiceProvider).registerDeviceToken(token);
-      //     }
-      //   }
-    });
+    // Defensive: Supabase is an optional, offline-first layer. If it failed to
+    // initialize during bootstrap, `Supabase.instance` throws — so guard the
+    // auth listener to make sure a missing backend can never crash the shell.
+    try {
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+        if (data.event == AuthChangeEvent.passwordRecovery) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            router.push('/reset-password');
+          });
+        }
+        // TODO: register APNs device token when user signs in.
+        // Requires a platform plugin to retrieve the token (e.g. firebase_messaging
+        // without FirebaseApp, or flutter_apns_only). Once you have the token:
+        //
+        //   if (data.event == AuthChangeEvent.signedIn) {
+        //     final token = await YourPushPlugin.getToken();
+        //     if (token != null) {
+        //       ref.read(supabaseServiceProvider).registerDeviceToken(token);
+        //     }
+        //   }
+      });
+    } catch (error) {
+      debugPrint(
+          '[MarginaliaApp] auth listener not attached (Supabase unavailable): $error');
+    }
   }
 
   @override
