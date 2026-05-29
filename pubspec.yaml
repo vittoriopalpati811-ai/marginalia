@@ -77,6 +77,11 @@ dev_dependencies:
   build_runner: ^2.4.9
   riverpod_generator: ^2.4.0
   isar_generator: ^3.1.0+1
+  # Generates AppIcon set (iOS) + Android launcher icons from a single
+  # source PNG. Run once after providing assets/icon/app-icon.png:
+  #   dart run flutter_launcher_icons
+  # Config lives in `flutter_launcher_icons.yaml` at the repo root.
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   generate: true

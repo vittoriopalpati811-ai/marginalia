@@ -1,0 +1,26 @@
+# Generates the iOS AppIcon set and Android launcher icon from a single
+# 1024×1024 PNG source. Run once after providing the source:
+#
+#   dart run flutter_launcher_icons
+#
+# The source PNG should be:
+#   • Exactly 1024×1024 pixels
+#   • No alpha / transparency (Apple rejects transparent App Store icons)
+#   • No rounded corners — iOS applies its own mask
+#   • Saved at assets/icon/app-icon.png
+#
+# Output:
+#   • iOS: ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
+#         (all sizes from 20pt @1x up to 1024×1024 marketing icon)
+#   • Android: android/app/src/main/res/mipmap-*/launcher_icon.png
+#
+# The package overwrites the AppIcon set on every run, so re-running is
+# safe and idempotent.
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app-icon.png"
+  remove_alpha_ios: true
+  # iOS only — adaptive icons are Android-only.
+  min_sdk_android: 21

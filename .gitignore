@@ -16,13 +16,25 @@ build/
 pubspec.lock
 lib/generated/
 
-# Flutter per-platform generated (riaggiunto da flutter create)
-ios/
-android/
+# ─── Flutter per-platform — ios/ is TRACKED (Codemagic builds from it).
+#     The desktop platforms are still ignored — we don't ship to them.
 linux/
 macos/
 windows/
 # web/ NON ignorato: contiene index.html e manifest.json scritti a mano
+
+# ─── iOS — committed scaffold, but generated artifacts excluded ─────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Sources/                 # leftover Swift project from pre-Flutter era
+
+# ─── Android — ignored entirely until we ship Android ───────────────
+android/
 
 # ─── Supabase ────────────────────────────────
 supabase/.temp/
