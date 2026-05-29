@@ -86,6 +86,15 @@ workflows:
         # already exist, so the committed ios/Runner/Info.plist is kept.
         script: |
           flutter create --platforms=ios --org io.marginalia .
+          # `flutter create` also regenerates the default counter-app
+          # test/widget_test.dart (it isn't committed, so it's treated as a
+          # missing template file). That boilerplate test imports a `MyApp`
+          # widget this project doesn't have, so it fails to COMPILE and takes
+          # the whole `flutter test` step down with it — it even crashed the
+          # shared Dart compiler and cascaded into the parser test (build #3,
+          # commit 2899d3c, died exactly here). Remove it; the real tests live
+          # in test/parser/ and pass on their own.
+          rm -f test/widget_test.dart
           # --org io.marginalia makes the bundle id io.marginalia.marginalia;
           # rewrite it to the canonical io.marginalia.app that the signing
           # config above and the App Store Connect record both expect.
