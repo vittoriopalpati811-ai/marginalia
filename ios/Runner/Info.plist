@@ -76,5 +76,17 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Marginalia needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
+	<!--
+	  Export-compliance declaration. Marginalia uses only Apple's stock
+	  HTTPS/TLS (Supabase, the `http` package) — i.e. standard encryption
+	  that is EXEMPT from US export rules. Declaring this here auto-answers
+	  the "Missing Compliance" question in TestFlight/App Store Connect, so
+	  every uploaded build is immediately installable by testers instead of
+	  blocking on a manual cryptography prompt. (Without it, build #8 sat in
+	  "Missing Compliance".) If real non-exempt crypto is ever added, remove
+	  this key and answer the questionnaire in App Store Connect instead.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

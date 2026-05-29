@@ -215,6 +215,29 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
-        beta_groups:
-          - Tester interni
+        # INTERNAL TestFlight testing only.
+        #
+        # The `Publishing` step above uploads the IPA to App Store Connect; once
+        # Apple finishes processing it, the build is AUTOMATICALLY available to
+        # Internal Testers (the App Store Connect users you add under TestFlight
+        # → Internal Testing) — no Beta App Review, no Test Information required.
+        #
+        # We deliberately DROPPED `submit_to_testflight: true` + `beta_groups:
+        # [Tester interni]`. Those drive EXTERNAL testing, which needs (a) an
+        # external beta group that already exists in App Store Connect and (b)
+        # complete Test Information (feedback email + review contact name/phone/
+        # email) plus a Beta App Review. Build #8 (commit 7aa181e) uploaded and
+        # was processed by Apple just fine, but post-processing then FAILED on
+        # exactly those external-only requirements:
+        #   "Cannot find Beta group with the name 'Tester interni'"
+        #   "Complete test information is required ... for external testing"
+        # For a solo internal beta none of that is needed, and leaving it in
+        # makes every push report a (misleading) post-processing failure.
+        #
+        # TO ENABLE EXTERNAL TESTING later: in App Store Connect → TestFlight,
+        # create an external group (e.g. "Tester interni") and fill Test Info at
+        # appstoreconnect.apple.com/apps/6774710376/testflight/test-info, then
+        # re-add:
+        #   submit_to_testflight: true
+        #   beta_groups:
+        #     - Tester interni
