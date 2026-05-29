@@ -124,55 +124,69 @@ final libraryRecommendationsProvider =
     return const RecsResult(list: [], reason: RecsEmptyReason.notAuth);
   }
 
-  // ── 1. Collect the user's 100 most recent highlights, grouped by book ──────
+  // ── 1. Sample a few highlights from EVERY book in the library ──────────────
   //
-  // Earlier versions sent "up to 20 books with up to 4 highlights each"
-  // (80 highlights). The user asked us to use the 100 most recent
-  // highlights end-to-end — same idea, just framed by recency of the
-  // *highlight* rather than recency of the book. This gives the model
-  // a more faithful picture of what the user is reading right now,
-  // including books they touched only once or twice.
+  // User direction: "mettine un numero di highlights per libro in modo da
+  // considerare tutti i libri per un massimo di numero ragionevole e
+  // coerente di richieste."
+  //
+  // Why this beats "the 100 most-recent highlights": a 100-highlight cap
+  // skewed the model toward whatever 3-4 books the user was actively
+  // reading this week — anything older was invisible. The opposite is
+  // better: take a small (3-highlight) sample from EVERY book, so the AI
+  // gets a panoramic picture of the user's reading life, not a snapshot
+  // of the last fortnight.
+  //
+  // Caps:
+  //   • Per book: 3 highlights — enough signal for the model to grasp
+  //     a book's voice without bloating the prompt.
+  //   • Total books: 40 — bounded so the request stays under llama-3.1-
+  //     8b-instant's 6 K tokens-per-minute ceiling (~3.5 K tokens at the
+  //     upper end of this budget). For libraries larger than 40 books we
+  //     take the 40 with the most-recent highlight (i.e. the books the
+  //     user has touched most recently), which still gives broad
+  //     coverage of the active reading life.
   //
   // Both backends already return highlights sorted by added_at DESC, so
-  // we just take the prefix of that stream until we hit 100 (or run out).
-  // The first time we see a book id we record its title + author; every
-  // subsequent highlight from that book appends. The natural order of
-  // book ids by recency-of-first-highlight becomes our `orderedBookIds`.
+  // we just iterate that stream. The first time we see a book id we
+  // record it; every subsequent highlight from that book appends until
+  // the per-book cap. New books beyond the totalBookCap are skipped.
 
-  const highlightCap = 100;
+  const perBookCap   = 3;
+  const totalBookCap = 40;
 
   final Map<String, Map<String, dynamic>> bookMap = {};
   final List<String> orderedBookIds = [];
-  var highlightCount = 0;
+
+  void ingest(String bookId, String title, String author, String content) {
+    if (bookId.isEmpty || content.isEmpty) return;
+    if (!bookMap.containsKey(bookId)) {
+      if (bookMap.length >= totalBookCap) return; // library bigger than cap
+      if (title.isEmpty) return;
+      bookMap[bookId] = {
+        'title':      title,
+        'author':     author,
+        'highlights': <String>[],
+      };
+      orderedBookIds.add(bookId);
+    }
+    final hs = bookMap[bookId]!['highlights'] as List<String>;
+    if (hs.length < perBookCap) hs.add(content);
+  }
 
   if (kIsWeb) {
     final service = ref.read(supabaseServiceProvider);
     try {
       final data = await service.fetchHighlights();
       debugPrint('[Recs] fetchHighlights → ${data.length} rows');
-
       for (final h in data) {
-        if (highlightCount >= highlightCap) break;
-        final bookId  = (h['book_id'] as String?)?.trim() ?? '';
-        final content = (h['content'] as String?)?.trim() ?? '';
-        if (bookId.isEmpty || content.isEmpty) continue;
-
-        if (!bookMap.containsKey(bookId)) {
-          final booksEmbed = h['books'] as Map<String, dynamic>?;
-          final title  = (booksEmbed?['title']  as String? ?? '').trim();
-          final author = (booksEmbed?['author'] as String? ?? '').trim();
-          if (title.isEmpty) continue;
-
-          bookMap[bookId] = {
-            'title':      title,
-            'author':     author,
-            'highlights': <String>[],
-          };
-          orderedBookIds.add(bookId);
-        }
-
-        (bookMap[bookId]!['highlights'] as List<String>).add(content);
-        highlightCount++;
+        final booksEmbed = h['books'] as Map<String, dynamic>?;
+        ingest(
+          (h['book_id'] as String?)?.trim() ?? '',
+          (booksEmbed?['title']  as String? ?? '').trim(),
+          (booksEmbed?['author'] as String? ?? '').trim(),
+          (h['content'] as String?)?.trim() ?? '',
+        );
       }
     } catch (e, st) {
       debugPrint('[Recs] fetchHighlights error: $e\n$st');
@@ -183,29 +197,22 @@ final libraryRecommendationsProvider =
     final all   = await ref.read(allHighlightsProvider.future);
     final books = ref.read(booksProvider).value ?? [];
     final bookById = {for (final b in books) b.supabaseId: b};
-
     for (final h in all) {
-      if (highlightCount >= highlightCap) break;
-      final bookId = h.bookId.toString();
-      if (h.content.isEmpty) continue;
-
-      if (!bookMap.containsKey(bookId)) {
-        final book = bookById[bookId];
-        if (book == null || book.title.isEmpty) continue;
-        bookMap[bookId] = {
-          'title':      book.title,
-          'author':     book.author,
-          'highlights': <String>[],
-        };
-        orderedBookIds.add(bookId);
-      }
-      (bookMap[bookId]!['highlights'] as List<String>).add(h.content);
-      highlightCount++;
+      final book = bookById[h.bookId.toString()];
+      if (book == null) continue;
+      ingest(
+        h.bookId.toString(),
+        book.title,
+        book.author,
+        h.content,
+      );
     }
   }
 
-  debugPrint('[Recs] distinct books: ${orderedBookIds.length}, '
-      'highlights collected: $highlightCount');
+  final totalHighlights = bookMap.values.fold<int>(
+      0, (a, b) => a + (b['highlights'] as List).length);
+  debugPrint('[Recs] sampled ${orderedBookIds.length} books, '
+      '$totalHighlights highlights total');
   if (orderedBookIds.isEmpty) {
     return const RecsResult(list: [], reason: RecsEmptyReason.noBooks);
   }
@@ -216,9 +223,7 @@ final libraryRecommendationsProvider =
       .map((id) => bookMap[id]!['title'] as String)
       .toList();
 
-  // Send every book that contributed a highlight to the 100 — no .take()
-  // cap on the client side. The Edge Function applies its own books +
-  // per-book caps as a safety net.
+  // Send every sampled book — the server applies its own caps as safety.
   final booksPayload = orderedBookIds.map((id) {
     final info = bookMap[id]!;
     return {

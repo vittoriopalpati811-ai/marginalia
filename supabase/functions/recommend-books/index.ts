@@ -74,18 +74,17 @@ Deno.serve(async (req) => {
 
   // Caps tuned for llama-3.1-8b-instant's 6 K TPM ceiling.
   //
-  // The client now sends the user's 100 most recent highlights, grouped
-  // by book. That can be anywhere from 5 books × 20 highlights (concentrated
-  // reader) to 100 books × 1 highlight (scattered reader). We cap to 14
-  // books × up to 8 highlight excerpts of 80 chars each — at the upper
-  // bound this is ~9 K chars / ~2.5 K tokens for the highlight payload,
-  // plus plot summaries only for books with sparse highlights. Total
-  // request ~3.5 K tokens, leaving ~2.5 K TPM headroom for two more
-  // invocations inside the same minute.
-  const books: InputBook[] = (body.books ?? []).slice(0, 14);
+  // The client now samples up to 3 highlights from EVERY book in the
+  // user's library (capped at 40 books) so the model sees the whole
+  // reading life, not just the last fortnight. With 3 highlights × 80
+  // chars × 40 books = 9.6 K chars / ~2.5 K tokens for the highlight
+  // payload, plus plot summaries only for books with sparse highlights
+  // (≤2). Total request stays ~3-3.5 K tokens, leaving 2.5-3 K TPM
+  // headroom for two more invocations inside the same minute.
+  const books: InputBook[] = (body.books ?? []).slice(0, 40);
   const existingTitles: string[] = (body.existingTitles ?? [])
     .map((t) => t.toLowerCase().trim())
-    .slice(0, 30);
+    .slice(0, 50);
   const userContext: Record<string, unknown> = body.context ?? {};
   const userName: string = (body.userName ?? "").trim();
 
