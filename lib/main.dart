@@ -15,42 +15,48 @@ const _supabaseAnonKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc';
 
 void main() {
-  // Run the WHOLE bootstrap inside a guarded zone.
+  // Guard the WHOLE bootstrap. A black screen on launch means runApp() never
+  // ran — an initializer threw OR HUNG before any UI was built.
   //
-  // A black screen on launch means runApp() never ran — i.e. an initializer
-  // threw before any UI was built. The previous main() awaited Supabase, Isar
-  // (via launchApp) and the home-widget bridge with NO error handling, so a
-  // single failure on a real device (most likely Isar.open failing to load its
-  // native library on iOS) aborted startup and left the user staring at black,
-  // with zero diagnostics because release builds have no console.
+  // The previous main() awaited Supabase / the home-widget bridge / Isar BEFORE
+  // the first runApp(), with only try/catch guards. try/catch does NOTHING
+  // against a HANG (an await that never completes — a platform channel that
+  // never returns, a never-resolving network/session call), so a single stuck
+  // initializer on a real device left the user on a silent black screen with
+  // zero diagnostics. That is exactly the reported symptom: black, and not even
+  // the BootstrapErrorApp screen (which only catches *thrown* errors).
   //
-  // Now any fatal error renders a visible, screenshot-able error screen
-  // instead, and the optional subsystems below are individually guarded so
-  // they can never take the whole app down.
-  runZonedGuarded(_bootstrap, (error, stack) {
-    debugPrint('[bootstrap] FATAL: $error\n$stack');
+  // Now runApp() is the FIRST thing that happens: we paint a visible cream
+  // splash immediately, then every fallible/slow initializer runs INSIDE that
+  // widget, after the first frame, each bounded by a timeout. If the Flutter
+  // engine can draw at all, the user sees cream — never black.
+  runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Surface framework errors (keep the default red-box) so anything during
+    // the first frames is logged rather than swallowed.
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      debugPrint('[FlutterError] ${details.exceptionAsString()}');
+    };
+
+    _applySystemChrome();
+
+    runApp(const _StartupGate());
+  }, (error, stack) {
+    debugPrint('[bootstrap] FATAL (zone): $error\n$stack');
     runApp(BootstrapErrorApp(
       error: error,
       stackTrace: stack,
-      onRetry: _bootstrap,
+      onRetry: () => runApp(const _StartupGate()),
     ));
   });
 }
 
-Future<void> _bootstrap() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Surface framework errors (and keep the default red-box behavior) so any
-  // error during the first frames is logged rather than swallowed.
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    debugPrint('[FlutterError] ${details.exceptionAsString()}');
-  };
-
-  // Always show the status bar; never let individual routes hide it.
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  // Default status-bar style: dark icons on cream bg (light theme).
-  // Screens with dark headers override this via AppBar.systemOverlayStyle.
+/// Status-bar / nav-bar styling. Fire-and-forget on purpose: these return
+/// Futures, but the first frame must never block on a platform channel.
+void _applySystemChrome() {
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarBrightness: Brightness.light, // iOS
@@ -58,31 +64,169 @@ Future<void> _bootstrap() async {
     systemNavigationBarColor: Colors.transparent,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
-
-  // ── Optional subsystems — never fatal ───────────────────────────────────────
-  // The app is offline-first (see CLAUDE.md): the backend, the home-screen
-  // widget bridge and the (stubbed) subscription layer are all optional. A
-  // failure in any of them must NOT prevent the UI from launching, so each runs
-  // in isolation and only logs on failure.
-  await _tryInit('Supabase', () async {
-    await Supabase.initialize(url: _supabaseUrl, anonKey: _supabaseAnonKey);
-  });
-  await _tryInit('Subscriptions', SubscriptionService.configure);
-  await _tryInit('HomeWidget', WidgetService.init);
-
-  // ── Required: open the local DB and start the app ───────────────────────────
-  // launchApp() opens Isar (native) / reads persisted state (web) and calls
-  // runApp(). If it throws, the zone guard above shows the error screen with
-  // the real exception text.
-  await launchApp();
 }
 
-/// Runs an optional initializer, swallowing (but logging) any failure so it can
-/// never prevent the UI from launching.
-Future<void> _tryInit(String label, Future<void> Function() init) async {
-  try {
-    await init();
-  } catch (error, stack) {
-    debugPrint('[bootstrap] $label init failed (non-fatal): $error\n$stack');
+/// Paints a visible splash IMMEDIATELY, then performs startup off the first
+/// frame. Optional subsystems are each bounded by a timeout and are never
+/// fatal; the required step (open Isar + read persisted state) hands off to the
+/// real app via launchApp(). On a fatal error it shows the readable
+/// BootstrapErrorApp instead of a black screen.
+class _StartupGate extends StatefulWidget {
+  const _StartupGate();
+
+  @override
+  State<_StartupGate> createState() => _StartupGateState();
+}
+
+class _StartupGateState extends State<_StartupGate> {
+  String _status = 'Avvio…';
+  Object? _error;
+  StackTrace? _stack;
+
+  @override
+  void initState() {
+    super.initState();
+    _boot();
+  }
+
+  Future<void> _boot() async {
+    try {
+      // ── Optional subsystems — offline-first, bounded, never fatal ──────────
+      // A hang in any of these used to freeze startup forever; each is now
+      // capped so we always fall through to opening the app.
+      await _optional(
+        'Supabase',
+        'Connessione al server…',
+        const Duration(seconds: 8),
+        () async {
+          await Supabase.initialize(
+            url: _supabaseUrl,
+            anonKey: _supabaseAnonKey,
+          );
+        },
+      );
+      await _optional(
+        'HomeWidget',
+        'Preparazione…',
+        const Duration(seconds: 5),
+        WidgetService.init,
+      );
+      await _optional(
+        'Subscriptions',
+        'Preparazione…',
+        const Duration(seconds: 5),
+        SubscriptionService.configure,
+      );
+
+      // ── Required: open the local DB, read persisted state, runApp(real) ────
+      if (mounted) setState(() => _status = 'Apertura libreria…');
+      await launchApp(); // replaces this gate with the real app on success
+    } catch (error, stack) {
+      debugPrint('[bootstrap] FATAL (gate): $error\n$stack');
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _stack = stack;
+        });
+      }
+    }
+  }
+
+  /// Runs an optional initializer bounded by [limit]; logs and swallows any
+  /// failure (including a timeout) so it can never block the UI from launching.
+  Future<void> _optional(
+    String label,
+    String status,
+    Duration limit,
+    Future<void> Function() init,
+  ) async {
+    if (mounted) setState(() => _status = status);
+    try {
+      await init().timeout(limit);
+    } catch (error) {
+      debugPrint('[bootstrap] $label init skipped (non-fatal): $error');
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _error = null;
+      _stack = null;
+      _status = 'Avvio…';
+    });
+    _boot();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return BootstrapErrorApp(
+        error: _error!,
+        stackTrace: _stack,
+        onRetry: _retry,
+      );
+    }
+    return _SplashScreen(status: _status);
+  }
+}
+
+/// Dependency-light splash (Material + system fonts only) so it can ALWAYS
+/// paint, even if a higher-level subsystem — the app theme, google_fonts, Isar
+/// — is the very thing that failed.
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen({required this.status});
+
+  final String status;
+
+  static const _cream = Color(0xFFFAFAF8);
+  static const _inkMuted = Color(0xFF6B6B6B);
+  static const _accent = Color(0xFF4A7A35); // matcha green
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Marginalia',
+      home: Scaffold(
+        backgroundColor: _cream,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'MARGINALIA',
+                  style: TextStyle(
+                    fontFamily: 'serif',
+                    fontSize: 15,
+                    letterSpacing: 4,
+                    color: _accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(_accent),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  status,
+                  style: const TextStyle(
+                    fontFamily: 'serif',
+                    fontSize: 13.5,
+                    color: _inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
