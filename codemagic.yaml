@@ -40,9 +40,17 @@ workflows:
       app_store_connect: marginalia-asc
 
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: io.marginalia.app
+      # NOTE: intentionally NO declarative `ios_signing:` block here.
+      # `environment.ios_signing` only matches provisioning profiles that
+      # ALREADY exist in Codemagic — it does not create them — and it is
+      # mutually exclusive with the manual `fetch-signing-files` flow below.
+      # Having it caused an instant pre-flight failure on the very first
+      # build: "No matching profiles found for bundle identifier
+      # io.marginalia.app and distribution type app_store". The manual flow in
+      # `scripts` (fetch-signing-files --create → keychain add-certificates →
+      # xcode-project use-profiles) creates the distribution certificate and
+      # the provisioning profile on first run. The App Store Connect API key
+      # for those commands comes from `integrations.app_store_connect` above.
       vars:
         FLUTTER_VERSION: "3.22.0"
         BUNDLE_ID: io.marginalia.app
@@ -107,20 +115,33 @@ workflows:
         script: |
           cd ios && pod install
 
+      - name: Initialize keychain
+        # Create the dedicated code-signing keychain BEFORE any certificate
+        # is imported into it (canonical Codemagic order).
+        script: |
+          keychain initialize
+
       - name: Fetch signing files
-        # Pulls the distribution certificate + provisioning profile
-        # from Codemagic's managed signing storage. The `--type
-        # IOS_APP_STORE` flag matches the distribution_type above.
+        # Creates (on first build) and downloads the iOS distribution
+        # certificate + an App Store provisioning profile for io.marginalia.app.
+        # `--create` makes whichever resources don't exist yet; the App Store
+        # Connect API key is injected from integrations.app_store_connect.
+        # `--type IOS_APP_STORE` requests an App Store profile (not dev/ad-hoc).
         script: |
           app-store-connect fetch-signing-files \
             "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
 
-      - name: Use fetched profiles
+      - name: Add certificate to keychain
+        # Import the fetched/created signing certificate into the keychain.
         script: |
-          keychain initialize
           keychain add-certificates
+
+      - name: Use fetched profiles
+        # Point the Xcode project at the downloaded provisioning profile so
+        # build-ipa signs with the matching identity (manual signing).
+        script: |
           xcode-project use-profiles
 
       - name: Build IPA
