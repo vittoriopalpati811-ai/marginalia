@@ -73,13 +73,13 @@ const _palettes = <_Mood, List<_Palette>>{
     _Palette(bg: Color(0xFF4B3A4F), ink: Color(0xFFE0CDD5), accent: Color(0xFF8B0F2A)),  // plum dust
     _Palette(bg: Color(0xFF1A1F2E), ink: Color(0xFF8B7C9E), accent: Color(0xFFEFE5D6)),  // navy mist
     _Palette(bg: Color(0xFF2D2A38), ink: Color(0xFFB0A8C5), accent: Color(0xFFE8A87C)),  // violet stone
-    _Palette(bg: Color(0xFF15171A), ink: Color(0xFF6B1818), accent: Color(0xFFA8A89E)),  // ink wine
+    _Palette(bg: Color(0xFF15171A), ink: Color(0xFFC73E3A), accent: Color(0xFFE5DDBF)),  // ink + crimson
     _Palette(bg: Color(0xFF3A2F33), ink: Color(0xFFD4B5A0), accent: Color(0xFFE63946)),  // mauve dust
   ],
   _Mood.romantic: [
     _Palette(bg: Color(0xFFFBC2D3), ink: Color(0xFFE63277), accent: Color(0xFF6E2447)),  // hot pink
     _Palette(bg: Color(0xFFFAD9E0), ink: Color(0xFFBE5773), accent: Color(0xFF8B3A4E)),  // dusty rose
-    _Palette(bg: Color(0xFFFFE4D5), ink: Color(0xFFD68A95), accent: Color(0xFF7D4357)),  // peach blush
+    _Palette(bg: Color(0xFFFFE4D5), ink: Color(0xFF9E4A60), accent: Color(0xFF7D4357)),  // peach blush
     _Palette(bg: Color(0xFFEDD4D8), ink: Color(0xFFA8557B), accent: Color(0xFFE8B574)),  // sherbet rose
     _Palette(bg: Color(0xFFE5C9DE), ink: Color(0xFF7D2A5C), accent: Color(0xFFFCDDB7)),  // mauve
     _Palette(bg: Color(0xFFE4B7B0), ink: Color(0xFF8B3A3E), accent: Color(0xFFF7E2DA)),  // muted terracotta
@@ -88,7 +88,7 @@ const _palettes = <_Mood, List<_Palette>>{
     _Palette(bg: Color(0xFFFFF4D6), ink: Color(0xFF8B6F47), accent: Color(0xFFE89B3C)),  // butter
     _Palette(bg: Color(0xFFD4E8D0), ink: Color(0xFF5A7A4D), accent: Color(0xFF8B6F47)),  // mint cream
     _Palette(bg: Color(0xFFC7DFEC), ink: Color(0xFF4B6B85), accent: Color(0xFFE8A87C)),  // baby blue
-    _Palette(bg: Color(0xFFF6EFDD), ink: Color(0xFFB89B6F), accent: Color(0xFF5B4733)),  // cream paper
+    _Palette(bg: Color(0xFFF6EFDD), ink: Color(0xFF5B4733), accent: Color(0xFFB89B6F)),  // cream paper
     _Palette(bg: Color(0xFFFFE2A8), ink: Color(0xFF8B5A2B), accent: Color(0xFF2C1F12)),  // honey
     _Palette(bg: Color(0xFFFAD7C7), ink: Color(0xFF8B5C4E), accent: Color(0xFF5A7A4D)),  // peach cream
   ],
@@ -130,13 +130,13 @@ const _palettes = <_Mood, List<_Palette>>{
     _Palette(bg: Color(0xFFCFD8B5), ink: Color(0xFF5A7A3F), accent: Color(0xFF8B3A2E)),  // sage spring
     _Palette(bg: Color(0xFF6BBA29), ink: Color(0xFFF4F0E0), accent: Color(0xFF1F3A2A)),  // bright leaf
     _Palette(bg: Color(0xFFD8C8A0), ink: Color(0xFF6B5A2B), accent: Color(0xFF4A7A35)),  // ochre
-    _Palette(bg: Color(0xFFF5EFE0), ink: Color(0xFFB89B6F), accent: Color(0xFF4A7A35)),  // sand sage
+    _Palette(bg: Color(0xFFF5EFE0), ink: Color(0xFF4A7A35), accent: Color(0xFF8B6F47)),  // sand sage
   ],
   _Mood.contemplative: [
     _Palette(bg: Color(0xFFDDE0D8), ink: Color(0xFF5C7A7E), accent: Color(0xFF8F7C5F)),  // mist
     _Palette(bg: Color(0xFFC4D5D3), ink: Color(0xFF3A5C5C), accent: Color(0xFFE8AB73)),  // pearl teal
     _Palette(bg: Color(0xFFD8D4C5), ink: Color(0xFF5A5C4D), accent: Color(0xFF8B4A5C)),  // dust olive
-    _Palette(bg: Color(0xFF4FC1E9), ink: Color(0xFFF4F0E0), accent: Color(0xFF0F5C56)),  // sky teal
+    _Palette(bg: Color(0xFF4FC1E9), ink: Color(0xFF0F5C56), accent: Color(0xFFF4F0E0)),  // sky teal
     _Palette(bg: Color(0xFFAFC4C0), ink: Color(0xFF2F4F4F), accent: Color(0xFFF5EFE0)),  // sage cool
     _Palette(bg: Color(0xFFE8DCC8), ink: Color(0xFF7A6B4F), accent: Color(0xFF4B6B85)),  // taupe
   ],
@@ -651,65 +651,65 @@ class _MoodPainter extends CustomPainter {
     return Offset(point.dx + dx * ratio, point.dy + dy * ratio);
   }
 
-  void _scatterDots(Canvas canvas, Size size, int count, Color color, double radius,
-      {double topPad = 0.08, double bottomPad = 0.08, int seedShift = 0}) {
-    final paint = Paint()..color = color;
-    for (var i = 0; i < count; i++) {
-      final dx = _f(seedShift + i * 2 + 1);
-      final dy = _f(seedShift + i * 2 + 2);
-      final x = size.width * (0.10 + dx * 0.80);
-      final y = size.height * (topPad + dy * (1.0 - topPad - bottomPad));
-      canvas.drawCircle(Offset(x, y), radius * (0.65 + dx * 0.6), paint);
-    }
-  }
-
   // ───── Compositions ───────────────────────────────────────────────────
+  //
+  // User feedback (2026-05-29):
+  //   1. "togli i pallini piccoli messi a caso nelle immagini" — no random
+  //      scattered dots. Where dots remain they must follow a logical
+  //      pattern (a row, an arc, a column) AND vary in size.
+  //   2. "ce ne sono alcune solo colore (tinta unita), toglile" — every
+  //      composition must produce a visible non-background shape. To
+  //      enforce this, every method below draws AT LEAST one solid filled
+  //      shape on top of the bg, never a stroke-only result.
+  //   3. "le linee più chunky" — stroke widths bumped to ≥ 0.034 of the
+  //      shortest side (was as low as 0.014).
+  //
+  // No `_scatterDots` helper anymore: every dot below is placed by hand.
 
-  // 1. Squircle + dots
+  // 1. Squircle + inner squircle (concentric)
   void _drawSquircleDots(Canvas canvas, Size size) {
-    final side = size.shortestSide * (0.50 + 0.06 * _f(1));
-    final cx = size.width  * (0.46 + 0.08 * _f(2));
-    final cy = size.height * (0.46 + 0.08 * _f(3));
-    final rect = Rect.fromCenter(center: Offset(cx, cy), width: side, height: side);
+    final side = size.shortestSide * (0.58 + 0.04 * _f(1));
+    final cx = size.width  * (0.50);
+    final cy = size.height * (0.48 + 0.04 * _f(3));
+    final outer = Rect.fromCenter(center: Offset(cx, cy), width: side, height: side);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(rect, Radius.circular(side * 0.32)),
+      RRect.fromRectAndRadius(outer, Radius.circular(side * 0.32)),
       Paint()..color = palette.ink,
     );
-    // Dots: 4-6 scattered around
-    final dotCount = 4 + subVariant; // 4, 5, 6
-    _scatterDots(canvas, size, dotCount, palette.accent,
-        size.shortestSide * 0.040, seedShift: 10);
+    // Inner concentric squircle in accent — deliberate, not random.
+    final innerSide = side * 0.40;
+    final inner = Rect.fromCenter(
+        center: Offset(cx, cy), width: innerSide, height: innerSide);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(inner, Radius.circular(innerSide * 0.32)),
+      Paint()..color = palette.accent,
+    );
   }
 
-  // 2. Organic blob + 3 accent dots
+  // 2. Big blob + smaller offset blob
   void _drawBlobAccentDots(Canvas canvas, Size size) {
-    final cx = size.width  * (0.42 + 0.10 * _f(1));
-    final cy = size.height * (0.44 + 0.10 * _f(2));
-    final r  = size.shortestSide * 0.40;
+    final cx = size.width  * (0.44 + 0.06 * _f(1));
+    final cy = size.height * (0.46 + 0.06 * _f(2));
+    final r  = size.shortestSide * 0.44;
     canvas.drawPath(_blobPath(cx, cy, r, wobble: 0.22),
         Paint()..color = palette.ink);
-    // 3 small accent dots opposite to the blob centre
-    final accent = Paint()..color = palette.accent;
-    for (var i = 0; i < 3; i++) {
-      canvas.drawCircle(
-        Offset(size.width  * (0.20 + 0.12 * _f(10 + i * 2)),
-               size.height * (0.74 + 0.16 * _f(11 + i * 2))),
-        size.shortestSide * (0.030 + 0.018 * _f(12 + i)),
-        accent,
-      );
-    }
+    // Smaller blob, offset toward the opposite corner — deliberate counter-
+    // weight, not a random sprinkle of dots.
+    final offCx = size.width  * 0.78;
+    final offCy = size.height * 0.78;
+    canvas.drawPath(_blobPath(offCx, offCy, r * 0.35, wobble: 0.18, points: 7),
+        Paint()..color = palette.accent);
   }
 
-  // 3. Soft triangle + wavy line behind
+  // 3. Soft triangle + chunky wavy line behind
   void _drawSoftTriWaves(Canvas canvas, Size size) {
-    // Wavy line behind (drawn first so triangle covers it partially)
     final waveY = size.height * 0.60;
     final wavePath = Path();
     const steps = 50;
     for (var i = 0; i <= steps; i++) {
       final t = i / steps;
       final x = size.width * t;
-      final y = waveY + math.sin(t * math.pi * 4) * size.height * 0.05;
+      final y = waveY + math.sin(t * math.pi * 4) * size.height * 0.06;
       if (i == 0) {
         wavePath.moveTo(x, y);
       } else {
@@ -721,74 +721,68 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.accent
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.018
+        ..strokeWidth = size.shortestSide * 0.038
         ..strokeCap = StrokeCap.round,
     );
     final tri = _softTrianglePath(
-        size.width * (0.48 + 0.06 * _f(1)),
-        size.height * 0.48,
-        size.shortestSide * 0.50,
+        size.width * 0.50,
+        size.height * 0.46,
+        size.shortestSide * 0.56,
         down: subVariant == 1);
     canvas.drawPath(tri, Paint()..color = palette.ink);
   }
 
-  // 4. Solid circle + outline ring + floating dot
+  // 4. Solid circle + outer ring + small inner ring (3 concentric layers)
   void _drawCircleRingDot(Canvas canvas, Size size) {
-    final cx = size.width  * (0.42 + 0.10 * _f(1));
-    final cy = size.height * (0.42 + 0.10 * _f(2));
-    final r  = size.shortestSide * 0.32;
+    final cx = size.width  * 0.50;
+    final cy = size.height * (0.48 + 0.04 * _f(2));
+    final r  = size.shortestSide * 0.34;
     canvas.drawCircle(Offset(cx, cy), r, Paint()..color = palette.ink);
-    // outline ring slightly larger
+    // Outer ring (chunky stroke).
     canvas.drawCircle(
       Offset(cx, cy),
-      r * 1.30,
+      r * 1.34,
       Paint()
         ..color = palette.accent
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.014,
+        ..strokeWidth = size.shortestSide * 0.034,
     );
-    // floating dot in opposite corner
+    // Inner accent dot, at the geometric centre — logical anchor, not
+    // a random freckle.
     canvas.drawCircle(
-      Offset(size.width  * (0.75 + 0.10 * _f(3)),
-             size.height * (0.78 + 0.10 * _f(4))),
-      size.shortestSide * 0.045,
+      Offset(cx, cy),
+      r * 0.28,
       Paint()..color = palette.accent,
     );
   }
 
-  // 5. Crescent + 4-5 tiny stars/dots
+  // 5. Crescent + 3 column dots in varied sizes
   void _drawCrescentStars(Canvas canvas, Size size) {
-    final r = size.shortestSide * 0.30;
-    final cx = size.width  * (0.40 + 0.06 * _f(1));
-    final cy = size.height * (0.42 + 0.08 * _f(2));
+    final r = size.shortestSide * 0.32;
+    final cx = size.width  * 0.42;
+    final cy = size.height * (0.44 + 0.06 * _f(2));
     canvas.drawPath(
       _crescentPath(cx, cy, r, r * 0.42),
       Paint()..color = palette.ink,
     );
-    // tiny accent dots around
-    final dotCount = 4 + subVariant;
+    // 3 "stars" arranged in a deliberate vertical column on the right side,
+    // sized large → medium → small from top to bottom (Polaris descending).
     final accent = Paint()..color = palette.accent;
-    for (var i = 0; i < dotCount; i++) {
-      final px = size.width * (0.18 + 0.74 * _f(20 + i * 2));
-      final py = size.height * (0.12 + 0.76 * _f(21 + i * 2));
-      // skip dots that would land on the crescent
-      final dx = px - cx;
-      final dy = py - cy;
-      if (math.sqrt(dx * dx + dy * dy) < r * 1.05) continue;
-      canvas.drawCircle(
-        Offset(px, py),
-        size.shortestSide * (0.022 + 0.014 * _f(30 + i)),
-        accent,
-      );
-    }
+    final colX = size.width * 0.78;
+    canvas.drawCircle(Offset(colX, size.height * 0.22),
+        size.shortestSide * 0.060, accent);
+    canvas.drawCircle(Offset(colX, size.height * 0.46),
+        size.shortestSide * 0.040, accent);
+    canvas.drawCircle(Offset(colX, size.height * 0.70),
+        size.shortestSide * 0.024, accent);
   }
 
-  // 6. Squiggle + floating circle
+  // 6. Chunky squiggle + floating big circle (no extra dot)
   void _drawSquiggleDot(Canvas canvas, Size size) {
     final path = Path();
-    final midY = size.height * (0.48 + 0.10 * _f(1));
+    final midY = size.height * 0.62;
     final waves = 2.0 + _f(2) * 1.5;
-    final amp = size.height * 0.10;
+    final amp = size.height * 0.11;
     const steps = 80;
     for (var i = 0; i <= steps; i++) {
       final t = i / steps;
@@ -805,34 +799,29 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.ink
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.024
+        ..strokeWidth = size.shortestSide * 0.040
         ..strokeCap = StrokeCap.round,
     );
-    // floating circle above
+    // ONE deliberate solid circle above the squiggle — anchors the
+    // composition so it isn't read as "just a wavy line on colour".
     canvas.drawCircle(
-      Offset(size.width * 0.78, size.height * 0.22),
-      size.shortestSide * 0.085,
-      Paint()..color = palette.accent,
-    );
-    // tiny extra dot
-    canvas.drawCircle(
-      Offset(size.width * 0.18, size.height * 0.22),
-      size.shortestSide * 0.030,
+      Offset(size.width * 0.72, size.height * 0.30),
+      size.shortestSide * 0.13,
       Paint()..color = palette.accent,
     );
   }
 
-  // 7. Four petals around a centre dot
+  // 7. Petals around a centre dot — sized in 2 tiers
   void _drawPetalCluster(Canvas canvas, Size size) {
     final cx = size.width  * 0.50;
     final cy = size.height * 0.48;
-    final petalR = size.shortestSide * 0.20;
-    final dist   = size.shortestSide * 0.22;
+    final petalR = size.shortestSide * 0.22;
+    final dist   = size.shortestSide * 0.24;
     final petals = 4 + subVariant; // 4, 5, 6
     final ink = Paint()..color = palette.ink;
     final accent = Paint()..color = palette.accent;
     for (var i = 0; i < petals; i++) {
-      final angle = (math.pi * 2 / petals) * i + (_f(1) - 0.5) * 0.4;
+      final angle = (math.pi * 2 / petals) * i;
       final px = cx + dist * math.cos(angle);
       final py = cy + dist * math.sin(angle);
       canvas.save();
@@ -840,28 +829,28 @@ class _MoodPainter extends CustomPainter {
       canvas.rotate(angle + math.pi / 2);
       final rect = Rect.fromCenter(
         center: Offset.zero,
-        width:  petalR * 0.9,
-        height: petalR * 1.8,
+        width:  petalR * 0.95,
+        height: petalR * 1.9,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, Radius.circular(petalR * 0.5)),
+        RRect.fromRectAndRadius(rect, Radius.circular(petalR * 0.55)),
         i.isEven ? ink : accent,
       );
       canvas.restore();
     }
-    // centre dot
+    // Centre dot, anchors the radial cluster.
     canvas.drawCircle(
       Offset(cx, cy),
-      size.shortestSide * 0.055,
+      size.shortestSide * 0.075,
       Paint()..color = palette.ink,
     );
   }
 
-  // 8. Stacked blobs (nested rounded shapes)
+  // 8. Stacked blobs — already mixed, just slightly larger
   void _drawStackedBlobs(Canvas canvas, Size size) {
-    final cx = size.width  * (0.46 + 0.08 * _f(1));
-    final cy = size.height * (0.46 + 0.08 * _f(2));
-    final r1 = size.shortestSide * 0.42;
+    final cx = size.width  * 0.50;
+    final cy = size.height * (0.48 + 0.04 * _f(2));
+    final r1 = size.shortestSide * 0.46;
     canvas.drawPath(_blobPath(cx, cy, r1, wobble: 0.18, points: 8),
         Paint()..color = palette.ink);
     canvas.drawPath(_blobPath(cx, cy, r1 * 0.65, wobble: 0.25, points: 7),
@@ -870,55 +859,43 @@ class _MoodPainter extends CustomPainter {
         Paint()..color = palette.bg);
   }
 
-  // 9. Soft hexagon + 3 corner dots
+  // 9. Soft hexagon + concentric smaller hexagon (no scattered dots)
   void _drawSoftHexDots(Canvas canvas, Size size) {
-    final cx = size.width  * (0.48 + 0.06 * _f(1));
-    final cy = size.height * (0.46 + 0.08 * _f(2));
-    final r  = size.shortestSide * 0.34;
+    final cx = size.width  * 0.50;
+    final cy = size.height * (0.48 + 0.04 * _f(2));
+    final r  = size.shortestSide * 0.40;
     canvas.drawPath(_softHexagonPath(cx, cy, r),
         Paint()..color = palette.ink);
-    // 3 small dots, one near each "free" corner of the cover
-    final accent = Paint()..color = palette.accent;
-    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.20),
-        size.shortestSide * 0.036, accent);
-    canvas.drawCircle(Offset(size.width * 0.82, size.height * 0.20),
-        size.shortestSide * 0.030, accent);
-    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.82),
-        size.shortestSide * 0.040, accent);
+    canvas.drawPath(_softHexagonPath(cx, cy, r * 0.50),
+        Paint()..color = palette.accent);
   }
 
-  // 10. Soft star inside a circle backdrop
+  // 10. Soft star inside a circle backdrop (no extra floating dot)
   void _drawStarOnCircle(Canvas canvas, Size size) {
     final cx = size.width * 0.50;
-    final cy = size.height * (0.46 + 0.06 * _f(1));
-    final circleR = size.shortestSide * 0.40;
+    final cy = size.height * (0.48 + 0.04 * _f(1));
+    final circleR = size.shortestSide * 0.44;
     canvas.drawCircle(Offset(cx, cy), circleR, Paint()..color = palette.accent);
     canvas.drawPath(
-      _softStarPath(cx, cy, circleR * 0.78),
-      Paint()..color = palette.ink,
-    );
-    // small floating accent dot
-    canvas.drawCircle(
-      Offset(size.width * 0.82, size.height * 0.18),
-      size.shortestSide * 0.034,
+      _softStarPath(cx, cy, circleR * 0.80),
       Paint()..color = palette.ink,
     );
   }
 
-  // 11. Wavy band + arc above + dot
+  // 11. Solid arc above + chunky wavy band below (no tiny dot)
   void _drawWavyBandArc(Canvas canvas, Size size) {
-    // arc above
-    final arcCx = size.width * (0.50 + 0.10 * (_f(1) - 0.5));
-    final arcCy = size.height * 0.30;
-    final arcR  = size.shortestSide * 0.30;
+    // Arc above — filled crescent.
+    final arcCx = size.width * 0.50;
+    final arcCy = size.height * 0.32;
+    final arcR  = size.shortestSide * 0.34;
     canvas.drawPath(
       _crescentPath(arcCx, arcCy, arcR, arcR * 0.65),
       Paint()..color = palette.ink,
     );
-    // wavy band lower
+    // Chunky wavy band lower.
     final bandPath = Path();
-    final midY = size.height * 0.70;
-    final amp = size.height * 0.06;
+    final midY = size.height * 0.72;
+    final amp = size.height * 0.07;
     const steps = 40;
     for (var i = 0; i <= steps; i++) {
       final t = i / steps;
@@ -935,20 +912,14 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.accent
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.030
+        ..strokeWidth = size.shortestSide * 0.046
         ..strokeCap = StrokeCap.round,
-    );
-    // tiny dot above arc
-    canvas.drawCircle(
-      Offset(size.width * 0.20, size.height * 0.16),
-      size.shortestSide * 0.034,
-      Paint()..color = palette.accent,
     );
   }
 
-  // 12. Three overlapping bubbles + accent dot
+  // 12. Three overlapping bubbles in a triangle layout
   void _drawTripleBubbles(Canvas canvas, Size size) {
-    final r = size.shortestSide * 0.22;
+    final r = size.shortestSide * 0.26;
     final cx = size.width * 0.50;
     final cy = size.height * 0.50;
     final offset = r * 0.85;
@@ -957,83 +928,62 @@ class _MoodPainter extends CustomPainter {
     canvas.drawCircle(Offset(cx - offset, cy + offset * 0.55), r, ink);
     canvas.drawCircle(Offset(cx + offset, cy + offset * 0.55), r, ink);
     canvas.drawCircle(Offset(cx,          cy - offset * 0.55), r, accent);
-    // small accent ring around centre
-    canvas.drawCircle(
-      Offset(cx, cy),
-      r * 0.30,
-      Paint()..color = palette.bg,
-    );
   }
 
-  // 13. Pill shape + floating circle
+  // 13. Pill shape + floating circle (no extra dot)
   void _drawPillFloat(Canvas canvas, Size size) {
     final pillRect = Rect.fromCenter(
-      center: Offset(size.width * 0.50, size.height * 0.60),
-      width: size.width * 0.70,
-      height: size.height * 0.18,
+      center: Offset(size.width * 0.50, size.height * 0.62),
+      width: size.width * 0.76,
+      height: size.height * 0.20,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(pillRect, Radius.circular(size.height * 0.10)),
+      RRect.fromRectAndRadius(pillRect, Radius.circular(size.height * 0.11)),
       Paint()..color = palette.ink,
     );
-    // floating circle above
     canvas.drawCircle(
-      Offset(size.width * (0.30 + 0.40 * _f(1)),
-             size.height * 0.30),
-      size.shortestSide * (0.090 + 0.030 * _f(2)),
-      Paint()..color = palette.accent,
-    );
-    // small dot at one end
-    canvas.drawCircle(
-      Offset(size.width * 0.18, size.height * 0.22),
-      size.shortestSide * 0.030,
+      Offset(size.width * 0.50, size.height * 0.28),
+      size.shortestSide * 0.14,
       Paint()..color = palette.accent,
     );
   }
 
-  // 14. Soft mountain triangle + sun circle + dots
+  // 14. Soft mountain triangle + sun circle (no scattered dots)
   void _drawMountainSun(Canvas canvas, Size size) {
-    // sun (drawn first, behind)
     canvas.drawCircle(
-      Offset(size.width * (0.70 + 0.10 * _f(1)),
-             size.height * 0.32),
-      size.shortestSide * 0.18,
+      Offset(size.width * 0.72, size.height * 0.30),
+      size.shortestSide * 0.20,
       Paint()..color = palette.accent,
     );
-    // mountain triangle
     canvas.drawPath(
       _softTrianglePath(
         size.width * 0.45,
         size.height * 0.62,
-        size.shortestSide * 0.60,
+        size.shortestSide * 0.66,
       ),
       Paint()..color = palette.ink,
     );
-    // tiny scatter dots
-    _scatterDots(canvas, size, 3, palette.accent,
-        size.shortestSide * 0.024,
-        topPad: 0.78, bottomPad: 0.06, seedShift: 40);
   }
 
-  // 15. Cloud shape + 3 dots below
+  // 15. Cloud + 3 raindrops in varied sizes (logical row)
   void _drawCloudRain(Canvas canvas, Size size) {
-    final cx = size.width  * (0.50 + 0.06 * _f(1));
-    final cy = size.height * (0.40 + 0.06 * _f(2));
-    final w = size.width  * 0.60;
-    final h = size.height * 0.32;
+    final cx = size.width  * 0.50;
+    final cy = size.height * 0.40;
+    final w = size.width  * 0.66;
+    final h = size.height * 0.34;
     canvas.drawPath(
       _cloudPath(cx, cy, w, h),
       Paint()..color = palette.ink,
     );
-    // raindrops below — 3-4 dots in a slight arc
-    final dotCount = 3 + subVariant; // 3 or 4 or 5
+    // Three raindrops in a deliberate row beneath the cloud, sized
+    // large → medium → small for visual rhythm. No random scatter.
     final accent = Paint()..color = palette.accent;
-    for (var i = 0; i < dotCount; i++) {
-      final t = (i + 1) / (dotCount + 1);
-      final x = size.width  * (0.30 + 0.40 * t);
-      final y = size.height * (0.72 + 0.06 * math.sin(t * math.pi));
-      canvas.drawCircle(Offset(x, y), size.shortestSide * 0.040, accent);
-    }
+    canvas.drawCircle(Offset(size.width * 0.34, size.height * 0.76),
+        size.shortestSide * 0.060, accent);
+    canvas.drawCircle(Offset(size.width * 0.50, size.height * 0.80),
+        size.shortestSide * 0.044, accent);
+    canvas.drawCircle(Offset(size.width * 0.66, size.height * 0.76),
+        size.shortestSide * 0.030, accent);
   }
 
   @override
