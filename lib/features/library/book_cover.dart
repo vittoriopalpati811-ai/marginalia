@@ -1,28 +1,28 @@
-// ─── Book cover — Philographics-inspired mood art ──────────────────────────
+// ─── Book cover — doodle/mixed-element mood art ────────────────────────────
 //
-// Reference: Genis Carreras' "Philographics" poster series — one bold,
-// saturated background colour per concept, with a single geometric
-// composition (circle, X, triangle, plus, domino chain, venn, grid…)
-// that *visually rhymes* with the concept. Minimal but never timid.
+// User direction (verbatim, 2026-05-29):
+//   "fai uno stile più doodles per le copertine, che non usi angoli
+//    retti ma angoli smussati e arrotondati, design morbido e colorato,
+//    500 variabili. evita copertine con solo linee ma mischia gli
+//    elementi."
 //
-// User direction:
-//   "Modifica le immagini di copertina prendendo di riferimento queste
-//    immagini, rendi le copertine più dinamiche e più diversificate tra
-//    loro evitando ripetizioni tra le copertine."
-//
-// Cover catalogue:
-//   • 11 moods (mapped to ~70 famous books + keyword fallback)
-//   • 3 palette variants per mood (33 distinct palettes total) — pure-
-//     saturated reds for fiery, ink-black/wine for dark, dusty rose for
-//     romantic, etc. Hash picks the variant so two books of the same
-//     mood don't necessarily share a palette.
-//   • 20 compositions — each mood lists 6–8 compatible compositions,
-//     hash picks one. With 11 moods × 6 compositions × 3 palettes ≈
-//     200 unique outputs, a 30-book library should land on essentially
-//     no duplicates.
+// Concrete design rules:
+//   1. NO sharp 90° corners. Every rect is a squircle (large radius).
+//      Triangles, hexagons and stars have rounded vertices via path
+//      quadratics. Lines have round stroke caps. Shapes use organic
+//      blob outlines where the geometric form allows.
+//   2. MIXED elements per cover — every composition combines at least
+//      a main shape with a secondary motif (dots, accent dot, scribble,
+//      mini ring). Pure-line covers are forbidden.
+//   3. SOFT + COLOURFUL — 6 palette variants per mood (was 3) plus
+//      bolder accent colour use. 11 moods × 6 palettes = 66 palettes
+//      total.
+//   4. ≥ 500 unique outputs — 11 moods × 6 palettes × ~15 compositions
+//      × 3 sub-variants ≈ 3000 distinct cover renderings. A 50-book
+//      library practically never repeats.
 //
 // The cover never renders the book title or author — the surrounding
-// card (library_screen, profile, book_detail) handles that.
+// card handles that (library_screen, profile, book_detail).
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -56,270 +56,220 @@ class _Palette {
   final Color accent;
 }
 
-// Three palette variants per mood — the hash picks one. Bolder, more
-// saturated than the previous single-palette version.
+// Six palettes per mood. The lineup leans softer + more pastel than the
+// previous bolder variants, but each mood keeps one "saturated" option
+// for energy (e.g. crimson for fiery, hot-pink for romantic).
 const _palettes = <_Mood, List<_Palette>>{
   _Mood.fiery: [
-    _Palette(bg: Color(0xFF3A1810), ink: Color(0xFFC73E1D), accent: Color(0xFFE89B3C)), // sienna burnt
-    _Palette(bg: Color(0xFFE63946), ink: Color(0xFFFCD34D), accent: Color(0xFF240B0B)), // saturated crimson
-    _Palette(bg: Color(0xFFE84B27), ink: Color(0xFFFFE8C8), accent: Color(0xFF1B1814)), // orange flame
+    _Palette(bg: Color(0xFFFFCBA4), ink: Color(0xFFD9533C), accent: Color(0xFF6B2C20)),  // peach + brick
+    _Palette(bg: Color(0xFFE63946), ink: Color(0xFFFCD34D), accent: Color(0xFF240B0B)),  // crimson + sun
+    _Palette(bg: Color(0xFFFAD2C5), ink: Color(0xFFC04936), accent: Color(0xFFE8AB73)),  // salmon
+    _Palette(bg: Color(0xFFFFE8C8), ink: Color(0xFFE25A2C), accent: Color(0xFF8B3A2E)),  // sherbet
+    _Palette(bg: Color(0xFFE84B27), ink: Color(0xFFFFE8C8), accent: Color(0xFF1B1814)),  // flame
+    _Palette(bg: Color(0xFF3A1810), ink: Color(0xFFE89B3C), accent: Color(0xFFFAD2C5)),  // burnt sienna
   ],
   _Mood.dark: [
-    _Palette(bg: Color(0xFF15171A), ink: Color(0xFF6B1818), accent: Color(0xFFA8A89E)), // near black, wine
-    _Palette(bg: Color(0xFF2C2D2F), ink: Color(0xFFE5E5E0), accent: Color(0xFFC73E1D)), // charcoal, bone
-    _Palette(bg: Color(0xFF0E1018), ink: Color(0xFF8B0F2A), accent: Color(0xFFE8D89D)), // ink, blood
+    _Palette(bg: Color(0xFF2C2D2F), ink: Color(0xFFE5E5E0), accent: Color(0xFFC73E1D)),  // charcoal
+    _Palette(bg: Color(0xFF4B3A4F), ink: Color(0xFFE0CDD5), accent: Color(0xFF8B0F2A)),  // plum dust
+    _Palette(bg: Color(0xFF1A1F2E), ink: Color(0xFF8B7C9E), accent: Color(0xFFEFE5D6)),  // navy mist
+    _Palette(bg: Color(0xFF2D2A38), ink: Color(0xFFB0A8C5), accent: Color(0xFFE8A87C)),  // violet stone
+    _Palette(bg: Color(0xFF15171A), ink: Color(0xFF6B1818), accent: Color(0xFFA8A89E)),  // ink wine
+    _Palette(bg: Color(0xFF3A2F33), ink: Color(0xFFD4B5A0), accent: Color(0xFFE63946)),  // mauve dust
   ],
   _Mood.romantic: [
-    _Palette(bg: Color(0xFFF3D9D9), ink: Color(0xFFB9747E), accent: Color(0xFF73403C)), // dusty rose
-    _Palette(bg: Color(0xFFFBC2D3), ink: Color(0xFFE63277), accent: Color(0xFF400D26)), // hot pink, vivid
-    _Palette(bg: Color(0xFFE4B7B0), ink: Color(0xFF8B3A3E), accent: Color(0xFFF7E2DA)), // muted terracotta
+    _Palette(bg: Color(0xFFFBC2D3), ink: Color(0xFFE63277), accent: Color(0xFF6E2447)),  // hot pink
+    _Palette(bg: Color(0xFFFAD9E0), ink: Color(0xFFBE5773), accent: Color(0xFF8B3A4E)),  // dusty rose
+    _Palette(bg: Color(0xFFFFE4D5), ink: Color(0xFFD68A95), accent: Color(0xFF7D4357)),  // peach blush
+    _Palette(bg: Color(0xFFEDD4D8), ink: Color(0xFFA8557B), accent: Color(0xFFE8B574)),  // sherbet rose
+    _Palette(bg: Color(0xFFE5C9DE), ink: Color(0xFF7D2A5C), accent: Color(0xFFFCDDB7)),  // mauve
+    _Palette(bg: Color(0xFFE4B7B0), ink: Color(0xFF8B3A3E), accent: Color(0xFFF7E2DA)),  // muted terracotta
   ],
   _Mood.gentle: [
-    _Palette(bg: Color(0xFFF6EFDD), ink: Color(0xFFB89B6F), accent: Color(0xFF5B4733)), // cream paper
-    _Palette(bg: Color(0xFFFFE2A8), ink: Color(0xFF8B5A2B), accent: Color(0xFF2C1F12)), // warm yellow
-    _Palette(bg: Color(0xFFEDE7DE), ink: Color(0xFF4A7A35), accent: Color(0xFFB54B3A)), // matcha on cream
+    _Palette(bg: Color(0xFFFFF4D6), ink: Color(0xFF8B6F47), accent: Color(0xFFE89B3C)),  // butter
+    _Palette(bg: Color(0xFFD4E8D0), ink: Color(0xFF5A7A4D), accent: Color(0xFF8B6F47)),  // mint cream
+    _Palette(bg: Color(0xFFC7DFEC), ink: Color(0xFF4B6B85), accent: Color(0xFFE8A87C)),  // baby blue
+    _Palette(bg: Color(0xFFF6EFDD), ink: Color(0xFFB89B6F), accent: Color(0xFF5B4733)),  // cream paper
+    _Palette(bg: Color(0xFFFFE2A8), ink: Color(0xFF8B5A2B), accent: Color(0xFF2C1F12)),  // honey
+    _Palette(bg: Color(0xFFFAD7C7), ink: Color(0xFF8B5C4E), accent: Color(0xFF5A7A4D)),  // peach cream
   ],
   _Mood.melancholic: [
-    _Palette(bg: Color(0xFF38516B), ink: Color(0xFFA1B7CC), accent: Color(0xFFE1DCCB)), // slate blue
-    _Palette(bg: Color(0xFF2B4F9E), ink: Color(0xFFE5DDBF), accent: Color(0xFF0E1A3A)), // royal blue
-    _Palette(bg: Color(0xFF4A5969), ink: Color(0xFFD8E0EC), accent: Color(0xFF8B3A3E)), // grey-blue
+    _Palette(bg: Color(0xFFB0C0D0), ink: Color(0xFF364B5C), accent: Color(0xFFE1DCCB)),  // powder blue
+    _Palette(bg: Color(0xFFD4C5D0), ink: Color(0xFF5B3D5A), accent: Color(0xFFE8AB73)),  // dusty mauve
+    _Palette(bg: Color(0xFFC4CCBE), ink: Color(0xFF4B6B5A), accent: Color(0xFFD4A095)),  // sage
+    _Palette(bg: Color(0xFF38516B), ink: Color(0xFFA1B7CC), accent: Color(0xFFE1DCCB)),  // slate
+    _Palette(bg: Color(0xFF6B5A6F), ink: Color(0xFFD0BFD5), accent: Color(0xFFE8C57D)),  // dusk
+    _Palette(bg: Color(0xFFE8D6CE), ink: Color(0xFF7D5A6B), accent: Color(0xFF4B6B85)),  // ash rose
   ],
   _Mood.adventurous: [
-    _Palette(bg: Color(0xFF1F3A2A), ink: Color(0xFF89B07A), accent: Color(0xFFE8D89D)), // forest
-    _Palette(bg: Color(0xFF4A7A35), ink: Color(0xFFFFE2A8), accent: Color(0xFF1B1814)), // matcha bold
-    _Palette(bg: Color(0xFF2F5234), ink: Color(0xFFE7CB57), accent: Color(0xFFF4F0E0)), // pine + gold
+    _Palette(bg: Color(0xFFE7D588), ink: Color(0xFF6B5A2B), accent: Color(0xFF8B3A2E)),  // mustard
+    _Palette(bg: Color(0xFFCFB89D), ink: Color(0xFF5C3A1F), accent: Color(0xFF6B8B47)),  // tan
+    _Palette(bg: Color(0xFF6B8E5A), ink: Color(0xFFF4F0E0), accent: Color(0xFFE8A87C)),  // olive
+    _Palette(bg: Color(0xFF1F3A2A), ink: Color(0xFF89B07A), accent: Color(0xFFE8D89D)),  // forest
+    _Palette(bg: Color(0xFFE0A87C), ink: Color(0xFF6B3A1F), accent: Color(0xFFFCE8C8)),  // copper
+    _Palette(bg: Color(0xFFD4C97A), ink: Color(0xFF5C5C2B), accent: Color(0xFF8B3A2E)),  // sage gold
   ],
   _Mood.mystical: [
-    _Palette(bg: Color(0xFF2A1740), ink: Color(0xFF9C6BC9), accent: Color(0xFFF0D88B)), // deep violet
-    _Palette(bg: Color(0xFF5C2D7B), ink: Color(0xFFF0D88B), accent: Color(0xFFFFE2A8)), // bishop purple
-    _Palette(bg: Color(0xFF1B0E2E), ink: Color(0xFFE63277), accent: Color(0xFFD8E0EC)), // night violet
+    _Palette(bg: Color(0xFFD8C8E5), ink: Color(0xFF5C3A7B), accent: Color(0xFFE8C57D)),  // lavender
+    _Palette(bg: Color(0xFFC5B8D5), ink: Color(0xFF6B4A7D), accent: Color(0xFFE8AB73)),  // periwinkle
+    _Palette(bg: Color(0xFFE2C9DB), ink: Color(0xFF7D4A6B), accent: Color(0xFFF0D88B)),  // plum blush
+    _Palette(bg: Color(0xFF2A1740), ink: Color(0xFF9C6BC9), accent: Color(0xFFF0D88B)),  // deep violet
+    _Palette(bg: Color(0xFF5C2D7B), ink: Color(0xFFF0D88B), accent: Color(0xFFFFE2A8)),  // bishop
+    _Palette(bg: Color(0xFFB89BC5), ink: Color(0xFF4A2D6B), accent: Color(0xFFF4E2A8)),  // amethyst dust
   ],
   _Mood.intellectual: [
-    _Palette(bg: Color(0xFF1A2A3A), ink: Color(0xFF8FAACF), accent: Color(0xFFE5DDBF)), // ink blue
-    _Palette(bg: Color(0xFF065A82), ink: Color(0xFFE5DDBF), accent: Color(0xFFFCD34D)), // teal-navy
-    _Palette(bg: Color(0xFFF2EDE4), ink: Color(0xFF1A2A3A), accent: Color(0xFFC73E1D)), // parchment
+    _Palette(bg: Color(0xFFE5E0D0), ink: Color(0xFF3A4A5C), accent: Color(0xFFC73E1D)),  // parchment
+    _Palette(bg: Color(0xFFCFD8E0), ink: Color(0xFF4A5C7D), accent: Color(0xFFE89B3C)),  // chalk blue
+    _Palette(bg: Color(0xFF1A2A3A), ink: Color(0xFF8FAACF), accent: Color(0xFFE5DDBF)),  // ink blue
+    _Palette(bg: Color(0xFF065A82), ink: Color(0xFFE5DDBF), accent: Color(0xFFFCD34D)),  // teal navy
+    _Palette(bg: Color(0xFFD4C5B0), ink: Color(0xFF3A2A1A), accent: Color(0xFF4B6B5A)),  // newsprint
+    _Palette(bg: Color(0xFFB5C5C8), ink: Color(0xFF2D4147), accent: Color(0xFFE89B3C)),  // steel
   ],
   _Mood.natural: [
-    _Palette(bg: Color(0xFFE6E0CC), ink: Color(0xFF6B8F3C), accent: Color(0xFF8B6F47)), // linen
-    _Palette(bg: Color(0xFF6BBA29), ink: Color(0xFFF4F0E0), accent: Color(0xFF1F3A2A)), // bright leaf
-    _Palette(bg: Color(0xFFF5EFE0), ink: Color(0xFFB89B6F), accent: Color(0xFF4A7A35)), // sand + sage
+    _Palette(bg: Color(0xFFE6E0CC), ink: Color(0xFF6B8F3C), accent: Color(0xFF8B6F47)),  // linen
+    _Palette(bg: Color(0xFFB0C499), ink: Color(0xFF3A5C2B), accent: Color(0xFFE8AB73)),  // moss
+    _Palette(bg: Color(0xFFCFD8B5), ink: Color(0xFF5A7A3F), accent: Color(0xFF8B3A2E)),  // sage spring
+    _Palette(bg: Color(0xFF6BBA29), ink: Color(0xFFF4F0E0), accent: Color(0xFF1F3A2A)),  // bright leaf
+    _Palette(bg: Color(0xFFD8C8A0), ink: Color(0xFF6B5A2B), accent: Color(0xFF4A7A35)),  // ochre
+    _Palette(bg: Color(0xFFF5EFE0), ink: Color(0xFFB89B6F), accent: Color(0xFF4A7A35)),  // sand sage
   ],
   _Mood.contemplative: [
-    _Palette(bg: Color(0xFFDDE0D8), ink: Color(0xFF5C7A7E), accent: Color(0xFF8F7C5F)), // mist grey
-    _Palette(bg: Color(0xFF4FC1E9), ink: Color(0xFFF4F0E0), accent: Color(0xFF0F5C56)), // sky teal
-    _Palette(bg: Color(0xFFAFC4C0), ink: Color(0xFF2F4F4F), accent: Color(0xFFF5EFE0)), // sage cool
+    _Palette(bg: Color(0xFFDDE0D8), ink: Color(0xFF5C7A7E), accent: Color(0xFF8F7C5F)),  // mist
+    _Palette(bg: Color(0xFFC4D5D3), ink: Color(0xFF3A5C5C), accent: Color(0xFFE8AB73)),  // pearl teal
+    _Palette(bg: Color(0xFFD8D4C5), ink: Color(0xFF5A5C4D), accent: Color(0xFF8B4A5C)),  // dust olive
+    _Palette(bg: Color(0xFF4FC1E9), ink: Color(0xFFF4F0E0), accent: Color(0xFF0F5C56)),  // sky teal
+    _Palette(bg: Color(0xFFAFC4C0), ink: Color(0xFF2F4F4F), accent: Color(0xFFF5EFE0)),  // sage cool
+    _Palette(bg: Color(0xFFE8DCC8), ink: Color(0xFF7A6B4F), accent: Color(0xFF4B6B85)),  // taupe
   ],
   _Mood.celestial: [
-    _Palette(bg: Color(0xFF0F2640), ink: Color(0xFFE5C56A), accent: Color(0xFFD8E0EC)), // night sky
-    _Palette(bg: Color(0xFF1A1338), ink: Color(0xFFFFE8C8), accent: Color(0xFFE5C56A)), // cosmos
-    _Palette(bg: Color(0xFF050720), ink: Color(0xFFFCD34D), accent: Color(0xFFF4F0E0)), // deep void
+    _Palette(bg: Color(0xFF0F2640), ink: Color(0xFFE5C56A), accent: Color(0xFFD8E0EC)),  // night sky
+    _Palette(bg: Color(0xFF1A1338), ink: Color(0xFFFFE8C8), accent: Color(0xFFE5C56A)),  // cosmos
+    _Palette(bg: Color(0xFF050720), ink: Color(0xFFFCD34D), accent: Color(0xFFF4F0E0)),  // void
+    _Palette(bg: Color(0xFF2D3F5C), ink: Color(0xFFF4D88B), accent: Color(0xFFD0B5C9)),  // dusk navy
+    _Palette(bg: Color(0xFFB5C5D8), ink: Color(0xFF1F3A5C), accent: Color(0xFFE8C57D)),  // morning sky
+    _Palette(bg: Color(0xFF4A4A6B), ink: Color(0xFFE5C56A), accent: Color(0xFFFCDDB7)),  // twilight
   ],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Curated lookup — ~70 famous books mapped by hand
+// Curated lookup — famous books mapped by hand
 // ═══════════════════════════════════════════════════════════════════════════
 
 const _curated = <String, _Mood>{
-  // Dante
   'inferno':                    _Mood.fiery,
   'divina commedia':            _Mood.mystical,
   'purgatorio':                 _Mood.contemplative,
   'paradiso':                   _Mood.celestial,
-
-  // Manzoni
   'promessi sposi':             _Mood.gentle,
-
-  // Calvino
   'barone rampante':            _Mood.natural,
   'visconte dimezzato':         _Mood.melancholic,
   'cavaliere inesistente':      _Mood.adventurous,
   'citta invisibili':           _Mood.intellectual,
   "se una notte d'inverno":     _Mood.intellectual,
-
-  // Eco
   'nome della rosa':            _Mood.intellectual,
   'pendolo di foucault':        _Mood.mystical,
-
-  // Primo Levi
   'se questo e un uomo':        _Mood.melancholic,
   'se questo e\' un uomo':      _Mood.melancholic,
-
-  // Marquez
   "cent'anni di solitudine":    _Mood.melancholic,
   'cento anni di solitudine':   _Mood.melancholic,
   'amore ai tempi del colera':  _Mood.romantic,
-
-  // Saint-Exupery
   'piccolo principe':           _Mood.celestial,
   'petit prince':               _Mood.celestial,
-
-  // Cervantes
   'don chisciotte':             _Mood.adventurous,
   'don quijote':                _Mood.adventurous,
-
-  // Austen
   'orgoglio e pregiudizio':     _Mood.romantic,
   'pride and prejudice':        _Mood.romantic,
   'sense and sensibility':      _Mood.romantic,
   'emma':                       _Mood.romantic,
-
-  // Orwell
   '1984':                       _Mood.dark,
   'fattoria degli animali':     _Mood.dark,
   'animal farm':                _Mood.dark,
-
-  // Tolstoy
   'anna karenina':              _Mood.romantic,
   'guerra e pace':              _Mood.melancholic,
   'war and peace':              _Mood.melancholic,
-
-  // Dostoyevsky
   'fratelli karamazov':         _Mood.melancholic,
   'delitto e castigo':          _Mood.dark,
   'crime and punishment':       _Mood.dark,
   'idiota':                     _Mood.melancholic,
-
-  // Hesse
   'siddharta':                  _Mood.contemplative,
   'siddhartha':                 _Mood.contemplative,
   'lupo della steppa':          _Mood.melancholic,
-
-  // Kafka
   'metamorfosi':                _Mood.dark,
   'il processo':                _Mood.dark,
   'castello':                   _Mood.melancholic,
-
-  // Hemingway
   'vecchio e il mare':          _Mood.contemplative,
   'addio alle armi':            _Mood.melancholic,
-
-  // Camus
   'lo straniero':               _Mood.dark,
   'la peste':                   _Mood.dark,
-
-  // Saramago
   'cecita':                     _Mood.dark,
-
-  // Pessoa
   "libro dell'inquietudine":    _Mood.melancholic,
-
-  // Suskind
   'profumo':                    _Mood.dark,
-
-  // Wilde
   'ritratto di dorian gray':    _Mood.dark,
   'picture of dorian gray':     _Mood.dark,
-
-  // Bulgakov
   'maestro e margherita':       _Mood.mystical,
-
-  // Tolkien
   'signore degli anelli':       _Mood.adventurous,
   'lord of the rings':          _Mood.adventurous,
   'hobbit':                     _Mood.adventurous,
-
-  // Murakami
   'norwegian wood':             _Mood.melancholic,
   'tokyo blues':                _Mood.melancholic,
   'kafka sulla spiaggia':       _Mood.mystical,
   '1q84':                       _Mood.mystical,
-
-  // Tomasi di Lampedusa
   'gattopardo':                 _Mood.melancholic,
-
-  // Sciascia
   'giorno della civetta':       _Mood.dark,
-
-  // D'Annunzio
   'il piacere':                 _Mood.romantic,
-
-  // Pirandello
   'fu mattia pascal':           _Mood.melancholic,
   'uno, nessuno e centomila':   _Mood.intellectual,
-
-  // Svevo
   'coscienza di zeno':          _Mood.intellectual,
-
-  // Buzzati
   'deserto dei tartari':        _Mood.melancholic,
-
-  // Ferrante
   'amica geniale':              _Mood.gentle,
-
-  // Giordano
   'solitudine dei numeri primi':_Mood.melancholic,
-
-  // Saviano
   'gomorra':                    _Mood.dark,
-
-  // Verne
   'ventimila leghe':            _Mood.adventurous,
   'giro del mondo':             _Mood.adventurous,
-
-  // Stevenson
   'isola del tesoro':           _Mood.adventurous,
   'jekyll':                     _Mood.dark,
-
-  // Shelley
   'frankenstein':               _Mood.dark,
-
-  // Stoker
   'dracula':                    _Mood.dark,
-
-  // Melville
   'moby dick':                  _Mood.adventurous,
-
-  // Steinbeck
   'furore':                     _Mood.melancholic,
   'grapes of wrath':            _Mood.melancholic,
   'uomini e topi':              _Mood.melancholic,
-
-  // Fitzgerald
   'gatsby':                     _Mood.romantic,
   'great gatsby':               _Mood.romantic,
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
 // Keyword fallback
-// ═══════════════════════════════════════════════════════════════════════════
-
 const _keywords = <String, _Mood>{
-  'morte':      _Mood.dark, 'sangue':    _Mood.dark, 'guerra':   _Mood.dark,
-  'ombra':      _Mood.dark, 'ombre':     _Mood.dark, 'paura':    _Mood.dark,
-  'death':      _Mood.dark, 'blood':     _Mood.dark, 'shadow':   _Mood.dark,
-  'dark':       _Mood.dark,
-  'fuoco':      _Mood.fiery, 'fiamma':   _Mood.fiery, 'rivoluzione': _Mood.fiery,
-  'fire':       _Mood.fiery, 'flame':    _Mood.fiery,
-  'amore':      _Mood.romantic, 'cuore': _Mood.romantic, 'rosa': _Mood.romantic,
-  'love':       _Mood.romantic, 'heart': _Mood.romantic, 'rose': _Mood.romantic,
-  'bambino':    _Mood.gentle, 'bambina': _Mood.gentle,
-  'piccolo':    _Mood.gentle, 'piccola': _Mood.gentle,
-  'child':      _Mood.gentle, 'little':  _Mood.gentle,
-  'memoria':    _Mood.melancholic, 'ricordi':    _Mood.melancholic,
-  'solitudine': _Mood.melancholic, 'pioggia':    _Mood.melancholic,
-  'inverno':    _Mood.melancholic, 'silenzio':   _Mood.melancholic,
-  'memory':     _Mood.melancholic, 'rain':       _Mood.melancholic,
-  'winter':     _Mood.melancholic, 'lonely':     _Mood.melancholic,
-  'solitude':   _Mood.melancholic,
-  'viaggio':    _Mood.adventurous, 'avventura': _Mood.adventurous,
-  'montagna':   _Mood.adventurous, 'isola':     _Mood.adventurous,
-  'journey':    _Mood.adventurous, 'voyage':    _Mood.adventurous,
-  'island':     _Mood.adventurous,
-  'mare':       _Mood.contemplative, 'sea':     _Mood.contemplative,
-  'sogno':      _Mood.mystical, 'magia':      _Mood.mystical,
-  'mistero':    _Mood.mystical, 'dream':      _Mood.mystical,
-  'magic':      _Mood.mystical, 'mystery':    _Mood.mystical,
-  'storia':     _Mood.intellectual, 'libro':   _Mood.intellectual,
-  'verita':     _Mood.intellectual, 'biblioteca': _Mood.intellectual,
-  'book':       _Mood.intellectual, 'library': _Mood.intellectual,
-  'foresta':    _Mood.natural, 'bosco':     _Mood.natural,
-  'giardino':   _Mood.natural, 'campo':     _Mood.natural,
-  'forest':     _Mood.natural, 'garden':    _Mood.natural, 'wood': _Mood.natural,
-  'stella':     _Mood.celestial, 'stelle': _Mood.celestial,
-  'cielo':      _Mood.celestial, 'luna':   _Mood.celestial,
-  'sole':       _Mood.celestial, 'star':   _Mood.celestial,
-  'sky':        _Mood.celestial, 'moon':   _Mood.celestial, 'sun': _Mood.celestial,
+  'morte': _Mood.dark, 'sangue': _Mood.dark, 'guerra': _Mood.dark,
+  'ombra': _Mood.dark, 'ombre': _Mood.dark, 'paura': _Mood.dark,
+  'death': _Mood.dark, 'blood': _Mood.dark, 'shadow': _Mood.dark, 'dark': _Mood.dark,
+  'fuoco': _Mood.fiery, 'fiamma': _Mood.fiery, 'rivoluzione': _Mood.fiery,
+  'fire': _Mood.fiery, 'flame': _Mood.fiery,
+  'amore': _Mood.romantic, 'cuore': _Mood.romantic, 'rosa': _Mood.romantic,
+  'love': _Mood.romantic, 'heart': _Mood.romantic, 'rose': _Mood.romantic,
+  'bambino': _Mood.gentle, 'bambina': _Mood.gentle,
+  'piccolo': _Mood.gentle, 'piccola': _Mood.gentle,
+  'child': _Mood.gentle, 'little': _Mood.gentle,
+  'memoria': _Mood.melancholic, 'ricordi': _Mood.melancholic,
+  'solitudine': _Mood.melancholic, 'pioggia': _Mood.melancholic,
+  'inverno': _Mood.melancholic, 'silenzio': _Mood.melancholic,
+  'memory': _Mood.melancholic, 'rain': _Mood.melancholic,
+  'winter': _Mood.melancholic, 'lonely': _Mood.melancholic, 'solitude': _Mood.melancholic,
+  'viaggio': _Mood.adventurous, 'avventura': _Mood.adventurous,
+  'montagna': _Mood.adventurous, 'isola': _Mood.adventurous,
+  'journey': _Mood.adventurous, 'voyage': _Mood.adventurous, 'island': _Mood.adventurous,
+  'mare': _Mood.contemplative, 'sea': _Mood.contemplative,
+  'sogno': _Mood.mystical, 'magia': _Mood.mystical, 'mistero': _Mood.mystical,
+  'dream': _Mood.mystical, 'magic': _Mood.mystical, 'mystery': _Mood.mystical,
+  'storia': _Mood.intellectual, 'libro': _Mood.intellectual,
+  'verita': _Mood.intellectual, 'biblioteca': _Mood.intellectual,
+  'book': _Mood.intellectual, 'library': _Mood.intellectual,
+  'foresta': _Mood.natural, 'bosco': _Mood.natural,
+  'giardino': _Mood.natural, 'campo': _Mood.natural,
+  'forest': _Mood.natural, 'garden': _Mood.natural, 'wood': _Mood.natural,
+  'stella': _Mood.celestial, 'stelle': _Mood.celestial,
+  'cielo': _Mood.celestial, 'luna': _Mood.celestial,
+  'sole': _Mood.celestial, 'star': _Mood.celestial,
+  'sky': _Mood.celestial, 'moon': _Mood.celestial, 'sun': _Mood.celestial,
 };
 
 _Mood _detectMood(String title) {
@@ -335,136 +285,145 @@ _Mood _detectMood(String title) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Compositions — 20 variants
+// Compositions — every one MIXES at least two element types
 // ═══════════════════════════════════════════════════════════════════════════
 
 enum _Composition {
-  bigCircle,
-  concentricRings,
-  sunArc,
-  wavyHorizon,
-  threeDots,
-  triangle,
-  invertedTriangle,
-  stackedArcs,
-  verticalLines,
-  plus,
-  diagonalSlash,
-  xMark,
-  vennCircles,
-  nestedSquares,
-  dotGrid,
-  hexagon,
-  star,
-  dominoFall,
-  bigSquare,
-  horizontalBar,
+  squircleDots,        // rounded square + scattered dots
+  blobAccentDots,      // organic blob + 3 small accent dots
+  softTriWaves,        // soft triangle + wavy line behind
+  circleRingDot,       // solid circle + outline ring + floating dot
+  crescentStars,       // crescent + tiny star/circle scatter
+  squiggleDot,         // wavy line + floating circle
+  petalCluster,        // 4 petal/leaf shapes + centre dot
+  stackedBlobs,        // 3 nested rounded shapes
+  softHexDots,         // soft hexagon + 3 corner dots
+  starOnCircle,        // soft star + circle backdrop
+  wavyBandArc,         // wavy band + arc above + dot
+  tripleBubbles,       // 3 overlapping circles + accent
+  pillFloat,           // rounded pill + floating circle
+  mountainSun,         // soft triangle + circle + small dots
+  cloudRain,           // cloud bump + dots below
 }
 
-// Each mood lists 6–8 compositions whose visual language matches the mood.
-// Hash picks one. With ~6 options and 3 palettes (= 18 unique looks per
-// mood) the chance of two same-mood books colliding is small.
+_Composition _pickComposition(int seed, _Mood mood) {
+  final list = _moodCompositions[mood] ?? const [_Composition.circleRingDot];
+  return list[seed.abs() % list.length];
+}
+
+/// Each mood lists 8 compatible compositions. With 6 palettes per mood and
+/// 3 sub-variants per composition, that's 6 × 8 × 3 = 144 unique outputs
+/// per mood, 11 × 144 ≈ 1500 unique outputs across all moods.
 const _moodCompositions = <_Mood, List<_Composition>>{
   _Mood.fiery: [
-    _Composition.bigCircle,
-    _Composition.concentricRings,
-    _Composition.sunArc,
-    _Composition.triangle,
-    _Composition.dominoFall,
-    _Composition.plus,
-    _Composition.star,
+    _Composition.circleRingDot,
+    _Composition.softTriWaves,
+    _Composition.starOnCircle,
+    _Composition.crescentStars,
+    _Composition.mountainSun,
+    _Composition.petalCluster,
+    _Composition.tripleBubbles,
+    _Composition.squircleDots,
   ],
   _Mood.dark: [
-    _Composition.bigCircle,
-    _Composition.verticalLines,
-    _Composition.xMark,
-    _Composition.invertedTriangle,
-    _Composition.diagonalSlash,
-    _Composition.horizontalBar,
-    _Composition.nestedSquares,
-    _Composition.bigSquare,
+    _Composition.squircleDots,
+    _Composition.stackedBlobs,
+    _Composition.pillFloat,
+    _Composition.tripleBubbles,
+    _Composition.blobAccentDots,
+    _Composition.softHexDots,
+    _Composition.circleRingDot,
+    _Composition.squiggleDot,
   ],
   _Mood.romantic: [
-    _Composition.wavyHorizon,
-    _Composition.bigCircle,
-    _Composition.stackedArcs,
-    _Composition.sunArc,
-    _Composition.vennCircles,
-    _Composition.threeDots,
-    _Composition.hexagon,
+    _Composition.petalCluster,
+    _Composition.wavyBandArc,
+    _Composition.tripleBubbles,
+    _Composition.softTriWaves,
+    _Composition.crescentStars,
+    _Composition.stackedBlobs,
+    _Composition.blobAccentDots,
+    _Composition.squiggleDot,
   ],
   _Mood.gentle: [
-    _Composition.stackedArcs,
-    _Composition.wavyHorizon,
-    _Composition.sunArc,
-    _Composition.threeDots,
-    _Composition.bigCircle,
-    _Composition.hexagon,
-    _Composition.dotGrid,
+    _Composition.cloudRain,
+    _Composition.stackedBlobs,
+    _Composition.softHexDots,
+    _Composition.pillFloat,
+    _Composition.blobAccentDots,
+    _Composition.wavyBandArc,
+    _Composition.squircleDots,
+    _Composition.crescentStars,
   ],
   _Mood.melancholic: [
-    _Composition.wavyHorizon,
-    _Composition.verticalLines,
-    _Composition.threeDots,
-    _Composition.bigCircle,
-    _Composition.invertedTriangle,
-    _Composition.horizontalBar,
-    _Composition.diagonalSlash,
+    _Composition.squiggleDot,
+    _Composition.wavyBandArc,
+    _Composition.stackedBlobs,
+    _Composition.cloudRain,
+    _Composition.blobAccentDots,
+    _Composition.circleRingDot,
+    _Composition.pillFloat,
+    _Composition.softTriWaves,
   ],
   _Mood.adventurous: [
-    _Composition.triangle,
-    _Composition.stackedArcs,
-    _Composition.verticalLines,
-    _Composition.diagonalSlash,
-    _Composition.dominoFall,
-    _Composition.star,
-    _Composition.hexagon,
+    _Composition.mountainSun,
+    _Composition.softTriWaves,
+    _Composition.starOnCircle,
+    _Composition.softHexDots,
+    _Composition.tripleBubbles,
+    _Composition.petalCluster,
+    _Composition.squircleDots,
+    _Composition.pillFloat,
   ],
   _Mood.mystical: [
-    _Composition.concentricRings,
-    _Composition.threeDots,
-    _Composition.verticalLines,
-    _Composition.bigCircle,
-    _Composition.xMark,
-    _Composition.star,
-    _Composition.vennCircles,
+    _Composition.crescentStars,
+    _Composition.starOnCircle,
+    _Composition.stackedBlobs,
+    _Composition.petalCluster,
+    _Composition.circleRingDot,
+    _Composition.softHexDots,
+    _Composition.squiggleDot,
+    _Composition.blobAccentDots,
   ],
   _Mood.intellectual: [
-    _Composition.verticalLines,
-    _Composition.bigCircle,
-    _Composition.triangle,
-    _Composition.concentricRings,
-    _Composition.dotGrid,
-    _Composition.nestedSquares,
-    _Composition.plus,
-    _Composition.bigSquare,
+    _Composition.squircleDots,
+    _Composition.softHexDots,
+    _Composition.pillFloat,
+    _Composition.circleRingDot,
+    _Composition.stackedBlobs,
+    _Composition.tripleBubbles,
+    _Composition.softTriWaves,
+    _Composition.starOnCircle,
   ],
   _Mood.natural: [
-    _Composition.stackedArcs,
-    _Composition.wavyHorizon,
-    _Composition.triangle,
-    _Composition.sunArc,
-    _Composition.threeDots,
-    _Composition.bigCircle,
-    _Composition.hexagon,
+    _Composition.petalCluster,
+    _Composition.mountainSun,
+    _Composition.wavyBandArc,
+    _Composition.softTriWaves,
+    _Composition.cloudRain,
+    _Composition.stackedBlobs,
+    _Composition.blobAccentDots,
+    _Composition.crescentStars,
   ],
   _Mood.contemplative: [
-    _Composition.wavyHorizon,
-    _Composition.threeDots,
-    _Composition.bigCircle,
-    _Composition.sunArc,
-    _Composition.concentricRings,
-    _Composition.horizontalBar,
-    _Composition.vennCircles,
+    _Composition.wavyBandArc,
+    _Composition.cloudRain,
+    _Composition.circleRingDot,
+    _Composition.squiggleDot,
+    _Composition.crescentStars,
+    _Composition.stackedBlobs,
+    _Composition.softTriWaves,
+    _Composition.blobAccentDots,
   ],
   _Mood.celestial: [
-    _Composition.threeDots,
-    _Composition.bigCircle,
-    _Composition.concentricRings,
-    _Composition.sunArc,
-    _Composition.star,
-    _Composition.plus,
-    _Composition.dotGrid,
+    _Composition.crescentStars,
+    _Composition.starOnCircle,
+    _Composition.tripleBubbles,
+    _Composition.petalCluster,
+    _Composition.circleRingDot,
+    _Composition.squiggleDot,
+    _Composition.cloudRain,
+    _Composition.blobAccentDots,
   ],
 };
 
@@ -472,9 +431,6 @@ const _moodCompositions = <_Mood, List<_Composition>>{
 // Public widget
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Philographics-inspired geometric cover. 20 compositions × 3 palettes
-/// per mood means a 30-book library practically never repeats itself.
-/// No text on the cover — title + author belong in the surrounding card.
 class BookEditorialCover extends StatelessWidget {
   const BookEditorialCover({
     super.key,
@@ -489,16 +445,12 @@ class BookEditorialCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Mix title and author hashes hard so two books with similar titles
-    // diverge in seed (and therefore in palette + composition + position).
-    final seed = (title.hashCode * 1315423911) ^ (author.hashCode * 2654435769);
-    final s    = seed.abs();
-
-    final mood       = _detectMood(title);
-    final palettes   = _palettes[mood]!;
-    final palette    = palettes[(s ~/ 7) % palettes.length];
-    final comps      = _moodCompositions[mood]!;
-    final composition = comps[s % comps.length];
+    final seed = ((title.hashCode * 1315423911) ^ (author.hashCode * 2654435769)).abs();
+    final mood        = _detectMood(title);
+    final palettes    = _palettes[mood]!;
+    final palette     = palettes[(seed ~/ 13) % palettes.length];
+    final composition = _pickComposition(seed, mood);
+    final subVariant  = (seed ~/ 7) % 3; // 0, 1, 2
 
     return ClipRRect(
       borderRadius: borderRadius,
@@ -506,7 +458,8 @@ class BookEditorialCover extends StatelessWidget {
         painter: _MoodPainter(
           palette:     palette,
           composition: composition,
-          seed:        s,
+          seed:        seed,
+          subVariant:  subVariant,
         ),
         child: const SizedBox.expand(),
       ),
@@ -523,13 +476,14 @@ class _MoodPainter extends CustomPainter {
     required this.palette,
     required this.composition,
     required this.seed,
+    required this.subVariant,
   });
 
   final _Palette     palette;
   final _Composition composition;
   final int          seed;
+  final int          subVariant;
 
-  // Deterministic pseudo-noise for shape offsets.
   double _f(int n) => ((seed * 9301 + n * 49297) % 233280) / 233280.0;
 
   @override
@@ -537,438 +491,555 @@ class _MoodPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, Paint()..color = palette.bg);
 
     switch (composition) {
-      case _Composition.bigCircle:        _drawBigCircle(canvas, size);
-      case _Composition.concentricRings:  _drawConcentricRings(canvas, size);
-      case _Composition.sunArc:           _drawSunArc(canvas, size);
-      case _Composition.wavyHorizon:      _drawWavyHorizon(canvas, size);
-      case _Composition.threeDots:        _drawThreeDots(canvas, size);
-      case _Composition.triangle:         _drawTriangle(canvas, size, pointDown: false);
-      case _Composition.invertedTriangle: _drawTriangle(canvas, size, pointDown: true);
-      case _Composition.stackedArcs:      _drawStackedArcs(canvas, size);
-      case _Composition.verticalLines:    _drawVerticalLines(canvas, size);
-      case _Composition.plus:             _drawPlus(canvas, size);
-      case _Composition.diagonalSlash:    _drawDiagonalSlash(canvas, size);
-      case _Composition.xMark:            _drawXMark(canvas, size);
-      case _Composition.vennCircles:      _drawVennCircles(canvas, size);
-      case _Composition.nestedSquares:    _drawNestedSquares(canvas, size);
-      case _Composition.dotGrid:          _drawDotGrid(canvas, size);
-      case _Composition.hexagon:          _drawHexagon(canvas, size);
-      case _Composition.star:             _drawStar(canvas, size);
-      case _Composition.dominoFall:       _drawDominoFall(canvas, size);
-      case _Composition.bigSquare:        _drawBigSquare(canvas, size);
-      case _Composition.horizontalBar:    _drawHorizontalBar(canvas, size);
+      case _Composition.squircleDots:    _drawSquircleDots(canvas, size);
+      case _Composition.blobAccentDots:  _drawBlobAccentDots(canvas, size);
+      case _Composition.softTriWaves:    _drawSoftTriWaves(canvas, size);
+      case _Composition.circleRingDot:   _drawCircleRingDot(canvas, size);
+      case _Composition.crescentStars:   _drawCrescentStars(canvas, size);
+      case _Composition.squiggleDot:     _drawSquiggleDot(canvas, size);
+      case _Composition.petalCluster:    _drawPetalCluster(canvas, size);
+      case _Composition.stackedBlobs:    _drawStackedBlobs(canvas, size);
+      case _Composition.softHexDots:     _drawSoftHexDots(canvas, size);
+      case _Composition.starOnCircle:    _drawStarOnCircle(canvas, size);
+      case _Composition.wavyBandArc:     _drawWavyBandArc(canvas, size);
+      case _Composition.tripleBubbles:   _drawTripleBubbles(canvas, size);
+      case _Composition.pillFloat:       _drawPillFloat(canvas, size);
+      case _Composition.mountainSun:     _drawMountainSun(canvas, size);
+      case _Composition.cloudRain:       _drawCloudRain(canvas, size);
     }
   }
 
-  // ── 1. Big circle ──────────────────────────────────────────────────────
-  void _drawBigCircle(Canvas canvas, Size size) {
-    final radius = size.shortestSide * 0.42;
-    final cx = size.width  * (0.32 + 0.36 * _f(1));
-    final cy = size.height * (0.30 + 0.20 * _f(2));
-    canvas.drawCircle(Offset(cx, cy), radius, Paint()..color = palette.ink);
-    canvas.drawCircle(
-      Offset(size.width * 0.82, size.height * 0.78),
-      size.shortestSide * 0.025,
-      Paint()..color = palette.accent,
-    );
-  }
+  // ───── Helpers ─────────────────────────────────────────────────────────
 
-  // ── 2. Concentric rings ────────────────────────────────────────────────
-  void _drawConcentricRings(Canvas canvas, Size size) {
-    final cx = size.width  * (0.40 + 0.20 * _f(1));
-    final cy = size.height * (0.40 + 0.20 * _f(2));
-    final stroke = Paint()
-      ..color = palette.ink
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.shortestSide * 0.014;
-    final base = size.shortestSide * 0.16;
-    for (var i = 0; i < 4; i++) {
-      canvas.drawCircle(Offset(cx, cy), base + i * base * 0.55, stroke);
+  /// Organic blob outline around (cx, cy). `wobble` controls how irregular.
+  Path _blobPath(double cx, double cy, double r, {double wobble = 0.15, int points = 8}) {
+    final pts = <Offset>[];
+    for (var i = 0; i < points; i++) {
+      final angle = (math.pi * 2 / points) * i;
+      final noise = 1.0 + (_f(i + 1) - 0.5) * wobble * 2;
+      final radius = r * noise;
+      pts.add(Offset(cx + radius * math.cos(angle), cy + radius * math.sin(angle)));
     }
-    canvas.drawCircle(Offset(cx, cy), size.shortestSide * 0.030,
-        Paint()..color = palette.accent);
-  }
-
-  // ── 3. Sun arc ─────────────────────────────────────────────────────────
-  void _drawSunArc(Canvas canvas, Size size) {
-    final radius = size.shortestSide * 0.48;
-    final cx = size.width * (0.45 + 0.10 * _f(1));
-    canvas.drawCircle(Offset(cx, size.height * 1.05), radius,
-        Paint()..color = palette.ink);
-    final y = size.height * 0.62;
-    canvas.drawLine(
-      Offset(size.width * 0.10, y),
-      Offset(size.width * 0.90, y),
-      Paint()..color = palette.accent..strokeWidth = size.height * 0.008,
-    );
-  }
-
-  // ── 4. Wavy horizon ────────────────────────────────────────────────────
-  void _drawWavyHorizon(Canvas canvas, Size size) {
-    final midY      = size.height * (0.46 + 0.10 * _f(1));
-    final amplitude = size.height * 0.08;
-    final waves     = 1.8 + _f(2) * 1.2;
-    const steps     = 60;
-
-    void drawWave(double y, double phase, Color color, double width) {
-      final path = Path();
-      for (var i = 0; i <= steps; i++) {
-        final t = i / steps;
-        final x = size.width * t;
-        final yi = y + math.sin(t * math.pi * 2 * waves + phase) * amplitude * 0.85;
-        if (i == 0) {
-          path.moveTo(x, yi);
-        } else {
-          path.lineTo(x, yi);
-        }
-      }
-      canvas.drawPath(path, Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round);
-    }
-
-    drawWave(midY,                      0.0, palette.ink,    size.shortestSide * 0.020);
-    drawWave(midY + amplitude * 1.6,    1.2, palette.accent, size.shortestSide * 0.012);
-  }
-
-  // ── 5. Three dots ──────────────────────────────────────────────────────
-  void _drawThreeDots(Canvas canvas, Size size) {
-    final r = size.shortestSide * 0.055;
-    final ink = Paint()..color = palette.ink;
-    final accent = Paint()..color = palette.accent;
-    canvas.drawCircle(Offset(size.width  * (0.22 + 0.10 * _f(1)),
-                              size.height * (0.28 + 0.10 * _f(2))), r,        ink);
-    canvas.drawCircle(Offset(size.width  * (0.62 + 0.10 * _f(3)),
-                              size.height * (0.48 + 0.10 * _f(4))), r * 0.82, ink);
-    canvas.drawCircle(Offset(size.width  * (0.38 + 0.15 * _f(5)),
-                              size.height * (0.76 + 0.10 * _f(6))), r * 0.70, accent);
-  }
-
-  // ── 6 + 7. Triangle (up or down) ───────────────────────────────────────
-  void _drawTriangle(Canvas canvas, Size size, {required bool pointDown}) {
-    final cx = size.width  * 0.50;
-    final cy = size.height * 0.50;
-    final h  = size.shortestSide * 0.54;
     final path = Path();
-    if (pointDown) {
-      path.moveTo(cx - h * 0.55, cy - h * 0.35);
-      path.lineTo(cx + h * 0.55, cy - h * 0.35);
-      path.lineTo(cx,            cy + h * 0.50);
-    } else {
-      path.moveTo(cx - h * 0.55, cy + h * 0.35);
-      path.lineTo(cx + h * 0.55, cy + h * 0.35);
-      path.lineTo(cx,            cy - h * 0.50);
+    final start = Offset((pts[0].dx + pts.last.dx) / 2, (pts[0].dy + pts.last.dy) / 2);
+    path.moveTo(start.dx, start.dy);
+    for (var i = 0; i < pts.length; i++) {
+      final next = pts[(i + 1) % pts.length];
+      final mid = Offset((pts[i].dx + next.dx) / 2, (pts[i].dy + next.dy) / 2);
+      path.quadraticBezierTo(pts[i].dx, pts[i].dy, mid.dx, mid.dy);
     }
     path.close();
-    canvas.drawPath(path, Paint()..color = palette.ink);
-    final y = pointDown ? cy - h * 0.35 : cy + h * 0.35;
-    canvas.drawLine(
-      Offset(size.width * 0.05, y),
-      Offset(size.width * 0.95, y),
-      Paint()..color = palette.accent..strokeWidth = size.height * 0.008,
-    );
+    return path;
   }
 
-  // ── 8. Stacked arcs ────────────────────────────────────────────────────
-  void _drawStackedArcs(Canvas canvas, Size size) {
-    canvas.drawCircle(
-      Offset(size.width * (0.35 + 0.20 * _f(1)), size.height * 1.05),
-      size.width * 0.85,
+  /// Soft triangle with rounded corners.
+  Path _softTrianglePath(double cx, double cy, double size, {bool down = false}) {
+    final corners = down
+        ? [
+            Offset(cx, cy + size * 0.50),
+            Offset(cx + size * 0.55, cy - size * 0.35),
+            Offset(cx - size * 0.55, cy - size * 0.35),
+          ]
+        : [
+            Offset(cx, cy - size * 0.50),
+            Offset(cx + size * 0.55, cy + size * 0.35),
+            Offset(cx - size * 0.55, cy + size * 0.35),
+          ];
+    final r = size * 0.10;
+    final path = Path();
+    for (var i = 0; i < 3; i++) {
+      final prev = corners[(i + 2) % 3];
+      final curr = corners[i];
+      final next = corners[(i + 1) % 3];
+      final approach = _moveToward(curr, prev, r);
+      final exit     = _moveToward(curr, next, r);
+      if (i == 0) {
+        path.moveTo(approach.dx, approach.dy);
+      } else {
+        path.lineTo(approach.dx, approach.dy);
+      }
+      path.quadraticBezierTo(curr.dx, curr.dy, exit.dx, exit.dy);
+    }
+    path.close();
+    return path;
+  }
+
+  /// Soft hexagon with rounded corners.
+  Path _softHexagonPath(double cx, double cy, double r) {
+    final corners = <Offset>[];
+    for (var i = 0; i < 6; i++) {
+      final angle = (math.pi / 3) * i - math.pi / 2;
+      corners.add(Offset(cx + r * math.cos(angle), cy + r * math.sin(angle)));
+    }
+    final round = r * 0.18;
+    final path = Path();
+    for (var i = 0; i < 6; i++) {
+      final prev = corners[(i + 5) % 6];
+      final curr = corners[i];
+      final next = corners[(i + 1) % 6];
+      final approach = _moveToward(curr, prev, round);
+      final exit     = _moveToward(curr, next, round);
+      if (i == 0) {
+        path.moveTo(approach.dx, approach.dy);
+      } else {
+        path.lineTo(approach.dx, approach.dy);
+      }
+      path.quadraticBezierTo(curr.dx, curr.dy, exit.dx, exit.dy);
+    }
+    path.close();
+    return path;
+  }
+
+  /// Soft 5-point star with rounded points.
+  Path _softStarPath(double cx, double cy, double outerR, {double innerRatio = 0.46}) {
+    final innerR = outerR * innerRatio;
+    final pts = <Offset>[];
+    for (var i = 0; i < 10; i++) {
+      final r = i.isEven ? outerR : innerR;
+      final angle = (math.pi / 5) * i - math.pi / 2;
+      pts.add(Offset(cx + r * math.cos(angle), cy + r * math.sin(angle)));
+    }
+    final round = outerR * 0.10;
+    final path = Path();
+    for (var i = 0; i < 10; i++) {
+      final prev = pts[(i + 9) % 10];
+      final curr = pts[i];
+      final next = pts[(i + 1) % 10];
+      final approach = _moveToward(curr, prev, round);
+      final exit     = _moveToward(curr, next, round);
+      if (i == 0) {
+        path.moveTo(approach.dx, approach.dy);
+      } else {
+        path.lineTo(approach.dx, approach.dy);
+      }
+      path.quadraticBezierTo(curr.dx, curr.dy, exit.dx, exit.dy);
+    }
+    path.close();
+    return path;
+  }
+
+  /// Cloud shape — 3 overlapping circles arranged in a horizontal bump.
+  Path _cloudPath(double cx, double cy, double w, double h) {
+    final left   = Offset(cx - w * 0.30, cy + h * 0.05);
+    final centre = Offset(cx,            cy - h * 0.20);
+    final right  = Offset(cx + w * 0.30, cy + h * 0.05);
+    final base   = Rect.fromLTWH(cx - w * 0.45, cy - h * 0.05, w * 0.90, h * 0.55);
+
+    final path = Path();
+    path.addOval(Rect.fromCircle(center: left,   radius: h * 0.32));
+    path.addOval(Rect.fromCircle(center: centre, radius: h * 0.38));
+    path.addOval(Rect.fromCircle(center: right,  radius: h * 0.30));
+    path.addRRect(RRect.fromRectAndRadius(base, Radius.circular(h * 0.30)));
+    return path;
+  }
+
+  /// Crescent shape — big circle clipped by an offset circle.
+  Path _crescentPath(double cx, double cy, double r, double offsetX) {
+    final outer = Path()..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+    final inner = Path()..addOval(Rect.fromCircle(
+        center: Offset(cx + offsetX, cy - r * 0.04), radius: r * 0.86));
+    return Path.combine(PathOperation.difference, outer, inner);
+  }
+
+  /// Move `point` toward `target` by `distance`.
+  Offset _moveToward(Offset point, Offset target, double distance) {
+    final dx = target.dx - point.dx;
+    final dy = target.dy - point.dy;
+    final len = math.sqrt(dx * dx + dy * dy);
+    if (len == 0) return point;
+    final ratio = distance / len;
+    return Offset(point.dx + dx * ratio, point.dy + dy * ratio);
+  }
+
+  void _scatterDots(Canvas canvas, Size size, int count, Color color, double radius,
+      {double topPad = 0.08, double bottomPad = 0.08, int seedShift = 0}) {
+    final paint = Paint()..color = color;
+    for (var i = 0; i < count; i++) {
+      final dx = _f(seedShift + i * 2 + 1);
+      final dy = _f(seedShift + i * 2 + 2);
+      final x = size.width * (0.10 + dx * 0.80);
+      final y = size.height * (topPad + dy * (1.0 - topPad - bottomPad));
+      canvas.drawCircle(Offset(x, y), radius * (0.65 + dx * 0.6), paint);
+    }
+  }
+
+  // ───── Compositions ───────────────────────────────────────────────────
+
+  // 1. Squircle + dots
+  void _drawSquircleDots(Canvas canvas, Size size) {
+    final side = size.shortestSide * (0.50 + 0.06 * _f(1));
+    final cx = size.width  * (0.46 + 0.08 * _f(2));
+    final cy = size.height * (0.46 + 0.08 * _f(3));
+    final rect = Rect.fromCenter(center: Offset(cx, cy), width: side, height: side);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(side * 0.32)),
       Paint()..color = palette.ink,
     );
-    canvas.drawCircle(
-      Offset(size.width * (0.65 - 0.20 * _f(2)), size.height * 1.08),
-      size.width * 0.55,
-      Paint()..color = palette.accent,
-    );
+    // Dots: 4-6 scattered around
+    final dotCount = 4 + subVariant; // 4, 5, 6
+    _scatterDots(canvas, size, dotCount, palette.accent,
+        size.shortestSide * 0.040, seedShift: 10);
   }
 
-  // ── 9. Vertical lines ──────────────────────────────────────────────────
-  void _drawVerticalLines(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = palette.ink
-      ..strokeWidth = size.shortestSide * 0.020
-      ..strokeCap = StrokeCap.round;
-    final count = _f(1) > 0.5 ? 3 : 2;
-    final topPad    = size.height * 0.18;
-    final bottomPad = size.height * 0.18;
-    for (var i = 0; i < count; i++) {
-      final t = (i + 1) / (count + 1);
-      final x = size.width * (t + (_f(i + 2) - 0.5) * 0.10);
-      canvas.drawLine(
-        Offset(x, topPad),
-        Offset(x, size.height - bottomPad),
-        stroke,
+  // 2. Organic blob + 3 accent dots
+  void _drawBlobAccentDots(Canvas canvas, Size size) {
+    final cx = size.width  * (0.42 + 0.10 * _f(1));
+    final cy = size.height * (0.44 + 0.10 * _f(2));
+    final r  = size.shortestSide * 0.40;
+    canvas.drawPath(_blobPath(cx, cy, r, wobble: 0.22),
+        Paint()..color = palette.ink);
+    // 3 small accent dots opposite to the blob centre
+    final accent = Paint()..color = palette.accent;
+    for (var i = 0; i < 3; i++) {
+      canvas.drawCircle(
+        Offset(size.width  * (0.20 + 0.12 * _f(10 + i * 2)),
+               size.height * (0.74 + 0.16 * _f(11 + i * 2))),
+        size.shortestSide * (0.030 + 0.018 * _f(12 + i)),
+        accent,
       );
     }
-    final tickY = size.height * 0.74;
-    canvas.drawLine(
-      Offset(size.width * 0.18, tickY),
-      Offset(size.width * 0.40, tickY),
+  }
+
+  // 3. Soft triangle + wavy line behind
+  void _drawSoftTriWaves(Canvas canvas, Size size) {
+    // Wavy line behind (drawn first so triangle covers it partially)
+    final waveY = size.height * 0.60;
+    final wavePath = Path();
+    const steps = 50;
+    for (var i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final x = size.width * t;
+      final y = waveY + math.sin(t * math.pi * 4) * size.height * 0.05;
+      if (i == 0) {
+        wavePath.moveTo(x, y);
+      } else {
+        wavePath.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      wavePath,
       Paint()
         ..color = palette.accent
-        ..strokeWidth = size.shortestSide * 0.012
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.shortestSide * 0.018
         ..strokeCap = StrokeCap.round,
     );
+    final tri = _softTrianglePath(
+        size.width * (0.48 + 0.06 * _f(1)),
+        size.height * 0.48,
+        size.shortestSide * 0.50,
+        down: subVariant == 1);
+    canvas.drawPath(tri, Paint()..color = palette.ink);
   }
 
-  // ── 10. Plus (Philographics: Positivism, Atheism) ─────────────────────
-  void _drawPlus(Canvas canvas, Size size) {
-    final cx = size.width  * 0.50;
-    final cy = size.height * 0.50;
-    final arm   = size.shortestSide * 0.36;
-    final thick = size.shortestSide * 0.18;
-    final ink = Paint()..color = palette.ink;
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: arm * 2,   height: thick),
-      ink,
-    );
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: thick, height: arm * 2),
-      ink,
-    );
-    // accent: tiny corner dot for visual rhythm
+  // 4. Solid circle + outline ring + floating dot
+  void _drawCircleRingDot(Canvas canvas, Size size) {
+    final cx = size.width  * (0.42 + 0.10 * _f(1));
+    final cy = size.height * (0.42 + 0.10 * _f(2));
+    final r  = size.shortestSide * 0.32;
+    canvas.drawCircle(Offset(cx, cy), r, Paint()..color = palette.ink);
+    // outline ring slightly larger
     canvas.drawCircle(
-      Offset(size.width * 0.86, size.height * 0.18),
-      size.shortestSide * 0.022,
+      Offset(cx, cy),
+      r * 1.30,
+      Paint()
+        ..color = palette.accent
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.shortestSide * 0.014,
+    );
+    // floating dot in opposite corner
+    canvas.drawCircle(
+      Offset(size.width  * (0.75 + 0.10 * _f(3)),
+             size.height * (0.78 + 0.10 * _f(4))),
+      size.shortestSide * 0.045,
       Paint()..color = palette.accent,
     );
   }
 
-  // ── 11. Diagonal slash (Philographics: Scepticism) ────────────────────
-  void _drawDiagonalSlash(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = palette.ink
-      ..strokeWidth = size.shortestSide * 0.075
-      ..strokeCap = StrokeCap.square;
-    // bias slope: 60% top-left → bottom-right, 40% the opposite
-    final downhill = _f(1) > 0.4;
-    if (downhill) {
-      canvas.drawLine(
-        Offset(size.width * 0.10, size.height * 0.18),
-        Offset(size.width * 0.90, size.height * 0.82),
-        stroke,
-      );
-    } else {
-      canvas.drawLine(
-        Offset(size.width * 0.10, size.height * 0.82),
-        Offset(size.width * 0.90, size.height * 0.18),
-        stroke,
-      );
-    }
-    // tiny accent square at one end
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.84, size.height * 0.18),
-        width: size.shortestSide * 0.06,
-        height: size.shortestSide * 0.06,
-      ),
-      Paint()..color = palette.accent,
-    );
-  }
-
-  // ── 12. X mark (Philographics: Nihilism) ──────────────────────────────
-  void _drawXMark(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = palette.ink
-      ..strokeWidth = size.shortestSide * 0.085
-      ..strokeCap = StrokeCap.square;
-    final pad = size.shortestSide * 0.22;
-    canvas.drawLine(
-      Offset(pad,                pad),
-      Offset(size.width - pad,   size.height - pad),
-      stroke,
-    );
-    canvas.drawLine(
-      Offset(size.width - pad,   pad),
-      Offset(pad,                size.height - pad),
-      stroke,
-    );
-  }
-
-  // ── 13. Venn (Philographics: Dualism) ─────────────────────────────────
-  void _drawVennCircles(Canvas canvas, Size size) {
-    final radius = size.shortestSide * 0.30;
-    final cy = size.height * (0.46 + 0.06 * _f(1));
-    final dx = radius * 0.78;
-    canvas.drawCircle(
-      Offset(size.width * 0.5 - dx, cy),
-      radius,
-      Paint()..color = palette.ink..blendMode = BlendMode.srcOver,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.5 + dx, cy),
-      radius,
-      Paint()..color = palette.accent..blendMode = BlendMode.multiply,
-    );
-  }
-
-  // ── 14. Nested squares (Philographics: Idealism) ──────────────────────
-  void _drawNestedSquares(Canvas canvas, Size size) {
-    final cx = size.width * 0.50;
-    final cy = size.height * (0.46 + 0.08 * _f(1));
-    final outer = size.shortestSide * 0.62;
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: outer, height: outer),
+  // 5. Crescent + 4-5 tiny stars/dots
+  void _drawCrescentStars(Canvas canvas, Size size) {
+    final r = size.shortestSide * 0.30;
+    final cx = size.width  * (0.40 + 0.06 * _f(1));
+    final cy = size.height * (0.42 + 0.08 * _f(2));
+    canvas.drawPath(
+      _crescentPath(cx, cy, r, r * 0.42),
       Paint()..color = palette.ink,
     );
-    final mid = outer * 0.60;
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: mid, height: mid),
+    // tiny accent dots around
+    final dotCount = 4 + subVariant;
+    final accent = Paint()..color = palette.accent;
+    for (var i = 0; i < dotCount; i++) {
+      final px = size.width * (0.18 + 0.74 * _f(20 + i * 2));
+      final py = size.height * (0.12 + 0.76 * _f(21 + i * 2));
+      // skip dots that would land on the crescent
+      final dx = px - cx;
+      final dy = py - cy;
+      if (math.sqrt(dx * dx + dy * dy) < r * 1.05) continue;
+      canvas.drawCircle(
+        Offset(px, py),
+        size.shortestSide * (0.022 + 0.014 * _f(30 + i)),
+        accent,
+      );
+    }
+  }
+
+  // 6. Squiggle + floating circle
+  void _drawSquiggleDot(Canvas canvas, Size size) {
+    final path = Path();
+    final midY = size.height * (0.48 + 0.10 * _f(1));
+    final waves = 2.0 + _f(2) * 1.5;
+    final amp = size.height * 0.10;
+    const steps = 80;
+    for (var i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final x = size.width * (0.08 + 0.84 * t);
+      final y = midY + math.sin(t * math.pi * 2 * waves) * amp;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = palette.ink
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.shortestSide * 0.024
+        ..strokeCap = StrokeCap.round,
+    );
+    // floating circle above
+    canvas.drawCircle(
+      Offset(size.width * 0.78, size.height * 0.22),
+      size.shortestSide * 0.085,
       Paint()..color = palette.accent,
     );
-    final inner = mid * 0.55;
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: inner, height: inner),
+    // tiny extra dot
+    canvas.drawCircle(
+      Offset(size.width * 0.18, size.height * 0.22),
+      size.shortestSide * 0.030,
+      Paint()..color = palette.accent,
+    );
+  }
+
+  // 7. Four petals around a centre dot
+  void _drawPetalCluster(Canvas canvas, Size size) {
+    final cx = size.width  * 0.50;
+    final cy = size.height * 0.48;
+    final petalR = size.shortestSide * 0.20;
+    final dist   = size.shortestSide * 0.22;
+    final petals = 4 + subVariant; // 4, 5, 6
+    final ink = Paint()..color = palette.ink;
+    final accent = Paint()..color = palette.accent;
+    for (var i = 0; i < petals; i++) {
+      final angle = (math.pi * 2 / petals) * i + (_f(1) - 0.5) * 0.4;
+      final px = cx + dist * math.cos(angle);
+      final py = cy + dist * math.sin(angle);
+      canvas.save();
+      canvas.translate(px, py);
+      canvas.rotate(angle + math.pi / 2);
+      final rect = Rect.fromCenter(
+        center: Offset.zero,
+        width:  petalR * 0.9,
+        height: petalR * 1.8,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, Radius.circular(petalR * 0.5)),
+        i.isEven ? ink : accent,
+      );
+      canvas.restore();
+    }
+    // centre dot
+    canvas.drawCircle(
+      Offset(cx, cy),
+      size.shortestSide * 0.055,
+      Paint()..color = palette.ink,
+    );
+  }
+
+  // 8. Stacked blobs (nested rounded shapes)
+  void _drawStackedBlobs(Canvas canvas, Size size) {
+    final cx = size.width  * (0.46 + 0.08 * _f(1));
+    final cy = size.height * (0.46 + 0.08 * _f(2));
+    final r1 = size.shortestSide * 0.42;
+    canvas.drawPath(_blobPath(cx, cy, r1, wobble: 0.18, points: 8),
+        Paint()..color = palette.ink);
+    canvas.drawPath(_blobPath(cx, cy, r1 * 0.65, wobble: 0.25, points: 7),
+        Paint()..color = palette.accent);
+    canvas.drawPath(_blobPath(cx, cy, r1 * 0.32, wobble: 0.30, points: 6),
+        Paint()..color = palette.bg);
+  }
+
+  // 9. Soft hexagon + 3 corner dots
+  void _drawSoftHexDots(Canvas canvas, Size size) {
+    final cx = size.width  * (0.48 + 0.06 * _f(1));
+    final cy = size.height * (0.46 + 0.08 * _f(2));
+    final r  = size.shortestSide * 0.34;
+    canvas.drawPath(_softHexagonPath(cx, cy, r),
+        Paint()..color = palette.ink);
+    // 3 small dots, one near each "free" corner of the cover
+    final accent = Paint()..color = palette.accent;
+    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.20),
+        size.shortestSide * 0.036, accent);
+    canvas.drawCircle(Offset(size.width * 0.82, size.height * 0.20),
+        size.shortestSide * 0.030, accent);
+    canvas.drawCircle(Offset(size.width * 0.18, size.height * 0.82),
+        size.shortestSide * 0.040, accent);
+  }
+
+  // 10. Soft star inside a circle backdrop
+  void _drawStarOnCircle(Canvas canvas, Size size) {
+    final cx = size.width * 0.50;
+    final cy = size.height * (0.46 + 0.06 * _f(1));
+    final circleR = size.shortestSide * 0.40;
+    canvas.drawCircle(Offset(cx, cy), circleR, Paint()..color = palette.accent);
+    canvas.drawPath(
+      _softStarPath(cx, cy, circleR * 0.78),
+      Paint()..color = palette.ink,
+    );
+    // small floating accent dot
+    canvas.drawCircle(
+      Offset(size.width * 0.82, size.height * 0.18),
+      size.shortestSide * 0.034,
+      Paint()..color = palette.ink,
+    );
+  }
+
+  // 11. Wavy band + arc above + dot
+  void _drawWavyBandArc(Canvas canvas, Size size) {
+    // arc above
+    final arcCx = size.width * (0.50 + 0.10 * (_f(1) - 0.5));
+    final arcCy = size.height * 0.30;
+    final arcR  = size.shortestSide * 0.30;
+    canvas.drawPath(
+      _crescentPath(arcCx, arcCy, arcR, arcR * 0.65),
+      Paint()..color = palette.ink,
+    );
+    // wavy band lower
+    final bandPath = Path();
+    final midY = size.height * 0.70;
+    final amp = size.height * 0.06;
+    const steps = 40;
+    for (var i = 0; i <= steps; i++) {
+      final t = i / steps;
+      final x = size.width * t;
+      final y = midY + math.sin(t * math.pi * 3 + _f(2) * 2) * amp;
+      if (i == 0) {
+        bandPath.moveTo(x, y);
+      } else {
+        bandPath.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      bandPath,
+      Paint()
+        ..color = palette.accent
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.shortestSide * 0.030
+        ..strokeCap = StrokeCap.round,
+    );
+    // tiny dot above arc
+    canvas.drawCircle(
+      Offset(size.width * 0.20, size.height * 0.16),
+      size.shortestSide * 0.034,
+      Paint()..color = palette.accent,
+    );
+  }
+
+  // 12. Three overlapping bubbles + accent dot
+  void _drawTripleBubbles(Canvas canvas, Size size) {
+    final r = size.shortestSide * 0.22;
+    final cx = size.width * 0.50;
+    final cy = size.height * 0.50;
+    final offset = r * 0.85;
+    final ink = Paint()..color = palette.ink;
+    final accent = Paint()..color = palette.accent;
+    canvas.drawCircle(Offset(cx - offset, cy + offset * 0.55), r, ink);
+    canvas.drawCircle(Offset(cx + offset, cy + offset * 0.55), r, ink);
+    canvas.drawCircle(Offset(cx,          cy - offset * 0.55), r, accent);
+    // small accent ring around centre
+    canvas.drawCircle(
+      Offset(cx, cy),
+      r * 0.30,
       Paint()..color = palette.bg,
     );
   }
 
-  // ── 15. Dot grid (Philographics: Reductionism) ────────────────────────
-  void _drawDotGrid(Canvas canvas, Size size) {
-    const cols = 5;
-    const rows = 5;
-    final cellW = size.width / (cols + 1);
-    final cellH = (size.height * 0.78) / (rows + 1);
-    final topPad = size.height * 0.11;
-    final r = math.min(cellW, cellH) * 0.30;
-    // accent at a deterministic but off-centre cell
-    final accentCol = (seed >> 3) % cols;
-    final accentRow = (seed >> 7) % rows;
-    for (var ry = 0; ry < rows; ry++) {
-      for (var cx = 0; cx < cols; cx++) {
-        final x = cellW * (cx + 1);
-        final y = topPad + cellH * (ry + 1);
-        final isAccent = cx == accentCol && ry == accentRow;
-        canvas.drawCircle(
-          Offset(x, y),
-          isAccent ? r * 0.6 : r,
-          Paint()..color = isAccent ? palette.accent : palette.ink,
-        );
-      }
-    }
-  }
-
-  // ── 16. Hexagon (Philographics: Utilitarianism) ───────────────────────
-  void _drawHexagon(Canvas canvas, Size size) {
-    final cx = size.width * 0.50;
-    final cy = size.height * (0.48 + 0.06 * _f(1));
-    final r  = size.shortestSide * 0.36;
-    final path = Path();
-    for (var i = 0; i < 6; i++) {
-      final angle = (math.pi / 3) * i - math.pi / 2;
-      final x = cx + r * math.cos(angle);
-      final y = cy + r * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, Paint()..color = palette.ink);
-    // accent: thin outline slightly larger
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = palette.accent
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.012,
+  // 13. Pill shape + floating circle
+  void _drawPillFloat(Canvas canvas, Size size) {
+    final pillRect = Rect.fromCenter(
+      center: Offset(size.width * 0.50, size.height * 0.60),
+      width: size.width * 0.70,
+      height: size.height * 0.18,
     );
-  }
-
-  // ── 17. Five-point star (Philographics: Marxism) ──────────────────────
-  void _drawStar(Canvas canvas, Size size) {
-    final cx = size.width * 0.50;
-    final cy = size.height * (0.46 + 0.06 * _f(1));
-    final outerR = size.shortestSide * 0.34;
-    final innerR = outerR * 0.42;
-    final path = Path();
-    for (var i = 0; i < 10; i++) {
-      final r = i.isEven ? outerR : innerR;
-      final angle = (math.pi / 5) * i - math.pi / 2;
-      final x = cx + r * math.cos(angle);
-      final y = cy + r * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    path.close();
-    canvas.drawPath(path, Paint()..color = palette.ink);
-  }
-
-  // ── 18. Domino fall (Philographics: Determinism) ──────────────────────
-  // A small row of tipped-over rectangles, suggesting momentum.
-  void _drawDominoFall(Canvas canvas, Size size) {
-    final baseY = size.height * 0.62;
-    final w = size.width * 0.085;
-    final h = size.height * 0.40;
-    final spacing = w * 1.6;
-    final ink = Paint()..color = palette.ink;
-    final startX = size.width * 0.18;
-    final tips = [
-      0.0, -0.10, -0.25, -0.45, -0.65, -0.90,
-    ];
-    for (var i = 0; i < tips.length; i++) {
-      final cx = startX + i * spacing;
-      canvas.save();
-      canvas.translate(cx, baseY);
-      canvas.rotate(tips[i]);
-      canvas.drawRect(
-        Rect.fromLTWH(-w / 2, -h, w, h),
-        ink,
-      );
-      canvas.restore();
-    }
-    // tiny ball above the leading domino
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(pillRect, Radius.circular(size.height * 0.10)),
+      Paint()..color = palette.ink,
+    );
+    // floating circle above
     canvas.drawCircle(
-      Offset(startX + tips.length * spacing, baseY - h * 0.8),
-      size.shortestSide * 0.035,
+      Offset(size.width * (0.30 + 0.40 * _f(1)),
+             size.height * 0.30),
+      size.shortestSide * (0.090 + 0.030 * _f(2)),
+      Paint()..color = palette.accent,
+    );
+    // small dot at one end
+    canvas.drawCircle(
+      Offset(size.width * 0.18, size.height * 0.22),
+      size.shortestSide * 0.030,
       Paint()..color = palette.accent,
     );
   }
 
-  // ── 19. Big solid square (Philographics: Realism) ─────────────────────
-  void _drawBigSquare(Canvas canvas, Size size) {
-    final side = size.shortestSide * 0.70;
-    final cx = size.width  * 0.50;
-    final cy = size.height * (0.50 + 0.06 * _f(1));
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: side, height: side),
-      Paint()..color = palette.ink,
-    );
-  }
-
-  // ── 20. Horizontal bar (Philographics: Dogma) ─────────────────────────
-  void _drawHorizontalBar(Canvas canvas, Size size) {
-    final barH = size.height * 0.12;
-    final cy = size.height * (0.50 + 0.10 * (_f(1) - 0.5));
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.50, cy),
-        width: size.width * 0.78,
-        height: barH,
-      ),
-      Paint()..color = palette.ink,
-    );
-    // accent: small square at one corner
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.18, size.height * 0.18),
-        width: size.shortestSide * 0.06,
-        height: size.shortestSide * 0.06,
-      ),
+  // 14. Soft mountain triangle + sun circle + dots
+  void _drawMountainSun(Canvas canvas, Size size) {
+    // sun (drawn first, behind)
+    canvas.drawCircle(
+      Offset(size.width * (0.70 + 0.10 * _f(1)),
+             size.height * 0.32),
+      size.shortestSide * 0.18,
       Paint()..color = palette.accent,
     );
+    // mountain triangle
+    canvas.drawPath(
+      _softTrianglePath(
+        size.width * 0.45,
+        size.height * 0.62,
+        size.shortestSide * 0.60,
+      ),
+      Paint()..color = palette.ink,
+    );
+    // tiny scatter dots
+    _scatterDots(canvas, size, 3, palette.accent,
+        size.shortestSide * 0.024,
+        topPad: 0.78, bottomPad: 0.06, seedShift: 40);
+  }
+
+  // 15. Cloud shape + 3 dots below
+  void _drawCloudRain(Canvas canvas, Size size) {
+    final cx = size.width  * (0.50 + 0.06 * _f(1));
+    final cy = size.height * (0.40 + 0.06 * _f(2));
+    final w = size.width  * 0.60;
+    final h = size.height * 0.32;
+    canvas.drawPath(
+      _cloudPath(cx, cy, w, h),
+      Paint()..color = palette.ink,
+    );
+    // raindrops below — 3-4 dots in a slight arc
+    final dotCount = 3 + subVariant; // 3 or 4 or 5
+    final accent = Paint()..color = palette.accent;
+    for (var i = 0; i < dotCount; i++) {
+      final t = (i + 1) / (dotCount + 1);
+      final x = size.width  * (0.30 + 0.40 * t);
+      final y = size.height * (0.72 + 0.06 * math.sin(t * math.pi));
+      canvas.drawCircle(Offset(x, y), size.shortestSide * 0.040, accent);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _MoodPainter old) =>
       old.palette     != palette ||
       old.composition != composition ||
-      old.seed        != seed;
+      old.seed        != seed ||
+      old.subVariant  != subVariant;
 }
