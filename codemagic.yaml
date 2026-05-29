@@ -197,6 +197,34 @@ workflows:
         script: |
           xcode-project use-profiles
 
+      - name: Set iOS build number
+        # App Store Connect rejects re-uploading a build whose CFBundleVersion was
+        # already used: "The bundle version must be higher than the previously
+        # uploaded version" / ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE (build #9,
+        # commit b9e5bb0, died here in Publishing AFTER a clean Build IPA — the
+        # internal-testing publish config was correct, the binary just collided).
+        # pubspec pins `version: 1.0.0+1`, so every build otherwise re-uploads
+        # CFBundleVersion 1 — fine for the FIRST upload (build #8) but a hard
+        # failure for every build after it. Derive a unique, monotonic
+        # CFBundleVersion from the highest build number already on App Store
+        # Connect + 1 (the App Store Connect API key comes from the same
+        # integrations.app_store_connect used by fetch-signing-files). Fall back to
+        # Codemagic's ever-increasing $BUILD_NUMBER, then to a unix timestamp, so
+        # the value is ALWAYS > the last upload even if the lookup returns nothing.
+        # CFBundleVersion is $(FLUTTER_BUILD_NUMBER) (see ios/Runner/Info.plist),
+        # which Flutter writes into ios/Flutter/Generated.xcconfig during pub get;
+        # xcode-project build-ipa reads that file, so rewriting the line here is
+        # enough — no pubspec bump per build, no hand-written export plist.
+        script: |
+          LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)
+          case "$LATEST" in
+            ''|*[!0-9]*) NEXT="${BUILD_NUMBER:-$(date +%s)}" ;;
+            *) NEXT=$((LATEST + 1)) ;;
+          esac
+          echo "Latest App Store Connect build number: '${LATEST:-none}' -> setting CFBundleVersion to $NEXT"
+          perl -pi -e "s/^FLUTTER_BUILD_NUMBER=.*/FLUTTER_BUILD_NUMBER=$NEXT/" ios/Flutter/Generated.xcconfig
+          grep FLUTTER_BUILD ios/Flutter/Generated.xcconfig
+
       - name: Build IPA
         # `xcode-project build-ipa` is Codemagic CLI's wrapper around
         # xcodebuild that handles archive + export with sensible
