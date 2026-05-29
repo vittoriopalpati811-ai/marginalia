@@ -55,6 +55,19 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<!--
+	  CRITICAL — do NOT remove. Names the storyboard iOS loads as the app's
+	  MAIN interface; that storyboard instantiates the FlutterViewController
+	  which starts the engine and runs Dart. `flutter create` generates
+	  Main.storyboard, but this hand-written Info.plist originally omitted this
+	  key, so iOS launched with NO root view controller: a black window, no
+	  crash, and Dart never ran. THAT was the real cause of the TestFlight black
+	  screen — every Dart-side fix (render-first bootstrap, Impeller off) and
+	  even a zero-dependency magenta test build (#5) still showed pure black,
+	  because the Flutter engine was never started in the first place.
+	-->
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
