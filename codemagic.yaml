@@ -36,11 +36,10 @@ workflows:
       vars:
         FLUTTER_VERSION: "3.22.0"
         BUNDLE_ID: io.marginalia.app
-        # ⚠️ REPLACE: this is the numeric Apple ID of the Marginalia
-        # app record in App Store Connect, NOT your developer account.
-        # Find it at App Store Connect → My Apps → Marginalia → App
-        # Information → Apple ID.
-        APP_STORE_APPLE_ID: "REPLACE_WITH_NUMERIC_APPLE_ID"
+        # The numeric Apple ID (adam ID) of the Marginalia app record in
+        # App Store Connect — NOT the developer account ID. Taken from the
+        # app URL appstoreconnect.apple.com/apps/6774710376 (set 2026-05-29).
+        APP_STORE_APPLE_ID: "6774710376"
       app_store_connect:
         # Configured in Codemagic UI → Teams → Integrations → App
         # Store Connect API. Must be done once before the first build.

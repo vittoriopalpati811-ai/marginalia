@@ -61,6 +61,10 @@ scripts/.venv/
 *.pem
 *.key
 *.mobileprovision
+# App Store Connect API private key (AuthKey_XXXXXXXXXX.p8) — uploaded to
+# Codemagic for signing, must never land in git.
+*.p8
+AuthKey_*.p8
 
 # ─── Claude Code locale ──────────────────────
 .claude/cache/
