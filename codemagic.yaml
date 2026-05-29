@@ -29,6 +29,16 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
 
+    # The App Store Connect API key added in Codemagic UI → Teams →
+    # Integrations → App Store Connect (integration name "marginalia-asc").
+    # `integrations` is a WORKFLOW-level key (sibling of `environment`), NOT
+    # nested under environment — Codemagic's validator rejects
+    # environment.integrations ("extra fields not permitted") and requires
+    # the key at "workflow -> integrations -> app_store_connect". This is what
+    # publishing.app_store_connect.auth: integration resolves against.
+    integrations:
+      app_store_connect: marginalia-asc
+
     environment:
       ios_signing:
         distribution_type: app_store
@@ -40,14 +50,6 @@ workflows:
         # App Store Connect — NOT the developer account ID. Taken from the
         # app URL appstoreconnect.apple.com/apps/6774710376 (set 2026-05-29).
         APP_STORE_APPLE_ID: "6774710376"
-      integrations:
-        # The App Store Connect API key added in Codemagic UI → Teams →
-        # Integrations → App Store Connect (integration name "marginalia-asc").
-        # Referencing it here exposes the key to fetch-signing-files and to
-        # the publishing block below. NOTE: the key goes under
-        # environment.integrations, NOT environment.app_store_connect — the
-        # latter is not a valid field and fails yaml validation.
-        app_store_connect: marginalia-asc
 
     triggering:
       events:
