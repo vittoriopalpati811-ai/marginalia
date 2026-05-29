@@ -15,6 +15,15 @@ const _supabaseAnonKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc';
 
 void main() {
+  // FIRST Dart statement to execute — a CI smoke-test probe. The simulator boot
+  // test in codemagic.yaml greps the app's console for this exact marker. If it
+  // appears, Dart main() ran, which PROVES the Flutter engine started — the very
+  // thing the missing UIMainStoryboardFile key used to prevent (no main
+  // interface → no FlutterViewController → engine never started → black screen,
+  // no crash, no Dart). Harmless in production: a single debug log line at
+  // launch with no user-visible effect.
+  debugPrint('### MARGINALIA-BOOT-OK ###');
+
   // Guard the WHOLE bootstrap. A black screen on launch means runApp() never
   // ran — an initializer threw OR HUNG before any UI was built.
   //
