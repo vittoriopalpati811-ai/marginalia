@@ -31,7 +31,8 @@ ios/Flutter/ephemeral/
 ios/Flutter/flutter_export_environment.sh
 ios/ServiceDefinitions.json
 ios/Runner/GeneratedPluginRegistrant.*
-ios/Sources/                 # leftover Swift project from pre-Flutter era
+# leftover Swift project from pre-Flutter era (inline comments aren't valid in .gitignore)
+ios/Sources/
 
 # ─── Android — ignored entirely until we ship Android ───────────────
 android/

@@ -56,10 +56,34 @@ workflows:
           include: true
 
     scripts:
+      - name: Generate iOS native shell
+        # The repo deliberately does NOT commit the generated iOS Runner
+        # project (Runner.xcodeproj, AppDelegate.swift, Podfile,
+        # Assets.xcassets, LaunchScreen.storyboard). They're produced here
+        # on the Mac runner, which has the matching Flutter toolchain.
+        # `flutter create` is idempotent and NEVER overwrites files that
+        # already exist, so the committed ios/Runner/Info.plist is kept.
+        script: |
+          flutter create --platforms=ios --org io.marginalia .
+          # --org io.marginalia makes the bundle id io.marginalia.marginalia;
+          # rewrite it to the canonical io.marginalia.app that the signing
+          # config above and the App Store Connect record both expect.
+          perl -pi -e 's/io\.marginalia\.marginalia/io.marginalia.app/g' ios/Runner.xcodeproj/project.pbxproj
+          echo "Bundle identifiers in project.pbxproj:"
+          grep PRODUCT_BUNDLE_IDENTIFIER ios/Runner.xcodeproj/project.pbxproj
+
       - name: Set up Flutter
         script: |
           flutter --version
           flutter pub get
+
+      - name: Generate app icons
+        # Builds the full AppIcon set into
+        # ios/Runner/Assets.xcassets/AppIcon.appiconset/ from the single
+        # 1024x1024 source at assets/icon/app-icon.png. Must run after
+        # `flutter create` (asset catalog must exist) and pub get
+        # (flutter_launcher_icons must be resolved).
+        script: dart run flutter_launcher_icons
 
       - name: Generate localizations
         script: flutter gen-l10n

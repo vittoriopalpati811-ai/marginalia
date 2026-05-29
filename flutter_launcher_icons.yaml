@@ -12,15 +12,16 @@
 # Output:
 #   • iOS: ios/Runner/Assets.xcassets/AppIcon.appiconset/*.png
 #         (all sizes from 20pt @1x up to 1024×1024 marketing icon)
-#   • Android: android/app/src/main/res/mipmap-*/launcher_icon.png
 #
 # The package overwrites the AppIcon set on every run, so re-running is
 # safe and idempotent.
+#
+# Android is disabled: the CI build runs `flutter create --platforms=ios`
+# only, so there is no android/ project for this package to write into.
+# Re-enable (android: "launcher_icon") if/when we ship Android.
 
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: false
   ios: true
   image_path: "assets/icon/app-icon.png"
   remove_alpha_ios: true
-  # iOS only — adaptive icons are Android-only.
-  min_sdk_android: 21
