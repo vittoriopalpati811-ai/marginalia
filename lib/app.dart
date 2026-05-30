@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:animations/animations.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,30 +44,25 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 // ─── Transition helpers ───────────────────────────────────────────────────────
 
-/// Push transition: cinematic horizontal shared axis with deep easeOutQuart.
-/// Background fillColor matches the scaffold to avoid the white-flash that
-/// occurs when Material's default fill leaks through during the transition.
-/// Airbnb-style: motion settles into rest rather than bouncing.
-CustomTransitionPage<void> _pushPage(Widget child, GoRouterState state) {
-  return CustomTransitionPage<void>(
+/// Push transition: native iOS slide **with the interactive edge-swipe-back
+/// gesture**.
+///
+/// Previously this returned a [CustomTransitionPage] wrapping a
+/// [SharedAxisTransition]. It looked cinematic but it silently disabled the
+/// swipe-from-the-left-edge-to-go-back gesture entirely — a [CustomTransitionPage]
+/// has no `popGestureEnabled`. That is exactly the "gestures per tornare
+/// indietro non funzionano sempre" bug: only the handful of screens still
+/// pushed through `Navigator.push(MaterialPageRoute)` responded to the swipe,
+/// so the gesture felt random.
+///
+/// [CupertinoPage] gives every pushed route the platform-standard horizontal
+/// slide AND a fully interactive back-swipe, matching iOS HIG. Each pushed
+/// screen owns an opaque [Scaffold], so there is no white-flash during the
+/// parallax slide and the old `fillColor` workaround is no longer needed.
+CupertinoPage<void> _pushPage(Widget child, GoRouterState state) {
+  return CupertinoPage<void>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 380),
-    reverseTransitionDuration: const Duration(milliseconds: 320),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      // Wrap the Material curves to deepen them
-      final eased = CurvedAnimation(
-          parent: animation, curve: Curves.easeOutQuart);
-      final easedSecondary = CurvedAnimation(
-          parent: secondaryAnimation, curve: Curves.easeOutQuart);
-      return SharedAxisTransition(
-        animation: eased,
-        secondaryAnimation: easedSecondary,
-        transitionType: SharedAxisTransitionType.horizontal,
-        fillColor: MarginaliaColors.background,
-        child: child,
-      );
-    },
   );
 }
 
@@ -92,6 +87,36 @@ CustomTransitionPage<void> _modalPage(Widget child, GoRouterState state) {
         child: SlideTransition(position: slide, child: child),
       );
     },
+  );
+}
+
+/// App-wide [MaterialApp.builder] that dismisses the soft keyboard whenever the
+/// user taps an inert area of the screen.
+///
+/// Fixes "tastiera che non scompare quando dovrebbe": Flutter only drops focus
+/// when a tap lands on another focus target, so tapping blank space used to
+/// leave the keyboard up. A translucent [GestureDetector] at the very root
+/// claims those otherwise-unhandled taps and unfocuses the primary focus node.
+/// `HitTestBehavior.translucent` keeps every child (buttons, fields, scroll
+/// views) winning the gesture arena first, so this never swallows real taps.
+Widget _dismissKeyboardOnTap(BuildContext context, Widget? child) {
+  final media = MediaQuery.of(context);
+  // Clamp iOS Dynamic Type / Android font scaling. Without a ceiling, the
+  // largest accessibility text sizes overflow fixed-height headers, chips,
+  // pills and single-line rows all over the app ("non è molto responsive").
+  // 1.3 still honours enlargement up to +30% for readability while keeping
+  // every layout intact; 0.85 stops the tiniest setting from looking broken.
+  final clampedTextScaler = media.textScaler.clamp(
+    minScaleFactor: 0.85,
+    maxScaleFactor: 1.3,
+  );
+  return MediaQuery(
+    data: media.copyWith(textScaler: clampedTextScaler),
+    child: GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: child,
+    ),
   );
 }
 
@@ -326,6 +351,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         locale: locale,
         localizationsDelegates: _localizationsDelegates,
         supportedLocales: _supportedLocales,
+        builder: _dismissKeyboardOnTap,
         home: const OnboardingScreen(),
       );
     }
@@ -340,6 +366,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
       locale: locale,
       localizationsDelegates: _localizationsDelegates,
       supportedLocales: _supportedLocales,
+      builder: _dismissKeyboardOnTap,
     );
   }
 }
