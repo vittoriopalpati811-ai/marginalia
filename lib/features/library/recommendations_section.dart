@@ -196,7 +196,11 @@ final libraryRecommendationsProvider =
     // Native (Isar): allHighlightsProvider already sorts by addedAt DESC.
     final all   = await ref.read(allHighlightsProvider.future);
     final books = ref.read(booksProvider).value ?? [];
-    final bookById = {for (final b in books) b.supabaseId: b};
+    // Key by the Isar local id — Highlight.bookId resolves to book.value.id
+    // (the local int), NOT the Supabase UUID. Keying this map by supabaseId
+    // meant every lookup missed, so the native path always reported "no
+    // books" and AI recommendations never appeared on iOS.
+    final bookById = {for (final b in books) b.id.toString(): b};
     for (final h in all) {
       final book = bookById[h.bookId.toString()];
       if (book == null) continue;
