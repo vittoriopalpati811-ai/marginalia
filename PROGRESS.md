@@ -10,6 +10,7 @@
 **Fase**: Flutter MVP — Airbnb redesign completo + Jam 2.0 + i18n + notifiche
 **Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Jam 2.0
 **Prossima azione founder**:
+  0. 📱 **TestFlight — la schermata nera è RISOLTA**: elimina la vecchia app dall'iPhone → apri TestFlight → installa **1.0.0 (8)** (l'ultima; NON la build 5, che era il test diagnostico magenta/nero) → aprila. Dovresti vedere lo splash crema "MARGINALIA" e poi la libreria. Vedi **Sessione 19** per il dettaglio.
   1. Applicare **024_favorite_books.sql** in Supabase SQL Editor
   2. Applicare migrations **020–023** in ordine (se non già fatto)
   3. Eseguire `flutter pub get && flutter gen-l10n`
@@ -17,7 +18,7 @@
   5. Creare account RevenueCat → inserire API key in `subscription_service.dart`
 **Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
-**Build status iOS (TestFlight)**: 🔴 bloccato — Apple Developer Program non attivo (vedi QUESTIONS.md)
+**Build status iOS (TestFlight)**: 🟢 operativo — **1.0.0 (8)** su TestFlight (Completo), schermata nera al lancio risolta (vedi Sessione 19)
 
 **Infrastruttura cloud**:
 - Supabase `marginalia`: ✅ operativo (`https://ibucvloawkfwobaelwbr.supabase.co`)
@@ -36,6 +37,41 @@
 ---
 
 ## Sessioni
+
+### Sessione 19 — 2026-05-30
+**Durata**: ~notturna (autonoma)
+**Branch**: master
+**Commit**: `f79065b` (fix) · `1596ce9` + `de833dc` (prova CI)
+
+#### Problema
+Aprendo Marginalia da TestFlight si vedeva **schermata tutta nera** al lancio: niente crash, niente splash, niente UI. Era successo anche con una build diagnostica "magenta" a zero dipendenze → quindi il problema NON era Dart/dipendenze, ma la **shell nativa iOS**.
+
+#### Causa radice (trovata)
+Mancava la chiave **`UIMainStoryboardFile = Main`** in `ios/Runner/Info.plist`.
+L'`AppDelegate.swift` generato da Flutter **non crea la finestra/`FlutterViewController` da codice**: si affida interamente allo storyboard nominato da `UIMainStoryboardFile`. Senza quella chiave: LaunchScreen → nessun root view controller → finestra nera, nessun crash, il motore Flutter non parte mai → nessun Dart. Sintomo esatto riportato.
+
+#### Fix
+- `ios/Runner/Info.plist`: aggiunta `<key>UIMainStoryboardFile</key><string>Main</string>` (commit `f79065b`). Committato **prima** di `flutter create` così il comando non la sovrascrive.
+
+#### Verifica indipendente dal dispositivo (il founder dormiva)
+Aggiunto al CI uno **smoke-test** (`codemagic.yaml`) + un marker `### MARGINALIA-BOOT-OK ###` come **prima riga** di `main()` (raw `print`, mai throttled):
+- **STATIC PASS** — `Main.storyboard` viene generato (1605 byte) **e** Info.plist lo referenzia.
+- **DYNAMIC PASS** — la build gira su **simulatore** in CI, si avvia, e nel log unificato (`simctl spawn … log stream`) compare `MARGINALIA-BOOT-OK` → **Dart `main()` ha eseguito = il motore Flutter parte** (esattamente ciò che il nero impediva).
+- Bonus: nel log compare la **compilazione degli shader Metal** = il motore sta effettivamente renderizzando.
+
+#### Stato su App Store Connect
+Mapping build (CFBundleVersion):
+- **5** = test diagnostico magenta → **nero** (è quella che il founder aveva provato). NON installare.
+- **6** = primo fix · **7** = fix + smoke-test · **8** = fix + prova rafforzata (STATIC+DYNAMIC PASS).
+- **1.0.0 (8)** risulta **Completo** su ASC, conformità export già azzerata (`ITSAppUsesNonExemptEncryption=false`), assegnata al gruppo interno **TestGroup** (founder = tester invitato). Installabile subito.
+
+#### Architettura "a prova di nero" (già presente, confermata)
+`main()` fa `runApp()` come **primissima** cosa (splash crema visibile), poi i sottosistemi opzionali (Supabase / HomeWidget / Subscriptions) girano **dopo il primo frame**, ciascuno con **timeout** e mai fatali; apertura Isar con timeout 12s + retry + fallback; ogni errore → `BootstrapErrorApp` leggibile, **mai** nero.
+
+#### Prossima azione founder
+- 📱 Installare **1.0.0 (8)** da TestFlight (eliminare prima la vecchia app) e confermare che si apre. Resta l'unico tassello che richiede il device fisico.
+
+---
 
 ### Sessione 18 — 2026-05-24
 **Durata**: ~1h
