@@ -63,6 +63,13 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   RealtimeChannel? _channel;
   bool _uploadingCover = false;
 
+  /// Locally-applied title after an owner rename, so the new name shows
+  /// instantly without waiting for the provider round-trip.
+  String? _liveTitle;
+
+  /// The title currently shown in the header — the freshest value we have.
+  String get _displayTitle => _liveTitle ?? widget.jamName;
+
   @override
   void initState() {
     super.initState();
@@ -90,7 +97,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       'Join my Jam on Marginalia.\n\n'
       'Code: $inviteCode\n\n'
       'Download the app: https://marginalia.app',
-      subject: 'Join the Jam "${widget.jamName}"',
+      subject: 'Join the Jam "$_displayTitle"',
     );
   }
 
@@ -130,6 +137,69 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       }
     } finally {
       if (mounted) setState(() => _uploadingCover = false);
+    }
+  }
+
+  // ── Rename Jam (owner only) ──────────────────────────────────────────────────
+
+  Future<void> _renameJam() async {
+    // Capture context-bound objects before the async dialog gap.
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController(text: _displayTitle);
+
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(
+          'Rinomina la Jam',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 60,
+          textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) => Navigator.pop(dialogCtx, value),
+          decoration: const InputDecoration(
+            hintText: 'Nome della Jam',
+            counterText: '',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx, controller.text),
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    final trimmed = newTitle?.trim() ?? '';
+    if (trimmed.isEmpty || trimmed == _displayTitle) return;
+
+    try {
+      final saved = await ref
+          .read(supabaseServiceProvider)
+          .updateJamTitle(widget.jamId, trimmed);
+      if (!mounted) return;
+      setState(() => _liveTitle = saved);
+      ref.invalidate(jamDetailProvider(widget.jamId));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Nome della Jam aggiornato')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Impossibile rinominare la Jam: $e')),
+      );
     }
   }
 
@@ -238,6 +308,14 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       orElse: () => 0,
     );
 
+    // Only the Jam owner may rename it — drives the pencil affordance.
+    final ownerId = jamDetailAsync.maybeWhen(
+      data: (j) => j?['owner_id'] as String?,
+      orElse: () => null,
+    );
+    final isOwner =
+        ownerId != null && ownerId == ref.read(supabaseServiceProvider).userId;
+
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
       body: CustomScrollView(
@@ -287,6 +365,14 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                     ),
                 ],
               ),
+              // Rename pencil — when a cover photo hides the inline pencil,
+              // the owner still gets a rename affordance here in the toolbar.
+              if (isOwner && jamCoverUrl != null && jamCoverUrl.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Rinomina la Jam',
+                  onPressed: _renameJam,
+                ),
               // Cover photo upload button
               _uploadingCover
                   ? const Padding(
@@ -317,7 +403,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               // the no-cover background already renders the name in large type.
               title: (jamCoverUrl != null && jamCoverUrl.isNotEmpty)
                   ? Text(
-                      widget.jamName,
+                      _displayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFFF1EEE7),
                         fontSize: 16,
@@ -381,16 +469,41 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        // Jam name
-                        Text(
-                          widget.jamName,
-                          style: const TextStyle(
-                            color: Color(0xFFF1EEE7),
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.8,
-                            height: 1.1,
-                          ),
+                        // Jam name — with an owner-only rename pencil inline.
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _displayTitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFFF1EEE7),
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.8,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                            if (isOwner) ...[
+                              const SizedBox(width: 4),
+                              IconButton(
+                                onPressed: _renameJam,
+                                tooltip: 'Rinomina la Jam',
+                                iconSize: 18,
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                                constraints: const BoxConstraints(
+                                    minWidth: 40, minHeight: 40),
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  color: Color(0xFFF1EEE7),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 5),
                         if (memberCount > 0)

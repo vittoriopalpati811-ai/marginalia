@@ -977,6 +977,18 @@ class SupabaseService {
     return url;
   }
 
+  /// Renames a Jam. RLS + the explicit owner_id filter ensure only the owner
+  /// can change the title. Returns the trimmed title that was persisted.
+  Future<String> updateJamTitle(String jamId, String title) async {
+    final trimmed = title.trim();
+    await _client
+        .from('jams')
+        .update({'title': trimmed})
+        .eq('id', jamId)
+        .eq('owner_id', userId!);
+    return trimmed;
+  }
+
   // ─── Pinned highlights ────────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> fetchPinnedHighlights(String targetUserId) async {
