@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ─── Palette — Airbnb-clean (refined 2026-05-27) ───────────────────────────
@@ -299,6 +300,22 @@ class MarginaliaDecorations {
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
     ),
+  );
+
+  /// Status-bar overlay for screens whose TOP is a dark [gradientHeader].
+  ///
+  /// The global default (set once in main.dart) uses DARK status-bar icons,
+  /// which is correct over the cream content screens but renders the iOS
+  /// clock/battery nearly invisible against the dark green gradient — the
+  /// reported "sovrapposizione grafica" at the top of the screen. Plain
+  /// Container headers (no AppBar) don't auto-correct this the way Material's
+  /// AppBar does, so each must wrap its header in an
+  /// `AnnotatedRegion<SystemUiOverlayStyle>` with this value to switch the
+  /// system icons to light (white).
+  static const SystemUiOverlayStyle lightStatusBar = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarBrightness: Brightness.dark, // iOS: dark background → light icons
+    statusBarIconBrightness: Brightness.light, // Android
   );
 
   /// Page card — recessed, no shadow (list item variant)

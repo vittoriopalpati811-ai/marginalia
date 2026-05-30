@@ -1005,6 +1005,14 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final isOwner = svc.userId != null && svc.userId == postUserId;
     final body = widget.post['body'] as String? ?? '';
 
+    // Capture messenger + l10n ONCE, here, while this card's context is
+    // guaranteed mounted. Every menu action below reuses these instead of
+    // touching `context` after an await — so a rebuild that unmounts this
+    // card (e.g. after a delete invalidates postsProvider) can never make a
+    // callback throw and leave an orphaned modal barrier ("tutto nero").
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+
     if (!isOwner) {
       // Non-owner: only "Report" option (placeholder)
       await showModalBottomSheet<void>(
@@ -1018,8 +1026,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
               color: MarginaliaColors.inkMuted,
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10n.feedReported)),
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.feedReported)),
                 );
               },
             ),
@@ -1052,15 +1060,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
             onTap: () async {
               Navigator.pop(ctx);
               if (postId == null) return;
-              // Capture messenger + l10n BEFORE the async gap. The moment the
-              // post is deleted, `postsProvider` is invalidated, the list
-              // rebuilds without this post and this very card unmounts — which
-              // deactivates `context`. Reading ScaffoldMessenger.of(context)
-              // (or context.l10n) afterwards throws, the exception escapes the
-              // tap callback, and the only thing left painted is the modal
-              // barrier: an all-black screen ("elimina post → tutto nero").
-              final messenger = ScaffoldMessenger.of(context);
-              final l10n = context.l10n;
+              // messenger + l10n were captured at the top of _showPostMenu,
+              // while this card was guaranteed mounted — safe to use across
+              // the awaits below even after the card unmounts.
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (dialogCtx) => AlertDialog(

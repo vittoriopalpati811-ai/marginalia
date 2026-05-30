@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -143,7 +144,9 @@ class _MessagesHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: MarginaliaDecorations.lightStatusBar,
+      child: Container(
       width: double.infinity,
       decoration: MarginaliaDecorations.gradientHeader,
       child: SafeArea(
@@ -189,13 +192,14 @@ class _MessagesHeader extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
 
 // ─── Conversation Card ───────────────────────────────────────────────────────
 
-class _ConversationCard extends StatelessWidget {
+class _ConversationCard extends ConsumerWidget {
   const _ConversationCard({
     required this.conversation,
     required this.index,
@@ -207,7 +211,7 @@ class _ConversationCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isGroup = conversation['is_group'] == true;
     final members =
         (conversation['members'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
@@ -236,20 +240,30 @@ class _ConversationCard extends StatelessWidget {
       }
     }
 
-    // Unread = last message exists, NOT sent by me, newer than my last_read_at
+    // Unread = last message exists, NOT sent by me, newer than my effective
+    // read time. The effective read time is the LATEST of the server's
+    // persisted my_last_read_at and any optimistic local read recorded this
+    // session (set the instant the chat opens — see locallyReadProvider).
+    // This clears the bold "unread" styling immediately after viewing, even
+    // if the mark_conversation_read RPC lags or is unavailable.
+    final localRead = ref.watch(locallyReadProvider)[conversation['id']];
     bool hasUnread = false;
     if (lastMessage != null) {
       final senderId = lastMessage['sender_id'] as String? ?? '';
       if (senderId != currentUserId) {
-        if (myLastReadAt == null) {
+        final lastMsgTime =
+            DateTime.tryParse(lastMessage['created_at'] as String? ?? '');
+        final serverRead =
+            myLastReadAt != null ? DateTime.tryParse(myLastReadAt) : null;
+        final effectiveRead = serverRead == null
+            ? localRead
+            : (localRead == null
+                ? serverRead
+                : (localRead.isAfter(serverRead) ? localRead : serverRead));
+        if (effectiveRead == null) {
           hasUnread = true;
-        } else {
-          final lastMsgTime =
-              DateTime.tryParse(lastMessage['created_at'] as String? ?? '');
-          final lastRead = DateTime.tryParse(myLastReadAt);
-          if (lastMsgTime != null && lastRead != null) {
-            hasUnread = lastMsgTime.isAfter(lastRead);
-          }
+        } else if (lastMsgTime != null) {
+          hasUnread = lastMsgTime.isAfter(effectiveRead);
         }
       }
     }

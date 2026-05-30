@@ -196,7 +196,9 @@ class _SocialHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: MarginaliaDecorations.lightStatusBar,
+      child: Container(
       decoration: MarginaliaDecorations.gradientHeader,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -271,6 +273,7 @@ class _SocialHeader extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

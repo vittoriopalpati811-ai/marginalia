@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -50,7 +51,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: Column(
         children: [
           // ── Gradient header ─────────────────────────────────────────────────
-          Container(
+          AnnotatedRegion<SystemUiOverlayStyle>(
+            value: MarginaliaDecorations.lightStatusBar,
+            child: Container(
             decoration: MarginaliaDecorations.gradientHeader,
             child: SafeArea(
               bottom: false,
@@ -170,6 +173,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ),
+          ),
           ),
 
           // ── Results ─────────────────────────────────────────────────────────

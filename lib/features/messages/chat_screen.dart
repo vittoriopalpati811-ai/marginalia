@@ -50,6 +50,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _subscribeRealtime();
+      // Record an optimistic local "read" instant FIRST, so the nav badge
+      // + bold "unread" styling clear the moment the chat opens — even if
+      // the markConversationRead RPC is slow or unavailable (e.g. the
+      // mark_conversation_read migration is not yet applied on the backend).
+      // This was the reported symptom: a viewed message still showed as
+      // "da visualizzare".
+      ref.read(locallyReadProvider.notifier).markRead(widget.conversationId);
       // Mark messages as read AND invalidate the inbox so the nav badge
       // + bold "unread" styling on the conversation tile disappear
       // immediately. Without the invalidate, the server-side last_read_at
@@ -110,6 +117,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               // message as read immediately and refresh the inbox.
               // Without this, the nav badge lights up for a message
               // already on screen, until they leave and re-enter.
+              // The optimistic local timestamp keeps the conversation
+              // looking read even if the RPC round-trip lags.
+              ref
+                  .read(locallyReadProvider.notifier)
+                  .markRead(widget.conversationId);
               svc.markConversationRead(widget.conversationId).then((_) {
                 if (mounted) ref.invalidate(conversationsProvider);
               });

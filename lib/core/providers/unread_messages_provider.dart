@@ -83,8 +83,52 @@ final inboxRealtimeProvider = Provider<void>((ref) {
   ref.onDispose(() => channel.unsubscribe());
 });
 
+/// Optimistic, session-local "read" timestamps keyed by conversation id.
+///
+/// When the user opens a chat we record the current time here *immediately*,
+/// then overlay it on top of the server's `my_last_read_at` wherever unread
+/// state is computed. This clears the red nav dot + the bold conversation
+/// styling the instant the chat opens — without waiting for the
+/// `mark_conversation_read` RPC to round-trip, and even if that RPC is
+/// unavailable (e.g. the backend migration is not yet applied). It was the
+/// reported symptom: "dopo aver visualizzato il messaggio rimane 'da
+/// visualizzare'".
+///
+/// It can only ever make a conversation look READ, never unread: a genuinely
+/// newer incoming message (created after our local read time) still surfaces
+/// as unread, because the comparison below always uses the *latest* of the
+/// local and server read times.
+class LocallyReadConversations extends Notifier<Map<String, DateTime>> {
+  @override
+  Map<String, DateTime> build() => const {};
+
+  void markRead(String conversationId) {
+    state = {...state, conversationId: DateTime.now().toUtc()};
+  }
+}
+
+final locallyReadProvider =
+    NotifierProvider<LocallyReadConversations, Map<String, DateTime>>(
+  LocallyReadConversations.new,
+);
+
+/// Resolves the effective "read up to" instant for a conversation: the later
+/// of the server's persisted `my_last_read_at` and any optimistic local read
+/// recorded this session. Returns null only when the conversation has never
+/// been read by either source.
+DateTime? _effectiveReadTime(
+  String? serverReadIso,
+  DateTime? localRead,
+) {
+  final serverRead =
+      serverReadIso != null ? DateTime.tryParse(serverReadIso) : null;
+  if (serverRead == null) return localRead;
+  if (localRead == null) return serverRead;
+  return localRead.isAfter(serverRead) ? localRead : serverRead;
+}
+
 /// Number of conversations where the latest message is from someone else
-/// and is newer than my `last_read_at`. Drives the red dot on the
+/// and is newer than my effective read time. Drives the red dot on the
 /// bottom-nav Messages tab.
 final unreadConversationsCountProvider = Provider<int>((ref) {
   final svc   = ref.watch(supabaseServiceProvider);
@@ -92,6 +136,7 @@ final unreadConversationsCountProvider = Provider<int>((ref) {
   if (me == null) return 0;
 
   final convs = ref.watch(conversationsProvider).asData?.value ?? const [];
+  final locallyRead = ref.watch(locallyReadProvider);
 
   var count = 0;
   for (final c in convs) {
@@ -106,12 +151,15 @@ final unreadConversationsCountProvider = Provider<int>((ref) {
     final msgTime = DateTime.tryParse(msgIso);
     if (msgTime == null) continue;
 
-    final readIso = c['my_last_read_at'] as String?;
-    if (readIso == null) {
+    final convId   = c['id'] as String?;
+    final readTime = _effectiveReadTime(
+      c['my_last_read_at'] as String?,
+      convId != null ? locallyRead[convId] : null,
+    );
+    if (readTime == null) {
       count++;                              // never opened
-    } else {
-      final readTime = DateTime.tryParse(readIso);
-      if (readTime != null && msgTime.isAfter(readTime)) count++;
+    } else if (msgTime.isAfter(readTime)) {
+      count++;
     }
   }
   return count;

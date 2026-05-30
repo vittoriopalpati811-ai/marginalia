@@ -4,6 +4,7 @@
 // Gradient header with wordmark + "Scrivi" button, then the full FeedTab.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -54,7 +55,9 @@ class _HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
 
-    return Container(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: MarginaliaDecorations.lightStatusBar,
+      child: Container(
       decoration: MarginaliaDecorations.gradientHeader,
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, top + 16, 16, 14),
@@ -113,6 +116,7 @@ class _HomeHeader extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
