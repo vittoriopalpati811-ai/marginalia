@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/share_helper.dart';
+import 'privacy_policy_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -824,15 +825,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: const Icon(Icons.privacy_tip_outlined,
                   color: MarginaliaColors.primary),
               title: Text(context.l10n.settingsPrivacyPolicy),
-              trailing: const Icon(Icons.open_in_new,
-                  size: 14, color: MarginaliaColors.inkFaint),
-              onTap: () async {
+              trailing: const Icon(Icons.chevron_right,
+                  size: 18, color: MarginaliaColors.inkFaint),
+              onTap: () {
                 Navigator.pop(ctx);
-                final isIt = Localizations.localeOf(context).languageCode == 'it';
-                final uri = Uri.parse(isIt
-                    ? 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/it/'
-                    : 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
-                if (await canLaunchUrl(uri)) await launchUrl(uri);
+                final isIt =
+                    Localizations.localeOf(context).languageCode == 'it';
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PrivacyPolicyScreen(isItalian: isIt),
+                  ),
+                );
               },
             ),
             const Divider(indent: 16, endIndent: 16),

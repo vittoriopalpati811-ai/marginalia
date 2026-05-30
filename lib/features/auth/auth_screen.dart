@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../settings/privacy_policy_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -389,15 +390,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
-                                  ..onTap = () async {
+                                  ..onTap = () {
                                     final isIt = Localizations.localeOf(context)
                                             .languageCode == 'it';
-                                    final uri = Uri.parse(isIt
-                                        ? 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/it/'
-                                        : 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/');
-                                    if (await canLaunchUrl(uri)) {
-                                      await launchUrl(uri);
-                                    }
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder: (_) =>
+                                            PrivacyPolicyScreen(isItalian: isIt),
+                                      ),
+                                    );
                                   },
                               ),
                               const TextSpan(
