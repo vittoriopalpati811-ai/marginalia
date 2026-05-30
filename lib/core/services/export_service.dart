@@ -1,3 +1,5 @@
+import 'dart:ui' show Rect;
+
 import 'package:intl/intl.dart';
 
 import '../models/highlight.dart';
@@ -168,13 +170,17 @@ class ExportService {
   // ─── Public API ─────────────────────────────────────────────────────────────
 
   /// Exports all highlights grouped by book, shared as a .md file.
-  static Future<void> exportAll(List<Highlight> allHighlights) async {
+  static Future<void> exportAll(
+    List<Highlight> allHighlights, {
+    Rect? sharePositionOrigin,
+  }) async {
     final markdown = buildFullMarkdown(allHighlights);
     final date = DateFormat('yyyyMMdd').format(DateTime.now());
     await writeAndShareMarkdown(
       markdown: markdown,
       filename: 'marginalia_export_$date.md',
       subject: 'Marginalia — Export completo',
+      sharePositionOrigin: sharePositionOrigin,
     );
   }
 
@@ -183,6 +189,7 @@ class ExportService {
     required String bookTitle,
     required String bookAuthor,
     required List<Highlight> highlights,
+    Rect? sharePositionOrigin,
   }) async {
     final markdown = buildSingleBookMarkdown(
       bookTitle: bookTitle,
@@ -198,6 +205,7 @@ class ExportService {
       markdown: markdown,
       filename: 'marginalia_${slug.isEmpty ? 'libro' : slug}.md',
       subject: 'Highlight: $bookTitle',
+      sharePositionOrigin: sharePositionOrigin,
     );
   }
 }

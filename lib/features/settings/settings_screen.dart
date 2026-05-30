@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../core/utils/share_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -253,6 +254,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onPressed: () => Share.share(
                       'I read on Marginalia\n'
                       'Come read with me!\nhttps://marginalia.app',
+                      sharePositionOrigin: shareOrigin(context),
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: MarginaliaColors.primary,
@@ -484,6 +486,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     try {
+      final shareRect = shareOrigin(context);
       // allHighlightsProvider is cross-platform (Isar on native, Supabase on
       // web) and already loads book links so bookTitle / bookAuthor are set.
       final highlights = await ref.read(allHighlightsProvider.future);
@@ -503,7 +506,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return;
       }
 
-      await ExportService.exportAll(highlights);
+      await ExportService.exportAll(highlights, sharePositionOrigin: shareRect);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
@@ -765,7 +768,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(0, 16, 0, 48),
-        child: Column(
+        child: ListTileTheme(
+          data: const ListTileThemeData(textColor: MarginaliaColors.ink),
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Center(
@@ -859,6 +864,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ],
+        ),
         ),
       ),
     );

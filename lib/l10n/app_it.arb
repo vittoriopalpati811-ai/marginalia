@@ -149,6 +149,10 @@
 
   "feedNoPostsYet": "Nessun post ancora.",
   "@feedNoPostsYet": {},
+  "socialTabJams": "Jam",
+  "socialTabFriends": "Amici",
+  "feedEmptyFollowing": "Segui altri lettori dalla scheda Amici\nper vedere qui i loro post.",
+  "@feedEmptyFollowing": {},
 
   "feedEmptyFeed": "Non hai ancora seguito nessuno.\nVai nella tab Amici per iniziare!",
   "@feedEmptyFeed": {},

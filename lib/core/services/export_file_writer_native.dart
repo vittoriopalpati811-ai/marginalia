@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' show Rect;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -8,6 +9,7 @@ Future<void> writeAndShareMarkdown({
   required String markdown,
   required String filename,
   String? subject,
+  Rect? sharePositionOrigin,
 }) async {
   final tmpDir = await getTemporaryDirectory();
   final file = File('${tmpDir.path}/$filename');
@@ -17,5 +19,6 @@ Future<void> writeAndShareMarkdown({
     [XFile(file.path, mimeType: 'text/markdown')],
     subject: subject ?? 'Marginalia Export',
     text: '📚 I miei highlight da Marginalia',
+    sharePositionOrigin: sharePositionOrigin,
   );
 }

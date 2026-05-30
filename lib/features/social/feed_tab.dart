@@ -2,6 +2,8 @@
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -2330,48 +2332,69 @@ class _PostMenuSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom;
-    return Container(
-      decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(0, 8, 0, bottom + 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            width: 36,
-            height: 4,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, 0, 12, bottom + 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
-              borderRadius: BorderRadius.circular(2),
+              // Translucent surface over a blurred backdrop = liquid glass.
+              color: MarginaliaColors.surface.withAlpha(225),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withAlpha(46), width: 0.6),
             ),
-          ),
-          ...items.map(
-            (a) => InkWell(
-              onTap: a.onTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(
-                  children: [
-                    Icon(a.icon, size: 20, color: a.color ?? MarginaliaColors.ink),
-                    const SizedBox(width: 14),
-                    Text(
-                      a.label,
-                      style: GoogleFonts.manrope(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: a.color ?? MarginaliaColors.ink,
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.rule,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ...items.map(
+                  (a) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: a.onTap,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Icon(a.icon,
+                                  size: 20,
+                                  color: a.color ?? MarginaliaColors.ink),
+                              const SizedBox(width: 14),
+                              Text(
+                                a.label,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: a.color ?? MarginaliaColors.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2407,7 +2430,7 @@ class _EmptyFeed extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Follow other readers from the Friends tab\nto see their posts here.',
+            context.l10n.feedEmptyFollowing,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               color: MarginaliaColors.inkMuted,

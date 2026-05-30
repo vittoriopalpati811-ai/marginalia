@@ -241,7 +241,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
             // ── Bottom padding for nav bar ─────────────────────────────────
             // Bottom safety padding (nav bar is now solid, not floating)
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
           ],
         ),
       ),

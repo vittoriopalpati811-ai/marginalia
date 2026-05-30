@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import '../../core/utils/share_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -421,7 +422,10 @@ class _HighlightCard extends StatelessWidget {
                         ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () => Share.share(highlight.content),
+                        onTap: () => Share.share(
+                          highlight.content,
+                          sharePositionOrigin: shareOrigin(context),
+                        ),
                         child: const Icon(Icons.ios_share_rounded,
                             size: 14, color: MarginaliaColors.inkFaint),
                       ),

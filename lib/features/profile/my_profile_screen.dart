@@ -1,6 +1,7 @@
 ﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/utils/share_helper.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -131,6 +132,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     Share.share(
       'Segui $name su Marginalia.\n\nhttps://marginalia.app/user/$uid',
       subject: 'Marginalia Profile – $name',
+      sharePositionOrigin: shareOrigin(context),
     );
   }
 

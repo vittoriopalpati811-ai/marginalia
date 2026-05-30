@@ -1,6 +1,7 @@
 ﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/utils/share_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -98,6 +99,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       'Join my Jam "$name" on Marginalia.\n\n'
       'Invite code: $code',
       subject: 'Marginalia Jam – $name',
+      sharePositionOrigin: shareOrigin(context),
     );
   }
 
@@ -267,9 +269,9 @@ class _SocialHeader extends StatelessWidget {
               fontWeight: FontWeight.w400,
               letterSpacing: 0.1,
             ),
-            tabs: const [
-              Tab(text: 'Jams'),
-              Tab(text: 'Friends'),
+            tabs: [
+              Tab(text: context.l10n.socialTabJams),
+              Tab(text: context.l10n.socialTabFriends),
             ],
           ),
         ],

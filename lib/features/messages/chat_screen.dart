@@ -36,7 +36,8 @@ class ChatScreen extends ConsumerStatefulWidget {
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends ConsumerState<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen>
+    with WidgetsBindingObserver {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   final List<Map<String, dynamic>> _localMessages = [];
@@ -48,6 +49,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _subscribeRealtime();
       // Record an optimistic local "read" instant FIRST, so the nav badge
@@ -131,8 +133,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         .subscribe();
   }
 
+  // When the keyboard opens, the viewport shrinks; snap to the latest message
+  // so the newest bubbles aren't left hidden behind the keyboard (the user had
+  // to scroll down manually otherwise).
+  @override
+  void didChangeMetrics() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    final keyboardOpen = views.isNotEmpty && views.first.viewInsets.bottom > 0;
+    if (keyboardOpen) _scrollToBottom();
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _realtimeChannel?.unsubscribe();
     _textController.dispose();
     _scrollController.dispose();

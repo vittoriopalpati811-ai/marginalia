@@ -10,6 +10,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../utils/share_helper.dart';
+
 import '../theme.dart';
 import 'share_file_helper.dart';
 
@@ -127,11 +129,12 @@ class _ShareSheetState extends State<_ShareSheet> {
 
   Future<void> _shareImage() async {
     if (_capturing) return;
+    final origin = shareOrigin(context);
     setState(() => _capturing = true);
 
     try {
       if (kIsWeb) {
-        await Share.share(_buildShareText());
+        await Share.share(_buildShareText(), sharePositionOrigin: origin);
         return;
       }
 
@@ -141,7 +144,7 @@ class _ShareSheetState extends State<_ShareSheet> {
       final boundary =
           _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
-        await Share.share(_buildShareText());
+        await Share.share(_buildShareText(), sharePositionOrigin: origin);
         return;
       }
 
@@ -149,7 +152,7 @@ class _ShareSheetState extends State<_ShareSheet> {
       final byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
-        await Share.share(_buildShareText());
+        await Share.share(_buildShareText(), sharePositionOrigin: origin);
         return;
       }
 
@@ -159,10 +162,10 @@ class _ShareSheetState extends State<_ShareSheet> {
           '${tempDir.path}/marginalia_${DateTime.now().millisecondsSinceEpoch}.png';
 
       await writeShareFile(path, bytes);
-      await Share.shareXFiles([XFile(path)], text: _buildShareText());
+      await Share.shareXFiles([XFile(path)], text: _buildShareText(), sharePositionOrigin: origin);
     } catch (_) {
       // Fallback to text-only share on any error
-      await Share.share(_buildShareText());
+      await Share.share(_buildShareText(), sharePositionOrigin: origin);
     } finally {
       if (mounted) setState(() => _capturing = false);
     }

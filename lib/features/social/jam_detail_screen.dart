@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../core/utils/share_helper.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,6 +16,7 @@ import '../../core/l10n/l10n_extension.dart';
 import 'jam_highlight_detail_screen.dart'
     show reactionsProvider, commentsProvider, JamHighlightDetailScreen;
 import 'weekly_prompt.dart';
+import 'social_screen.dart' show jamsProvider;
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -98,6 +100,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       'Code: $inviteCode\n\n'
       'Download the app: https://marginalia.app',
       subject: 'Join the Jam "$_displayTitle"',
+      sharePositionOrigin: shareOrigin(context),
     );
   }
 
@@ -192,6 +195,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       if (!mounted) return;
       setState(() => _liveTitle = saved);
       ref.invalidate(jamDetailProvider(widget.jamId));
+      // Also refresh the Jams list (social tab) so the new name shows
+      // immediately there instead of only after an app restart.
+      ref.invalidate(jamsProvider);
       messenger.showSnackBar(
         const SnackBar(content: Text('Nome della Jam aggiornato')),
       );
