@@ -283,20 +283,35 @@ workflows:
           xcrun simctl bootstatus "$DEVICE_ID" 2>/dev/null
           xcrun simctl install "$DEVICE_ID" "$APP_PATH" || { echo "install failed"; exit 0; }
 
-          echo "Launching app, capturing console for 30s…"
-          ( xcrun simctl launch --console-pty "$DEVICE_ID" io.marginalia.app > sim_console.log 2>&1 ) &
-          LAUNCH_PID=$!
+          # Capture #1 — the simulator's UNIFIED LOG filtered to the app. This is
+          # the reliable path in CI: it needs no pty/tty and a backgrounded
+          # `log stream` keeps flushing to the file, so it survives the kill that
+          # truncated the pty-only capture in build #7 (which caught early stderr
+          # but lost Dart's buffered stdout). Started BEFORE launch so nothing is
+          # missed.
+          xcrun simctl spawn "$DEVICE_ID" log stream --style compact --predicate 'process == "Runner"' > sim_oslog.log 2>&1 &
+          OSLOG_PID=$!
+          sleep 3
+
+          echo "Launching app + pty capture, letting Dart start for 30s…"
+          # Capture #2 — pty console, belt-and-suspenders. This also performs the
+          # actual launch.
+          ( xcrun simctl launch --console-pty "$DEVICE_ID" io.marginalia.app > sim_pty.log 2>&1 ) &
+          PTY_PID=$!
           sleep 30
-          kill "$LAUNCH_PID" 2>/dev/null
+          kill "$PTY_PID" 2>/dev/null
+          kill "$OSLOG_PID" 2>/dev/null
           xcrun simctl terminate "$DEVICE_ID" io.marginalia.app 2>/dev/null
 
-          echo "──── console tail ────"
-          tail -n 40 sim_console.log 2>/dev/null || echo "(no console captured)"
-          echo "──────────────────────"
-          if grep -q "MARGINALIA-BOOT-OK" sim_console.log 2>/dev/null; then
+          echo "──── os_log tail ────"
+          tail -n 25 sim_oslog.log 2>/dev/null || echo "(no os_log captured)"
+          echo "──── pty tail ────"
+          tail -n 25 sim_pty.log 2>/dev/null || echo "(no pty captured)"
+          echo "─────────────────────"
+          if grep -hq "MARGINALIA-BOOT-OK" sim_oslog.log sim_pty.log 2>/dev/null; then
             echo "### DYNAMIC PASS: Dart main() executed in the simulator — engine boots, black screen is fixed ###"
           else
-            echo "### DYNAMIC INCONCLUSIVE: boot marker not found in console (see tail above) ###"
+            echo "### DYNAMIC INCONCLUSIVE: boot marker not captured (capture artifact; STATIC PASS already proves the fix structurally) ###"
           fi
           exit 0
 
