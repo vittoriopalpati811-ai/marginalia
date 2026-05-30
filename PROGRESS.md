@@ -10,7 +10,7 @@
 **Fase**: Flutter MVP — Airbnb redesign completo + Jam 2.0 + i18n + notifiche
 **Sprint corrente**: Sprint 1 (Flutter) — Foundation + UX + Social + Monetizzazione + i18n + Jam 2.0
 **Prossima azione founder**:
-  0. 📱 **TestFlight — la schermata nera è RISOLTA**: elimina la vecchia app dall'iPhone → apri TestFlight → installa **1.0.0 (8)** (l'ultima; NON la build 5, che era il test diagnostico magenta/nero) → aprila. Dovresti vedere lo splash crema "MARGINALIA" e poi la libreria. Vedi **Sessione 19** per il dettaglio.
+  0. 📱 **TestFlight — installa l'ULTIMA build (1.0.0 (9), in arrivo da Codemagic ~20 min dopo il push della Sessione 20)**: elimina la vecchia app dall'iPhone → apri TestFlight → installa la build più recente (NON la build 5, test diagnostico magenta/nero) → aprila. La build 9 contiene **sia** il fix schermata-nera (Sessione 19) **sia** i 6 fix della Sessione 20 (consigli AI, tastiera, elimina post, rinomina Jam, swipe-back, responsive). Conferma che si apre e che i 6 problemi sono risolti.
   1. Applicare **024_favorite_books.sql** in Supabase SQL Editor
   2. Applicare migrations **020–023** in ordine (se non già fatto)
   3. Eseguire `flutter pub get && flutter gen-l10n`
@@ -18,7 +18,7 @@
   5. Creare account RevenueCat → inserire API key in `subscription_service.dart`
 **Branch attivo**: master
 **Build status Flutter/Windows**: 🟡 pronto — esegui `dart run build_runner build` poi `flutter run -d windows`
-**Build status iOS (TestFlight)**: 🟢 operativo — **1.0.0 (8)** su TestFlight (Completo), schermata nera al lancio risolta (vedi Sessione 19)
+**Build status iOS (TestFlight)**: 🟢 operativo — **1.0.0 (9)** in build su Codemagic (push Sessione 20): include fix schermata-nera (Sess. 19) + i 6 fix funzionali (Sess. 20). Build 8 precedente già Completa.
 
 **Infrastruttura cloud**:
 - Supabase `marginalia`: ✅ operativo (`https://ibucvloawkfwobaelwbr.supabase.co`)
@@ -37,6 +37,47 @@
 ---
 
 ## Sessioni
+
+### Sessione 20 — 2026-05-30
+**Durata**: ~autonoma
+**Branch**: master
+**Commit**: `1538049` (#66) · `2043956` (#68) · `5759e8c` (#69) · `0e1f1b1` (#67+#70+#71)
+
+#### Richiesta founder
+> "ci sono diverse funzionalità che non funzionano, sia nelle jam che fuori: i libri consigliati da AI non funzionano, non è molto responsive, la tastiera non scompare quando dovrebbe, elimina post dà errore tutto nero, non c'è la matitina per cambiare titolo Jam, le gesture per tornare indietro non funzionano sempre. Risolvi tutti questi errori."
+
+Sei bug, tutti risolti lato codice in 4 commit logici.
+
+#### #66 — Libri consigliati da AI non funzionano
+**Causa**: nel ramo nativo (Isar) `recommendations_section.dart` indicizzava i libri per `b.supabaseId` (UUID) ma poi cercava per `h.bookId`, che su native è l'**id locale Isar (int)**, non l'UUID → nessun match → nessun highlight passato al recommender → zero consigli.
+**Fix**: `bookById = {for (final b in books) b.id.toString(): b}` e lookup per `h.bookId.toString()`.
+⚠️ **Dipendenza esterna**: il recommender server (`recommend-books` Edge Function) richiede comunque il secret **`GROQ_API_KEY`** impostato e la function **deployata** sul progetto `ibucvloawkfwobaelwbr`. Non verificabile da qui (vedi task #56). Se i consigli restano vuoti su device, è quello il tassello mancante.
+
+#### #67 — La tastiera non scompare
+**Causa**: Flutter toglie il focus solo se il tap finisce su un altro focus target; toccare un'area vuota lasciava la tastiera su.
+**Fix**: `MaterialApp.builder` (`_dismissKeyboardOnTap` in `app.dart`) con un `GestureDetector` translucent alla radice che fa `FocusManager.instance.primaryFocus?.unfocus()`. `HitTestBehavior.translucent` → i tap reali (bottoni, campi, scroll) vincono comunque per primi.
+
+#### #68 — Eliminare un post → schermata tutta nera
+**Causa**: classico context-after-async-gap. Dopo `await deletePost`, l'uso del `context`/`ScaffoldMessenger` smontato lasciava il modal-barrier overlay nero.
+**Fix** (`feed_tab.dart`): pre-cattura `messenger` e `l10n` **prima** del dialog/await; dialog su `dialogCtx`; try/catch con snackbar d'errore; `ref.invalidate(postsProvider)` a successo.
+
+#### #69 — Manca la matitina per rinominare la Jam
+**Fix**: nuovo `SupabaseService.updateJamTitle(jamId, title)` (RLS + filtro `owner_id` espliciti → solo il proprietario rinomina). In `jam_detail_screen.dart`: `_renameJam()` con `AlertDialog` theme-driven (maxLength 60), titolo live (`_liveTitle`) aggiornato in-place + `ref.invalidate(jamDetailProvider)`, e icona matita **visibile solo al proprietario** (sia nella toolbar con cover, sia inline accanto al titolo senza cover).
+
+#### #70 — Gesture "torna indietro" incoerente
+**Causa**: `_pushPage` usava `CustomTransitionPage` + `SharedAxisTransition` (pacchetto `animations`). Bello da vedere ma **disabilita silenziosamente** lo swipe-back dal bordo: un `CustomTransitionPage` non ha `popGestureEnabled`. Solo le poche schermate ancora pushate via `MaterialPageRoute` rispondevano → sembrava casuale.
+**Fix**: `_pushPage` ora ritorna `CupertinoPage` → ogni route ottiene lo slide nativo iOS **e** lo swipe-back interattivo (HIG). Rimosso l'import di `package:animations`; il pacchetto resta in `pubspec` (inutilizzato, innocuo — rimozione = modifica deps, richiede OK founder).
+
+#### #71 — Non molto responsive
+**Fix**: stesso `_dismissKeyboardOnTap` clampa `textScaler` a **0.85–1.3** (Dynamic Type iOS / font scaling Android) → i testi accessibilità più grandi non sfondano più header/chip/pill a altezza fissa in tutta l'app. In più, il titolo Jam ora ha `maxLines` + `TextOverflow.ellipsis` (cover: 1 riga; senza cover: 2 righe in `Flexible`).
+
+#### Note di processo
+- **Flutter non installato** su questa macchina → impossibile `flutter analyze`/`flutter test` localmente. Mitigato con review manuale attenta dei diff; **Codemagic CI resta l'autorità di compilazione**.
+- Verificato che `app.dart` resta compile-safe dopo la rimozione di `animations`: nessun simbolo `SharedAxisTransition`/`FadeThroughTransition`/`OpenContainer` residuo nel codice (solo in un commento), `_modalPage` usa solo transizioni Flutter native, `MarginaliaColors` ancora referenziato.
+- Questo push triggera una **nuova build TestFlight** (sarà `1.0.0 (9)`), che include anche il fix schermata-nera della Sessione 19.
+- ⚠️ La verifica on-device dei 6 fix (e della schermata nera #65) richiede il device fisico del founder.
+
+---
 
 ### Sessione 19 — 2026-05-30
 **Durata**: ~notturna (autonoma)
