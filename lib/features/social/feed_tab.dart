@@ -1037,40 +1037,49 @@ class _PostCardState extends ConsumerState<_PostCard> {
             onTap: () async {
               Navigator.pop(ctx);
               if (postId == null) return;
+              // Capture messenger + l10n BEFORE the async gap. The moment the
+              // post is deleted, `postsProvider` is invalidated, the list
+              // rebuilds without this post and this very card unmounts — which
+              // deactivates `context`. Reading ScaffoldMessenger.of(context)
+              // (or context.l10n) afterwards throws, the exception escapes the
+              // tap callback, and the only thing left painted is the modal
+              // barrier: an all-black screen ("elimina post → tutto nero").
+              final messenger = ScaffoldMessenger.of(context);
+              final l10n = context.l10n;
               final confirm = await showDialog<bool>(
                 context: context,
-                builder: (_) => AlertDialog(
+                builder: (dialogCtx) => AlertDialog(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: Text(context.l10n.feedDeleteConfirmTitle),
-                  content: Text(context.l10n.feedDeleteConfirmBody),
+                  title: Text(l10n.feedDeleteConfirmTitle),
+                  content: Text(l10n.feedDeleteConfirmBody),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(context.l10n.cancel),
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: Text(l10n.cancel),
                     ),
                     FilledButton(
                       style: FilledButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-                      onPressed: () => Navigator.pop(context, true),
-                      child: Text(context.l10n.feedDeleteAction),
+                      onPressed: () => Navigator.pop(dialogCtx, true),
+                      child: Text(l10n.feedDeleteAction),
                     ),
                   ],
                 ),
               );
-              if (confirm == true && mounted) {
-                try {
-                  await svc.deletePost(postId);
-                  // Provider-driven removal: refetch the list and let the
-                  // SliverChildBuilderDelegate's ValueKey + findChildIndexCallback
-                  // unmount this card naturally. No local `_deleted` flag —
-                  // an optimistic flag combined with the rebuild can leave
-                  // a zombie state and render a blank screen.
-                  ref.invalidate(postsProvider);
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(context.l10n.feedErrorPrefix(e.toString()))));
-                  }
-                }
+              if (confirm != true) return;
+              try {
+                await svc.deletePost(postId);
+                // Provider-driven removal: refetch the list and let the
+                // SliverChildBuilderDelegate's ValueKey + findChildIndexCallback
+                // unmount this card naturally. No local `_deleted` flag —
+                // an optimistic flag combined with the rebuild can leave
+                // a zombie state and render a blank screen.
+                ref.invalidate(postsProvider);
+              } catch (e) {
+                // Use the pre-captured messenger; `context` may already be
+                // deactivated here.
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.feedErrorPrefix(e.toString()))),
+                );
               }
             },
           ),
