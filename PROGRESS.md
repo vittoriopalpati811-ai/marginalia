@@ -41,7 +41,7 @@
 ### Sessione 20 — 2026-05-30
 **Durata**: ~autonoma
 **Branch**: master
-**Commit**: `1538049` (#66) · `2043956` (#68) · `5759e8c` (#69) · `0e1f1b1` (#67+#70+#71)
+**Commit**: `1538049` (#66) · `2043956` (#68) · `5759e8c` (#69) · `0e1f1b1` (#67+#70+#71) · composer fixes (#72 overlay status bar + #73 tastiera invio/pubblica)
 
 #### Richiesta founder
 > "ci sono diverse funzionalità che non funzionano, sia nelle jam che fuori: i libri consigliati da AI non funzionano, non è molto responsive, la tastiera non scompare quando dovrebbe, elimina post dà errore tutto nero, non c'è la matitina per cambiare titolo Jam, le gesture per tornare indietro non funzionano sempre. Risolvi tutti questi errori."
@@ -70,6 +70,14 @@ Sei bug, tutti risolti lato codice in 4 commit logici.
 
 #### #71 — Non molto responsive
 **Fix**: stesso `_dismissKeyboardOnTap` clampa `textScaler` a **0.85–1.3** (Dynamic Type iOS / font scaling Android) → i testi accessibilità più grandi non sfondano più header/chip/pill a altezza fissa in tutta l'app. In più, il titolo Jam ora ha `maxLines` + `TextOverflow.ellipsis` (cover: 1 riga; senza cover: 2 righe in `Flexible`).
+
+#### #72 — Il tasto "Pubblica" si sovrappone alla status bar (orario)
+**Causa**: `CreatePostSheet` è aperta con `showModalBottomSheet(isScrollControlled: true)` senza tetto d'altezza. Con la tastiera aperta (c'è `autofocus`) e corpo lungo, lo sheet cresce fino a sotto il notch → l'header con il bottone Pubblica finisce sotto l'orologio di sistema.
+**Fix** (`feed_tab.dart`, dentro il widget così copre entrambi i punti di apertura — feed e profilo): `constraints: BoxConstraints(maxHeight: size.height - padding.top - 12)` + corpo avvolto in `SingleChildScrollView`. Lo sheet non sale mai sopra la status bar e, se i contenuti + tastiera non entrano, scrollano invece di andare in overflow.
+
+#### #73 — La tastiera deve sparire dopo aver pubblicato / premuto invio
+**Fix** (`feed_tab.dart`): in `_submit()` un `FocusManager.instance.primaryFocus?.unfocus()` appena parte la pubblicazione (la tastiera non resta sopra l'animazione di successo né sul feed). Sul `TextField`: `textInputAction: TextInputAction.done` + `onSubmitted → unfocus` → il tasto invio chiude la tastiera.
+⚠️ **Trade-off**: col tasto invio mappato a "chiudi", non si inseriscono più a-capo manuali dalla tastiera nel post. È esattamente ciò che il founder ha chiesto ("dopo aver premuto invio"); se in futuro servono i paragrafi, si torna a `TextInputAction.newline` + un pulsante "Fine" separato.
 
 #### Note di processo
 - **Flutter non installato** su questa macchina → impossibile `flutter analyze`/`flutter test` localmente. Mitigato con review manuale attenta dei diff; **Codemagic CI resta l'autorità di compilazione**.

@@ -349,6 +349,9 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   Future<void> _submit() async {
     final text = _controller.text.trim();
     if (text.isEmpty && _imageBytes == null) return;
+    // Drop the keyboard immediately so it doesn't hover over the success
+    // animation or linger on the feed after the sheet closes.
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _posting = true);
 
     // Capture context before async gap
@@ -381,19 +384,26 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
+    final media = MediaQuery.of(context);
+    final bottom = media.viewInsets.bottom + media.padding.bottom;
+    // Cap the sheet to the space below the status bar / notch so the header
+    // (and its publish button) can never slide under the system clock when
+    // isScrollControlled lets the sheet grow tall with the keyboard up.
+    final maxSheetHeight = media.size.height - media.padding.top - 12;
     final canPost = !_posting &&
         (_controller.text.trim().isNotEmpty || _imageBytes != null);
 
     return Container(
+      constraints: BoxConstraints(maxHeight: maxSheetHeight),
       decoration: const BoxDecoration(
         color: MarginaliaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Handle
           Container(
             margin: const EdgeInsets.only(top: 12, bottom: 16),
@@ -449,6 +459,10 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
               maxLines: 6,
               minLines: 3,
               maxLength: 1000,
+              // Return key dismisses the keyboard instead of inserting a
+              // newline, per the founder's request ("dopo aver premuto invio").
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(
                 fontSize: 15,
                 color: MarginaliaColors.ink,
@@ -535,7 +549,8 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
               ),
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
