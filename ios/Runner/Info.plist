@@ -110,6 +110,10 @@
 	<false/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Marginalia needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Marginalia reads today's calendar events on-device to tailor your daily reading highlight to your day. This data never leaves your phone.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Marginalia reads today's calendar events on-device to tailor your daily reading highlight to your day. This data never leaves your phone.</string>
 	<!--
 	  Export-compliance declaration. Marginalia uses only Apple's stock
 	  HTTPS/TLS (Supabase, the `http` package) — i.e. standard encryption

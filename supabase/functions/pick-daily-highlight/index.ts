@@ -121,6 +121,12 @@ function buildPrompt(
     const phase = phaseMap[ctx.cyclePhase as string] ?? String(ctx.cyclePhase);
     contextParts.push(`Fase del ciclo: ${phase}`);
   }
+  if (Array.isArray(ctx.calendarEvents) &&
+      (ctx.calendarEvents as string[]).length > 0) {
+    contextParts.push(
+      `Impegni di oggi: ${(ctx.calendarEvents as string[]).join(", ")}`,
+    );
+  }
 
   // ── Highlight list ───────────────────────────────────────────────────────
   const list = highlights

@@ -22,6 +22,7 @@ import '../providers/auth_provider.dart';
 import '../providers/highlights_provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/health_provider.dart';
+import '../providers/calendar_provider.dart';
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 //
@@ -75,6 +76,9 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   final now        = DateTime.now();
   final weather    = ref.read(weatherProvider).asData?.value;
   final healthSnap = ref.read(healthSnapshotProvider).asData?.value;
+  // Reading this also kicks off the fetch so today's events are cached for the
+  // next 3-hour refresh even if they aren't ready on the very first run.
+  final calendar   = ref.read(calendarSnapshotProvider).asData?.value;
 
   final contextPayload = <String, dynamic>{
     'hour': now.hour,
@@ -91,6 +95,8 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
       if (healthSnap.hasCycle && healthSnap.cyclePhase != null)
         'cyclePhase': healthSnap.cyclePhase!.name,
     },
+    if (calendar != null && calendar.isNotEmpty)
+      'calendarEvents': calendar.todayTitles,
   };
 
   // ── 4. Call Edge Function ──────────────────────────────────────────────────

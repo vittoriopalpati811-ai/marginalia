@@ -58,6 +58,10 @@ dependencies:
   # URL launching (privacy policy, external links)
   url_launcher: ^6.3.0
 
+  # Calendar — today's events feed the "frase scelta per te" context.
+  # EventKit needs no entitlement, only the Info.plist usage strings.
+  device_calendar: ^4.3.3
+
   # Utility
   intl: ^0.19.0
   crypto: ^3.0.3
