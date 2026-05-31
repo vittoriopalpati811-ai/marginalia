@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Committed (like Info.plist) so flutter create preserves it. Wired into the
+  Runner target via a perl patch in codemagic.yaml (CODE_SIGN_ENTITLEMENTS).
+  aps-environment = production: TestFlight/App Store builds use the PRODUCTION
+  APNs environment, which matches the APNs auth key + send-push-notification
+  (api.push.apple.com).
+-->
+<plist version="1.0">
+<dict>
+	<key>aps-environment</key>
+	<string>production</string>
+</dict>
+</plist>

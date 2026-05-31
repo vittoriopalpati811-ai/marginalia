@@ -1495,6 +1495,45 @@ class SupabaseService {
         .from('conversations')
         .update({'updated_at': now})
         .eq('id', conversationId);
+
+    // Best-effort push to the other members (realtime covers the in-app case;
+    // this reaches recipients whose app is closed). Never blocks/fails the send.
+    // ignore: discarded_futures
+    _notifyConversationMembers(conversationId, content: content);
+  }
+
+  /// Best-effort APNs push to the OTHER members of [conversationId] when a
+  /// message is sent. Fire-and-forget — never throws.
+  Future<void> _notifyConversationMembers(
+    String conversationId, {
+    String? content,
+  }) async {
+    try {
+      final me = userId;
+      final rows = await _client
+          .from('conversation_members')
+          .select('user_id')
+          .eq('conversation_id', conversationId) as List;
+      final text = content?.trim() ?? '';
+      final preview = text.isNotEmpty
+          ? (text.length > 140 ? '${text.substring(0, 140)}…' : text)
+          : 'Ti ha inviato una foto';
+      for (final row in rows) {
+        final uid = (row as Map)['user_id'] as String?;
+        if (uid == null || uid == me) continue;
+        await _client.functions.invoke(
+          'send-push-notification',
+          body: {
+            'user_id': uid,
+            'title': 'Nuovo messaggio',
+            'body': preview,
+            'data': {'conversation_id': conversationId},
+          },
+        );
+      }
+    } catch (_) {
+      // Push is best-effort; a failure must never affect message delivery.
+    }
   }
 
   /// Returns the conversation ID for a DM with [otherUserId].
