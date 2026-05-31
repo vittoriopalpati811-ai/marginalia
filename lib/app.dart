@@ -14,8 +14,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/unread_messages_provider.dart';
-import 'core/providers/auth_provider.dart';
-import 'core/services/push_service.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'core/providers/onboarding_provider.dart';
 import 'features/social/home_tab.dart';
@@ -296,8 +294,6 @@ class MarginaliaApp extends ConsumerStatefulWidget {
 
 class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
   StreamSubscription<AuthState>? _authSub;
-  late final PushService _pushService =
-      PushService(ref.read(supabaseServiceProvider));
 
   @override
   void initState() {
@@ -314,13 +310,16 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
             router.push('/reset-password');
           });
         }
-        // Register for APNs push whenever a session is active (covers the
-        // initial-session event on launch AND later sign-ins). PushService is
-        // idempotent and iOS-only; the native AppDelegate prompts for
-        // permission, registers, and forwards the token to registerDeviceToken.
-        if (data.session != null) {
-          _pushService.start();
-        }
+        // TODO: register APNs device token when user signs in.
+        // Requires a platform plugin to retrieve the token (e.g. firebase_messaging
+        // without FirebaseApp, or flutter_apns_only). Once you have the token:
+        //
+        //   if (data.event == AuthChangeEvent.signedIn) {
+        //     final token = await YourPushPlugin.getToken();
+        //     if (token != null) {
+        //       ref.read(supabaseServiceProvider).registerDeviceToken(token);
+        //     }
+        //   }
       });
     } catch (error) {
       debugPrint(

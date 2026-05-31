@@ -132,15 +132,6 @@ workflows:
           perl -pi -e 's/IPHONEOS_DEPLOYMENT_TARGET = 1[12]\.0;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' ios/Runner.xcodeproj/project.pbxproj
           echo "Podfile platform line:"
           grep "platform :ios" ios/Podfile
-          # Wire the committed push entitlements (ios/Runner/Runner.entitlements,
-          # preserved by flutter create like Info.plist) into the app target's
-          # build configs. RunnerTests' bundle id is io.marginalia.app.RunnerTests
-          # so it won't match "io.marginalia.app;" — only the app target gets it.
-          # Without CODE_SIGN_ENTITLEMENTS the aps-environment entitlement is
-          # dropped and APNs device-token registration silently never fires.
-          perl -pi -e 's{PRODUCT_BUNDLE_IDENTIFIER = io\.marginalia\.app;}{PRODUCT_BUNDLE_IDENTIFIER = io.marginalia.app;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;}g' ios/Runner.xcodeproj/project.pbxproj
-          echo "Entitlements wiring:"
-          grep -c CODE_SIGN_ENTITLEMENTS ios/Runner.xcodeproj/project.pbxproj || echo "  (none)"
 
       - name: Set up Flutter
         script: |
