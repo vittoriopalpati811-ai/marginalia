@@ -424,9 +424,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   /// Pull-to-refresh: refresh books/highlights data only.
   /// Recommendations are NOT invalidated — they only update after a real import.
+  /// The daily phrase is intentionally NOT invalidated: it must stay stable for
+  /// its 3-hour window regardless of how often the user swipes to refresh.
+  /// (Even if it were re-run, the 3h cache returns the same pick.)
   void _refreshLibrary() {
     ref.invalidate(booksProvider);
-    ref.invalidate(dailyHighlightProvider);
     ref.invalidate(allHighlightsProvider);
   }
 

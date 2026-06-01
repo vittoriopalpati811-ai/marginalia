@@ -29,8 +29,10 @@ class HealthService {
   static const _types = [
     HealthDataType.STEPS,
     HealthDataType.MENSTRUATION_FLOW,
+    HealthDataType.WORKOUT,
   ];
   static const _permissions = [
+    HealthDataAccess.READ,
     HealthDataAccess.READ,
     HealthDataAccess.READ,
   ];
@@ -76,11 +78,19 @@ class HealthService {
         debugPrint('[Health] cycle error: $e');
       }
 
-      debugPrint('[Health] stepsToday=$steps cyclePhase=${cyclePhase?.name}');
+      var workouts = const <WorkoutActivity>[];
+      try {
+        workouts = await _fetchWorkouts(now);
+      } catch (e) {
+        debugPrint('[Health] workouts error: $e');
+      }
+
+      debugPrint('[Health] stepsToday=$steps '
+          'cyclePhase=${cyclePhase?.name} workouts=${workouts.length}');
 
       return HealthSnapshot(
         stepsToday: steps,
-        workoutsThisWeek: const <WorkoutActivity>[],
+        workoutsThisWeek: workouts,
         cyclePhase: cyclePhase,
         isAvailable: true,
       );
@@ -138,5 +148,64 @@ class HealthService {
     if (daysSince <= 16) return CyclePhase.ovulation;
     if (daysSince <= 40) return CyclePhase.luteal;
     return null; // last period too long ago — don't guess
+  }
+
+  // ── Workouts ────────────────────────────────────────────────────────────────
+  //
+  // Last 7 days of WORKOUT sessions. Like steps and cycle, this stays on-device
+  // and is only distilled into the daily-phrase "tone" (a recent workout → a more
+  // energetic phrase). Raw workout data never leaves the device.
+
+  Future<List<WorkoutActivity>> _fetchWorkouts(DateTime now) async {
+    final start = now.subtract(const Duration(days: 7));
+    final points = await Health().getHealthDataFromTypes(
+      types: const [HealthDataType.WORKOUT],
+      startTime: start,
+      endTime: now,
+    );
+
+    final workouts = <WorkoutActivity>[];
+    for (final p in points) {
+      final value = p.value;
+      if (value is! WorkoutHealthValue) continue;
+      final type = value.workoutActivityType.name;
+      final minutes = p.dateTo.difference(p.dateFrom).inMinutes;
+      workouts.add(WorkoutActivity(
+        type: type,
+        typeLabel: _workoutLabel(type),
+        durationMinutes: minutes < 0 ? 0 : minutes,
+        date: p.dateFrom,
+        caloriesBurned: value.totalEnergyBurned?.toDouble(),
+      ));
+    }
+    workouts.sort((a, b) => b.date.compareTo(a.date)); // most recent first
+    return workouts;
+  }
+
+  // Short Italian label for common workout types; unknown types fall back to a
+  // title-cased version of the raw HealthKit name.
+  String _workoutLabel(String type) {
+    const map = {
+      'RUNNING': 'Corsa',
+      'WALKING': 'Camminata',
+      'CYCLING': 'Ciclismo',
+      'SWIMMING': 'Nuoto',
+      'YOGA': 'Yoga',
+      'FUNCTIONAL_STRENGTH_TRAINING': 'Forza funzionale',
+      'TRADITIONAL_STRENGTH_TRAINING': 'Pesi',
+      'HIGH_INTENSITY_INTERVAL_TRAINING': 'HIIT',
+      'PILATES': 'Pilates',
+      'HIKING': 'Escursione',
+      'DANCE': 'Danza',
+      'ELLIPTICAL': 'Ellittica',
+      'ROWING': 'Vogatore',
+      'CORE_TRAINING': 'Core',
+    };
+    final label = map[type];
+    if (label != null) return label;
+    final words = type.toLowerCase().replaceAll('_', ' ').trim();
+    return words.isEmpty
+        ? 'Allenamento'
+        : words[0].toUpperCase() + words.substring(1);
   }
 }

@@ -14,6 +14,7 @@ import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/export_service.dart';
+import '../../core/services/clippings_importer.dart';
 import '../../core/services/onboarding_service.dart';
 import '../widget/widget_preview_screen.dart';
 
@@ -363,7 +364,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 icon: Icons.upload_file_outlined,
                 label: 'Import My Clippings.txt',
                 subtitle: 'Manually import from your Kindle file',
-                onTap: () => context.go('/'),
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    final res = await pickAndImportClippings(ref);
+                    if (res == null) return; // user cancelled
+                    ref.invalidate(allHighlightsProvider);
+                    messenger.showSnackBar(SnackBar(
+                      content: Text(
+                          'Importati ${res.highlightsAdded} highlight da ${res.booksAdded} libri'),
+                    ));
+                  } catch (e) {
+                    messenger.showSnackBar(
+                        SnackBar(content: Text('Errore durante l\'import: $e')));
+                  }
+                },
               ),
               _SettingsTile(
                 icon: Icons.download_outlined,

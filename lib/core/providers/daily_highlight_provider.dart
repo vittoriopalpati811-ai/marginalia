@@ -24,6 +24,20 @@ import '../providers/weather_provider.dart';
 import '../providers/health_provider.dart';
 import '../providers/calendar_provider.dart';
 
+// ─── 3-hour stability cache ─────────────────────────────────────────────────
+//
+// The chosen phrase must stay STABLE for a 3-hour window regardless of
+// pull-to-refresh, scroll, or re-watch — the user should NOT get a new phrase
+// every time they swipe to refresh. This module-level cache lives OUTSIDE the
+// provider's state, so it survives `ref.invalidate(dailyHighlightProvider)`:
+// once a phrase is chosen for a 3h bucket it's reused until the bucket rolls
+// over (or the 3h self-invalidate timer fires).
+String? _cachedBucketKey;
+int? _cachedHighlightId;
+
+String _bucketKey(DateTime now) =>
+    '${now.year}-${now.month}-${now.day}-${now.hour ~/ 3}';
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 //
 // Regular (non-autoDispose) FutureProvider so it is never torn down by
@@ -54,6 +68,28 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   if (all.isEmpty) return null;
   if (all.length < 3) return all.first;
 
+  // ── 3-hour stability ───────────────────────────────────────────────────────
+  final now       = DateTime.now();
+  final bucketKey = _bucketKey(now);
+
+  // Already chose for this 3h bucket? Reuse it (survives pull-to-refresh / scroll
+  // / re-watch) as long as that highlight still exists in the library.
+  if (_cachedBucketKey == bucketKey && _cachedHighlightId != null) {
+    for (final h in all) {
+      if (h.id == _cachedHighlightId) {
+        debugPrint('[DailyHL] reusing pick for bucket $bucketKey');
+        return h;
+      }
+    }
+  }
+
+  // Records the chosen highlight for this bucket so subsequent runs are stable.
+  Highlight remember(Highlight h) {
+    _cachedBucketKey = bucketKey;
+    _cachedHighlightId = h.id;
+    return h;
+  }
+
   // ── 2. Build a diverse sample (max 40 highlights sent to Groq) ────────────
   //
   // Prefer favorites (stronger personal meaning) but include a healthy mix so
@@ -73,7 +109,6 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
 
   // ── 3. Collect context ─────────────────────────────────────────────────────
 
-  final now        = DateTime.now();
   final weather    = ref.read(weatherProvider).asData?.value;
   final healthSnap = ref.read(healthSnapshotProvider).asData?.value;
   // Reading this also kicks off the fetch so today's events are cached for the
@@ -89,10 +124,17 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   if (healthSnap != null && healthSnap.isAvailable) {
     final phase = healthSnap.cyclePhase?.name;
     final steps = healthSnap.stepsToday;
+    final today = DateTime(now.year, now.month, now.day);
+    final workedOutToday = healthSnap.workoutsThisWeek.any((w) =>
+        w.date.year == today.year &&
+        w.date.month == today.month &&
+        w.date.day == today.day);
     if (phase == 'menstruation' || phase == 'luteal') {
       tone = 'gentle';
     } else if (phase == 'follicular' || phase == 'ovulation') {
       tone = 'uplifting';
+    } else if (workedOutToday) {
+      tone = 'uplifting'; // a workout today → an energetic, propositive tone
     } else if (steps != null && steps >= 8000) {
       tone = 'uplifting';
     } else if (steps != null && steps < 2000) {
@@ -147,7 +189,7 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
           selectedIndex >= 0 &&
           selectedIndex < limited.length) {
         debugPrint('[DailyHL] Groq selected index $selectedIndex');
-        return limited[selectedIndex];
+        return remember(limited[selectedIndex]);
       }
     }
   } catch (e) {
@@ -160,6 +202,6 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   // that window even without network. Uses the same 3-hour bucket as the timer.
 
   debugPrint('[DailyHL] using hour-seeded fallback');
-  final bucket = now.year * 100000 + now.month * 1000 + now.day * 10 + (now.hour ~/ 3);
-  return all[bucket % all.length];
+  final seed = now.year * 100000 + now.month * 1000 + now.day * 10 + (now.hour ~/ 3);
+  return remember(all[seed % all.length]);
 });
