@@ -142,6 +142,21 @@ workflows:
           echo "Entitlements wiring:"
           grep -c CODE_SIGN_ENTITLEMENTS ios/Runner.xcodeproj/project.pbxproj || echo "  (none)"
 
+      - name: Inject widget extension target
+        # `flutter create` regenerates Runner.xcodeproj WITHOUT the WidgetKit
+        # extension (the .xcodeproj is generated in CI, so the target can't be
+        # committed). Re-create the "MarginaliaWidgetsExtension" app-extension
+        # target, attach ios/MarginaliaWidgets/MarginaliaWidgets.swift, its
+        # Info.plist + App-Group entitlements, and add the host app's "Embed App
+        # Extensions" phase — all via the xcodeproj Ruby gem (ships with the
+        # CocoaPods install on the Mac runner). Runs AFTER bundle-id
+        # normalization and BEFORE pub get / pod install.
+        script: |
+          gem install xcodeproj --no-document 2>/dev/null || sudo gem install xcodeproj --no-document 2>/dev/null || true
+          ruby ios/scripts/add_widgets_extension.rb
+          echo "Extension target references in project.pbxproj:"
+          grep -c "MarginaliaWidgetsExtension" ios/Runner.xcodeproj/project.pbxproj || echo "  (extension NOT found — injection failed!)"
+
       - name: Set up Flutter
         script: |
           flutter --version
@@ -172,6 +187,29 @@ workflows:
         script: |
           cd ios && pod install
 
+      - name: Validate widget extension compiles (simulator, no signing)
+        # DE-RISK the native injection BEFORE the (signing-dependent) archive:
+        # build the app for the simulator with signing disabled so the embedded
+        # MarginaliaWidgetsExtension is COMPILED. This proves the Ruby injection
+        # produced a valid target and the SwiftUI widget code compiles, even if
+        # the later Build IPA step fails on a missing App-Group entitlement
+        # (Apple-portal one-time setup). Non-fatal: never blocks the pipeline.
+        ignore_failure: true
+        script: |
+          set +e
+          ruby -e "require 'xcodeproj'; puts 'Targets: ' + Xcodeproj::Project.open('ios/Runner.xcodeproj').targets.map(&:name).join(', ')"
+          echo "Building Runner (incl. embedded widget) for simulator, no codesign…"
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -sdk iphonesimulator -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -n 60
+          echo "xcodebuild exit: ${PIPESTATUS[0]}"
+          if ls -d ~/Library/Developer/Xcode/DerivedData/*/Build/Products/*-iphonesimulator/Runner.app/PlugIns/*.appex >/dev/null 2>&1; then
+            echo "### WIDGET COMPILE PASS: .appex embedded in Runner.app — injection + Swift compile OK ###"
+          else
+            echo "### WIDGET COMPILE: .appex not found in build products — inspect the xcodebuild tail above ###"
+          fi
+          exit 0
+
       - name: Initialize keychain
         # Create the dedicated code-signing keychain BEFORE any certificate
         # is imported into it (canonical Codemagic order).
@@ -189,8 +227,23 @@ workflows:
         # distribution certificate is built on — required by `--create`, else
         # "Cannot save Signing Certificates without certificate private key".
         script: |
+          # Main app profile.
           app-store-connect fetch-signing-files \
             "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          # Widget-extension profile (separate App ID). --create registers the
+          # bundle id + mints a profile if missing. NOTE: the profile only
+          # carries the com.apple.security.application-groups entitlement once
+          # the "App Groups" capability is enabled on BOTH App IDs
+          # (io.marginalia.app and io.marginalia.app.MarginaliaWidgets) and the
+          # group "group.marginalia.widget" is registered + assigned in the
+          # Apple Developer portal. If that one-time setup is missing, the
+          # Build IPA step fails with a clear "missing application-groups
+          # entitlement" message (same pattern as Push/HealthKit capabilities).
+          app-store-connect fetch-signing-files \
+            "io.marginalia.app.MarginaliaWidgets" \
             --type IOS_APP_STORE \
             --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
             --create
@@ -233,6 +286,14 @@ workflows:
           echo "Latest App Store Connect build number: '${LATEST:-none}' -> setting CFBundleVersion to $NEXT"
           perl -pi -e "s/^FLUTTER_BUILD_NUMBER=.*/FLUTTER_BUILD_NUMBER=$NEXT/" ios/Flutter/Generated.xcconfig
           grep FLUTTER_BUILD ios/Flutter/Generated.xcconfig
+          # The widget extension's CFBundleVersion / CFBundleShortVersionString
+          # MUST equal the host app's, or App Store Connect rejects the upload.
+          # Replace the committed placeholders with the same values the app uses.
+          BUILD_NAME=$(grep '^FLUTTER_BUILD_NAME=' ios/Flutter/Generated.xcconfig | cut -d= -f2)
+          BUILD_NAME=${BUILD_NAME:-1.0.0}
+          perl -pi -e "s/__BUILD_NUMBER__/$NEXT/g; s/__BUILD_NAME__/$BUILD_NAME/g" ios/MarginaliaWidgets/Info.plist
+          echo "Widget extension version → $BUILD_NAME ($NEXT):"
+          grep -A1 -E "CFBundle(Version|ShortVersionString)" ios/MarginaliaWidgets/Info.plist
 
       - name: Build IPA
         # `xcode-project build-ipa` is Codemagic CLI's wrapper around
