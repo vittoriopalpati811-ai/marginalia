@@ -80,6 +80,26 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   // next 3-hour refresh even if they aren't ready on the very first run.
   final calendar   = ref.read(calendarSnapshotProvider).asData?.value;
 
+  // Privacy by design: distil health signals (steps + menstrual-cycle phase)
+  // into an abstract, NON-health "tone" hint ON-DEVICE. Only this coarse mood
+  // word is sent to the picker — raw health data never leaves the device, so
+  // the "your health data stays on your phone" promise holds. The cycle still
+  // shapes the chosen highlight, just privately.
+  String? tone;
+  if (healthSnap != null && healthSnap.isAvailable) {
+    final phase = healthSnap.cyclePhase?.name;
+    final steps = healthSnap.stepsToday;
+    if (phase == 'menstruation' || phase == 'luteal') {
+      tone = 'gentle';
+    } else if (phase == 'follicular' || phase == 'ovulation') {
+      tone = 'uplifting';
+    } else if (steps != null && steps >= 8000) {
+      tone = 'uplifting';
+    } else if (steps != null && steps < 2000) {
+      tone = 'reflective';
+    }
+  }
+
   final contextPayload = <String, dynamic>{
     'hour': now.hour,
     if (weather != null) ...{
@@ -87,14 +107,8 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
       'weatherCity': weather.cityName,
       'weatherTemp': weather.temperatureRounded,
     },
-    if (healthSnap != null && healthSnap.isAvailable) ...{
-      if (healthSnap.stepsToday != null)
-        'stepsToday': healthSnap.stepsToday,
-      if (healthSnap.workoutsThisWeek.isNotEmpty)
-        'lastWorkout': healthSnap.workoutsThisWeek.first.typeLabel,
-      if (healthSnap.hasCycle && healthSnap.cyclePhase != null)
-        'cyclePhase': healthSnap.cyclePhase!.name,
-    },
+    // Only an abstract, non-health mood word — see the tone derivation above.
+    if (tone != null) 'tone': tone,
     if (calendar != null && calendar.isNotEmpty)
       'calendarEvents': calendar.todayTitles,
   };

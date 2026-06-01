@@ -115,7 +115,7 @@
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Marginalia reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Marginalia reads your step count and cycle phase to personalize your daily reading highlight. A brief derived summary (such as the cycle phase) may be sent to our phrase-selection service to choose your highlight; your raw health data stays on your device.</string>
+	<string>Marginalia reads your step count and cycle phase on your device to gently tailor your daily reading highlight. Your health data stays on your device — only a coarse mood hint, with no health details, informs your phrase.</string>
 	<!--
 	  Export-compliance declaration. Marginalia uses only Apple's stock
 	  HTTPS/TLS (Supabase, the `http` package) — i.e. standard encryption

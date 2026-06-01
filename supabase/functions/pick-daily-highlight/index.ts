@@ -1,9 +1,11 @@
 // pick-daily-highlight — Supabase Edge Function
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Receives a sample of the user's highlights and current context (time, weather,
-// steps, cycle phase), then asks Llama 3.3 70B (via Groq) to pick the single
-// highlight most resonant for this specific moment.
+// Receives a sample of the user's highlights and NON-SENSITIVE context (time,
+// weather, and an abstract on-device "tone" hint), then asks Llama 3.3 70B (via
+// Groq) to pick the single highlight most resonant for this specific moment.
+// Raw health signals (steps, menstrual-cycle phase) are NEVER sent here — they
+// stay on-device and are distilled there into the coarse `tone` field.
 //
 // Returns the index of the selected highlight — Flutter maps it back to the
 // actual Highlight object and displays the original text unchanged.
@@ -16,9 +18,8 @@
 //       weather?:     string,    ← 'sunny' | 'rain' | 'cloudy' | 'snow' | 'clear'
 //       weatherCity?: string,
 //       weatherTemp?: number,
-//       stepsToday?:  number,
-//       lastWorkout?: string,
-//       cyclePhase?:  string,
+//       tone?:        string,    ← 'gentle'|'uplifting'|'reflective'
+//                                  (abstract mood derived ON-DEVICE; not health)
 //     }
 //   }
 //
@@ -126,19 +127,18 @@ function buildPrompt(
     const cond = weatherMap[ctx.weather as string] ?? String(ctx.weather);
     contextParts.push(`Meteo: ${cond} a ${ctx.weatherCity}, ${ctx.weatherTemp}°C`);
   }
-  if (ctx.stepsToday) {
-    contextParts.push(`Passi oggi: ${ctx.stepsToday}`);
-  }
-  if (ctx.lastWorkout) {
-    contextParts.push(`Attività fisica recente: ${ctx.lastWorkout}`);
-  }
-  if (ctx.cyclePhase) {
-    const phaseMap: Record<string, string> = {
-      menstruation: "mestruazioni", follicular: "fase follicolare",
-      ovulation: "ovulazione", luteal: "fase luteale",
+  // Privacy by design: the app no longer transmits raw health signals (steps,
+  // menstrual-cycle phase). Those stay on-device and are distilled THERE into an
+  // abstract, non-health "tone" hint, so this third-party LLM never receives any
+  // health data — only a generic mood preference.
+  if (ctx.tone) {
+    const toneMap: Record<string, string> = {
+      gentle: "gentile, consolatorio, intimo",
+      uplifting: "energico, propositivo, luminoso",
+      reflective: "riflessivo, calmo, introspettivo",
     };
-    const phase = phaseMap[ctx.cyclePhase as string] ?? String(ctx.cyclePhase);
-    contextParts.push(`Fase del ciclo: ${phase}`);
+    const tone = toneMap[ctx.tone as string];
+    if (tone) contextParts.push(`Tono preferito per oggi: ${tone}`);
   }
   if (Array.isArray(ctx.calendarEvents) &&
       (ctx.calendarEvents as string[]).length > 0) {
