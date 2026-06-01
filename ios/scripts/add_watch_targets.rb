@@ -62,6 +62,7 @@ watch_app.build_configurations.each do |c|
     'PRODUCT_BUNDLE_IDENTIFIER'  => WATCH_BUNDLE,
     'PRODUCT_NAME'               => '$(TARGET_NAME)',
     'SDKROOT'                    => 'watchos',
+    'SUPPORTED_PLATFORMS'        => 'watchos watchsimulator',
     'WATCHOS_DEPLOYMENT_TARGET'  => DEPLOY,
     'TARGETED_DEVICE_FAMILY'     => '4',
     'INFOPLIST_FILE'             => "#{WATCH_DIR}/Info.plist",
@@ -93,6 +94,7 @@ watch_ext.build_configurations.each do |c|
     'PRODUCT_BUNDLE_IDENTIFIER'  => EXT_BUNDLE,
     'PRODUCT_NAME'               => '$(TARGET_NAME)',
     'SDKROOT'                    => 'watchos',
+    'SUPPORTED_PLATFORMS'        => 'watchos watchsimulator',
     'WATCHOS_DEPLOYMENT_TARGET'  => DEPLOY,
     'TARGETED_DEVICE_FAMILY'     => '4',
     'INFOPLIST_FILE'             => "#{EXT_DIR}/Info.plist",
@@ -138,3 +140,8 @@ project.save
 puts "✓ Injected watch app + complication extension"
 puts "  targets now : #{project.targets.map(&:name).join(', ')}"
 puts "  runner phases: #{runner.build_phases.map(&:display_name).join(' > ')}"
+[watch_app, watch_ext].each do |t|
+  rel = t.build_configurations.find { |c| c.name == 'Release' } || t.build_configurations.first
+  bs = rel.build_settings
+  puts "  #{t.name}: SDKROOT=#{bs['SDKROOT']} SUPPORTED_PLATFORMS=#{bs['SUPPORTED_PLATFORMS']} WATCHOS_DEPLOYMENT_TARGET=#{bs['WATCHOS_DEPLOYMENT_TARGET']}"
+end
