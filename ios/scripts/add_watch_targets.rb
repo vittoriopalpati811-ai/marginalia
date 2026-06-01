@@ -57,6 +57,10 @@ watch_group.new_file('Info.plist')
 watch_group.new_file('MarginaliaWatch.entitlements')
 watch_app.add_file_references([watch_src])
 
+# Watch app icon (App Store upload requires it — ITMS-90391/90713).
+assets_ref = watch_group.new_file('Assets.xcassets')
+watch_app.add_resources([assets_ref])
+
 watch_app.build_configurations.each do |c|
   c.build_settings.merge!(
     'PRODUCT_BUNDLE_IDENTIFIER'  => WATCH_BUNDLE,
@@ -74,6 +78,7 @@ watch_app.build_configurations.each do |c|
     'MARKETING_VERSION'          => '1.0.0',
     'DEVELOPMENT_TEAM'           => TEAM_ID,
     'CODE_SIGN_STYLE'            => 'Manual',
+    'ASSETCATALOG_COMPILER_APPICON_NAME' => 'AppIcon',
     'SUPPORTS_MACCATALYST'       => 'NO',
     'LD_RUNPATH_SEARCH_PATHS'    => '$(inherited) @executable_path/Frameworks'
   )

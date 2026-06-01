@@ -36,6 +36,8 @@
 	<string>__BUILD_NAME__</string>
 	<key>CFBundleVersion</key>
 	<string>__BUILD_NUMBER__</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
