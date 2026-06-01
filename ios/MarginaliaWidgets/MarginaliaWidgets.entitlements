@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App-extension entitlements: shares the App Group container with the Runner app
+  so the widget can read the highlight/stats data written by home_widget.
+  Requires the "App Groups" capability to be enabled on the
+  io.marginalia.app.MarginaliaWidgets App ID (and the group registered).
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.marginalia.widget</string>
+	</array>
+</dict>
+</plist>

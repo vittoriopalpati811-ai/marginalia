@@ -24,4 +24,11 @@ class WidgetService {
     List<Map<String, dynamic>> highlights,
   ) async =>
       null;
+
+  static Future<void> updateStats({
+    required int streak,
+    required int monthMinutes,
+    required int yearBooks,
+    required int yearGoal,
+  }) async {}
 }

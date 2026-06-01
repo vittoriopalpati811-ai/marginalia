@@ -18,6 +18,7 @@ import 'core/providers/auth_provider.dart';
 import 'core/services/push_service.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'core/providers/onboarding_provider.dart';
+import 'core/providers/widget_sync_provider.dart';
 import 'features/social/home_tab.dart';
 import 'features/library/library_screen.dart';
 import 'features/library/book_detail_screen.dart';
@@ -356,6 +357,10 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         home: const OnboardingScreen(),
       );
     }
+
+    // Keep the iOS home-screen widgets (daily phrase + reading stats) in sync
+    // with live app data for the whole authenticated session. No-op off-iOS.
+    ref.watch(widgetSyncProvider);
 
     return MaterialApp.router(
       title: 'Marginalia',

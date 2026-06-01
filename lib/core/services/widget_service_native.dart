@@ -78,6 +78,26 @@ class WidgetService {
     return snapshot;
   }
 
+  /// Push reading statistics to the iOS stats widget ("MarginaliaStats").
+  /// Values are written as integers into the shared App Group container and the
+  /// widget timeline is reloaded so the home screen reflects them.
+  static Future<void> updateStats({
+    required int streak,
+    required int monthMinutes,
+    required int yearBooks,
+    required int yearGoal,
+  }) async {
+    try {
+      await HomeWidget.saveWidgetData<int>('w_streak', streak);
+      await HomeWidget.saveWidgetData<int>('w_month_min', monthMinutes);
+      await HomeWidget.saveWidgetData<int>('w_year_books', yearBooks);
+      await HomeWidget.saveWidgetData<int>('w_year_goal', yearGoal);
+      await HomeWidget.updateWidget(iOSName: 'MarginaliaStats');
+    } catch (e) {
+      debugPrint('[WidgetService] updateStats failed: $e');
+    }
+  }
+
   // ── Push to widget ────────────────────────────────────────────────────────
 
   static Future<void> _push(WidgetHighlight h, DateTime now) async {
