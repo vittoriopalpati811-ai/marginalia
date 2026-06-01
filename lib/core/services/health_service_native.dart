@@ -1,18 +1,19 @@
 // ─── Health Service — Native (iOS / Android) ──────────────────────────────────
 //
-// HealthKit step count for the "frase scelta per te" daily-highlight context.
-// Read-only, on-device — nothing is uploaded.
+// Reads HealthKit signals for the "frase scelta per te" daily-highlight context:
+//   • TODAY'S STEPS  via getTotalStepsInInterval (version-stable).
+//   • MENSTRUAL-CYCLE PHASE inferred from MENSTRUATION_FLOW samples.
 //
-// Scope note: we read TODAY'S STEPS via getTotalStepsInInterval — the canonical,
-// version-stable health API. Workout and menstrual-cycle types were attempted
-// but their value classes differ across `health` package versions
-// (MENSTRUATION_FLOW / MenstruationFlowHealthValue aren't in 10.2.0), so they're
-// intentionally left out to keep the build stable. Steps is the primary signal;
-// the daily phrase also uses weather, calendar, and time of day.
+// Read-only, on-device — nothing is uploaded. The cycle phase is derived locally
+// and only its coarse label (menstruation / follicular / ovulation / luteal) is
+// passed to the edge function; raw health samples never leave the device.
 //
-// Requires: health: ^10.2.0, the HealthKit entitlement (Runner.entitlements,
-// wired in codemagic.yaml), the NSHealth*UsageDescription strings in Info.plist,
-// and the HealthKit capability on the App ID.
+// Requires: health: >=11.1.1 <12 (11.x adds HealthDataType.MENSTRUATION_FLOW and
+// keeps the Health() singleton + getTotalStepsInInterval; 12.x drops the
+// singleton). Plus the HealthKit entitlement (Runner.entitlements, wired in
+// codemagic.yaml), the NSHealth*UsageDescription strings in Info.plist, and the
+// HealthKit capability on the App ID. Menstrual flow is a standard HKCategoryType
+// — no extra clinical-records entitlement is needed.
 
 import 'health_service_web.dart' show HealthSnapshot, WorkoutActivity, CyclePhase;
 
@@ -25,7 +26,14 @@ import 'package:health/health.dart';
 class HealthService {
   const HealthService();
 
-  static const _types = [HealthDataType.STEPS];
+  static const _types = [
+    HealthDataType.STEPS,
+    HealthDataType.MENSTRUATION_FLOW,
+  ];
+  static const _permissions = [
+    HealthDataAccess.READ,
+    HealthDataAccess.READ,
+  ];
 
   // `Health()` is a factory returning a process-wide singleton, so creating it
   // per call is free and keeps this class const-constructible.
@@ -34,7 +42,7 @@ class HealthService {
     try {
       final granted = await Health().requestAuthorization(
         _types,
-        permissions: const [HealthDataAccess.READ],
+        permissions: _permissions,
       );
       debugPrint('[Health] permissions granted: $granted');
       return granted;
@@ -47,26 +55,88 @@ class HealthService {
   Future<HealthSnapshot> fetchSnapshot() async {
     try {
       // Prompt for Health read access on first run (iOS shows the sheet once).
-      await Health().requestAuthorization(
-        _types,
-        permissions: const [HealthDataAccess.READ],
-      );
+      await Health().requestAuthorization(_types, permissions: _permissions);
 
       final now = DateTime.now();
       final midnight = DateTime(now.year, now.month, now.day);
-      final steps = await Health().getTotalStepsInInterval(midnight, now);
 
-      debugPrint('[Health] stepsToday=$steps');
+      // Steps and cycle are independent: isolate each so one failing (e.g. the
+      // user granted steps but not cycle) never wipes the other signal.
+      int? steps;
+      try {
+        steps = await Health().getTotalStepsInInterval(midnight, now);
+      } catch (e) {
+        debugPrint('[Health] steps error: $e');
+      }
+
+      CyclePhase? cyclePhase;
+      try {
+        cyclePhase = await _fetchCyclePhase(now);
+      } catch (e) {
+        debugPrint('[Health] cycle error: $e');
+      }
+
+      debugPrint('[Health] stepsToday=$steps cyclePhase=${cyclePhase?.name}');
 
       return HealthSnapshot(
         stepsToday: steps,
         workoutsThisWeek: const <WorkoutActivity>[],
-        cyclePhase: null,
+        cyclePhase: cyclePhase,
         isAvailable: true,
       );
     } catch (e, st) {
       debugPrint('[Health] fetchSnapshot error: $e\n$st');
       return HealthSnapshot.empty;
     }
+  }
+
+  // ── Cycle-phase inference ───────────────────────────────────────────────────
+  //
+  // HealthKit exposes menstrual *flow* samples, not a ready phase. We read the
+  // last 120 days of MENSTRUATION_FLOW, find the most recent period's start day
+  // (first day of the latest run of flow days, tolerating a 1-day gap), and map
+  // the days elapsed onto the canonical four phases using a typical 28-day
+  // cycle. This is an approximation — good enough to gently colour the daily
+  // phrase, never presented as medical fact. Returns null when there's no data
+  // or it's too stale (>40 days) to be meaningful.
+
+  Future<CyclePhase?> _fetchCyclePhase(DateTime now) async {
+    final start = now.subtract(const Duration(days: 120));
+    final points = await Health().getHealthDataFromTypes(
+      types: const [HealthDataType.MENSTRUATION_FLOW],
+      startTime: start,
+      endTime: now,
+    );
+    if (points.isEmpty) return null;
+
+    // Collapse samples to the distinct calendar days that had any flow logged.
+    final days = <DateTime>{};
+    for (final p in points) {
+      final d = p.dateFrom;
+      days.add(DateTime(d.year, d.month, d.day));
+    }
+    final sorted = days.toList()..sort();
+    if (sorted.isEmpty) return null;
+
+    // Walk back from the most recent flow day through consecutive days (≤2-day
+    // gap tolerated for sparse logging) to find this period's start.
+    var periodStart = sorted.last;
+    for (var i = sorted.length - 1; i > 0; i--) {
+      if (sorted[i].difference(sorted[i - 1]).inDays <= 2) {
+        periodStart = sorted[i - 1];
+      } else {
+        break;
+      }
+    }
+
+    final today = DateTime(now.year, now.month, now.day);
+    final daysSince = today.difference(periodStart).inDays;
+    final flowToday = days.contains(today);
+
+    if (flowToday || daysSince <= 5) return CyclePhase.menstruation;
+    if (daysSince <= 12) return CyclePhase.follicular;
+    if (daysSince <= 16) return CyclePhase.ovulation;
+    if (daysSince <= 40) return CyclePhase.luteal;
+    return null; // last period too long ago — don't guess
   }
 }
