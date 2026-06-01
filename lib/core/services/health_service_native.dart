@@ -13,7 +13,7 @@
 //     ios/Runner/Info.plist
 //   • HealthKit capability enabled on the App ID
 
-import 'health_service_web.dart' show HealthSnapshot;
+import 'health_service_web.dart' show HealthSnapshot, WorkoutActivity, CyclePhase;
 
 export 'health_service_web.dart'
     show WorkoutActivity, CyclePhase, HealthSnapshot;
