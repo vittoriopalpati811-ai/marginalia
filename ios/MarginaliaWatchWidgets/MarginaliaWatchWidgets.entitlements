@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Widget-extension entitlements: shares the watch-side App Group container with
+  the MarginaliaWatch app so the complications can read the phrase/reading data
+  the app persists from WatchConnectivity.
+
+  Requires the "App Groups" capability to be enabled on the
+  io.marginalia.app.watchkitapp.MarginaliaWatchWidgets App ID (and the group
+  registered in the portal).
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.io.marginalia.watch</string>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist for the MarginaliaWatch single-target watchOS app (watchOS 10+).
+
+  This is the MODERN single-target SwiftUI watch app, NOT the legacy 2-target
+  (WatchKit App + WatchKit Extension) style:
+    * WKApplication = true marks it as the modern single-bundle watch app.
+    * There is intentionally NO WKExtensionDelegateClassName and NO
+      WKWatchKitApp key (those belong to the legacy split-bundle layout).
+    * WKCompanionAppBundleIdentifier points at the iOS host app so the system
+      pairs the two and offers the watch app for install from the iPhone.
+
+  __BUILD_NAME__ / __BUILD_NUMBER__ are placeholders rewritten in CI so the
+  watch app's version ALWAYS matches the iOS host and the widget extension —
+  App Store Connect rejects mismatched versions across an app and its embedded
+  bundles.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Marginalia</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>__BUILD_NAME__</string>
+	<key>CFBundleVersion</key>
+	<string>__BUILD_NUMBER__</string>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>io.marginalia.app</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>
