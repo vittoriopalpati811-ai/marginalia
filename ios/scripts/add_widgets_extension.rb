@@ -88,8 +88,20 @@ embed.dst_path = ''
 build_file = embed.add_file_reference(ext.product_reference, true)
 build_file.settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
 
-# The target dependency added above guarantees the extension builds before the
-# host app's embed phase runs; no manual phase reordering needed.
+# ── Avoid "Cycle inside Runner" ──────────────────────────────────────────────
+# A copy-files phase left at the END (after Flutter's xcode_backend run-script
+# phases "Run Script" / "Thin Binary") makes Xcode's build system report
+# `error: Cycle inside Runner` and the archive fails (exit 65). Fix: run
+# "Embed App Extensions" EARLY — right after the Frameworks (link) phase and
+# before any shell-script phase. Rebuild the phase order using only delete + <<
+# (both reliably supported by xcodeproj's ObjectList).
+order = runner.build_phases.to_a
+order.delete(embed)
+fw_index = order.find_index { |p| p.isa == 'PBXFrameworksBuildPhase' }
+order.insert(fw_index ? fw_index + 1 : order.length, embed)
+order.each { |p| runner.build_phases.delete(p) }
+order.each { |p| runner.build_phases << p }
+puts "  build phase order: #{runner.build_phases.map(&:display_name).join(' > ')}"
 
 project.save
 
