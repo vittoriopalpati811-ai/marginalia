@@ -19,12 +19,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/highlight.dart';
 import '../services/widget_service.dart';
+import '../services/watch_service.dart';
 import 'highlights_provider.dart';
 import '../../features/stats/stats_screen.dart'
     show readingGoalProvider, readingSessionsProvider;
 
 /// Side-effecting provider: watch it once (e.g. from the app root) to keep the
 /// iOS widgets continuously in sync with the user's data.
+// Latest values mirrored to the Apple Watch. updateApplicationContext keeps only
+// the most recent snapshot, so phrase and stats arrive on separate async events
+// but we always send the full known set.
+String _watchText = '', _watchBook = '', _watchAuthor = '';
+int _watchStreak = 0, _watchMonthMin = 0;
+void _pushWatch() {
+  WatchService.send(
+    text: _watchText,
+    book: _watchBook,
+    author: _watchAuthor,
+    monthMinutes: _watchMonthMin,
+    streak: _watchStreak,
+  );
+}
+
 final widgetSyncProvider = Provider<void>((ref) {
   // ── Daily phrase ──────────────────────────────────────────────────────────
   ref.listen<AsyncValue<List<Highlight>>>(
@@ -39,7 +55,14 @@ final widgetSyncProvider = Provider<void>((ref) {
                   'author': h.bookAuthor ?? '',
                 })
             .toList();
-        WidgetService.update(maps);
+        WidgetService.update(maps).then((wh) {
+          if (wh != null) {
+            _watchText = wh.text;
+            _watchBook = wh.bookTitle;
+            _watchAuthor = wh.author;
+            _pushWatch();
+          }
+        });
       });
     },
     fireImmediately: true,
@@ -50,12 +73,17 @@ final widgetSyncProvider = Provider<void>((ref) {
     final sessions = ref.read(readingSessionsProvider).value;
     if (sessions == null) return;
     final goal = ref.read(readingGoalProvider).value;
+    final streak = _streakDays(sessions);
+    final monthMinutes = _totalMinutesThisMonth(sessions);
     WidgetService.updateStats(
-      streak: _streakDays(sessions),
-      monthMinutes: _totalMinutesThisMonth(sessions),
+      streak: streak,
+      monthMinutes: monthMinutes,
       yearBooks: _countDistinctBooks(sessions),
       yearGoal: goal ?? 0,
     );
+    _watchStreak = streak;
+    _watchMonthMin = monthMinutes;
+    _pushWatch();
   }
 
   ref.listen(readingSessionsProvider, (_, __) => pushStats(), fireImmediately: true);
