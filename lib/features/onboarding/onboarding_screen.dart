@@ -12,6 +12,8 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
+import '../../core/providers/health_provider.dart';
+import '../../core/providers/calendar_provider.dart';
 import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/motion/airbnb_motion.dart';
@@ -22,11 +24,11 @@ import 'steps/currently_reading_step.dart';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const _kTotalSteps = 9;
+const _kTotalSteps = 10;
 // Step indices (keep in sync with the PageView children below):
 // 0: Welcome   · 1: Auth   · 2: Username  · 3: Name   · 4: Avatar
-// 5: Cover     · 6: Goal   · 7: Currently · 8: Complete
-const _kStepComplete = 8;
+// 5: Cover     · 6: Goal   · 7: Currently · 8: Permissions · 9: Complete
+const _kStepComplete = 9;
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -172,6 +174,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _next() => _goTo(_step + 1);
+
+  // Triggers the iOS Health + Calendar permission prompts from the permissions
+  // onboarding step, so the system sheets appear WITH context (the step explains
+  // why) instead of silently on first library load.
+  Future<void> _requestContextPermissions() async {
+    try {
+      await requestHealthPermissions();
+    } catch (_) {/* non-fatal */}
+    try {
+      // Reading the provider runs CalendarService.fetchTodayEvents(), which
+      // triggers the EventKit permission prompt.
+      await ref.read(calendarSnapshotProvider.future);
+    } catch (_) {/* non-fatal */}
+  }
 
   // ── Step 1: Auth ────────────────────────────────────────────────────────────
 
@@ -498,6 +514,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     authorCtrl: _crAuthorCtrl,
                     onContinue: _next,
                     onSkip:     _next,
+                  ),
+                  _PermissionsStep(
+                    onAllow: () async {
+                      await _requestContextPermissions();
+                      _next();
+                    },
+                    onSkip: _next,
                   ),
                   _CompleteStep(
                     username: _usernameCtrl.text.trim(),
@@ -1769,6 +1792,133 @@ class _CoverStep extends StatelessWidget {
 //   steps/currently_reading_step.dart
 
 // ─── Step 8: Complete ─────────────────────────────────────────────────────────
+
+// ─── Step 8: Health + Calendar permissions ───────────────────────────────────
+//
+// Asks for the daily-highlight personalisation permissions WITH an explanation,
+// so the iOS Health/Calendar sheets don't appear out of context. Read-only,
+// on-device.
+
+class _PermissionsStep extends StatelessWidget {
+  const _PermissionsStep({required this.onAllow, required this.onSkip});
+
+  final Future<void> Function() onAllow;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    final title = isIt
+        ? 'Una frase cucita\nsul tuo momento'
+        : 'A highlight tuned\nto your moment';
+    final body = isIt
+        ? 'Col tuo permesso, Marginalia usa i passi di oggi (Salute) e gli impegni in calendario per scegliere la citazione giusta per l’ora, il meteo e il ritmo della tua giornata.'
+        : 'With your permission, Marginalia uses today’s steps (Health) and your calendar to pick the right quote for the time, weather and rhythm of your day.';
+    final note = isIt
+        ? 'Tutto resta sul tuo iPhone. Niente viene caricato.'
+        : 'Everything stays on your iPhone. Nothing is uploaded.';
+    final allow = isIt ? 'Consenti accesso' : 'Allow access';
+    final later = isIt ? 'Più tardi' : 'Maybe later';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                _PermIcon(icon: Icons.favorite_rounded),
+                SizedBox(width: 14),
+                _PermIcon(icon: Icons.event_rounded),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.ebGaramond(
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+              height: 1.12,
+              color: MarginaliaColors.ink,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            body,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: 15,
+              height: 1.6,
+              color: MarginaliaColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: 12.5,
+              color: MarginaliaColors.inkFaint,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => onAllow(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: MarginaliaColors.primary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: Text(
+                  allow,
+                  style: GoogleFonts.manrope(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextButton(
+            onPressed: onSkip,
+            child: Text(
+              later,
+              style: GoogleFonts.manrope(
+                color: MarginaliaColors.inkMuted,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PermIcon extends StatelessWidget {
+  const _PermIcon({required this.icon});
+  final IconData icon;
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: MarginaliaColors.siennaFaint,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Icon(icon, size: 30, color: MarginaliaColors.sienna),
+      );
+}
 
 class _CompleteStep extends StatefulWidget {
   const _CompleteStep({
