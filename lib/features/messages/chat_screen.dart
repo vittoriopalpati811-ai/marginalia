@@ -155,17 +155,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   // ── Scroll helpers ───────────────────────────────────────────────────────────
 
   void _scrollToBottom({bool animated = true}) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
+    void run() {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
       if (animated) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          target,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       } else {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        _scrollController.jumpTo(target);
       }
+    }
+
+    // Jump after this frame, then re-pin (non-animated) as late-loading
+    // content — images, wrapped text — grows the list. Without the follow-up
+    // the first jump lands mid-chat because maxScrollExtent was still growing,
+    // so opening a chat didn't reliably show the most recent message.
+    WidgetsBinding.instance.addPostFrameCallback((_) => run());
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
 
