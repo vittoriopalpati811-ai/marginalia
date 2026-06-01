@@ -28,6 +28,8 @@
 // Required secret: GROQ_API_KEY  (same key used by recommend-books)
 // Deploy: supabase functions deploy pick-daily-highlight
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -49,6 +51,14 @@ Deno.serve(async (req) => {
     return json({ error: "POST only" }, 405);
   }
 
+  // ── Auth: require a valid Supabase user JWT ────────────────────────────────
+  // Previously unauthenticated: anyone could pump unbounded user text into the
+  // Groq LLM prompt. Require a verified caller before doing any model work.
+  const user = await requireUser(req);
+  if (!user) {
+    return json({ error: "unauthorized" }, 401);
+  }
+
   let body: {
     highlights?: HighlightInput[];
     context?: Record<string, unknown>;
@@ -59,7 +69,16 @@ Deno.serve(async (req) => {
     return json({ selectedIndex: 0 });
   }
 
-  const highlights: HighlightInput[] = (body.highlights ?? []).slice(0, 40);
+  // Defensive clamping: cap the array AND each text field to <=400 chars before
+  // building the prompt. Bounds prompt size, token cost, and injection length.
+  const MAX_FIELD = 400;
+  const clampField = (v: unknown): string => String(v ?? "").slice(0, MAX_FIELD);
+  const highlights: HighlightInput[] = (Array.isArray(body.highlights) ? body.highlights : [])
+    .slice(0, 40)
+    .map((h) => ({
+      content: clampField(h?.content),
+      bookTitle: clampField(h?.bookTitle),
+    }));
   const ctx: Record<string, unknown> = body.context ?? {};
 
   if (highlights.length === 0) return json({ selectedIndex: 0 });
@@ -183,6 +202,28 @@ async function callGroq(
   const idx = parseInt(match[0], 10);
   if (isNaN(idx) || idx < 0 || idx >= maxIndex) return 0;
   return idx;
+}
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+//
+// Verifies the incoming `Authorization: Bearer <jwt>` against Supabase Auth
+// using the anon key + the caller's JWT. Returns the authenticated user, or
+// null if the token is missing/invalid (caller should answer 401).
+
+async function requireUser(req: Request): Promise<{ id: string } | null> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) return null;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+  );
+
+  const { data, error } = await supabase.auth.getUser(jwt);
+  if (error || !data?.user) return null;
+  return { id: data.user.id };
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────

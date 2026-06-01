@@ -1,0 +1,43 @@
+-- ─── Security fix: notifications INSERT policy ─────────────────────────────────
+--
+-- [CRITICAL] Migration 023_notifications.sql created:
+--
+--     create policy "notifications_service_insert" on public.notifications
+--       for insert with check (true);   -- Edge Functions use service-role key
+--
+-- The intent (per the comment) was "service-role inserts only". But the policy
+-- was NOT restricted to the service_role — `with check (true)` grants INSERT to
+-- EVERY role the policy applies to, which includes `anon` and `authenticated`.
+-- Result: any authenticated (or even anonymous) user could insert notifications
+-- with an ARBITRARY user_id / type / title / body — a phishing & spam vector
+-- (forge "system" alerts into any victim's feed).
+--
+-- DECISION: DROP the policy (do NOT replace it with a constrained one).
+--
+-- Justification — notifications are NEVER created by the client directly:
+--   • The Flutter client only ever SELECTs and UPDATEs notifications
+--     (lib/core/services/supabase_service.dart: fetchNotifications,
+--      unread count, markNotificationRead, markAllNotificationsRead). There is
+--      no from('notifications').insert(...) anywhere in lib/.
+--   • All legitimate creation goes through either:
+--       (a) public.create_notification(...) — a SECURITY DEFINER function that
+--           runs as the table owner and is already locked down in migration
+--           028 (EXECUTE revoked from anon/authenticated; blocks direct client
+--           calls), or
+--       (b) the send-push-notification / server-side edge functions using the
+--           service-role key.
+--   • Both (a) and (b) BYPASS row-level security, so they do not need — and are
+--     unaffected by — the absence of an INSERT policy.
+--
+-- With RLS enabled and no INSERT policy, anon/authenticated INSERTs are denied
+-- by default (fail-closed), while service-role and the definer RPC continue to
+-- work. This closes the hole without breaking any real code path.
+--
+-- If, in the future, the client ever needs to create a notification directly,
+-- add a constrained policy gated on a verified actor column (e.g.
+-- `with check (auth.uid() = actor_id)`) rather than re-opening `with check (true)`.
+
+drop policy if exists "notifications_service_insert" on public.notifications;
+
+-- Reload PostgREST schema cache so the change takes effect immediately.
+notify pgrst, 'reload schema';

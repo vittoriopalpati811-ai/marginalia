@@ -28,12 +28,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const url    = new URL(req.url);
-    const userId = url.searchParams.get("user_id");
-
-    if (!userId) {
-      return json({ error: "user_id obbligatorio" }, 400);
+    // ── Auth: require a valid Supabase user JWT ──────────────────────────────
+    // Previously this endpoint read `user_id` from the query string and
+    // returned THAT user's highlights via the service-role key with no auth —
+    // a classic IDOR (anyone could read anyone's highlights). We now verify
+    // the caller's JWT and serve ONLY the authenticated user's data.
+    const user = await requireUser(req);
+    if (!user) {
+      return json({ error: "unauthorized" }, 401);
     }
+
+    const url = new URL(req.url);
+
+    // Ignore any client-supplied user_id; if one is sent and it does NOT match
+    // the authenticated user, reject it explicitly (no cross-user reads).
+    const requestedUserId = url.searchParams.get("user_id");
+    if (requestedUserId && requestedUserId !== user.id) {
+      return json({ error: "forbidden" }, 403);
+    }
+    const userId = user.id;
 
     // Usa l'ora locale passata dal client (Scriptable conosce l'ora del telefono)
     const now     = new Date();
@@ -41,7 +54,8 @@ Deno.serve(async (req) => {
     const weekday = clampInt(url.searchParams.get("weekday"), now.getDay(),     0, 6);
     const weather = sanitizeWeather(url.searchParams.get("weather"));
 
-    // Service role key: accede a tutti i dati, bypass RLS
+    // Service role key: accede a tutti i dati, bypass RLS. Safe now that we
+    // pin the query to the verified user.id above.
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -139,6 +153,28 @@ function greeting(hour: number): string {
   if (hour >= 12 && hour < 17) return "Buon pomeriggio";
   if (hour >= 17 && hour < 21) return "Buona sera";
   return "Buona notte";
+}
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+//
+// Verifies the incoming `Authorization: Bearer <jwt>` against Supabase Auth
+// using the anon key + the caller's JWT. Returns the authenticated user, or
+// null if the token is missing/invalid (caller should answer 401).
+
+async function requireUser(req: Request): Promise<{ id: string } | null> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) return null;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+  );
+
+  const { data, error } = await supabase.auth.getUser(jwt);
+  if (error || !data?.user) return null;
+  return { id: data.user.id };
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────

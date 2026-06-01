@@ -111,13 +111,11 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Marginalia needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Marginalia reads today's calendar events on-device to tailor your daily reading highlight to your day. This data never leaves your phone.</string>
+	<string>Marginalia reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Marginalia reads today's calendar events on-device to tailor your daily reading highlight to your day. This data never leaves your phone.</string>
+	<string>Marginalia reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Marginalia reads your step count, workouts, and cycle phase on-device to personalize your daily reading highlight. This data is never uploaded.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Marginalia does not write any data to Apple Health.</string>
+	<string>Marginalia reads your step count and cycle phase to personalize your daily reading highlight. A brief derived summary (such as the cycle phase) may be sent to our phrase-selection service to choose your highlight; your raw health data stays on your device.</string>
 	<!--
 	  Export-compliance declaration. Marginalia uses only Apple's stock
 	  HTTPS/TLS (Supabase, the `http` package) — i.e. standard encryption

@@ -6,17 +6,79 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "content-type": "application/json" },
+  });
+}
+
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  SERVICE_ROLE_KEY
 );
 
+// ─── Auth ───────────────────────────────────────────────────────────────────
+//
+// This function processes an import row for that row's user_id using the
+// service-role key. It can be invoked two legitimate ways:
+//   1. A Storage webhook / server-side caller using the service-role key.
+//   2. (Future) the owner directly, with their user JWT.
+// Previously it had NO auth at all — anyone could POST an arbitrary import_id
+// and trigger processing of another user's import. We now require ONE of:
+//   • the service-role key in the Authorization header (webhook path), or
+//   • a valid user JWT whose id matches the import row's user_id.
+//
+// Returns:
+//   { kind: "service" }                — trusted service-role caller
+//   { kind: "user", userId }           — verified end user
+//   null                               — missing/invalid credentials (401)
+
+async function authenticate(
+  req: Request,
+): Promise<{ kind: "service" } | { kind: "user"; userId: string } | null> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+
+  // Service-role key → trusted server-side caller (storage webhook).
+  if (token === SERVICE_ROLE_KEY) return { kind: "service" };
+
+  // Otherwise treat it as a user JWT and verify it via the anon client.
+  const authClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  );
+  const { data, error } = await authClient.auth.getUser(token);
+  if (error || !data?.user) return null;
+  return { kind: "user", userId: data.user.id };
+}
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
+    // ── Auth: trusted service-role caller OR verified user ───────────────────
+    const auth = await authenticate(req);
+    if (!auth) {
+      return jsonResponse({ error: "unauthorized" }, 401);
+    }
+
     const { import_id } = await req.json();
 
     if (!import_id) {
-      return new Response(JSON.stringify({ error: "import_id required" }), { status: 400 });
+      return jsonResponse({ error: "import_id required" }, 400);
     }
 
     // Fetch import record
@@ -27,7 +89,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (fetchError || !importRecord) {
-      return new Response(JSON.stringify({ error: "import not found" }), { status: 404 });
+      return jsonResponse({ error: "import not found" }, 404);
+    }
+
+    // A user JWT may only process their OWN import rows. Service-role bypasses
+    // this check (it is the trusted webhook path).
+    if (auth.kind === "user" && importRecord.user_id !== auth.userId) {
+      return jsonResponse({ error: "forbidden" }, 403);
     }
 
     // Mark as processing
@@ -43,7 +111,7 @@ Deno.serve(async (req) => {
 
     if (downloadError || !fileData) {
       await markError(import_id, "Failed to download file: " + downloadError?.message);
-      return new Response(JSON.stringify({ error: "download failed" }), { status: 500 });
+      return jsonResponse({ error: "download failed" }, 500);
     }
 
     const content = await fileData.text();
@@ -106,12 +174,9 @@ Deno.serve(async (req) => {
       })
       .eq("id", import_id);
 
-    return new Response(
-      JSON.stringify({ ok: true, booksAdded, highlightsAdded, duplicatesSkipped }),
-      { status: 200 }
-    );
+    return jsonResponse({ ok: true, booksAdded, highlightsAdded, duplicatesSkipped }, 200);
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+    return jsonResponse({ error: String(err) }, 500);
   }
 });
 

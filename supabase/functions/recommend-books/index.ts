@@ -60,6 +60,15 @@ Deno.serve(async (req) => {
     return json({ error: "POST only" }, 405);
   }
 
+  // ── Auth: require a valid Supabase user JWT ────────────────────────────────
+  // Previously unauthenticated: anyone could pump unbounded user text into the
+  // Groq LLM prompt (cost/abuse + prompt-injection surface). Require a verified
+  // caller before doing any model work.
+  const user = await requireUser(req);
+  if (!user) {
+    return json({ error: "unauthorized" }, 401);
+  }
+
   let body: {
     books?: InputBook[];
     existingTitles?: string[];
@@ -81,12 +90,27 @@ Deno.serve(async (req) => {
   // payload, plus plot summaries only for books with sparse highlights
   // (≤2). Total request stays ~3-3.5 K tokens, leaving 2.5-3 K TPM
   // headroom for two more invocations inside the same minute.
-  const books: InputBook[] = (body.books ?? []).slice(0, 40);
-  const existingTitles: string[] = (body.existingTitles ?? [])
-    .map((t) => t.toLowerCase().trim())
+  // Defensive clamping: cap array sizes AND every text field to <=400 chars
+  // before any of it reaches the prompt. The client already trims, but the
+  // server must not trust client input — this bounds prompt size, token cost,
+  // and prompt-injection payload length.
+  const MAX_FIELD = 400;
+  const clampField = (v: unknown): string => String(v ?? "").slice(0, MAX_FIELD);
+
+  const books: InputBook[] = (Array.isArray(body.books) ? body.books : [])
+    .slice(0, 40)
+    .map((b) => ({
+      title: clampField(b?.title),
+      author: clampField(b?.author),
+      highlights: (Array.isArray(b?.highlights) ? b.highlights : [])
+        .slice(0, 8)
+        .map(clampField),
+    }));
+  const existingTitles: string[] = (Array.isArray(body.existingTitles) ? body.existingTitles : [])
+    .map((t) => clampField(t).toLowerCase().trim())
     .slice(0, 50);
   const userContext: Record<string, unknown> = body.context ?? {};
-  const userName: string = (body.userName ?? "").trim();
+  const userName: string = clampField(body.userName).trim();
 
   if (books.length === 0) {
     return json({ recommendations: [], reason: "no_books" });
@@ -369,6 +393,28 @@ function extractJson(text: string): string {
     return text.slice(arrStart, arrEnd + 1);
   }
   return text.trim();
+}
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+//
+// Verifies the incoming `Authorization: Bearer <jwt>` against Supabase Auth
+// using the anon key + the caller's JWT. Returns the authenticated user, or
+// null if the token is missing/invalid (caller should answer 401).
+
+async function requireUser(req: Request): Promise<{ id: string } | null> {
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) return null;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+  );
+
+  const { data, error } = await supabase.auth.getUser(jwt);
+  if (error || !data?.user) return null;
+  return { id: data.user.id };
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────

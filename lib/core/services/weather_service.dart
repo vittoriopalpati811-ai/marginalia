@@ -99,22 +99,26 @@ class WeatherService {
   }
 
   // ── Step 1: IP geolocation ────────────────────────────────────────────────
-  // ip-api.com: free, 45 req/min, no key. Returns JSON with lat/lon/city.
+  // ipwho.is: free, no key, HTTPS. Returns JSON with latitude/longitude/city.
+  // MUST be HTTPS: the app ships with App Transport Security at its secure
+  // default (no NSAllowsArbitraryLoads), so a plain http:// endpoint is blocked
+  // by iOS at runtime — the previous http://ip-api.com call silently failed on
+  // device. HTTPS also stops an on-path attacker from spoofing the location.
 
   Future<(double lat, double lon, String city)?> _fetchGeoFromIp() async {
     try {
       final res = await http
-          .get(Uri.parse(
-              'http://ip-api.com/json?fields=lat,lon,city,status'))
+          .get(Uri.parse('https://ipwho.is/'))
           .timeout(const Duration(seconds: 6));
 
       if (res.statusCode != 200) return null;
       final j = jsonDecode(res.body) as Map<String, dynamic>;
-      if (j['status'] != 'success') return null;
+      if (j['success'] != true) return null;
 
-      final lat  = (j['lat']  as num).toDouble();
-      final lon  = (j['lon']  as num).toDouble();
-      final city = j['city']  as String? ?? '';
+      final lat  = (j['latitude']  as num?)?.toDouble();
+      final lon  = (j['longitude'] as num?)?.toDouble();
+      final city = j['city']       as String? ?? '';
+      if (lat == null || lon == null) return null;
       return (lat, lon, city);
     } catch (_) {
       return null;

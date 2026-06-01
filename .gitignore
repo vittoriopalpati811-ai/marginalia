@@ -46,6 +46,9 @@ scripts/*.pyc
 scripts/.env
 scripts/venv/
 scripts/.venv/
+# Codemagic helper scripts live in the repo root and embed a live API token —
+# NEVER commit them (a `git add -A` would otherwise stage the token).
+cm_*.py
 
 # ─── IDE / editor ────────────────────────────
 .vscode/
