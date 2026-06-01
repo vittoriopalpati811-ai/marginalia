@@ -62,10 +62,6 @@ dependencies:
   # EventKit needs no entitlement, only the Info.plist usage strings.
   device_calendar: ^4.3.3
 
-  # HealthKit — steps, workouts, menstrual-cycle phase feed the daily phrase.
-  # Needs the HealthKit entitlement + App ID capability + Info.plist strings.
-  health: ^10.2.0
-
   # Utility
   intl: ^0.19.0
   crypto: ^3.0.3
