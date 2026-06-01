@@ -156,6 +156,10 @@ workflows:
           ruby ios/scripts/add_widgets_extension.rb
           echo "Extension target references in project.pbxproj:"
           grep -c "MarginaliaWidgetsExtension" ios/Runner.xcodeproj/project.pbxproj || echo "  (extension NOT found — injection failed!)"
+          # Apple Watch app + complication extension (watchOS targets).
+          ruby ios/scripts/add_watch_targets.rb
+          echo "Watch target references:"
+          grep -c "MarginaliaWatch" ios/Runner.xcodeproj/project.pbxproj || echo "  (watch NOT found — injection failed!)"
 
       - name: Set up Flutter
         script: |
@@ -247,6 +251,19 @@ workflows:
             --type IOS_APP_STORE \
             --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
             --create
+          # watchOS app + complication extension profiles (App Groups capability
+          # must be enabled on these App IDs + the group registered in the portal,
+          # same one-time setup as the iOS widget).
+          app-store-connect fetch-signing-files \
+            "io.marginalia.app.watchkitapp" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          app-store-connect fetch-signing-files \
+            "io.marginalia.app.watchkitapp.MarginaliaWatchWidgets" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
 
       - name: Add certificate to keychain
         # Import the fetched/created signing certificate into the keychain.
@@ -294,6 +311,11 @@ workflows:
           perl -pi -e "s/__BUILD_NUMBER__/$NEXT/g; s/__BUILD_NAME__/$BUILD_NAME/g" ios/MarginaliaWidgets/Info.plist
           echo "Widget extension version → $BUILD_NAME ($NEXT):"
           grep -A1 -E "CFBundle(Version|ShortVersionString)" ios/MarginaliaWidgets/Info.plist
+          # Watch app + complication must share the host app's version too.
+          for plist in ios/MarginaliaWatch/Info.plist ios/MarginaliaWatchWidgets/Info.plist; do
+            perl -pi -e "s/__BUILD_NUMBER__/$NEXT/g; s/__BUILD_NAME__/$BUILD_NAME/g" "$plist"
+          done
+          echo "Watch versions set to $BUILD_NAME ($NEXT)"
 
       - name: Build IPA
         # `xcode-project build-ipa` is Codemagic CLI's wrapper around
