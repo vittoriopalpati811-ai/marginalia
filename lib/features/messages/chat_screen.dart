@@ -45,6 +45,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   bool _sending = false;
   bool _uploadingMedia = false;
   RealtimeChannel? _realtimeChannel;
+  // Per-sender profile cache: the realtime callback fires once per incoming
+  // message, so without this every message from the same person re-queried
+  // `profiles`. Fetched once per sender per session, then reused.
+  final Map<String, Map<String, dynamic>?> _senderProfileCache = {};
 
   @override
   void initState() {
@@ -94,18 +98,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             // optimistic, then replaced by the server refresh in _send)
             if ((row['sender_id'] as String?) == myId) return;
 
-            // Fetch sender profile to display name/avatar
+            // Fetch sender profile to display name/avatar — cached per sender
+            // so repeat messages from the same person don't re-query profiles.
+            final senderId = row['sender_id'] as String?;
             Map<String, dynamic>? senderProfile;
-            try {
-              final profiles = await svc.client
-                  .from('profiles')
-                  .select('id, display_name, avatar_url')
-                  .eq('id', row['sender_id'] as String)
-                  .limit(1);
-              if ((profiles as List).isNotEmpty) {
-                senderProfile = Map<String, dynamic>.from(profiles.first as Map);
+            if (senderId != null) {
+              if (_senderProfileCache.containsKey(senderId)) {
+                senderProfile = _senderProfileCache[senderId];
+              } else {
+                try {
+                  final profiles = await svc.client
+                      .from('profiles')
+                      .select('id, display_name, avatar_url')
+                      .eq('id', senderId)
+                      .limit(1);
+                  if ((profiles as List).isNotEmpty) {
+                    senderProfile =
+                        Map<String, dynamic>.from(profiles.first as Map);
+                  }
+                } catch (_) {}
+                _senderProfileCache[senderId] = senderProfile;
               }
-            } catch (_) {}
+            }
 
             final incoming = {
               ...row,
