@@ -8,7 +8,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/calendar_service.dart';
 
-export '../services/calendar_service.dart' show CalendarSnapshot;
+export '../services/calendar_service.dart' show CalendarSnapshot, CalendarEvent;
 
 const _service = CalendarService();
 

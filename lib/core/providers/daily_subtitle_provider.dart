@@ -1,27 +1,28 @@
 // ─── Daily Subtitle Provider ──────────────────────────────────────────────────
 //
-// Produces ONE warm, ARTICULATE Italian reflection shown under the daily phrase
-// that makes the reader feel the phrase was chosen for *them* — it interprets
-// the moment (it does not just list facts) and ties it to why these words are
-// for them today. Built from whatever on-device context is available (steps,
-// today's workout, menstrual-cycle phase, today's calendar). No emojis.
+// The line under the daily phrase ("perché questa frase è per te"). It is
+// WEIGHTED on the whole moment — the time of day, the calendar (with timings:
+// something coming up, a full day ahead or behind you, something just finished),
+// and the body (steps, today's workout, menstrual-cycle phase) — and ties that
+// to why these words land right now. Not a fact dump, not generic filler.
 //
 // DESIGN
-//  • On-device only: health signals never leave the phone, so the text is
-//    composed locally from rich template banks (no LLM, no network). The banks
-//    are interpretive — "il corpo chiede di rallentare" rather than "X passi".
-//  • One variant per day: a day-stable seed picks a phrasing, so it stays put
-//    through the day (like the 3-hour phrase) but changes day to day.
-//  • Gender-neutral Italian: avoids participles/adjectives that would agree with
-//    the reader ("ti sei mosso/a"); uses invariable forms or agreement with
-//    "il corpo / la mente / le energie", so it reads correctly for anyone. The
-//    cycle branch is reached ONLY for gender == 'female'.
+//  • On-device only: nothing leaves the phone, so it is composed locally from
+//    written template banks (no LLM). Every line is concrete — it names the
+//    event, the count, the hour-frame — so it reads observed, not generated.
+//  • Time of day is a real axis: morning frames forward ("prima di partire"),
+//    evening frames toward closing ("alle spalle", "per chiudere").
+//  • Calendar timings drive salience: an imminent event > a full day > a
+//    just-finished event > a later event.
+//  • Always present: even with zero signals the hour alone yields a grounded
+//    line, so the note never vanishes.
+//  • One variant per day (day-stable seed) and gender-neutral Italian (no
+//    participle/adjective agreeing with the reader; agreement falls on "il
+//    corpo / la mente / la giornata"). Cycle branch only for gender == 'female'.
 //
-// PRIVACY: the cycle phase is woven in ONLY for users whose locally-stored
-// gender is 'female' (see genderProvider — never uploaded). All source providers
-// return null/empty off iOS; rather than vanish there (or before any data is
-// available), the provider falls back to a warm, signal-free line so the daily
-// card always carries its "chosen for you" note.
+// PRIVACY: the cycle phase is woven in ONLY for locally-stored gender 'female'
+// (genderProvider — never uploaded). Calendar event titles are read transiently
+// and never persisted.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,20 +32,18 @@ import 'onboarding_provider.dart';
 
 final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
   final health = ref.watch(healthSnapshotProvider).asData?.value;
-  final todayTitles =
-      ref.watch(calendarSnapshotProvider).asData?.value.todayTitles ??
-          const <String>[];
+  final cal = ref.watch(calendarSnapshotProvider).asData?.value;
   final gender = ref.watch(genderProvider);
 
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
+  // Day-stable variation seed (changes day to day, steady through the day).
+  final seed = now.year * 372 + now.month * 31 + now.day;
 
-  // ── Gather raw signals ─────────────────────────────────────────────────────
+  // ── Body signals ───────────────────────────────────────────────────────────
   final rawSteps = health?.stepsToday;
   final steps = (rawSteps != null && rawSteps >= 500) ? rawSteps : null;
   final stepsText = steps != null ? _thousands(steps) : null;
-  final km = steps != null ? steps * 0.00075 : 0.0;
-  final kmText = km >= 1 ? '${_oneDecimal(km)} km' : null;
 
   String? workout;
   if (health != null) {
@@ -58,159 +57,188 @@ final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
     }
   }
 
-  // Cycle — ONLY for female users with real cycle data. Never for anyone else.
   CyclePhase? phase;
   if (gender == 'female' && (health?.hasCycle ?? false)) {
     phase = health!.cyclePhase;
   }
 
-  final rawEvent = todayTitles.isNotEmpty ? todayTitles.first.trim() : null;
-  final event = (rawEvent != null && rawEvent.isNotEmpty)
-      ? (rawEvent.length > 42 ? '${rawEvent.substring(0, 41)}…' : rawEvent)
-      : null;
-
-  final hasAny =
-      steps != null || workout != null || phase != null || event != null;
-
-  // Day-stable variation seed (changes day to day, steady through the day).
-  final seed = now.year * 372 + now.month * 31 + now.day;
-
-  // The "why this phrase is for you" line is the emotional core of the daily
-  // card, so it must NOT just vanish. With no on-device signals (early in the
-  // day, health/calendar permission not granted, or off iOS) fall back to a
-  // warm, signal-free reflection instead of returning null.
-  if (!hasAny) {
-    return const [
-      'Questa frase è scelta per te, per il momento in cui sei oggi.',
-      'Un pensiero scelto per accompagnarti oggi, qualunque sia la tua giornata.',
-      'Queste parole sono qui per te, proprio adesso: uno spazio che è soltanto tuo.',
-      'La frase di oggi è scelta apposta per il tuo momento.',
-    ][seed % 4];
-  }
+  // ── Calendar signals (with timings) ─────────────────────────────────────────
+  final count = cal?.events.length ?? 0;
+  final next = cal?.nextAfter(now);
+  final last = cal?.lastBefore(now);
+  final imminent =
+      next?.start != null && next!.start!.difference(now).inMinutes <= 150;
+  final justFinished =
+      last?.start != null && now.difference(last!.start!).inMinutes <= 120;
 
   return _compose(
     seed: seed,
+    when: _timeWord(now.hour, seed),
+    winding: now.hour >= 18 || now.hour < 5,
     steps: steps,
     stepsText: stepsText,
-    kmText: kmText,
     workout: workout,
     phase: phase,
-    event: event,
+    eventCount: count,
+    next: next,
+    last: last,
+    imminent: imminent,
+    justFinished: justFinished,
   );
 });
 
 // ─── Composer ─────────────────────────────────────────────────────────────────
+// Picks the single most salient lead (cycle care → imminent event → full day →
+// just-finished → workout → lots of steps → uplifting cycle → later event →
+// still day → moderate steps → the hour alone) and renders it through the
+// time-of-day frame. Always returns a line.
 
 String _compose({
   required int seed,
+  required String when,
+  required bool winding,
   int? steps,
   String? stepsText,
-  String? kmText,
   String? workout,
   CyclePhase? phase,
-  String? event,
+  required int eventCount,
+  CalendarEvent? next,
+  CalendarEvent? last,
+  required bool imminent,
+  required bool justFinished,
 }) {
   String pick(List<String> v) => v[seed % v.length];
+  String ev(CalendarEvent e) => '«${_clip(e.title)}»';
 
-  // A short, self-contained clause appended when there is a calendar event and
-  // the event is not already the lead signal. Kept grammatically independent so
-  // it can follow any base sentence cleanly.
-  String withEvent(String base) {
-    if (event == null) return base;
-    final tail = [
-      ' E con «$event» tra gli impegni di oggi, te lo meriti ancora di più.',
-      ' Soprattutto oggi, con «$event» nel mezzo.',
-      ' E dopo «$event», ancora di più.',
-    ][(seed ~/ 7) % 3];
-    return '$base$tail';
-  }
-
-  // 1. Cycle (female only) — the most tender, takes precedence.
-  switch (phase) {
-    case CyclePhase.menstruation:
-      return withEvent(pick([
-        'Sei nei giorni del ciclo in cui il corpo chiede di rallentare: questa frase è scelta per accoglierti con dolcezza, non per spingerti.',
-        'Nei giorni delle mestruazioni va bene andare piano — il pensiero di oggi è qui per starti vicino, senza chiederti nulla in cambio.',
-        'Il tuo corpo sta facendo un lavoro silenzioso e prezioso: queste parole vogliono soltanto prendersi cura di te, un respiro alla volta.',
-      ]));
-    case CyclePhase.luteal:
-      return withEvent(pick([
-        'Nella fase luteale l\'energia si raccoglie e tutto può pesare un po\' di più: questa frase è scelta per farti compagnia, con calma.',
-        'Sei in fase luteale, quando il ritmo naturale invita a rientrare verso di sé — lascia che queste parole ti accompagnino piano.',
-        'Sono i giorni in cui la sensibilità si fa più acuta: il pensiero di oggi è qui per coccolarti, non per metterti fretta.',
-      ]));
-    case CyclePhase.follicular:
-      return withEvent(pick([
-        'Sei nella fase follicolare, quando le energie tornano a salire: un momento perfetto per lasciarti ispirare da questa frase.',
-        'La fase follicolare porta slancio e voglia di ricominciare — queste parole sono scelte per assecondare quella spinta, che è tutta tua.',
-      ]));
-    case CyclePhase.ovulation:
-      return withEvent(pick([
-        'Intorno all\'ovulazione la vitalità tocca il suo picco: la frase di oggi è qui per darti ancora più luce.',
-        'Sono i giorni più luminosi del ciclo, pieni di energia — lascia che questa frase la incanali in qualcosa di tuo.',
-      ]));
-    case CyclePhase.unknown:
-    case null:
-      break; // no usable phase → fall through to the other signals
-  }
-
-  // 2. Workout today.
-  if (workout != null) {
-    final withSteps = stepsText != null ? ' e i $stepsText passi' : '';
-    return withEvent(pick([
-      'Dopo $workout$withSteps di oggi, il corpo è appagato e la mente più libera: questa frase è il tuo spazio per ricaricarti davvero.',
-      'Oggi hai messo in movimento il corpo — $workout$withSteps: queste parole sono la pausa buona che ti spetta.',
-      'Con $workout$withSteps alle spalle, concediti questa frase come una piccola ricompensa, pensata su misura per te.',
-    ]));
-  }
-
-  // 3. A lot of walking.
-  if (steps != null && steps >= 8000) {
-    final kmPart = kmText != null ? ', quasi $kmText' : '';
-    return withEvent(pick([
-      '$stepsText passi$kmPart: oggi hai dato molto. Questa frase è la tua tregua, scelta apposta per te.',
-      'Hai camminato parecchio, $stepsText passi$kmPart — lascia che questo pensiero sia il punto in cui ti fermi a respirare.',
-    ]));
-  }
-
-  // 4. A still, sedentary day — gentle and never pushy: acceptance, plus a
-  //    feather-light, always-optional nudge to move ("se ti va", "con calma").
-  if (steps != null && steps < 2000) {
-    return withEvent(pick([
-      'Oggi i passi sono stati pochi, e va bene così: il corpo sa quando fermarsi. Se più tardi ti va, anche una breve camminata può riaccendere la giornata — intanto questa frase è per te.',
-      'Giornata più ferma del solito, senza nessuna fretta: a volte basta un piccolo passo, quando te la senti, per ritrovare il ritmo. Queste parole sono qui ad accompagnarti.',
-      'Pochi passi finora, ma ogni momento è buono per ricominciare, con calma. Magari un giro lento dopo questa frase — solo se ne hai voglia.',
-      'Oggi il corpo è rimasto tranquillo, e va bene così: questa frase è un piccolo invito a rallentare e, quando vorrai, a rimetterti piano in movimento.',
-    ]));
-  }
-
-  // 5. A moderate, in-motion day.
-  if (steps != null) {
-    return withEvent(pick([
-      'Con i tuoi $stepsText passi, oggi hai tenuto un buon ritmo: questa frase è la pausa che lo completa.',
-      '$stepsText passi finora, una giornata in movimento — lascia che queste parole siano il tuo momento di quiete.',
-    ]));
-  }
-
-  // 6. Only a calendar event to go on.
-  if (event != null) {
+  // 1. Cycle, tender phases — care comes first.
+  if (phase == CyclePhase.menstruation) {
     return pick([
-      'Con «$event» tra i pensieri di oggi, questa frase è scelta per ritagliarti uno spazio che è soltanto tuo.',
-      'Dopo «$event», il pensiero di oggi vuole essere la tua piccola parentesi di calma.',
+      '$when, nei giorni del ciclo in cui il corpo chiede spazio: questa frase è qui per accoglierti, senza chiederti nulla.',
+      '$when, mentre il corpo fa il suo lavoro silenzioso — prenditi questa frase con calma, è pensata per te.',
+    ]);
+  }
+  if (phase == CyclePhase.luteal) {
+    return pick([
+      '$when, in una fase del ciclo più raccolta: questa frase è qui per starti vicino, piano.',
+      '$when, con la sensibilità un po\' più accesa di questi giorni — lascia che questa frase ti faccia compagnia.',
     ]);
   }
 
-  // 7. Safety fallback (shouldn't be reached given hasAny).
-  return 'Qualunque sia stata la tua giornata, queste parole sono qui per te, proprio adesso.';
+  // 2. Something coming up within a couple of hours.
+  if (imminent && next != null) {
+    return pick([
+      '$when, e tra poco ${ev(next)}: prenditi questa frase prima di rientrare nel ritmo.',
+      '$when, con ${ev(next)} che si avvicina — un attimo per te adesso, prima di tutto il resto.',
+    ]);
+  }
+
+  // 3. A full day — framed as ahead or behind by whether events remain.
+  if (eventCount >= 3) {
+    if (next != null) {
+      return pick([
+        '$when, con una giornata piena davanti — $eventCount impegni in agenda: questa frase è il tuo momento prima di partire.',
+        '$when, e $eventCount appuntamenti che ti aspettano: ritagliati questa frase prima di entrarci.',
+      ]);
+    }
+    return pick([
+      '$when, dopo una giornata piena da $eventCount impegni: questa frase è la pausa per scaricare tutto.',
+      '$when, con $eventCount impegni ormai alle spalle — respira, questa frase è la tua quiete.',
+    ]);
+  }
+
+  // 4. Just finished something.
+  if (justFinished && last != null) {
+    return pick([
+      '$when, appena dopo ${ev(last)}: questa frase è il tuo modo per tornare a te.',
+      '$when, con ${ev(last)} ormai alle spalle — respira, questa frase è per te.',
+    ]);
+  }
+
+  // 5. The body moved today.
+  if (workout != null) {
+    return pick([
+      '$when, con $workout ormai alle spalle: lascia che questa frase chiuda il cerchio in calma.',
+      '$when, e oggi il corpo si è mosso — questa frase è la ricompensa tranquilla che ti spetta.',
+    ]);
+  }
+
+  // 6. A lot of walking.
+  if (steps != null && steps >= 8000) {
+    return pick([
+      '$when, dopo i $stepsText passi di oggi: questa frase è la tua tregua, scelta per te.',
+      '$when, con tanta strada già fatta oggi — fermati un attimo qui, su queste parole.',
+    ]);
+  }
+
+  // 7. Cycle, bright phases.
+  if (phase == CyclePhase.follicular || phase == CyclePhase.ovulation) {
+    return pick([
+      '$when, con le energie in risalita di questi giorni: questa frase è benzina buona, prendila.',
+      '$when, in una fase luminosa del ciclo — lascia che questa frase assecondi lo slancio.',
+    ]);
+  }
+
+  // 8. Something later today (not imminent).
+  if (next != null) {
+    return pick([
+      '$when, e più tardi ti aspetta ${ev(next)}: intanto questa frase è uno spazio solo tuo.',
+      '$when, con ${ev(next)} ancora davanti — prenditi prima questo momento, è per te.',
+    ]);
+  }
+
+  // 9. A still day — gentle, always-optional nudge to move.
+  if (steps != null && steps < 2000) {
+    return pick([
+      '$when, e oggi i passi sono stati pochi: va bene così. Se ti va, due passi lenti più tardi; intanto questa frase è per te.',
+      '$when, con una giornata più ferma del solito: nessuna fretta — questa frase è un invito a rallentare e, quando vorrai, a muoverti piano.',
+    ]);
+  }
+
+  // 10. A moderate, in-motion day.
+  if (steps != null) {
+    return pick([
+      '$when, con i tuoi $stepsText passi di oggi: questa frase è la pausa che completa il ritmo.',
+      '$when, a giornata in movimento — lascia che queste parole siano il tuo momento di quiete.',
+    ]);
+  }
+
+  // 11. Nothing but the hour — morning opens, evening closes.
+  if (winding) {
+    return pick([
+      '$when, questa frase è un pensiero scelto per chiudere la giornata con te.',
+      '$when, lascia che queste parole siano l\'ultimo gesto di cura di oggi.',
+    ]);
+  }
+  return pick([
+    '$when, questa frase è il primo piccolo gesto di cura della giornata.',
+    '$when, queste parole sono scelte per il momento in cui sei adesso.',
+  ]);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/// Sentence-opening time-of-day phrase (a couple of variants per band, picked
+/// day-stably). Lower-cases naturally after a comma in the templates above.
+String _timeWord(int hour, int seed) {
+  final List<String> opts;
+  if (hour >= 5 && hour < 10) {
+    opts = ['Di prima mattina', 'Stamattina'];
+  } else if (hour >= 10 && hour < 13) {
+    opts = ['In mattinata', 'A metà mattina'];
+  } else if (hour >= 13 && hour < 18) {
+    opts = ['Nel pomeriggio', 'Oggi pomeriggio'];
+  } else if (hour >= 18 && hour < 22) {
+    opts = ['Stasera', 'A fine giornata'];
+  } else {
+    opts = ['A quest\'ora', 'A giornata ormai conclusa'];
+  }
+  return opts[seed % opts.length];
+}
+
+/// Trim an event title so the subtitle stays one tidy line.
+String _clip(String s) => s.length > 36 ? '${s.substring(0, 35)}…' : s;
 
 /// Italian-style thousands separator using a dot (e.g. 6200 → "6.200").
 String _thousands(int value) => value
     .toString()
     .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
-
-/// One-decimal string with an Italian decimal comma (e.g. 4.65 → "4,7").
-String _oneDecimal(double value) =>
-    value.toStringAsFixed(1).replaceAll('.', ',');
