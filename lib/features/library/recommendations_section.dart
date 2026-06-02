@@ -336,17 +336,17 @@ class LibraryRecommendationsSection extends ConsumerWidget {
   String _copyFor(BuildContext context, RecsEmptyReason reason) {
     switch (reason) {
       case RecsEmptyReason.notAuth:
-        return 'Accedi al tuo account per ricevere consigli personalizzati.';
+        return context.l10n.recsNotAuth;
       case RecsEmptyReason.noBooks:
         return context.l10n.recsEmpty;
       case RecsEmptyReason.rateLimit:
-        return 'Quota giornaliera del servizio AI esaurita. I consigli torneranno fra qualche ora — riprova più tardi.';
+        return context.l10n.recsRateLimit;
       case RecsEmptyReason.aiEmpty:
-        return 'Nessun consiglio al momento. Riprova fra poco.';
+        return context.l10n.recsAiEmpty;
       case RecsEmptyReason.aiError:
-        return 'Il servizio di consigli non risponde. Tocca "Riprova" per ritentare.';
+        return context.l10n.recsAiError;
       case RecsEmptyReason.network:
-        return 'Impossibile contattare il servizio. Controlla la connessione e riprova.';
+        return context.l10n.recsNetwork;
       case RecsEmptyReason.ok:
         return '';
     }

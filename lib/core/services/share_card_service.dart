@@ -10,6 +10,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../l10n/l10n_extension.dart';
+
 import '../utils/share_helper.dart';
 
 import '../theme.dart';
@@ -187,7 +189,7 @@ class _ShareSheetState extends State<_ShareSheet> {
     if (mounted) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Highlight copiato negli appunti')),
+        SnackBar(content: Text(context.l10n.highlightCopied)),
       );
     }
   }

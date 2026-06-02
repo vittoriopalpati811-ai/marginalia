@@ -148,15 +148,16 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   Future<void> _renameJam() async {
     // Capture context-bound objects before the async dialog gap.
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final controller = TextEditingController(text: _displayTitle);
 
     final newTitle = await showDialog<String>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text(
-          'Rinomina la Jam',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          l10n.jamRenameTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         content: TextField(
           controller: controller,
@@ -165,19 +166,19 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           textCapitalization: TextCapitalization.sentences,
           textInputAction: TextInputAction.done,
           onSubmitted: (value) => Navigator.pop(dialogCtx, value),
-          decoration: const InputDecoration(
-            hintText: 'Nome della Jam',
+          decoration: InputDecoration(
+            hintText: l10n.jamNameHint,
             counterText: '',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Annulla'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogCtx, controller.text),
-            child: const Text('Salva'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -199,12 +200,12 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       // immediately there instead of only after an app restart.
       ref.invalidate(jamsProvider);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Nome della Jam aggiornato')),
+        SnackBar(content: Text(l10n.jamRenamed)),
       );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Impossibile rinominare la Jam: $e')),
+        SnackBar(content: Text(l10n.jamRenameError(e.toString()))),
       );
     }
   }

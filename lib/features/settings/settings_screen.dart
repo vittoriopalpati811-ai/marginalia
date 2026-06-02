@@ -363,41 +363,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _SettingsTile(
                 icon: Icons.upload_file_outlined,
-                label: 'Import My Clippings.txt',
-                subtitle: 'Manually import from your Kindle file',
+                label: context.l10n.importClippingsTile,
+                subtitle: context.l10n.importClippingsSubtitle,
                 onTap: () async {
                   final messenger = ScaffoldMessenger.of(context);
+                  final l10n = context.l10n;
                   try {
                     final res = await pickAndImportClippings(ref);
                     if (res == null) return; // user cancelled
                     ref.invalidate(allHighlightsProvider);
                     messenger.showSnackBar(SnackBar(
-                      content: Text(
-                          'Importati ${res.highlightsAdded} highlight da ${res.booksAdded} libri'),
+                      content: Text(l10n.importSuccess(
+                          res.highlightsAdded, res.booksAdded)),
                     ));
                   } catch (e) {
-                    messenger.showSnackBar(
-                        SnackBar(content: Text('Errore durante l\'import: $e')));
+                    messenger.showSnackBar(SnackBar(
+                        content: Text(l10n.importErrorGeneric(e.toString()))));
                   }
                 },
               ),
               _SettingsTile(
                 icon: Icons.menu_book_outlined,
-                label: 'Importa da Kobo',
-                subtitle: 'Seleziona il file KoboReader.sqlite del tuo Kobo',
+                label: context.l10n.importKoboTile,
+                subtitle: context.l10n.importKoboSubtitle,
                 onTap: () async {
                   final messenger = ScaffoldMessenger.of(context);
+                  final l10n = context.l10n;
                   try {
                     final res = await pickAndImportKobo(ref);
                     if (res == null) return; // user cancelled
                     ref.invalidate(allHighlightsProvider);
                     messenger.showSnackBar(SnackBar(
-                      content: Text(
-                          'Importati ${res.highlightsAdded} highlight da ${res.booksAdded} libri'),
+                      content: Text(l10n.importSuccess(
+                          res.highlightsAdded, res.booksAdded)),
                     ));
                   } catch (e) {
-                    messenger.showSnackBar(
-                        SnackBar(content: Text('Errore import Kobo: $e')));
+                    messenger.showSnackBar(SnackBar(
+                        content: Text(l10n.koboImportError(e.toString()))));
                   }
                 },
               ),
@@ -433,7 +435,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Row(
                   children: [
-                    Text('PERSONALIZZAZIONE',
+                    Text(context.l10n.personalizationSection,
                         style: MarginaliaTextStyles.sectionTitle),
                     const SizedBox(width: 12),
                     const Expanded(child: Divider(color: MarginaliaColors.rule)),
@@ -442,8 +444,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _SettingsTile(
                 icon: Icons.favorite_outline,
-                label: 'Personalizzazione frasi',
-                subtitle: _genderSubtitle(ref.watch(genderProvider)),
+                label: context.l10n.personalizationTile,
+                subtitle: _genderSubtitle(context, ref.watch(genderProvider)),
                 onTap: () => _showCyclePersonalizationSheet(context, ref),
               ),
 
@@ -679,36 +681,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Personalizzazione frasi',
-              style: TextStyle(
+            Text(
+              ctx.l10n.personalizationTile,
+              style: const TextStyle(
                   fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.4),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'La frase del giorno è scelta per te. Se vuoi, può tenere conto '
-              'anche del tuo ciclo mestruale: succede solo se scegli «Donna» e '
-              'solo con i dati di Salute del tuo iPhone, che restano sul '
-              'dispositivo e non vengono mai caricati.',
-              style: TextStyle(
+            Text(
+              ctx.l10n.personalizationBody,
+              style: const TextStyle(
                   fontSize: 13, height: 1.5, color: MarginaliaColors.inkMuted),
             ),
             const SizedBox(height: 16),
             _GenderChoiceRow(
-              label: 'Donna',
-              hint: 'Le frasi possono tenere conto del ciclo',
+              label: ctx.l10n.genderWoman,
+              hint: ctx.l10n.genderCycleHint,
               selected: current == 'female',
               onTap: () => _setGender(ctx, ref, 'female'),
             ),
             _GenderChoiceRow(
-              label: 'Uomo',
+              label: ctx.l10n.genderMan,
               hint: null,
               selected: current == 'male',
               onTap: () => _setGender(ctx, ref, 'male'),
             ),
             _GenderChoiceRow(
-              label: 'Preferisco non dirlo',
-              hint: 'Nessuna frase legata al ciclo',
+              label: ctx.l10n.genderPreferNot,
+              hint: ctx.l10n.genderNoCycleHint,
               selected: current == 'unspecified',
               onTap: () => _setGender(ctx, ref, 'unspecified'),
             ),
@@ -1376,16 +1375,17 @@ class _SettingsTile extends StatelessWidget {
 // ─── Daily-phrase personalisation helpers ─────────────────────────────────────
 
 /// One-line summary of the current gender/cycle preference for the settings tile.
-String _genderSubtitle(String? gender) {
+String _genderSubtitle(BuildContext context, String? gender) {
+  final l10n = context.l10n;
   switch (gender) {
     case 'female':
-      return 'Donna · le frasi possono includere il ciclo';
+      return l10n.genderSubFemale;
     case 'male':
-      return 'Uomo';
+      return l10n.genderSubMale;
     case 'unspecified':
-      return 'Preferisci non specificare';
+      return l10n.genderSubUnspecified;
     default:
-      return 'Calibra la frase del giorno per te';
+      return l10n.genderSubUnset;
   }
 }
 
