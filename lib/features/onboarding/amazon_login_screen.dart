@@ -44,7 +44,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(AmazonSyncService.notebookUrl));
+      ..loadRequest(Uri.parse(AmazonSyncService.entryUrl));
   }
 
   Future<void> _onPageFinished(String url) async {
@@ -95,7 +95,10 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton.icon(
-                  onPressed: () => _onPageFinished(AmazonSyncService.notebookUrl),
+                  // Navigate to the notebook (now that the user has signed in
+                  // via the entry page); onPageFinished then extracts.
+                  onPressed: () => _webController
+                      .loadRequest(Uri.parse(AmazonSyncService.notebookUrl)),
                   icon: const Icon(Icons.download_outlined),
                   label: Text(context.l10n.jamExtractHighlights),
                 ),
@@ -125,7 +128,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
             onRetry: () {
               setState(() => _syncState = _SyncState.browsing);
               _webController.loadRequest(
-                Uri.parse(AmazonSyncService.notebookUrl),
+                Uri.parse(AmazonSyncService.entryUrl),
               );
             },
           ),

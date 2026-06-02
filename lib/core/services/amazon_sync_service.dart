@@ -19,6 +19,13 @@ import 'package:webview_flutter/webview_flutter.dart';
 class AmazonSyncService {
   static const String notebookUrl = 'https://read.amazon.com/kp/notebook';
 
+  // Entry URL loaded FIRST so the user signs into Amazon. Loading the notebook
+  // directly shows Amazon's "Sorry, we couldn't find that page" when the WebView
+  // isn't authenticated yet; starting at the Cloud Reader lets Amazon handle the
+  // sign-in, then the user taps the button to navigate to the (now authenticated)
+  // notebook and extract.
+  static const String entryUrl = 'https://read.amazon.com';
+
   // Cache keys stored in a simple in-memory map (cleared on app restart).
   // For persistence across launches use shared_preferences — add the package
   // and replace this map with prefs.getString / prefs.setString calls.
