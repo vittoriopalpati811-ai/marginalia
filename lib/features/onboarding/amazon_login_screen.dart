@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +30,30 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
   int _progressCount = 0;
   String? _progressBook;
   bool _importing = false;
+
+  // Fails the extraction with a clear message if the injected script goes silent
+  // (e.g. an unexpected Amazon page / JS error) instead of spinning forever.
+  // Re-armed on every progress message so large libraries don't trip it.
+  Timer? _watchdog;
+
+  void _armWatchdog() {
+    _watchdog?.cancel();
+    _watchdog = Timer(const Duration(seconds: 75), () {
+      if (!mounted || _syncState != _SyncState.extracting) return;
+      setState(() {
+        _syncState = _SyncState.error;
+        _errorMessage = 'La lettura degli highlight non risponde. Assicurati di '
+            'essere sulla pagina "I tuoi appunti e segnalibri" del tuo account '
+            'Amazon e riprova.';
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _watchdog?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -87,6 +113,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
       // Fire-and-forget: the extractor posts progress + the final payload back
       // through the channel (handled in _onChannelMessage).
       await _webController.runJavaScript(script);
+      _armWatchdog();
     } catch (e) {
       setState(() {
         _syncState = _SyncState.error;
@@ -101,15 +128,18 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
     final msg = AmazonSyncService.parseChannelMessage(message.message);
     switch (msg.type) {
       case SyncMessageType.progress:
+        _armWatchdog(); // still alive — reset the silence timer
         setState(() {
           _progressCount = msg.total ?? _progressCount;
           _progressBook = msg.book;
         });
         break;
       case SyncMessageType.done:
+        _watchdog?.cancel();
         _importHighlights(msg.highlights ?? const []);
         break;
       case SyncMessageType.error:
+        _watchdog?.cancel();
         setState(() {
           _syncState = _SyncState.error;
           _errorMessage = msg.error == 'NO_BOOKS'
@@ -207,6 +237,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           _ErrorOverlay(
             message: _errorMessage ?? 'Unknown error',
             onRetry: () {
+              _watchdog?.cancel();
               setState(() {
                 _syncState = _SyncState.browsing;
                 _errorMessage = null;
