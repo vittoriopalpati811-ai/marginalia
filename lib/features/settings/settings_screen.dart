@@ -381,6 +381,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               ),
               _SettingsTile(
+                icon: Icons.menu_book_outlined,
+                label: 'Importa da Kobo',
+                subtitle: 'Seleziona il file KoboReader.sqlite del tuo Kobo',
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    final res = await pickAndImportKobo(ref);
+                    if (res == null) return; // user cancelled
+                    ref.invalidate(allHighlightsProvider);
+                    messenger.showSnackBar(SnackBar(
+                      content: Text(
+                          'Importati ${res.highlightsAdded} highlight da ${res.booksAdded} libri'),
+                    ));
+                  } catch (e) {
+                    messenger.showSnackBar(
+                        SnackBar(content: Text('Errore import Kobo: $e')));
+                  }
+                },
+              ),
+              _SettingsTile(
                 icon: Icons.download_outlined,
                 label: 'Export as Markdown',
                 subtitle: 'Download all your highlights as a .md file',
