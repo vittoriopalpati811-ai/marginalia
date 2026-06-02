@@ -39,6 +39,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/providers/weather_provider.dart';
 import '../../core/providers/health_provider.dart';
+import '../../core/services/recs_cache.dart';
 
 // Re-export so library_screen can import just this file if needed
 export '../../core/providers/auth_provider.dart' show myDisplayNameProvider;
@@ -221,6 +222,31 @@ final libraryRecommendationsProvider =
     return const RecsResult(list: [], reason: RecsEmptyReason.noBooks);
   }
 
+  // ── Daily cache ────────────────────────────────────────────────────────────
+  //
+  // Skip the slow, Groq-quota-limited AI call when we already generated
+  // recommendations TODAY for this SAME library. The signature folds in the
+  // book + highlight counts, so an import (which changes them) busts the cache
+  // automatically; it also rolls over at midnight. This is what keeps the free
+  // Groq tier from being burned by repeated cold starts. (No-op on web.)
+  final cacheSig = '${orderedBookIds.length}:$totalHighlights';
+  final cachedRecs = await RecsCache.read(cacheSig);
+  if (cachedRecs != null) {
+    debugPrint('[Recs] cache hit ($cacheSig) — skipping AI call');
+    final list = cachedRecs
+        .map((r) => BookRecommendation(
+              title: (r['title'] as String? ?? '').trim(),
+              author: (r['author'] as String? ?? '').trim(),
+              year: (r['year'] as String? ?? '').trim(),
+              reason: (r['reason'] as String? ?? '').trim(),
+            ))
+        .where((r) => r.title.isNotEmpty)
+        .toList();
+    if (list.isNotEmpty) {
+      return RecsResult(list: list, reason: RecsEmptyReason.ok);
+    }
+  }
+
   // ── 2. Build request payload ───────────────────────────────────────────────
 
   final allTitles  = orderedBookIds
@@ -320,6 +346,23 @@ final libraryRecommendationsProvider =
   }).where((r) => r.title.isNotEmpty).toList();
 
   debugPrint('[Recs] received ${recommendations.length} recommendations');
+
+  // Cache this successful set for the rest of today (only successes are cached,
+  // so a rate-limited day can still recover on the next attempt).
+  if (recommendations.isNotEmpty) {
+    await RecsCache.write(
+      cacheSig,
+      recommendations
+          .map((r) => {
+                'title': r.title,
+                'author': r.author,
+                'year': r.year,
+                'reason': r.reason,
+              })
+          .toList(),
+    );
+  }
+
   return RecsResult(list: recommendations, reason: RecsEmptyReason.ok);
 });
 
@@ -336,17 +379,17 @@ class LibraryRecommendationsSection extends ConsumerWidget {
   String _copyFor(BuildContext context, RecsEmptyReason reason) {
     switch (reason) {
       case RecsEmptyReason.notAuth:
-        return 'Accedi al tuo account per ricevere consigli personalizzati.';
+        return context.l10n.recsNotAuth;
       case RecsEmptyReason.noBooks:
         return context.l10n.recsEmpty;
       case RecsEmptyReason.rateLimit:
-        return 'Quota giornaliera del servizio AI esaurita. I consigli torneranno fra qualche ora — riprova più tardi.';
+        return context.l10n.recsRateLimit;
       case RecsEmptyReason.aiEmpty:
-        return 'Nessun consiglio al momento. Riprova fra poco.';
+        return context.l10n.recsAiEmpty;
       case RecsEmptyReason.aiError:
-        return 'Il servizio di consigli non risponde. Tocca "Riprova" per ritentare.';
+        return context.l10n.recsAiError;
       case RecsEmptyReason.network:
-        return 'Impossibile contattare il servizio. Controlla la connessione e riprova.';
+        return context.l10n.recsNetwork;
       case RecsEmptyReason.ok:
         return '';
     }
