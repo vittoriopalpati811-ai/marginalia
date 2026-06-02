@@ -221,7 +221,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     if (msg.contains('Email not confirmed')) return l.authErrNotConfirmed;
     if (msg.contains('already registered')) return l.authErrAlreadyRegistered;
     if (msg.contains('Password should be')) return l.authErrWeakPassword;
-    return msg;
+    // "Non dire più del dovuto": never surface the raw server error string to
+    // the user (it can leak internal/auth details) — fall back to a generic one.
+    return l.authErrGeneric;
   }
 
   @override

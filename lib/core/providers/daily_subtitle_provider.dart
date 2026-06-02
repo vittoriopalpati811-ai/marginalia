@@ -19,8 +19,9 @@
 //
 // PRIVACY: the cycle phase is woven in ONLY for users whose locally-stored
 // gender is 'female' (see genderProvider — never uploaded). All source providers
-// return null/empty off iOS, so on web / Windows this simply yields null and the
-// subtitle disappears.
+// return null/empty off iOS; rather than vanish there (or before any data is
+// available), the provider falls back to a warm, signal-free line so the daily
+// card always carries its "chosen for you" note.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -70,10 +71,22 @@ final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
 
   final hasAny =
       steps != null || workout != null || phase != null || event != null;
-  if (!hasAny) return null;
 
   // Day-stable variation seed (changes day to day, steady through the day).
   final seed = now.year * 372 + now.month * 31 + now.day;
+
+  // The "why this phrase is for you" line is the emotional core of the daily
+  // card, so it must NOT just vanish. With no on-device signals (early in the
+  // day, health/calendar permission not granted, or off iOS) fall back to a
+  // warm, signal-free reflection instead of returning null.
+  if (!hasAny) {
+    return const [
+      'Questa frase è scelta per te, per il momento in cui sei oggi.',
+      'Un pensiero scelto per accompagnarti oggi, qualunque sia la tua giornata.',
+      'Queste parole sono qui per te, proprio adesso: uno spazio che è soltanto tuo.',
+      'La frase di oggi è scelta apposta per il tuo momento.',
+    ][seed % 4];
+  }
 
   return _compose(
     seed: seed,

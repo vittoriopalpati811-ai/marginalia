@@ -328,7 +328,8 @@ class SupabaseService {
           profiles(display_name)
         ''')
         .eq('jam_id', jamId)
-        .order('shared_at', ascending: false);
+        .order('shared_at', ascending: false)
+        .limit(200); // cap the jam feed (newest 200) — avoid loading everything
     return List<Map<String, dynamic>>.from(response as List);
   }
 
@@ -768,7 +769,8 @@ class SupabaseService {
         .from('jam_highlights')
         .select('*, highlights(content, color, books(title, author)), jams(title, id)')
         .eq('shared_by', userId!)
-        .order('shared_at', ascending: false);
+        .order('shared_at', ascending: false)
+        .limit(120); // profile grid — newest 120 is plenty
     return List<Map<String, dynamic>>.from(response as List);
   }
 
@@ -846,7 +848,8 @@ class SupabaseService {
         .select(
             '*, highlights(content, color, books(title, author)), jams(title, id)')
         .eq('shared_by', targetId)
-        .order('shared_at', ascending: false);
+        .order('shared_at', ascending: false)
+        .limit(120); // profile grid — newest 120 is plenty
     return List<Map<String, dynamic>>.from(response as List);
   }
 

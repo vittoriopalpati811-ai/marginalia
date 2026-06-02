@@ -269,7 +269,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (msg.contains('Email not confirmed')) return l.authErrNotConfirmed;
     if (msg.contains('already registered')) return l.authErrAlreadyRegistered;
     if (msg.contains('Password should be')) return l.authErrWeakPassword;
-    return msg;
+    // "Non dire più del dovuto": don't surface the raw server error string.
+    return l.authErrGeneric;
   }
 
   // ── Step 2: Username availability check ─────────────────────────────────────
