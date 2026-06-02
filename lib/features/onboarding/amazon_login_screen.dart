@@ -42,9 +42,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
       if (!mounted || _syncState != _SyncState.extracting) return;
       setState(() {
         _syncState = _SyncState.error;
-        _errorMessage = 'La lettura degli highlight non risponde. Assicurati di '
-            'essere sulla pagina "I tuoi appunti e segnalibri" del tuo account '
-            'Amazon e riprova.';
+        _errorMessage = context.l10n.kindleWatchdog;
       });
     });
   }
@@ -142,11 +140,8 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
         _watchdog?.cancel();
         setState(() {
           _syncState = _SyncState.error;
-          _errorMessage = msg.error == 'NO_BOOKS'
-              ? 'Sei connesso ad Amazon ma non vediamo nessun libro con '
-                  'highlight. Assicurati di usare lo stesso account Amazon (e la '
-                  'stessa regione, es. Amazon.it) collegato al tuo Kindle.'
-              : msg.error;
+          _errorMessage =
+              msg.error == 'NO_BOOKS' ? context.l10n.kindleNoBooks : msg.error;
         });
         break;
     }
@@ -160,7 +155,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
     if (highlights.isEmpty) {
       setState(() {
         _syncState = _SyncState.error;
-        _errorMessage = 'Non abbiamo trovato highlight da importare.';
+        _errorMessage = context.l10n.kindleNoHighlights;
       });
       _importing = false;
       return;
@@ -269,20 +264,19 @@ class _WebNotSupported extends StatelessWidget {
             const Icon(Icons.phone_iphone,
                 size: 64, color: MarginaliaColors.accentLight),
             const SizedBox(height: 24),
-            const Text(
-              'Sync automatico non disponibile sul web',
+            Text(
+              context.l10n.kindleWebTitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: MarginaliaColors.text),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Direct sync with Amazon Kindle requires the native iOS app.\n\n'
-              'On web you can import your highlights manually: go to Settings and upload the My Clippings.txt file from your Kindle\'s memory.',
+            Text(
+              context.l10n.kindleWebBody,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                   fontSize: 14,
                   height: 1.6,
                   color: MarginaliaColors.textMuted),
@@ -320,15 +314,15 @@ class _ExtractingOverlay extends StatelessWidget {
           children: [
             const CircularProgressIndicator(color: MarginaliaColors.accent),
             const SizedBox(height: 20),
-            const Text(
-              'Sto leggendo i tuoi highlight…',
-              style: TextStyle(color: MarginaliaColors.text, fontSize: 16),
+            Text(
+              context.l10n.kindleReading,
+              style: const TextStyle(color: MarginaliaColors.text, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
               count > 0
-                  ? '$count highlight finora'
-                  : 'Apro la tua libreria Kindle…',
+                  ? context.l10n.kindleSoFar(count)
+                  : context.l10n.kindleOpeningLibrary,
               style: const TextStyle(
                   color: MarginaliaColors.textMuted, fontSize: 13),
             ),
@@ -370,16 +364,16 @@ class _DoneOverlay extends StatelessWidget {
             const Icon(Icons.check_circle_outline,
                 size: 72, color: MarginaliaColors.accent),
             const SizedBox(height: 24),
-            const Text(
-              'Sync completato!',
-              style: TextStyle(
+            Text(
+              context.l10n.kindleDone,
+              style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                   color: MarginaliaColors.text),
             ),
             const SizedBox(height: 8),
             Text(
-              '$count highlight importati.',
+              context.l10n.kindleImported(count),
               style: const TextStyle(
                   fontSize: 16, color: MarginaliaColors.textMuted),
             ),
@@ -413,9 +407,9 @@ class _ErrorOverlay extends StatelessWidget {
             const Icon(Icons.error_outline,
                 size: 56, color: MarginaliaColors.textMuted),
             const SizedBox(height: 20),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
+            Text(
+              context.l10n.kindleSomethingWrong,
+              style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: MarginaliaColors.text),
