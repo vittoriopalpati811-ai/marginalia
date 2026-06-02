@@ -20,6 +20,7 @@ import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
 import '../../core/providers/daily_highlight_provider.dart';
+import '../../core/providers/daily_subtitle_provider.dart';
 import '../stats/stats_screen.dart'
     show readingSessionsProvider, readingGoalProvider;
 
@@ -49,6 +50,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final allHighlightsAsync = ref.watch(allHighlightsProvider);
     final filter            = ref.watch(_libraryFilterProvider);
     final randomAsync       = ref.watch(dailyHighlightProvider);
+    // "Why this phrase is for you" line — null off-iOS or with no context.
+    final subtitle          = ref.watch(dailySubtitleProvider);
 
     // Apply filter
     final filteredBooksAsync = booksAsync.whenData((books) {
@@ -96,6 +99,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ? SliverToBoxAdapter(
                       child: _DailyCard(
                         content: h.content,
+                        subtitle: subtitle,
                         onTap: () => context.push('/highlight/${h.id}'),
                       )
                           .animate()
@@ -576,10 +580,19 @@ class _EditorialHeader extends StatelessWidget {
 // ─── Hero pull-quote: highlight del giorno ───────────────────────────────────
 
 class _DailyCard extends StatelessWidget {
-  const _DailyCard({required this.content, required this.onTap});
+  const _DailyCard({
+    required this.content,
+    required this.onTap,
+    this.subtitle,
+  });
 
   final String content;
   final VoidCallback onTap;
+
+  /// Optional "why this phrase is for you" line, woven from on-device context
+  /// (steps, today's workout, cycle, calendar). Null off-iOS or when there are
+  /// no signals — in which case nothing is rendered.
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -626,6 +639,17 @@ class _DailyCard extends StatelessWidget {
                       color: MarginaliaColors.ink,
                     ),
                   ),
+                  if (subtitle != null && subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      subtitle!,
+                      style: MarginaliaTextStyles.subtitle.copyWith(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: MarginaliaColors.inkMuted,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Row(
                     children: [

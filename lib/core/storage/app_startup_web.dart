@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app.dart';
 import '../providers/onboarding_provider.dart';
+import '../services/gender_service.dart';
 import '../services/onboarding_service.dart';
 
 Future<void> launchApp() async {
@@ -10,10 +11,15 @@ Future<void> launchApp() async {
   // skip straight into the app while new users always see the onboarding.
   final onboardingComplete = await OnboardingService.isComplete();
 
+  // Privacy-sensitive: read the locally-stored gender (never uploaded) so the
+  // daily-phrase personalisation can restore it across launches.
+  final savedGender = await GenderService.read();
+
   runApp(
     ProviderScope(
       overrides: [
         onboardingCompleteProvider.overrideWith((ref) => onboardingComplete),
+        genderProvider.overrideWith((ref) => savedGender),
       ],
       child: const MarginaliaApp(),
     ),

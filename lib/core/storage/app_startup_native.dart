@@ -14,6 +14,7 @@ import '../models/jam_native.dart';
 import '../providers/isar_provider_native.dart';
 import '../providers/locale_provider.dart';
 import '../providers/onboarding_provider.dart';
+import '../services/gender_service.dart';
 import '../services/locale_service.dart';
 import '../services/onboarding_service.dart';
 
@@ -42,6 +43,14 @@ Future<void> launchApp() async {
   } catch (error) {
     debugPrint('[launchApp] locale read failed (non-fatal): $error');
   }
+  // Privacy-sensitive: read the locally-stored gender (never uploaded) so the
+  // daily-phrase personalisation can restore it across launches.
+  String? savedGender;
+  try {
+    savedGender = await GenderService.read();
+  } catch (error) {
+    debugPrint('[launchApp] gender read failed (non-fatal): $error');
+  }
 
   runApp(
     ProviderScope(
@@ -49,6 +58,7 @@ Future<void> launchApp() async {
         isarProvider.overrideWithValue(isar),
         onboardingCompleteProvider.overrideWith((ref) => onboardingComplete),
         localeProvider.overrideWith((ref) => savedLocale),
+        genderProvider.overrideWith((ref) => savedGender),
       ],
       child: const MarginaliaApp(),
     ),

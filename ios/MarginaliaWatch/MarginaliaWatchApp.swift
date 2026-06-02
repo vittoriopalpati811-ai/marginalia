@@ -203,9 +203,13 @@ struct ContentView: View {
                 Text(phrase)
                     .font(.system(size: 16, weight: .regular, design: .serif))
                     .italic()
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.mPaper)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(.ultraThinMaterial,
+                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 // Book attribution (only when present)
                 if !session.book.isEmpty {
@@ -227,6 +231,10 @@ struct ContentView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(Color.mAccent)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.ultraThinMaterial, in: Capsule())
 
                 if session.streak > 0 {
                     Text("Streak \(session.streak) giorni")
@@ -237,5 +245,13 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 4)
         }
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.055, green: 0.137, blue: 0.094), .black],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        )
     }
 }
