@@ -339,11 +339,16 @@ class AmazonHighlight {
 
   /// Converts to a My Clippings.txt entry so ImportService can process it
   /// without duplicating parsing logic.
+  ///
+  /// The "Title (Author)" line MUST keep the parentheses: MyClippingsParser
+  /// requires them and silently drops any entry without them, so a book with no
+  /// detected author falls back to a placeholder rather than losing its
+  /// highlights.
   String toClippingEntry() {
-    final titleLine = bookAuthor.isEmpty ? bookTitle : '$bookTitle ($bookAuthor)';
+    final author = bookAuthor.trim().isEmpty ? 'Sconosciuto' : bookAuthor.trim();
     final dateLine =
         '- Your Highlight on location ${location ?? '0'} | Added on ${DateTime.now()}';
-    return '$titleLine\n$dateLine\n\n$content';
+    return '$bookTitle ($author)\n$dateLine\n\n$content';
   }
 }
 
