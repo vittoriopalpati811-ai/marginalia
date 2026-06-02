@@ -173,11 +173,14 @@ String _compose({
     ]));
   }
 
-  // 4. A still, sedentary day.
+  // 4. A still, sedentary day — gentle and never pushy: acceptance, plus a
+  //    feather-light, always-optional nudge to move ("se ti va", "con calma").
   if (steps != null && steps < 2000) {
     return withEvent(pick([
-      'Oggi il corpo è rimasto tranquillo, e va bene così: questa frase è un piccolo invito a rallentare e respirare.',
-      'Una giornata più ferma del solito — queste parole sono qui per regalarti comunque un momento che è soltanto tuo.',
+      'Oggi i passi sono stati pochi, e va bene così: il corpo sa quando fermarsi. Se più tardi ti va, anche una breve camminata può riaccendere la giornata — intanto questa frase è per te.',
+      'Giornata più ferma del solito, senza nessuna fretta: a volte basta un piccolo passo, quando te la senti, per ritrovare il ritmo. Queste parole sono qui ad accompagnarti.',
+      'Pochi passi finora, ma ogni momento è buono per ricominciare, con calma. Magari un giro lento dopo questa frase — solo se ne hai voglia.',
+      'Oggi il corpo è rimasto tranquillo, e va bene così: questa frase è un piccolo invito a rallentare e, quando vorrai, a rimetterti piano in movimento.',
     ]));
   }
 
