@@ -348,7 +348,11 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         title: 'Marginalia',
         theme: buildMarginaliaTheme(),
         darkTheme: buildMarginaliaDarkTheme(),
-        themeMode: ThemeMode.system,
+        // Marginalia is designed entirely on the warm "paper" light palette and
+        // no screen implements dark-mode colours, so following the system theme
+        // produced light text on light surfaces (illegible) on dark-mode phones.
+        // Pin to light until a real dark theme is built across all screens.
+        themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
         locale: locale,
         localizationsDelegates: _localizationsDelegates,
