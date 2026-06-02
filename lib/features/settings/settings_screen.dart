@@ -16,6 +16,7 @@ import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/clippings_importer.dart';
 import '../../core/services/onboarding_service.dart';
+import '../../core/services/gender_service.dart';
 import '../widget/widget_preview_screen.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -426,6 +427,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
 
+              // ── PERSONALIZZAZIONE section ──────────────────────────────
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  children: [
+                    Text('PERSONALIZZAZIONE',
+                        style: MarginaliaTextStyles.sectionTitle),
+                    const SizedBox(width: 12),
+                    const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                  ],
+                ),
+              ),
+              _SettingsTile(
+                icon: Icons.favorite_outline,
+                label: 'Personalizzazione frasi',
+                subtitle: _genderSubtitle(ref.watch(genderProvider)),
+                onTap: () => _showCyclePersonalizationSheet(context, ref),
+              ),
+
               // ── PRIVACY & DATA section ─────────────────────────────────
               const SizedBox(height: 8),
               Padding(
@@ -623,6 +644,87 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  // ── Daily-phrase personalisation (gender / cycle) ─────────────────────────
+  //
+  // Lets users who already finished onboarding set (or change) the same
+  // preference the onboarding gender step captures, so the cycle-aware tone can
+  // be enabled later. The value is stored ONLY on-device (GenderService) and the
+  // in-memory provider is updated so the subtitle reacts immediately.
+  Future<void> _showCyclePersonalizationSheet(
+      BuildContext context, WidgetRef ref) async {
+    final current = ref.read(genderProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: MarginaliaColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(ctx).padding.bottom + 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.rule,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Personalizzazione frasi',
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.4),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'La frase del giorno è scelta per te. Se vuoi, può tenere conto '
+              'anche del tuo ciclo mestruale: succede solo se scegli «Donna» e '
+              'solo con i dati di Salute del tuo iPhone, che restano sul '
+              'dispositivo e non vengono mai caricati.',
+              style: TextStyle(
+                  fontSize: 13, height: 1.5, color: MarginaliaColors.inkMuted),
+            ),
+            const SizedBox(height: 16),
+            _GenderChoiceRow(
+              label: 'Donna',
+              hint: 'Le frasi possono tenere conto del ciclo',
+              selected: current == 'female',
+              onTap: () => _setGender(ctx, ref, 'female'),
+            ),
+            _GenderChoiceRow(
+              label: 'Uomo',
+              hint: null,
+              selected: current == 'male',
+              onTap: () => _setGender(ctx, ref, 'male'),
+            ),
+            _GenderChoiceRow(
+              label: 'Preferisco non dirlo',
+              hint: 'Nessuna frase legata al ciclo',
+              selected: current == 'unspecified',
+              onTap: () => _setGender(ctx, ref, 'unspecified'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setGender(
+      BuildContext sheetContext, WidgetRef ref, String value) async {
+    await GenderService.write(value);
+    // Update the live provider so the daily subtitle (which watches it)
+    // recomputes without an app restart.
+    ref.read(genderProvider.notifier).state = value;
+    if (sheetContext.mounted) Navigator.pop(sheetContext);
   }
 
   // ── Delete account confirmation dialog ────────────────────────────────────
@@ -1267,6 +1369,92 @@ class _SettingsTile extends StatelessWidget {
                   color: MarginaliaColors.inkFaint, size: 18)
               : null),
       onTap: onTap,
+    );
+  }
+}
+
+// ─── Daily-phrase personalisation helpers ─────────────────────────────────────
+
+/// One-line summary of the current gender/cycle preference for the settings tile.
+String _genderSubtitle(String? gender) {
+  switch (gender) {
+    case 'female':
+      return 'Donna · le frasi possono includere il ciclo';
+    case 'male':
+      return 'Uomo';
+    case 'unspecified':
+      return 'Preferisci non specificare';
+    default:
+      return 'Calibra la frase del giorno per te';
+  }
+}
+
+/// A selectable option row used inside the personalisation bottom sheet.
+class _GenderChoiceRow extends StatelessWidget {
+  const _GenderChoiceRow({
+    required this.label,
+    required this.hint,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? hint;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: selected
+                ? MarginaliaColors.primary.withOpacity(0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? MarginaliaColors.primary : MarginaliaColors.rule,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: MarginaliaColors.ink)),
+                    if (hint != null) ...[
+                      const SizedBox(height: 2),
+                      Text(hint!,
+                          style: const TextStyle(
+                              fontSize: 12, color: MarginaliaColors.inkMuted)),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                selected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: selected
+                    ? MarginaliaColors.primary
+                    : MarginaliaColors.inkFaint,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
