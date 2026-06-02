@@ -25,6 +25,9 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
   _SyncState _syncState = _SyncState.browsing;
   String? _errorMessage;
   int _highlightsImported = 0;
+  int _progressCount = 0;
+  String? _progressBook;
+  bool _importing = false;
 
   @override
   void initState() {
@@ -33,49 +36,126 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
 
     _webController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      // The extractor is asynchronous (many fetches + pagination) and WKWebView
+      // does not await Promises through runJavaScriptReturningResult, so results
+      // stream back through this channel instead.
+      ..addJavaScriptChannel(
+        AmazonSyncService.channelName,
+        onMessageReceived: _onChannelMessage,
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: _onPageFinished,
           onWebResourceError: (error) {
-            setState(() {
-              _syncState = _SyncState.error;
-              _errorMessage = error.description;
-            });
+            // Ignore sub-resource errors (ads, trackers, favicons) — only the
+            // main navigation matters and the user can retry from the overlay.
+            if (error.isForMainFrame == false) return;
           },
         ),
       )
       ..loadRequest(Uri.parse(AmazonSyncService.entryUrl));
   }
 
+  /// Opens the Kindle notebook on the SAME Amazon host the user is currently on
+  /// (region-safe), so an amazon.it / amazon.de / … account opens its own
+  /// notebook. onPageFinished then injects the extractor.
+  Future<void> _openNotebook() async {
+    String target = AmazonSyncService.notebookUrl;
+    try {
+      target = AmazonSyncService.notebookUrlForHost(
+          await _webController.currentUrl());
+    } catch (_) {
+      // Fall back to the global notebook URL.
+    }
+    await _webController.loadRequest(Uri.parse(target));
+  }
+
+  /// Fires when any page finishes loading. We only act once the user has reached
+  /// the (authenticated) notebook — at which point we inject the extractor.
   Future<void> _onPageFinished(String url) async {
     if (!AmazonSyncService.isOnNotebookPage(url)) return;
     if (_syncState != _SyncState.browsing) return;
 
-    setState(() => _syncState = _SyncState.extracting);
+    setState(() {
+      _syncState = _SyncState.extracting;
+      _progressCount = 0;
+      _progressBook = null;
+    });
 
     try {
-      final amazonHighlights = await AmazonSyncService.extractHighlights(_webController);
-
-      if (amazonHighlights.isEmpty) {
-        setState(() => _syncState = _SyncState.browsing);
-        return;
-      }
-
-      final clippingsText = amazonHighlightsToClippingsText(amazonHighlights);
-      final userId = ref.read(currentUserProvider)?.id ?? 'local';
-      final isar = ref.read(isarProvider);
-      final service = ImportService(isar, userId);
-      final result = await service.importClippingsText(clippingsText);
-
-      setState(() {
-        _syncState = _SyncState.done;
-        _highlightsImported = result.highlightsAdded;
-      });
+      final script = await AmazonSyncService.extractorScript();
+      // Fire-and-forget: the extractor posts progress + the final payload back
+      // through the channel (handled in _onChannelMessage).
+      await _webController.runJavaScript(script);
     } catch (e) {
       setState(() {
         _syncState = _SyncState.error;
         _errorMessage = e.toString();
       });
+    }
+  }
+
+  /// Receives JSON messages posted by the injected extractor.
+  void _onChannelMessage(JavaScriptMessage message) {
+    if (!mounted) return;
+    final msg = AmazonSyncService.parseChannelMessage(message.message);
+    switch (msg.type) {
+      case SyncMessageType.progress:
+        setState(() {
+          _progressCount = msg.total ?? _progressCount;
+          _progressBook = msg.book;
+        });
+        break;
+      case SyncMessageType.done:
+        _importHighlights(msg.highlights ?? const []);
+        break;
+      case SyncMessageType.error:
+        setState(() {
+          _syncState = _SyncState.error;
+          _errorMessage = msg.error == 'NO_BOOKS'
+              ? 'Sei connesso ad Amazon ma non vediamo nessun libro con '
+                  'highlight. Assicurati di usare lo stesso account Amazon (e la '
+                  'stessa regione, es. Amazon.it) collegato al tuo Kindle.'
+              : msg.error;
+        });
+        break;
+    }
+  }
+
+  /// Imports the extracted highlights via the shared My Clippings pipeline.
+  Future<void> _importHighlights(List<AmazonHighlight> highlights) async {
+    if (_importing) return; // guard against duplicate "done" messages
+    _importing = true;
+
+    if (highlights.isEmpty) {
+      setState(() {
+        _syncState = _SyncState.error;
+        _errorMessage = 'Non abbiamo trovato highlight da importare.';
+      });
+      _importing = false;
+      return;
+    }
+
+    try {
+      final clippingsText = amazonHighlightsToClippingsText(highlights);
+      final userId = ref.read(currentUserProvider)?.id ?? 'local';
+      final isar = ref.read(isarProvider);
+      final service = ImportService(isar, userId);
+      final result = await service.importClippingsText(clippingsText);
+
+      if (!mounted) return;
+      setState(() {
+        _syncState = _SyncState.done;
+        _highlightsImported = result.highlightsAdded;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _syncState = _SyncState.error;
+        _errorMessage = e.toString();
+      });
+    } finally {
+      _importing = false;
     }
   }
 
@@ -95,10 +175,10 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton.icon(
-                  // Navigate to the notebook (now that the user has signed in
-                  // via the entry page); onPageFinished then extracts.
-                  onPressed: () => _webController
-                      .loadRequest(Uri.parse(AmazonSyncService.notebookUrl)),
+                  // Navigate to the notebook on whatever Amazon host the user
+                  // ended up on after login (region-safe); onPageFinished then
+                  // injects the extractor.
+                  onPressed: _openNotebook,
                   icon: const Icon(Icons.download_outlined),
                   label: Text(context.l10n.jamExtractHighlights),
                 ),
@@ -116,7 +196,8 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           duration: const Duration(milliseconds: 300),
           child: WebViewWidget(controller: _webController),
         ),
-        if (_syncState == _SyncState.extracting) _ExtractingOverlay(),
+        if (_syncState == _SyncState.extracting)
+          _ExtractingOverlay(count: _progressCount, book: _progressBook),
         if (_syncState == _SyncState.done)
           _DoneOverlay(
             count: _highlightsImported,
@@ -126,7 +207,13 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           _ErrorOverlay(
             message: _errorMessage ?? 'Unknown error',
             onRetry: () {
-              setState(() => _syncState = _SyncState.browsing);
+              setState(() {
+                _syncState = _SyncState.browsing;
+                _errorMessage = null;
+                _progressCount = 0;
+                _progressBook = null;
+                _importing = false;
+              });
               _webController.loadRequest(
                 Uri.parse(AmazonSyncService.entryUrl),
               );
@@ -186,20 +273,47 @@ class _WebNotSupported extends StatelessWidget {
 }
 
 class _ExtractingOverlay extends StatelessWidget {
+  const _ExtractingOverlay({required this.count, this.book});
+
+  final int count;
+  final String? book;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       color: MarginaliaColors.background,
-      child: const Center(
+      padding: const EdgeInsets.all(32),
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: MarginaliaColors.accent),
-            SizedBox(height: 20),
-            Text(
-              'Sto estraendo gli highlight…',
-              style: TextStyle(color: MarginaliaColors.textMuted, fontSize: 15),
+            const CircularProgressIndicator(color: MarginaliaColors.accent),
+            const SizedBox(height: 20),
+            const Text(
+              'Sto leggendo i tuoi highlight…',
+              style: TextStyle(color: MarginaliaColors.text, fontSize: 16),
             ),
+            const SizedBox(height: 8),
+            Text(
+              count > 0
+                  ? '$count highlight finora'
+                  : 'Apro la tua libreria Kindle…',
+              style: const TextStyle(
+                  color: MarginaliaColors.textMuted, fontSize: 13),
+            ),
+            if (book != null && book!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                book!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: MarginaliaColors.textMuted,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic),
+              ),
+            ],
           ],
         ),
       ),
