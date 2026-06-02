@@ -23,6 +23,7 @@ import '../providers/highlights_provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/health_provider.dart';
 import '../providers/calendar_provider.dart';
+import '../providers/onboarding_provider.dart';
 
 // ─── 3-hour stability cache ─────────────────────────────────────────────────
 //
@@ -55,6 +56,11 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
       // Provider may already be gone (app closed) — safe to ignore.
     }
   });
+
+  // Privacy-sensitive: the locally-stored gender (never uploaded). The cycle
+  // phase below is only allowed to colour the tone for 'female' users; for
+  // everyone else the cycle is ignored entirely.
+  final gender = ref.read(genderProvider);
 
   // ── 1. Get all highlights ──────────────────────────────────────────────────
   final List<Highlight> all;
@@ -122,7 +128,10 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   // shapes the chosen highlight, just privately.
   String? tone;
   if (healthSnap != null && healthSnap.isAvailable) {
-    final phase = healthSnap.cyclePhase?.name;
+    // Cycle phase is consulted ONLY for users whose locally-stored gender is
+    // 'female'. For men / non-female / unset, `phase` stays null so the cycle
+    // branches never fire and we fall through to the steps/workout logic.
+    final phase = gender == 'female' ? healthSnap.cyclePhase?.name : null;
     final steps = healthSnap.stepsToday;
     final today = DateTime(now.year, now.month, now.day);
     final workedOutToday = healthSnap.workoutsThisWeek.any((w) =>

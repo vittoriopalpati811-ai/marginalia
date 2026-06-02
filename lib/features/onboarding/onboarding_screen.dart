@@ -14,6 +14,7 @@ import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/providers/health_provider.dart';
 import '../../core/providers/calendar_provider.dart';
+import '../../core/services/gender_service.dart';
 import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/motion/airbnb_motion.dart';
@@ -24,11 +25,11 @@ import 'steps/currently_reading_step.dart';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const _kTotalSteps = 10;
+const _kTotalSteps = 11;
 // Step indices (keep in sync with the PageView children below):
 // 0: Welcome   · 1: Auth   · 2: Username  · 3: Name   · 4: Avatar
-// 5: Cover     · 6: Goal   · 7: Currently · 8: Permissions · 9: Complete
-const _kStepComplete = 9;
+// 5: Cover     · 6: Goal   · 7: Currently · 8: Permissions · 9: Gender · 10: Complete
+const _kStepComplete = 10;
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -90,7 +91,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _crTitleCtrl  = TextEditingController();
   final _crAuthorCtrl = TextEditingController();
 
-  // Step 8 — Completing
+  // Step 9 — Gender (privacy-sensitive, stored ONLY on-device)
+  // 'female' | 'male' | 'unspecified', or null until the user chooses.
+  String? _gender;
+
+  // Step 10 — Completing
   bool _completing = false;
 
   @override
@@ -355,6 +360,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     setState(() => _completing = true);
     HapticFeedback.mediumImpact();
 
+    // Privacy-sensitive: persist the chosen gender ONLY on-device. Done first
+    // (and outside the Supabase calls) so the local write happens even if a
+    // later network step fails. GenderService.write is internally guarded.
+    await GenderService.write(_gender ?? 'unspecified');
+
     try {
       final svc = ref.read(supabaseServiceProvider);
 
@@ -521,6 +531,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       _next();
                     },
                     onSkip: _next,
+                  ),
+                  _GenderStep(
+                    selected: _gender,
+                    onSelect: (g) {
+                      setState(() => _gender = g);
+                      ref.read(genderProvider.notifier).state = g;
+                      _next();
+                    },
                   ),
                   _CompleteStep(
                     username: _usernameCtrl.text.trim(),
@@ -1918,6 +1936,136 @@ class _PermIcon extends StatelessWidget {
         ),
         child: Icon(icon, size: 30, color: MarginaliaColors.sienna),
       );
+}
+
+// ─── Step 9: Gender (local, privacy-preserving) ──────────────────────────────
+//
+// Asks how the user identifies SO the daily phrase can gently tailor its tone
+// (e.g. cycle-aware nudges). Styled like _PermissionsStep. Tapping a card
+// selects that value AND advances immediately. The answer is stored ONLY
+// on-device — see GenderService / genderProvider. Strings inlined it/en (no .arb
+// edits), matching _PermissionsStep's approach.
+
+class _GenderStep extends StatelessWidget {
+  const _GenderStep({required this.selected, required this.onSelect});
+
+  /// Currently-selected value, used only to show a brief pressed state on the
+  /// chosen card while the page-slide to the next step plays out.
+  final String? selected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    final title = isIt
+        ? 'Per personalizzare\nle frasi, come ti identifichi?'
+        : 'To tailor your phrases,\nhow do you identify?';
+    final note = isIt
+        ? 'Serve solo per mostrarti spunti pertinenti — resta sul tuo telefono.'
+        : 'Only used to show you relevant nudges — it stays on your phone.';
+    final female = isIt ? 'Donna' : 'Woman';
+    final male = isIt ? 'Uomo' : 'Man';
+    final unspecified = isIt ? 'Preferisco non dirlo' : 'Prefer not to say';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.ebGaramond(
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+              height: 1.12,
+              color: MarginaliaColors.ink,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: 13.5,
+              height: 1.6,
+              color: MarginaliaColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 36),
+          _GenderOption(
+            label: female,
+            value: 'female',
+            isSelected: selected == 'female',
+            onTap: () => onSelect('female'),
+          ),
+          const SizedBox(height: 12),
+          _GenderOption(
+            label: male,
+            value: 'male',
+            isSelected: selected == 'male',
+            onTap: () => onSelect('male'),
+          ),
+          const SizedBox(height: 12),
+          _GenderOption(
+            label: unspecified,
+            value: 'unspecified',
+            isSelected: selected == 'unspecified',
+            onTap: () => onSelect('unspecified'),
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenderOption extends StatelessWidget {
+  const _GenderOption({
+    required this.label,
+    required this.value,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String value;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? MarginaliaColors.primaryFaint
+              : MarginaliaColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? MarginaliaColors.primary : MarginaliaColors.rule,
+            width: isSelected ? 1.5 : 0.8,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.manrope(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? MarginaliaColors.primary : MarginaliaColors.ink,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CompleteStep extends StatefulWidget {
