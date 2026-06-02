@@ -124,11 +124,11 @@ struct PhraseWidgetView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .containerBackground(.clear, for: .widget)
+            .containerBackground(.ultraThinMaterial, for: .widget)
 
         default:
             Text(entry.text)
-                .containerBackground(.clear, for: .widget)
+                .containerBackground(.ultraThinMaterial, for: .widget)
         }
     }
 
@@ -201,7 +201,7 @@ struct ReadingWidgetView: View {
                 }
             }
             .widgetAccentable()
-            .containerBackground(.clear, for: .widget)
+            .containerBackground(.ultraThinMaterial, for: .widget)
 
         case .accessoryInline:
             // Inline supports a leading SF Symbol via Label.
@@ -220,11 +220,11 @@ struct ReadingWidgetView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .containerBackground(.clear, for: .widget)
+            .containerBackground(.ultraThinMaterial, for: .widget)
 
         default:
             Text(minutesLabel(entry.monthMinutes))
-                .containerBackground(.clear, for: .widget)
+                .containerBackground(.ultraThinMaterial, for: .widget)
         }
     }
 }
