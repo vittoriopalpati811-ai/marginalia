@@ -140,11 +140,16 @@ function buildPrompt(
     const tone = toneMap[ctx.tone as string];
     if (tone) contextParts.push(`Tono preferito per oggi: ${tone}`);
   }
-  if (Array.isArray(ctx.calendarEvents) &&
-      (ctx.calendarEvents as string[]).length > 0) {
-    contextParts.push(
-      `Impegni di oggi: ${(ctx.calendarEvents as string[]).join(", ")}`,
-    );
+  if (Array.isArray(ctx.calendarEvents)) {
+    // Clamp the array AND each title before splicing into the prompt — bounds
+    // prompt size / token cost / injection length on otherwise-unbounded input.
+    const events = (ctx.calendarEvents as unknown[])
+      .slice(0, 8)
+      .map((e) => String(e ?? "").slice(0, 80))
+      .filter((e) => e.length > 0);
+    if (events.length > 0) {
+      contextParts.push(`Impegni di oggi: ${events.join(", ")}`);
+    }
   }
 
   // ── Highlight list ───────────────────────────────────────────────────────
