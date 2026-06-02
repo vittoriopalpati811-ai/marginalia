@@ -114,8 +114,19 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "download failed" }, 500);
     }
 
+    // Reject oversized payloads (a My Clippings.txt is normally well under 1 MB;
+    // cap before materialising the string so a huge upload can't exhaust memory).
+    const MAX_FILE_BYTES = 5_000_000; // 5 MB
+    if (fileData.size > MAX_FILE_BYTES) {
+      await markError(import_id, "File too large (max 5 MB)");
+      return jsonResponse({ error: "file too large" }, 413);
+    }
+
     const content = await fileData.text();
-    const clippings = parseMyClippings(content);
+    // Bound the work even if the file slipped under the byte cap with many tiny
+    // entries — process at most this many clippings.
+    const MAX_CLIPPINGS = 20000;
+    const clippings = parseMyClippings(content).slice(0, MAX_CLIPPINGS);
 
     let booksAdded = 0;
     let highlightsAdded = 0;
