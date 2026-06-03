@@ -622,7 +622,7 @@ class _LanguageStepState extends State<_LanguageStep> {
 
           // ── Prompt ────────────────────────────────────────────────────────
           Text(
-            'Choose your language',
+            context.l10n.onboardingLangChoose,
             style: GoogleFonts.manrope(
               fontSize: 13,
               color: MarginaliaColors.inkFaint,
@@ -670,7 +670,7 @@ class _LanguageStepState extends State<_LanguageStep> {
 
           // ── Footnote ─────────────────────────────────────────────────────
           Text(
-            'You can change this later in Settings',
+            context.l10n.onboardingLangChangeLater,
             style: GoogleFonts.manrope(
               fontSize: 12,
               color: MarginaliaColors.inkFaint,
@@ -1314,7 +1314,7 @@ class _UsernameStep extends StatelessWidget {
             textInputAction: TextInputAction.done,
             onChanged: onChanged,
             decoration: InputDecoration(
-              hintText: 'username',
+              hintText: context.l10n.onboardingLangUsernameHint,
               prefixText: '@',
               prefixStyle: GoogleFonts.manrope(
                 fontWeight: FontWeight.w600,

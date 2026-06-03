@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -34,6 +35,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final l10n = context.l10n;
     setState(() { _loading = true; _error = null; });
 
     try {
@@ -47,7 +49,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       setState(() { _error = e.message; _loading = false; });
     } catch (_) {
       setState(() {
-        _error = 'Unexpected error. Please try again.';
+        _error = l10n.authErrGeneric;
         _loading = false;
       });
     }
@@ -142,9 +144,9 @@ class _FormState extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          const Text(
-            'Nuova password',
-            style: TextStyle(
+          Text(
+            context.l10n.resetTitle,
+            style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.5,
@@ -154,8 +156,8 @@ class _FormState extends StatelessWidget {
           const SizedBox(height: 6),
 
           Text(
-            'Choose a password of at least 6 characters.',
-            style: TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
+            context.l10n.resetSubtitle,
+            style: const TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
           ).animate(delay: 60.ms).fadeIn(duration: 300.ms),
 
           const SizedBox(height: 32),
@@ -165,7 +167,7 @@ class _FormState extends StatelessWidget {
             controller:  passwordCtrl,
             obscureText: obscure1,
             decoration:  InputDecoration(
-              hintText:   'New password',
+              hintText:   context.l10n.resetNewHint,
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(obscure1
@@ -175,8 +177,8 @@ class _FormState extends StatelessWidget {
               ),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Enter your new password';
-              if (v.length < 6) return 'At least 6 characters';
+              if (v == null || v.isEmpty) return context.l10n.resetEnterNew;
+              if (v.length < 6) return context.l10n.resetMin6;
               return null;
             },
           ).animate(delay: 100.ms).fadeIn(duration: 280.ms),
@@ -188,7 +190,7 @@ class _FormState extends StatelessWidget {
             controller:  confirmCtrl,
             obscureText: obscure2,
             decoration:  InputDecoration(
-              hintText:   'Confirm password',
+              hintText:   context.l10n.resetConfirmHint,
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 icon: Icon(obscure2
@@ -198,7 +200,7 @@ class _FormState extends StatelessWidget {
               ),
             ),
             validator: (v) {
-              if (v != passwordCtrl.text) return 'Passwords do not match';
+              if (v != passwordCtrl.text) return context.l10n.resetMismatch;
               return null;
             },
           ).animate(delay: 140.ms).fadeIn(duration: 280.ms),
@@ -243,7 +245,7 @@ class _FormState extends StatelessWidget {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Save password'),
+                  : Text(context.l10n.resetSaveCta),
             ),
           ).animate(delay: 180.ms).fadeIn(duration: 280.ms),
         ],
@@ -274,15 +276,15 @@ class _DoneState extends StatelessWidget {
               curve: Curves.elasticOut,
             ),
         const SizedBox(height: 24),
-        const Text(
-          'Password aggiornata!',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        Text(
+          context.l10n.resetDone,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           textAlign: TextAlign.center,
         ).animate(delay: 200.ms).fadeIn(duration: 300.ms),
         const SizedBox(height: 8),
         Text(
-          'Stai per essere reindirizzato…',
-          style: TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
+          context.l10n.resetRedirecting,
+          style: const TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
           textAlign: TextAlign.center,
         ).animate(delay: 350.ms).fadeIn(duration: 300.ms),
       ],

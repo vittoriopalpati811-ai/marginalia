@@ -32,7 +32,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Book of the month',
+          context.l10n.jamVoteTitle,
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -44,7 +44,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
           IconButton(
             icon: const Icon(Icons.add, color: MarginaliaColors.primary),
             onPressed: () => _showProposeSheet(),
-            tooltip: 'Propose a book',
+            tooltip: context.l10n.jamVoteProposeBook,
           ),
         ],
       ),
@@ -211,7 +211,7 @@ class _ProposalCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Proposto da $proposerName',
+                        context.l10n.jamVoteProposedBy(proposerName),
                         style: GoogleFonts.manrope(
                           fontSize: 11,
                           color: MarginaliaColors.inkFaint,
@@ -295,7 +295,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No proposals yet',
+              context.l10n.jamVoteNoProposals,
               style: GoogleFonts.manrope(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -305,7 +305,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Suggest the next book to read together.',
+              context.l10n.jamVoteNoProposalsBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 14,
@@ -402,7 +402,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Propose a book',
+            context.l10n.jamVoteProposeBook,
             style: GoogleFonts.manrope(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -413,19 +413,19 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
           const SizedBox(height: 20),
           TextField(
             controller: _titleCtrl,
-            decoration: const InputDecoration(hintText: 'Title *', prefixIcon: Icon(Icons.book_outlined)),
+            decoration: InputDecoration(hintText: context.l10n.jamVoteTitleFieldHint, prefixIcon: const Icon(Icons.book_outlined)),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _authorCtrl,
-            decoration: const InputDecoration(hintText: 'Author', prefixIcon: Icon(Icons.person_outline)),
+            decoration: InputDecoration(hintText: context.l10n.jamVoteAuthorFieldHint, prefixIcon: const Icon(Icons.person_outline)),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _descCtrl,
-            decoration: const InputDecoration(hintText: 'Why this book? (optional)'),
+            decoration: InputDecoration(hintText: context.l10n.jamVoteWhyFieldHint),
             maxLines: 3,
             textCapitalization: TextCapitalization.sentences,
           ),
@@ -436,7 +436,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
               onPressed: _loading ? null : _submit,
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Propose'),
+                  : Text(context.l10n.jamVoteProposeCta),
             ),
           ),
         ],

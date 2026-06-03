@@ -58,6 +58,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
   // ── Trending ─────────────────────────────────────────────────────────────
 
   Future<void> _fetchTrending() async {
+    final l10n = context.l10n;
     setState(() { _loading = true; _error = null; });
     try {
       final uri = Uri.parse(
@@ -71,10 +72,10 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
       if (res.statusCode == 200) {
         _parseAndSet(json.decode(res.body) as Map<String, dynamic>);
       } else {
-        if (mounted) setState(() => _error = 'Error ${res.statusCode}');
+        if (mounted) setState(() => _error = l10n.giphyError(res.statusCode.toString()));
       }
     } catch (e) {
-      if (mounted) setState(() => _error = 'Network unavailable');
+      if (mounted) setState(() => _error = l10n.giphyNetworkUnavailable);
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -86,6 +87,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
       _fetchTrending();
       return;
     }
+    final l10n = context.l10n;
     setState(() {
       _loading = true;
       _hasSearched = true;
@@ -104,10 +106,10 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
       if (res.statusCode == 200) {
         _parseAndSet(json.decode(res.body) as Map<String, dynamic>);
       } else {
-        if (mounted) setState(() => _error = 'Error ${res.statusCode}');
+        if (mounted) setState(() => _error = l10n.giphyError(res.statusCode.toString()));
       }
     } catch (e) {
-      if (mounted) setState(() => _error = 'Network unavailable');
+      if (mounted) setState(() => _error = l10n.giphyNetworkUnavailable);
     }
     if (mounted) setState(() => _loading = false);
   }
@@ -178,7 +180,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                 color: MarginaliaColors.ink,
               ),
               decoration: InputDecoration(
-                hintText: 'Search GIFs…',
+                hintText: context.l10n.giphySearchHint,
                 hintStyle: GoogleFonts.manrope(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
@@ -270,7 +272,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                 : _gifs.isEmpty && !_loading
                     ? Center(
                         child: Text(
-                          _hasSearched ? 'No results' : 'Loading…',
+                          _hasSearched ? context.l10n.giphyNoResults : context.l10n.giphyLoading,
                           style: GoogleFonts.manrope(
                             color: MarginaliaColors.inkFaint,
                             fontSize: 14,

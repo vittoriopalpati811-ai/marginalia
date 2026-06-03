@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
     existingTitles?: string[];
     context?: Record<string, unknown>;
     userName?: string;
+    lang?: string;
   };
   try {
     body = await req.json();
@@ -111,6 +112,9 @@ Deno.serve(async (req) => {
     .slice(0, 50);
   const userContext: Record<string, unknown> = body.context ?? {};
   const userName: string = clampField(body.userName).trim();
+  // Output language for the AI-written "reason" — defaults to Italian; English
+  // when the app locale is 'en' (US rollout). The client sends `lang`.
+  const lang: string = body.lang === "en" ? "en" : "it";
 
   if (books.length === 0) {
     return json({ recommendations: [], reason: "no_books" });
@@ -135,7 +139,7 @@ Deno.serve(async (req) => {
 
   // ── 2. Build prompt ──────────────────────────────────────────────────────
 
-  const prompt = buildPrompt(withPlots, existingTitles, userContext, userName);
+  const prompt = buildPrompt(withPlots, existingTitles, userContext, userName, lang);
 
   // ── 3. Call Groq API ─────────────────────────────────────────────────────
 
@@ -224,8 +228,10 @@ function buildPrompt(
   books: BookWithPlot[],
   existingTitles: string[],
   ctx: Record<string, unknown>,
-  userName: string
+  userName: string,
+  lang: string
 ): string {
+  const en = lang === "en";
   const bookList = books
     .map((b, i) => {
       // Up to 8 highlights × 80 chars per book. The client already
@@ -244,7 +250,9 @@ function buildPrompt(
 
   const exclusionNote =
     existingTitles.length > 0
-      ? `\n\nNon suggerire titoli già nella sua libreria: ${existingTitles.slice(0, 25).join(", ")}.`
+      ? (en
+          ? `\n\nDo not suggest titles already in their library: ${existingTitles.slice(0, 25).join(", ")}.`
+          : `\n\nNon suggerire titoli già nella sua libreria: ${existingTitles.slice(0, 25).join(", ")}.`)
       : "";
 
   const contextParts: string[] = [];
@@ -272,14 +280,45 @@ function buildPrompt(
   }
 
   const contextNote = contextParts.length > 0
-    ? `\n\nCONTESTO UTENTE: ${contextParts.join("; ")}. Puoi usarlo per sfumare i consigli, ma non è obbligatorio.`
+    ? (en
+        ? `\n\nUSER CONTEXT: ${contextParts.join("; ")}. You may use it to nuance the picks, but it is optional.`
+        : `\n\nCONTESTO UTENTE: ${contextParts.join("; ")}. Puoi usarlo per sfumare i consigli, ma non è obbligatorio.`)
     : "";
 
   // How to address the user in the reason field
   const addressee = userName ? userName : "lettore";
-  const reasonInstruction = userName
-    ? `Per ogni libro scrivi una "reason" in italiano (2-3 frasi) rivolgendoti direttamente all'utente per nome, in seconda persona. Inizia SEMPRE con "${userName}, apprezzerai" oppure "${userName}, adorerai" oppure "${userName}, ti conquisterà" — mai con "Il lettore" o frasi impersonali. Cita connessioni concrete con i suoi highlight.`
-    : `Per ogni libro scrivi una "reason" in italiano (2-3 frasi) in seconda persona diretta ("apprezzerai", "adorerai", "ti conquisterà"). Cita connessioni concrete con i suoi highlight.`;
+  const reasonInstruction = en
+    ? (userName
+        ? `For each book write a "reason" in ENGLISH (2-3 sentences), addressing the user directly by name, in the second person. ALWAYS start with "${userName}, you'll love" or "${userName}, you'll appreciate" or "${userName}, you'll be won over by" — never "The reader" or impersonal phrasing. Cite concrete connections with their highlights.`
+        : `For each book write a "reason" in ENGLISH (2-3 sentences) in direct second person ("you'll love", "you'll appreciate", "it will win you over"). Cite concrete connections with their highlights.`)
+    : (userName
+        ? `Per ogni libro scrivi una "reason" in italiano (2-3 frasi) rivolgendoti direttamente all'utente per nome, in seconda persona. Inizia SEMPRE con "${userName}, apprezzerai" oppure "${userName}, adorerai" oppure "${userName}, ti conquisterà" — mai con "Il lettore" o frasi impersonali. Cita connessioni concrete con i suoi highlight.`
+        : `Per ogni libro scrivi una "reason" in italiano (2-3 frasi) in seconda persona diretta ("apprezzerai", "adorerai", "ti conquisterà"). Cita connessioni concrete con i suoi highlight.`);
+
+  if (en) {
+    return `You are an expert librarian and passionate reader. Analyze the books this user has read and their personal highlights, then suggest 5 books they would love.
+
+BOOKS READ:
+${bookList}${exclusionNote}${contextNote}
+
+INSTRUCTIONS:
+- Suggest exactly 5 books the user has NOT read yet.
+- Choose books that resonate with the themes, ideas and style of the highlights.
+- Mix classics and contemporary, and authors from different countries.
+- ${reasonInstruction}
+- Reply ONLY with valid JSON in the format below, no markdown and no extra text. Use straight quotes (") only, never typographic quotes.
+
+{
+  "recommendations": [
+    {
+      "title": "Title",
+      "author": "Author",
+      "year": "year",
+      "reason": "Personalised explanation."
+    }
+  ]
+}`;
+  }
 
   return `Sei un bibliotecario italiano esperto e appassionato lettore. Analizza i libri che questo utente ha letto e i suoi highlight personali, poi suggerisci 5 libri che potrebbe amare.
 
