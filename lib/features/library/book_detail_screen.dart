@@ -236,7 +236,7 @@ class _StatRow extends StatelessWidget {
         children: [
           _StatBox(
             value: '$highlightCount',
-            label: highlightCount == 1 ? 'highlight' : 'highlights',
+            label: context.l10n.bookStatHighlights(highlightCount),
             icon: Icons.format_quote_outlined,
           ),
           // Sottile divisore verticale
@@ -247,7 +247,7 @@ class _StatRow extends StatelessWidget {
           ),
           _StatBox(
             value: author.split(' ').last,
-            label: 'autore',
+            label: context.l10n.bookStatAuthor,
             icon: Icons.person_outline,
           ),
           Container(
@@ -257,7 +257,7 @@ class _StatRow extends StatelessWidget {
           ),
           _StatBox(
             value: '',
-            label: 'in lettura',
+            label: context.l10n.bookStatReading,
             icon: Icons.menu_book_outlined,
           ),
         ],
@@ -414,7 +414,7 @@ class _HighlightCard extends StatelessWidget {
                     children: [
                       if (highlight.location != null)
                         Text(
-                          'pos. ${highlight.location}',
+                          context.l10n.bookLocationPrefix(highlight.location!),
                           style: MarginaliaTextStyles.label.copyWith(
                             fontSize: 10,
                             color: MarginaliaColors.inkFaint,
