@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 
@@ -37,7 +38,7 @@ class PinnedHighlightsSection extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
               child: Row(
                 children: [
-                  Text('IN EVIDENZA', style: MarginaliaTextStyles.sectionTitle),
+                  Text(context.l10n.profilePinnedSection, style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(
                       child:
@@ -61,7 +62,7 @@ class PinnedHighlightsSection extends ConsumerWidget {
                               size: 11, color: MarginaliaColors.sienna),
                           const SizedBox(width: 4),
                           Text(
-                            'Edit',
+                            context.l10n.profileEditButton,
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -81,7 +82,7 @@ class PinnedHighlightsSection extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 child: Text(
-                  'Tocca "Modifica" per scegliere fino a 3 highlight da mettere in evidenza.',
+                  context.l10n.profilePinnedEmptyHint,
                   style: const TextStyle(
                     fontSize: 13,
                     color: MarginaliaColors.inkMuted,
@@ -275,9 +276,9 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Featured highlights',
-                            style: TextStyle(
+                          Text(
+                            context.l10n.pinnedFeaturedTitle,
+                            style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
                               color: MarginaliaColors.ink,
@@ -285,7 +286,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             ),
                           ),
                           Text(
-                            'Select up to 3  (${_selectedIds.length}/3)',
+                            context.l10n.pinnedSelectUpTo(_selectedIds.length),
                             style: const TextStyle(
                               fontSize: 12,
                               color: MarginaliaColors.inkMuted,
@@ -317,8 +318,8 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                               child: CircularProgressIndicator(
                                   strokeWidth: 1.5,
                                   color: Color(0xFFF2F5EA)))
-                          : const Text('Save',
-                              style: TextStyle(
+                          : Text(context.l10n.save,
+                              style: const TextStyle(
                                   fontSize: 13, fontWeight: FontWeight.w700)),
                     ),
                   ],
@@ -334,19 +335,19 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                         color: MarginaliaColors.sienna, strokeWidth: 1.5),
                   ),
                   error: (e, _) =>
-                      Center(child: Text('Error: $e')),
+                      Center(child: Text(context.l10n.errorPrefix('$e'))),
                   data: (all) {
                     // Only synced highlights can be pinned (need a supabaseId)
                     final highlights =
                         all.where((h) => h.supabaseId != null).toList();
                     if (highlights.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(32),
+                          padding: const EdgeInsets.all(32),
                           child: Text(
-                            'Sync your highlights first to be able to feature them.',
+                            context.l10n.pinnedSyncFirst,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                                 color: MarginaliaColors.inkMuted,
                                 fontSize: 14,
                                 height: 1.5)),

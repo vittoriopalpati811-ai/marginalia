@@ -45,16 +45,34 @@ _GP _gpFor(String key) =>
     _kGradients.firstWhere((g) => g.key == key,
         orElse: () => _kGradients.first);
 
+// Render-time localized label for a gradient, keyed by the stable gradient id.
+// The const _kGradients list above cannot use context.l10n, so the display
+// label is resolved here at build time.
+String _gradientLabel(BuildContext context, String key) => switch (key) {
+      'sepia'    => context.l10n.gradientSepia,
+      'forest'   => context.l10n.gradientForest,
+      'ocean'    => context.l10n.gradientOcean,
+      'dusk'     => context.l10n.gradientDusk,
+      'rose'     => context.l10n.gradientRose,
+      'graphite' => context.l10n.gradientGraphite,
+      'amber'    => context.l10n.gradientAmber,
+      'slate'    => context.l10n.gradientSlate,
+      _          => context.l10n.gradientSepia,
+    };
+
 // ─── Pattern keys ─────────────────────────────────────────────────────────────
 
 const _kPatterns = ['none', 'dots', 'lines', 'grid', 'circles'];
-const _kPatternLabels = {
-  'none':    'None',
-  'dots':    'Dots',
-  'lines':   'Lines',
-  'grid':    'Grid',
-  'circles': 'Circles',
-};
+
+// Render-time localized label for a pattern, keyed by the stable pattern id.
+String _patternLabel(BuildContext context, String key) => switch (key) {
+      'none'    => context.l10n.patternNone,
+      'dots'    => context.l10n.patternDots,
+      'lines'   => context.l10n.patternLines,
+      'grid'    => context.l10n.patternGrid,
+      'circles' => context.l10n.patternCircles,
+      _         => context.l10n.patternNone,
+    };
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -325,7 +343,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
               child: Row(
                 children: [
-                  Text('POST', style: MarginaliaTextStyles.sectionTitle),
+                  Text(context.l10n.profilePostsSection, style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
                   const SizedBox(width: 8),
@@ -349,9 +367,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           width: 0.8,
                         ),
                       ),
-                      child: const Text(
-                        'Write',
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.profileWriteButton,
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: MarginaliaColors.primary,
@@ -406,7 +424,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
                           child: Row(
                             children: [
-                              Text('LIBRARY',
+                              Text(context.l10n.profileLibrarySection,
                                   style: MarginaliaTextStyles.sectionTitle),
                               const SizedBox(width: 12),
                               const Expanded(
@@ -624,7 +642,7 @@ class _ProfileHeader extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        name.isEmpty ? 'Your profile' : name,
+                        name.isEmpty ? context.l10n.profileYourProfile : name,
                         style: const TextStyle(
                           color: Color(0xFFEDE5D5),
                           fontSize: 20,
@@ -661,17 +679,17 @@ class _ProfileHeader extends StatelessWidget {
                 _IconBtn(
                     icon: Icons.edit_outlined,
                     onTap: onEditProfile,
-                    tooltip: 'Edit profile'),
+                    tooltip: context.l10n.profileEditProfile),
                 const SizedBox(width: 8),
                 _IconBtn(
                     icon: Icons.ios_share_outlined,
                     onTap: onShare,
-                    tooltip: 'Share profile'),
+                    tooltip: context.l10n.profileShareProfile),
                 const SizedBox(width: 8),
                 _IconBtn(
                     icon: Icons.settings_outlined,
                     onTap: onSettings,
-                    tooltip: 'Settings'),
+                    tooltip: context.l10n.profileSettings),
               ],
             ),
           ),
@@ -731,13 +749,13 @@ class _StatsRow extends StatelessWidget {
       decoration: MarginaliaDecorations.card(),
       child: Row(
         children: [
-          _StatBox(label: 'Books', value: booksCount, onTap: onBooks),
+          _StatBox(label: context.l10n.profileBooksStat, value: booksCount, onTap: onBooks),
           _Div(),
-          _StatBox(label: 'Highlights', value: stats['highlights'] ?? 0),
+          _StatBox(label: context.l10n.profileHighlightsStat, value: stats['highlights'] ?? 0),
           _Div(),
-          _StatBox(label: 'Following', value: stats['following'] ?? 0, onTap: onFollowing),
+          _StatBox(label: context.l10n.profileFollowing, value: stats['following'] ?? 0, onTap: onFollowing),
           _Div(),
-          _StatBox(label: 'Followers', value: stats['followers'] ?? 0, onTap: onFollowers),
+          _StatBox(label: context.l10n.profileFollowers, value: stats['followers'] ?? 0, onTap: onFollowers),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0, duration: 350.ms);
@@ -821,9 +839,9 @@ class _CurrentlyReadingCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'CURRENTLY READING',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.editProfileCurrentlyReadingLabel,
+                    style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                       color: MarginaliaColors.inkFaint,
@@ -898,7 +916,7 @@ class _SpotlightCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
-                Text('FEATURED HIGHLIGHT',
+                Text(context.l10n.profileSpotlight,
                     style: MarginaliaTextStyles.sectionTitle),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -1264,11 +1282,11 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
           ),
 
           // Title
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Customise profile',
-              style: TextStyle(
+              context.l10n.profileCustomise,
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: MarginaliaColors.ink,
@@ -1300,7 +1318,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                       CustomPaint(painter: _PatternPainter(_pat)),
                     Center(
                       child: Text(
-                        'Preview',
+                        context.l10n.editProfilePreviewLabel,
                         style: TextStyle(
                           color: Colors.white.withAlpha(180),
                           fontSize: 13,
@@ -1316,13 +1334,13 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
           ),
 
           // Gradient label
-          const Padding(
-            padding: EdgeInsets.only(left: 20, bottom: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 20, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'BACKGROUND',
-                style: TextStyle(
+                context.l10n.profileBackgroundLabel,
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: MarginaliaColors.inkFaint,
@@ -1396,7 +1414,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                 return SizedBox(
                   width: 52,
                   child: Text(
-                    g.label,
+                    _gradientLabel(context, g.key),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 9,
@@ -1415,13 +1433,13 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
           const SizedBox(height: 20),
 
           // Pattern label
-          const Padding(
-            padding: EdgeInsets.only(left: 20, bottom: 10),
+          Padding(
+            padding: const EdgeInsets.only(left: 20, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'PATTERN',
-                style: TextStyle(
+                context.l10n.profilePatternLabel,
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: MarginaliaColors.inkFaint,
@@ -1501,7 +1519,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                   return SizedBox(
                     width: 64,
                     child: Text(
-                      _kPatternLabels[pk] ?? pk,
+                      _patternLabel(context, pk),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 9,
@@ -1545,8 +1563,8 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                         child: CircularProgressIndicator(
                             strokeWidth: 1.5,
                             color: Color(0xFFF1EEE7)))
-                    : const Text('Save',
-                        style: TextStyle(
+                    : Text(context.l10n.save,
+                        style: const TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w700)),
               ),
             ),
@@ -1656,9 +1674,9 @@ class _NotLoggedIn extends StatelessWidget {
                     size: 32, color: MarginaliaColors.siennaLight),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Sign in to view your profile',
-                style: TextStyle(
+              Text(
+                context.l10n.profileLoginRequired,
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: MarginaliaColors.ink,
@@ -1694,16 +1712,16 @@ class _ProfilePostCard extends StatelessWidget {
   const _ProfilePostCard({required this.post});
   final Map<String, dynamic> post;
 
-  String _timeAgo(String? iso) {
+  String _timeAgo(BuildContext context, String? iso) {
     if (iso == null) return '';
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24)   return '${diff.inHours}h ago';
-    if (diff.inDays < 7)     return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).round()}w ago';
+    if (diff.inMinutes < 1)  return context.l10n.timeNow;
+    if (diff.inMinutes < 60) return context.l10n.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24)   return context.l10n.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7)     return context.l10n.timeDaysAgo(diff.inDays);
+    return context.l10n.timeWeeksAgo((diff.inDays / 7).round());
   }
 
   @override
@@ -1738,7 +1756,7 @@ class _ProfilePostCard extends StatelessWidget {
                   // Timestamp
                   if (createdAt != null)
                     Text(
-                      _timeAgo(createdAt),
+                      _timeAgo(context, createdAt),
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: MarginaliaColors.inkFaint,
@@ -1864,7 +1882,7 @@ class _FavoriteBooksSection extends StatelessWidget {
           // ── Section header ──────────────────────────────────────────────
           Row(
             children: [
-              Text('FAVOURITE BOOKS', style: MarginaliaTextStyles.sectionTitle),
+              Text(context.l10n.profileFavouriteBooksSection, style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
               const SizedBox(width: 8),
@@ -1881,7 +1899,7 @@ class _FavoriteBooksSection extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    favBooks.isEmpty ? 'Choose' : 'Edit',
+                    favBooks.isEmpty ? context.l10n.profileChooseButton : context.l10n.profileEditButton,
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -2131,7 +2149,7 @@ class _EmptyFavBooks extends StatelessWidget {
                 size: 22, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 8),
             Text(
-              'Choose your six favourite books',
+              context.l10n.profileChooseFavouritesPrompt,
               style: GoogleFonts.manrope(
                 fontSize: 12.5,
                 color: MarginaliaColors.inkMuted,
@@ -2238,9 +2256,9 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
               child: Row(
                 children: [
-                  const Text(
-                    'Favourite books',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.profileFavouriteBooksTitle,
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: MarginaliaColors.ink,
@@ -2274,7 +2292,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                   ? Padding(
                       padding: const EdgeInsets.all(40),
                       child: Text(
-                        'Add books to your library before choosing favourites.',
+                        context.l10n.profileAddBooksBeforeFavourites,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.manrope(
                           fontSize: 13.5,
@@ -2403,9 +2421,9 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                           child: CircularProgressIndicator(
                               strokeWidth: 1.5,
                               color: Color(0xFFF1EEE7)))
-                      : const Text(
-                          'Save',
-                          style: TextStyle(
+                      : Text(
+                          context.l10n.save,
+                          style: const TextStyle(
                               fontSize: 14, fontWeight: FontWeight.w700)),
                 ),
               ),

@@ -35,14 +35,32 @@ const _kGradients = [
 _GP _gpFor(String key) =>
     _kGradients.firstWhere((g) => g.key == key, orElse: () => _kGradients.first);
 
+// Render-time localized label for a gradient, keyed by the stable gradient id.
+// The const _kGradients list above cannot use context.l10n, so the display
+// label is resolved here at build time.
+String _gradientLabel(BuildContext context, String key) => switch (key) {
+      'sepia'    => context.l10n.gradientSepia,
+      'forest'   => context.l10n.gradientForest,
+      'ocean'    => context.l10n.gradientOcean,
+      'dusk'     => context.l10n.gradientDusk,
+      'rose'     => context.l10n.gradientRose,
+      'graphite' => context.l10n.gradientGraphite,
+      'amber'    => context.l10n.gradientAmber,
+      'slate'    => context.l10n.gradientSlate,
+      _          => context.l10n.gradientSepia,
+    };
+
 const _kPatterns = ['none', 'dots', 'lines', 'grid', 'circles'];
-const _kPatternLabels = {
-  'none':    'None',
-  'dots':    'Dots',
-  'lines':   'Lines',
-  'grid':    'Grid',
-  'circles': 'Circles',
-};
+
+// Render-time localized label for a pattern, keyed by the stable pattern id.
+String _patternLabel(BuildContext context, String key) => switch (key) {
+      'none'    => context.l10n.patternNone,
+      'dots'    => context.l10n.patternDots,
+      'lines'   => context.l10n.patternLines,
+      'grid'    => context.l10n.patternGrid,
+      'circles' => context.l10n.patternCircles,
+      _         => context.l10n.patternNone,
+    };
 
 // ─── EditProfileScreen ────────────────────────────────────────────────────────
 
@@ -274,7 +292,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Save error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
         setState(() => _saving = false);
       }
     }
@@ -310,7 +328,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           color: MarginaliaColors.ink,
         ),
         title: Text(
-          'Modifica profilo',
+          context.l10n.profileEditProfile,
           style: GoogleFonts.ebGaramond(
             fontSize: 19,
             fontWeight: FontWeight.w600,
@@ -331,7 +349,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionLabel('FOTO'),
+                  _SectionLabel(context.l10n.editProfilePhotosLabel),
                   const SizedBox(height: 10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -414,14 +432,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
-                                          children: const [
-                                            Icon(Icons.image_outlined,
+                                          children: [
+                                            const Icon(Icons.image_outlined,
                                                 size: 13,
                                                 color: Colors.white),
-                                            SizedBox(width: 4),
+                                            const SizedBox(width: 4),
                                             Text(
-                                              'Copertina',
-                                              style: TextStyle(
+                                              context.l10n.editProfileCoverBadge,
+                                              style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
@@ -451,13 +469,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionLabel('INFORMATION'),
+                  _SectionLabel(context.l10n.editProfileInformationLabel),
                   const SizedBox(height: 10),
 
                   _Field(
                     controller: _nameCtrl,
-                    label: 'Display name',
-                    hint: 'e.g. Marco Rossi',
+                    label: context.l10n.editProfileDisplayName,
+                    hint: context.l10n.editProfileDisplayNameHint,
                     icon: Icons.person_outline,
                     onChanged: (_) => setState(() {}),
                   ),
@@ -474,34 +492,34 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                   _Field(
                     controller: _bioCtrl,
-                    label: 'Bio',
-                    hint: 'Tell us about yourself as a reader…',
+                    label: context.l10n.editProfileBioLabel,
+                    hint: context.l10n.editProfileBioHint,
                     icon: Icons.edit_note_outlined,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 24),
 
-                  _SectionLabel('CURRENTLY READING'),
+                  _SectionLabel(context.l10n.editProfileCurrentlyReadingLabel),
                   const SizedBox(height: 10),
 
                   _Field(
                     controller: _readingTitleCtrl,
-                    label: 'Book title',
-                    hint: 'e.g. The Name of the Rose',
+                    label: context.l10n.editProfileBookTitleHint,
+                    hint: context.l10n.editProfileBookTitleExample,
                     icon: Icons.menu_book_outlined,
                   ),
                   const SizedBox(height: 12),
 
                   _Field(
                     controller: _readingAuthorCtrl,
-                    label: 'Author',
-                    hint: 'e.g. Umberto Eco',
+                    label: context.l10n.editProfileAuthorLabel,
+                    hint: context.l10n.editProfileAuthorExample,
                     icon: Icons.person_search_outlined,
                   ),
                   const SizedBox(height: 28),
 
                   // ── Gradient picker ────────────────────────────────────────
-                  _SectionLabel('PROFILE BACKGROUND'),
+                  _SectionLabel(context.l10n.editProfileBackgroundLabel),
                   const SizedBox(height: 12),
 
                   // Live mini-preview
@@ -514,7 +532,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         children: [
                           _GradientBox(gp: gp, pat: _patKey),
                           Center(
-                            child: Text('Anteprima',
+                            child: Text(context.l10n.editProfilePreviewLabel,
                                 style: TextStyle(
                                     color: Colors.white.withAlpha(180),
                                     fontSize: 13,
@@ -576,7 +594,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               const SizedBox(height: 6),
                               SizedBox(
                                 width: 52,
-                                child: Text(g.label,
+                                child: Text(_gradientLabel(context, g.key),
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 9,
@@ -595,7 +613,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const SizedBox(height: 28),
 
                   // ── Pattern picker ─────────────────────────────────────────
-                  _SectionLabel('PATTERN'),
+                  _SectionLabel(context.l10n.editProfilePatternLabel),
                   const SizedBox(height: 12),
 
                   SizedBox(
@@ -656,7 +674,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         return SizedBox(
                           width: 64,
                           child: Text(
-                            _kPatternLabels[pk] ?? pk,
+                            _patternLabel(context, pk),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 9,
@@ -691,9 +709,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               child: CircularProgressIndicator(
                                   strokeWidth: 1.8, color: Color(0xFFF1EEE7)),
                             )
-                          : const Text(
-                              'Save',
-                              style: TextStyle(
+                          : Text(
+                              context.l10n.save,
+                              style: const TextStyle(
                                   fontSize: 16, fontWeight: FontWeight.w700),
                             ),
                     ),
@@ -878,8 +896,8 @@ class _UsernameField extends StatelessWidget {
               height: 1.4,
             ),
             decoration: InputDecoration(
-              labelText: 'Username',
-              hintText: 'e.g. marco_reads',
+              labelText: context.l10n.editProfileUsernameLabel,
+              hintText: context.l10n.editProfileUsernameHint,
               prefixIcon: const Icon(Icons.alternate_email,
                   size: 18, color: MarginaliaColors.inkFaint),
               suffixIcon: suffix,
@@ -894,22 +912,22 @@ class _UsernameField extends StatelessWidget {
           ),
         ),
         if (available == false)
-          const Padding(
-            padding: EdgeInsets.only(left: 14, top: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 14, top: 4),
             child: Text(
-              'Username already taken, choose another.',
-              style: TextStyle(
+              context.l10n.editProfileUsernameUnavailable,
+              style: const TextStyle(
                   fontSize: 11,
                   color: Color(0xFFBF4A4A),
                   fontWeight: FontWeight.w500),
             ),
           ),
         if (available == true)
-          const Padding(
-            padding: EdgeInsets.only(left: 14, top: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 14, top: 4),
             child: Text(
-              'Username available!',
-              style: TextStyle(
+              context.l10n.editProfileUsernameAvailable,
+              style: const TextStyle(
                   fontSize: 11,
                   color: Color(0xFF4A7A35),
                   fontWeight: FontWeight.w500),

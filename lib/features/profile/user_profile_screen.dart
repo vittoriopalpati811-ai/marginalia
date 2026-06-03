@@ -81,7 +81,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
       }
     } finally {
       if (mounted) setState(() => _followLoading = false);
@@ -104,7 +104,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           if (profile == null) {
             return Center(child: Text(context.l10n.profileNotFound));
           }
-          final name = profile['display_name'] as String? ?? 'User';
+          final name = profile['display_name'] as String? ?? context.l10n.profileUserFallback;
           final readingTitle = profile['currently_reading_title'] as String?;
           final readingAuthor = profile['currently_reading_author'] as String?;
           final avatarUrl = profile['avatar_url'] as String?;
@@ -303,7 +303,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         children: [
                           Row(
                             children: [
-                              Text('LIBRI DEL CUORE',
+                              Text(context.l10n.profileFavouriteBooksSection,
                                   style: MarginaliaTextStyles.sectionTitle),
                               const SizedBox(width: 12),
                               const Expanded(
@@ -326,7 +326,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
                   child: Row(
                     children: [
-                      Text('POST', style: MarginaliaTextStyles.sectionTitle),
+                      Text(context.l10n.profilePostsSection, style: MarginaliaTextStyles.sectionTitle),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Divider(
@@ -344,7 +344,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
                           child: Text(
-                            'No posts yet.',
+                            context.l10n.feedNoPostsYet,
                             style: GoogleFonts.manrope(
                                 color: MarginaliaColors.inkMuted, fontSize: 13),
                           ),

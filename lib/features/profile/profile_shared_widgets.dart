@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme.dart';
 import '../library/book_cover.dart';
 
@@ -364,16 +365,16 @@ class PostDetailSheet extends StatelessWidget {
   const PostDetailSheet({super.key, required this.post});
   final Map<String, dynamic> post;
 
-  String _timeAgo(String? iso) {
+  String _timeAgo(BuildContext context, String? iso) {
     if (iso == null) return '';
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'adesso';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
-    if (diff.inHours < 24)   return '${diff.inHours}h fa';
-    if (diff.inDays < 7)     return '${diff.inDays}g fa';
-    return '${(diff.inDays / 7).round()}sett fa';
+    if (diff.inMinutes < 1)  return context.l10n.timeNow;
+    if (diff.inMinutes < 60) return context.l10n.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24)   return context.l10n.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7)     return context.l10n.timeDaysAgo(diff.inDays);
+    return context.l10n.timeWeeksAgo((diff.inDays / 7).round());
   }
 
   @override
@@ -413,7 +414,7 @@ class PostDetailSheet extends StatelessWidget {
                   // Timestamp
                   if (createdAt != null)
                     Text(
-                      _timeAgo(createdAt),
+                      _timeAgo(context, createdAt),
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: MarginaliaColors.inkFaint,

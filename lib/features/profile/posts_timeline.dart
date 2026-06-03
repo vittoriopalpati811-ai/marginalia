@@ -95,7 +95,7 @@ class _ThreadPost extends StatelessWidget {
 
     final name      = (profile?['display_name'] as String?)?.trim()
         ?? (profile?['username'] as String?)?.trim()
-        ?? 'Reader';
+        ?? context.l10n.profileReaderFallback;
     final username  = profile?['username']  as String?;
     final avatarUrl = profile?['avatar_url'] as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';

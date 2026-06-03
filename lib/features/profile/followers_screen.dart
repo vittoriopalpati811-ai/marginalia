@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 
 // ─── List type enum ───────────────────────────────────────────────────────────
@@ -76,10 +77,10 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
     }
   }
 
-  String get _title => switch (widget.type) {
-        ProfileListType.followers => 'Followers',
-        ProfileListType.following => 'Following',
-        ProfileListType.books     => 'Books read',
+  String _title(BuildContext context) => switch (widget.type) {
+        ProfileListType.followers => context.l10n.profileFollowers,
+        ProfileListType.following => context.l10n.profileFollowing,
+        ProfileListType.books     => context.l10n.booksTitle,
       };
 
   @override
@@ -115,7 +116,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                 child: Row(
                   children: [
                     Text(
-                      _title,
+                      _title(context),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -148,7 +149,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                     : _error != null
                         ? Center(
                             child: Text(
-                              'Error: $_error',
+                              context.l10n.errorPrefix('$_error'),
                               style: const TextStyle(
                                   color: MarginaliaColors.inkMuted),
                             ),
@@ -202,7 +203,7 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = data['display_name'] as String? ?? 'Reader';
+    final name = data['display_name'] as String? ?? context.l10n.profileReaderFallback;
     final reading = data['currently_reading_title'] as String?;
     final avatarUrl = data['avatar_url'] as String?;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'L';
@@ -260,7 +261,7 @@ class _BookRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = data['title'] as String? ?? 'Titolo sconosciuto';
+    final title = data['title'] as String? ?? context.l10n.bookUntitled;
     final author = data['author'] as String? ?? '';
     final coverColor = MarginaliaDecorations.bookCoverColor(title);
 
@@ -384,9 +385,9 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, msg) = switch (type) {
-      ProfileListType.followers => (Icons.group_outlined, 'No followers yet'),
-      ProfileListType.following => (Icons.person_add_outlined, 'Not following anyone yet'),
-      ProfileListType.books     => (Icons.menu_book_outlined, 'No books imported'),
+      ProfileListType.followers => (Icons.group_outlined, context.l10n.profileNoFollowers),
+      ProfileListType.following => (Icons.person_add_outlined, context.l10n.profileNoFollowing),
+      ProfileListType.books     => (Icons.menu_book_outlined, context.l10n.profileNoBooksImported),
     };
     return Center(
       child: Column(
