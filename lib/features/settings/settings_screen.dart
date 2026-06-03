@@ -380,8 +380,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             delegate: SliverChildListDelegate([
               _SettingsTile(
                 icon: Icons.sync_outlined,
-                label: 'Sync with Kindle',
-                subtitle: 'Sign in to Amazon and import highlights',
+                label: context.l10n.settingsSyncWithKindle,
+                subtitle: context.l10n.settingsSyncWithKindleSubtitle,
                 onTap: () => context.push('/sync/kindle'),
               ),
               _SettingsTile(
@@ -442,10 +442,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ),
-              const _SettingsTile(
+              _SettingsTile(
                 icon: Icons.info_outline,
-                label: 'Version',
-                trailing: Text(
+                label: context.l10n.settingsVersion,
+                trailing: const Text(
                   '1.0.0',
                   style: TextStyle(
                       color: MarginaliaColors.inkFaint, fontSize: 13),
@@ -478,7 +478,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Row(
                   children: [
-                    Text('PRIVACY & DATA',
+                    Text(context.l10n.settingsPrivacyDataSection,
                         style: MarginaliaTextStyles.sectionTitle),
                     const SizedBox(width: 12),
                     const Expanded(child: Divider(color: MarginaliaColors.rule)),
@@ -487,8 +487,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _SettingsTile(
                 icon: Icons.shield_outlined,
-                label: 'Your Data',
-                subtitle: 'What we store and how we use it',
+                label: context.l10n.settingsYourData,
+                subtitle: context.l10n.settingsYourDataSubtitle,
                 onTap: () => _showYourDataSheet(context),
               ),
               _SettingsTile(
@@ -508,8 +508,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _SettingsTile(
                 icon: Icons.delete_forever_outlined,
-                label: 'Delete Account',
-                subtitle: 'Permanently delete your account and all data',
+                label: context.l10n.settingsDeleteAccount,
+                subtitle: context.l10n.settingsDeleteAccountSubtitle,
                 onTap: () => _showDeleteAccountDialog(context, ref),
                 trailing: const Icon(Icons.chevron_right,
                     color: Color(0xFFB54848), size: 18),
@@ -626,39 +626,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'Your Data',
-              style: TextStyle(
+            Text(
+              ctx.l10n.settingsYourData,
+              style: const TextStyle(
                   fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.4),
             ),
             const SizedBox(height: 16),
             _DataRow(
               icon: Icons.email_outlined,
-              title: 'Email address',
-              body: 'Used for account authentication only.',
+              title: ctx.l10n.settingsDataEmailTitle,
+              body: ctx.l10n.settingsDataEmailBody,
             ),
             _DataRow(
               icon: Icons.format_quote_outlined,
-              title: 'Highlights & books',
-              body: 'Stored in our database to sync across devices. '
-                  'You can export or delete them at any time.',
+              title: ctx.l10n.settingsDataHighlightsTitle,
+              body: ctx.l10n.settingsDataHighlightsBody,
             ),
             _DataRow(
               icon: Icons.favorite_border,
-              title: 'Health data (steps, workouts, menstrual cycle)',
-              body: 'Processed on-device only to personalise your daily '
-                  'highlight. Never uploaded.',
+              title: ctx.l10n.settingsDataHealthTitle,
+              body: ctx.l10n.settingsDataHealthBody,
             ),
             _DataRow(
               icon: Icons.location_on_outlined,
-              title: 'Weather location',
-              body: 'Used on-device only to fetch weather context for your '
-                  'daily highlight. Never stored.',
+              title: ctx.l10n.settingsDataWeatherTitle,
+              body: ctx.l10n.settingsDataWeatherBody,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'No advertising. No tracking. No data sold.',
-              style: TextStyle(
+            Text(
+              ctx.l10n.settingsDataPledge,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: MarginaliaColors.sienna,
@@ -1063,15 +1060,15 @@ class _StatsRow extends StatelessWidget {
       decoration: MarginaliaDecorations.card(),
       child: Row(
         children: [
-          _StatBox(label: 'Books', value: stats['books'] ?? 0),
+          _StatBox(label: context.l10n.profileBooksStat, value: stats['books'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Highlights', value: stats['highlights'] ?? 0),
+          _StatBox(label: context.l10n.profileHighlightsStat, value: stats['highlights'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Jams', value: stats['jams'] ?? 0),
+          _StatBox(label: context.l10n.socialTabJams, value: stats['jams'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Following', value: stats['following'] ?? 0),
+          _StatBox(label: context.l10n.profileFollowing, value: stats['following'] ?? 0),
           _Divider(),
-          _StatBox(label: 'Followers', value: stats['followers'] ?? 0),
+          _StatBox(label: context.l10n.profileFollowers, value: stats['followers'] ?? 0),
         ],
       ),
     );
