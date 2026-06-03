@@ -32,7 +32,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Sondaggi highlight',
+          context.l10n.jamPollTitle,
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -44,7 +44,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
           IconButton(
             icon: const Icon(Icons.add, color: MarginaliaColors.primary),
             onPressed: _showCreatePollSheet,
-            tooltip: 'Nuovo sondaggio',
+            tooltip: context.l10n.jamPollNewPollTooltip,
           ),
         ],
       ),
@@ -202,7 +202,7 @@ class _PollCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    closed ? 'Chiuso' : 'Aperto',
+                    closed ? context.l10n.jamPollStatusClosed : context.l10n.jamPollStatusOpen,
                     style: GoogleFonts.manrope(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -218,8 +218,8 @@ class _PollCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
               child: Text(
                 closed
-                    ? 'Terminato il ${endsAt.day}/${endsAt.month}/${endsAt.year}'
-                    : 'Scade il ${endsAt.day}/${endsAt.month}/${endsAt.year}',
+                    ? context.l10n.jamPollEndedOn('${endsAt.day}/${endsAt.month}/${endsAt.year}')
+                    : context.l10n.jamPollEndsOn('${endsAt.day}/${endsAt.month}/${endsAt.year}'),
                 style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkFaint),
               ),
             ),
@@ -230,7 +230,7 @@ class _PollCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(18),
               child: Text(
-                'No highlights yet. Add yours!',
+                context.l10n.jamPollNoCandidates,
                 style: GoogleFonts.manrope(fontSize: 13, color: MarginaliaColors.inkMuted),
               ),
             )
@@ -358,12 +358,12 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.how_to_vote_outlined, size: 56, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
-              'No polls yet',
+              context.l10n.jamPollNoPolls,
               style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
-              'Create a poll to vote on the best highlight of the week.',
+              context.l10n.jamPollNoPollsBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
             ),
@@ -392,9 +392,21 @@ class _CreatePollSheet extends ConsumerStatefulWidget {
 }
 
 class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
-  final _titleCtrl = TextEditingController(text: 'Highlight of the week');
+  final _titleCtrl = TextEditingController();
   DateTime _endsAt = DateTime.now().add(const Duration(days: 7));
   bool _loading = false;
+  bool _didSetDefaultTitle = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Seed the default poll title once, localized. Done here (not in a field
+    // initializer) because it needs the inherited l10n from context.
+    if (!_didSetDefaultTitle) {
+      _didSetDefaultTitle = true;
+      _titleCtrl.text = context.l10n.jamPollDefaultTitle;
+    }
+  }
 
   @override
   void dispose() {
@@ -445,13 +457,13 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'New poll',
+            context.l10n.jamPollNewPollSheetTitle,
             style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
           ),
           const SizedBox(height: 20),
           TextField(
             controller: _titleCtrl,
-            decoration: const InputDecoration(hintText: 'Poll title *', prefixIcon: Icon(Icons.how_to_vote_outlined)),
+            decoration: InputDecoration(hintText: context.l10n.jamPollTitleFieldHint, prefixIcon: const Icon(Icons.how_to_vote_outlined)),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 14),
@@ -467,7 +479,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
             },
             icon: const Icon(Icons.calendar_today_outlined, size: 16),
             label: Text(
-              'Ends on: ${_endsAt.day}/${_endsAt.month}/${_endsAt.year}',
+              context.l10n.jamPollEndsOnLabel('${_endsAt.day}/${_endsAt.month}/${_endsAt.year}'),
               style: GoogleFonts.manrope(fontSize: 14),
             ),
           ),
@@ -478,7 +490,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
               onPressed: _loading ? null : _submit,
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Create'),
+                  : Text(context.l10n.jamPollCreateCta),
             ),
           ),
         ],
@@ -527,7 +539,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Choose your highlight',
+            context.l10n.jamPollChooseHighlightTitle,
             style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
           ),
           const SizedBox(height: 16),
@@ -556,8 +568,8 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                               : null,
                           onTap: () => setState(() {
                             _selectedHighlightContent = content;
-                            _selectedBookTitle = h.bookTitle as String?;
-                            _selectedBookAuthor = h.bookAuthor as String?;
+                            _selectedBookTitle = h.bookTitle;
+                            _selectedBookAuthor = h.bookAuthor;
                           }),
                         );
                       },
@@ -573,7 +585,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
               onPressed: (_loading || _selectedHighlightContent == null) ? null : _submit,
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Add to poll'),
+                  : Text(context.l10n.jamPollAddToPollCta),
             ),
           ),
         ],

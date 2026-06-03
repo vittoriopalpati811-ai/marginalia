@@ -31,7 +31,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Sfide di lettura',
+          context.l10n.jamChallengeTitle,
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -43,7 +43,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
           IconButton(
             icon: const Icon(Icons.add, color: MarginaliaColors.primary),
             onPressed: _showCreateSheet,
-            tooltip: 'Create challenge',
+            tooltip: context.l10n.jamChallengeCreateTooltip,
           ),
         ],
       ),
@@ -189,7 +189,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
           Row(
             children: [
               Text(
-                '$progress / $target $_unit',
+                context.l10n.jamChallengeProgress(progress, target, _unit),
                 style: GoogleFonts.manrope(
                   fontSize: 12,
                   color: MarginaliaColors.inkMuted,
@@ -199,7 +199,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
               const Spacer(),
               if (_deadline != null)
                 Text(
-                  'Scadenza: ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}',
+                  context.l10n.jamChallengeDeadline('${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'),
                   style: GoogleFonts.manrope(fontSize: 11, color: MarginaliaColors.inkFaint),
                 ),
             ],
@@ -285,12 +285,12 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.emoji_events_outlined, size: 56, color: MarginaliaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
-              'No active challenges',
+              context.l10n.jamChallengeNoChallenges,
               style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
-              'Create a shared challenge and motivate your reading companions.',
+              context.l10n.jamChallengeNoChallengesBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
             ),
@@ -380,19 +380,19 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Create challenge',
+              context.l10n.jamChallengeCreateSheetTitle,
               style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _titleCtrl,
-              decoration: const InputDecoration(hintText: 'Challenge name *', prefixIcon: Icon(Icons.emoji_events_outlined)),
+              decoration: InputDecoration(hintText: context.l10n.jamChallengeNameFieldHint, prefixIcon: const Icon(Icons.emoji_events_outlined)),
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _descCtrl,
-              decoration: const InputDecoration(hintText: 'Description (optional)'),
+              decoration: InputDecoration(hintText: context.l10n.jamChallengeDescFieldHint),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),
@@ -405,7 +405,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Goal', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text(context.l10n.jamChallengeGoalLabel, style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       Row(
                         children: [
@@ -431,7 +431,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Unit', style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text(context.l10n.jamChallengeUnitLabel, style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         value: _unit,
@@ -464,8 +464,8 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
               icon: const Icon(Icons.calendar_today_outlined, size: 16),
               label: Text(
                 _deadline != null
-                    ? 'Deadline: ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'
-                    : 'Set deadline (optional)',
+                    ? context.l10n.jamChallengeDeadlineLabel('${_deadline!.day}/${_deadline!.month}/${_deadline!.year}')
+                    : context.l10n.jamChallengeSetDeadline,
                 style: GoogleFonts.manrope(fontSize: 14),
               ),
             ),
@@ -476,7 +476,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                 onPressed: _loading ? null : _submit,
                 child: _loading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Create'),
+                    : Text(context.l10n.jamChallengeCreateCta),
               ),
             ),
           ],
