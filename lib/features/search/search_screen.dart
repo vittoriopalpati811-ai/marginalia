@@ -186,7 +186,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           color: MarginaliaColors.sienna, strokeWidth: 1.5),
                     ),
                     error: (e, _) => Center(
-                        child: Text('$e',
+                        child: Text(context.l10n.errorPrefix('$e'),
                             style: const TextStyle(
                                 color: MarginaliaColors.inkMuted))),
                     data: (users) => users.isEmpty
@@ -226,7 +226,7 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name      = user['display_name'] as String? ?? 'Reader';
+    final name      = user['display_name'] as String? ?? context.l10n.searchUserFallback;
     final username  = user['username']     as String?;
     final avatarUrl = user['avatar_url']   as String?;
     final bio       = user['bio']          as String?;

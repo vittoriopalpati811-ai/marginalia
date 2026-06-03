@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -240,7 +241,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Send error: $e'),
+            content: Text(context.l10n.errorPrefix('$e')),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -271,7 +272,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload error: $e')),
+          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
         );
       }
     } finally {
@@ -293,7 +294,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('GIF send error: $e')),
+          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
         );
       }
     } finally {
@@ -405,7 +406,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                           color: MarginaliaColors.inkFaint, size: 40),
                       const SizedBox(height: 16),
                       Text(
-                        'Unable to load messages',
+                        context.l10n.chatUnableToLoad,
                         style: GoogleFonts.manrope(
                           color: MarginaliaColors.inkMuted,
                           fontSize: 15,
@@ -416,7 +417,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         onPressed: () => ref.invalidate(
                             _messagesProvider(widget.conversationId)),
                         child: Text(
-                          'Retry',
+                          context.l10n.retry,
                           style: GoogleFonts.manrope(
                             color: MarginaliaColors.primary,
                             fontWeight: FontWeight.w600,
@@ -772,15 +773,13 @@ class _DateSeparator extends StatelessWidget {
     String label;
     final diff = now.difference(dt);
     if (diff.inDays == 0) {
-      label = 'Today';
+      label = context.l10n.chatDateToday;
     } else if (diff.inDays == 1) {
-      label = 'Yesterday';
+      label = context.l10n.chatDateYesterday;
     } else if (diff.inDays < 7) {
-      const days = [
-        'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-        'Friday', 'Saturday', 'Sunday'
-      ];
-      label = days[dt.weekday - 1];
+      // Locale-aware full weekday name ("Monday" / "Lunedì") via intl.
+      final locale = Localizations.localeOf(context).toLanguageTag();
+      label = DateFormat.EEEE(locale).format(dt);
     } else {
       label = '${dt.day}/${dt.month}/${dt.year}';
     }
@@ -847,7 +846,7 @@ class _EmptyChatState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'No messages',
+              context.l10n.msgNoMessages,
               style: GoogleFonts.ebGaramond(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -856,7 +855,7 @@ class _EmptyChatState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Start the conversation\nby sending the first message.',
+              context.l10n.chatEmptyBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 13,
@@ -938,8 +937,8 @@ class _MessageInputBar extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 hintText: uploadingMedia
-                    ? 'Loading…'
-                    : 'Write a message…',
+                    ? context.l10n.loading
+                    : context.l10n.messagesInputHint,
                 hintStyle: GoogleFonts.manrope(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,

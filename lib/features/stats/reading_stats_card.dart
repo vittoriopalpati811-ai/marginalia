@@ -90,7 +90,7 @@ class ReadingStatsCard extends ConsumerWidget {
                                   .read(myDisplayNameProvider)
                                   .asData
                                   ?.value ??
-                              'me';
+                              context.l10n.statsShareUserFallback;
                           await ShareCardService.showStats(
                             context,
                             userName: name,

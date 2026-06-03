@@ -230,7 +230,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
           ),
         if (_syncState == _SyncState.error)
           _ErrorOverlay(
-            message: _errorMessage ?? 'Unknown error',
+            message: _errorMessage ?? context.l10n.kindleSomethingWrong,
             onRetry: () {
               _watchdog?.cancel();
               setState(() {

@@ -410,7 +410,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
         debugPrint('[Recs] UI error: $e');
         // Surface the error instead of pretending nothing happened.
         return _RecommendationsHint(
-          'Il servizio di consigli non risponde. Tocca "Riprova" per ritentare.',
+          context.l10n.recsAiError,
           onRetry: () => ref.invalidate(libraryRecommendationsProvider),
         );
       },
@@ -904,7 +904,7 @@ class _RecommendationsHint extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Riprova',
+                      context.l10n.retry,
                       style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,

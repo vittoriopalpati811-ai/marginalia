@@ -51,7 +51,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         _showError(context.l10n.paywallPurchaseError);
       }
     } catch (_) {
-      if (mounted) _showError('Acquisto non riuscito. Riprova.');
+      if (mounted) _showError(context.l10n.paywallPurchaseError);
     } finally {
       if (mounted) setState(() => _purchasing = false);
     }
@@ -340,7 +340,7 @@ class _PaywallBody extends StatelessWidget {
                           color: Colors.white.withAlpha(25), width: 1),
                     ),
                     child: Text(
-                      '~€1.67/month',
+                      context.l10n.paywallPriceMonthlyEquivalent,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.white.withAlpha(180),
@@ -496,9 +496,9 @@ class _FeatureRow extends StatelessWidget {
                         color: MarginaliaColors.primaryFaint,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Text(
-                        'PREMIUM',
-                        style: TextStyle(
+                      child: Text(
+                        context.l10n.paywallPremiumBadge,
+                        style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
                           color: MarginaliaColors.primary,

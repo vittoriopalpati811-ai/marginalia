@@ -381,12 +381,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                               height: 1.5,
                             ),
                             children: [
-                              const TextSpan(
-                                text:
-                                    'By creating an account you agree to our ',
+                              TextSpan(
+                                text: context.l10n.authTermsPrefix,
                               ),
                               TextSpan(
-                                text: 'Privacy Policy',
+                                text: context.l10n.settingsPrivacyPolicy,
                                 style: const TextStyle(
                                   color: MarginaliaColors.sienna,
                                   decoration: TextDecoration.underline,
@@ -403,8 +402,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                     );
                                   },
                               ),
-                              const TextSpan(
-                                text: ' and confirm you are 16 or older.',
+                              TextSpan(
+                                text: context.l10n.authTermsSuffix,
                               ),
                             ],
                           ),

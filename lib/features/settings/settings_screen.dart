@@ -106,7 +106,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
-                tooltip: 'Settings',
+                tooltip: context.l10n.profileSettings,
                 onPressed: () => _showSettingsSheet(context, ref, profile),
               ),
               const SizedBox(width: 4),
@@ -278,8 +278,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(width: 10),
                   OutlinedButton(
                     onPressed: () => Share.share(
-                      'I read on Marginalia\n'
-                      'Come read with me!\nhttps://marginalia.app',
+                      context.l10n.settingsShareInvite,
                       sharePositionOrigin: shareOrigin(context),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -314,7 +313,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
               child: Row(
                 children: [
-                  Text('IN JAMS',
+                  Text(context.l10n.settingsInJamsSection,
                       style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 8),
                   Text(
@@ -367,7 +366,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
               child: Row(
                 children: [
-                  Text('SETTINGS',
+                  Text(context.l10n.settingsSettingsSection,
                       style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(child: Divider(color: MarginaliaColors.rule)),
@@ -577,10 +576,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
             ..showSnackBar(
-              const SnackBar(
-                content: Text(
-                    'No highlights to export. '
-                    'Import My Clippings.txt first.'),
+              SnackBar(
+                content: Text(context.l10n.settingsNothingToExport),
               ),
             );
         }
@@ -593,7 +590,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(
-            SnackBar(content: Text('Export error: $e')),
+            SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
           );
       }
     }
@@ -1173,9 +1170,9 @@ class _CurrentlyReadingCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'CURRENTLY READING',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.settingsCurrentlyReading,
+                    style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
                       color: MarginaliaColors.sienna,
@@ -1539,10 +1536,10 @@ class _UnauthenticatedProfile extends StatelessWidget {
             decoration: MarginaliaDecorations.gradientHeader,
             child: SafeArea(
               bottom: false,
-              child: const Padding(
-                padding: EdgeInsets.fromLTRB(20, 20, 20, 36),
-                child: Text('Profile',
-                    style: TextStyle(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 36),
+                child: Text(context.l10n.commonProfile,
+                    style: const TextStyle(
                         color: Color(0xFFF1EEE7),
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -1574,10 +1571,10 @@ class _UnauthenticatedProfile extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.3)),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Track your books,\nhighlights and connections.',
+                    Text(
+                      context.l10n.settingsSignInPromoBody,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                           color: MarginaliaColors.inkMuted,
                           height: 1.65,
                           fontSize: 14),

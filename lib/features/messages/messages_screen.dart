@@ -224,7 +224,7 @@ class _ConversationCard extends ConsumerWidget {
     String? avatarUrl;
 
     if (isGroup) {
-      displayName = conversation['group_name'] as String? ?? 'Group';
+      displayName = conversation['group_name'] as String? ?? context.l10n.msgGroupFallback;
       avatarUrl = conversation['group_avatar_url'] as String?;
     } else {
       final otherMember = members.isNotEmpty ? members.first : null;
@@ -283,7 +283,7 @@ class _ConversationCard extends ConsumerWidget {
 
       final createdAt = lastMessage['created_at'] as String?;
       if (createdAt != null) {
-        timeLabel = _formatTime(DateTime.tryParse(createdAt));
+        timeLabel = _formatTime(context, DateTime.tryParse(createdAt));
       }
     }
 
@@ -412,14 +412,15 @@ class _ConversationCard extends ConsumerWidget {
     );
   }
 
-  String _formatTime(DateTime? dt) {
+  String _formatTime(BuildContext context, DateTime? dt) {
     if (dt == null) return '';
+    final l10n = context.l10n;
     final now = DateTime.now();
     final diff = now.difference(dt.toLocal());
-    if (diff.inMinutes < 1) return 'ora';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}g';
+    if (diff.inMinutes < 1) return l10n.timeNow;
+    if (diff.inMinutes < 60) return l10n.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7) return l10n.timeDaysAgo(diff.inDays);
     return '${dt.day}/${dt.month}';
   }
 }
@@ -866,7 +867,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                         itemBuilder: (context, index) {
                           final user = _results[index];
                           final name =
-                              user['display_name'] as String? ?? 'User';
+                              user['display_name'] as String? ?? context.l10n.msgUserFallback;
                           final username = user['username'] as String? ?? '';
                           final avatarUrl = user['avatar_url'] as String?;
                           final userId = user['id'] as String? ?? '';
@@ -1096,7 +1097,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     spacing: 8,
                     runSpacing: 6,
                     children: _selectedUsers.map((user) {
-                      final name = user['display_name'] as String? ?? 'User';
+                      final name = user['display_name'] as String? ?? context.l10n.msgUserFallback;
                       return Chip(
                         label: Text(name),
                         onDeleted: () => _toggleUser(user),
@@ -1146,7 +1147,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                         itemBuilder: (context, index) {
                           final user = _searchResults[index];
                           final name =
-                              user['display_name'] as String? ?? 'User';
+                              user['display_name'] as String? ?? context.l10n.msgUserFallback;
                           final username = user['username'] as String? ?? '';
                           final avatarUrl = user['avatar_url'] as String?;
                           final initial =

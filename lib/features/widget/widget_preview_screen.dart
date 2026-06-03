@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/services/widget_service.dart';
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 // ─── WidgetPreviewScreen ──────────────────────────────────────────────────────
 //
@@ -91,6 +92,25 @@ String _guessWeatherByHour(int hour) {
   return 'clear';
 }
 
+/// The mock highlight stores its time-of-day greeting as a stable English
+/// marker ('Good morning' …) so the selection logic stays locale-independent.
+/// This maps that marker to the user's localized greeting for display.
+String _localizedGreeting(BuildContext context, String marker) {
+  final l10n = context.l10n;
+  switch (marker) {
+    case 'Good morning':
+      return l10n.greetingMorning;
+    case 'Good afternoon':
+      return l10n.greetingAfternoon;
+    case 'Good evening':
+      return l10n.greetingEvening;
+    case 'Good night':
+      return l10n.greetingNight;
+    default:
+      return marker;
+  }
+}
+
 // ── Screen ───────────────────────────────────────────────────────────────────
 
 class WidgetPreviewScreen extends ConsumerStatefulWidget {
@@ -123,7 +143,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          'Widget preview',
+          context.l10n.settingsWidget,
           style: GoogleFonts.manrope(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -144,15 +164,15 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: Colors.white54),
         ),
-        error: (_, __) => const Center(
-          child: Text('Error loading',
-              style: TextStyle(color: Colors.white54)),
+        error: (_, __) => Center(
+          child: Text(context.l10n.msgErrorLoading,
+              style: const TextStyle(color: Colors.white54)),
         ),
         data: (highlight) {
           if (highlight == null) {
-            return const Center(
-              child: Text('No highlight available',
-                  style: TextStyle(color: Colors.white54)),
+            return Center(
+              child: Text(context.l10n.widgetNoHighlight,
+                  style: const TextStyle(color: Colors.white54)),
             );
           }
           return _PhoneFrame(
@@ -169,7 +189,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Widget aggiornato sul telefono',
+                        context.l10n.widgetUpdatedOnPhone,
                         style: GoogleFonts.manrope(fontSize: 13),
                       ),
                       backgroundColor: MarginaliaColors.primary,
@@ -675,7 +695,7 @@ class _WidgetBrand extends StatelessWidget {
         const SizedBox(width: 6),
         if (!small)
           Text(
-            greeting,
+            _localizedGreeting(context, greeting),
             style: GoogleFonts.manrope(
               fontSize: 11,
               color: const Color(0xFF9EBB8A),
@@ -718,12 +738,12 @@ class _BottomBar extends StatelessWidget {
             children: [
               _ContextPill(
                 icon: Icons.access_time_rounded,
-                label: highlight.timeGreeting,
+                label: _localizedGreeting(context, highlight.timeGreeting),
               ),
               const SizedBox(width: 8),
               _ContextPill(
                 icon: _weatherIcon(highlight.weatherMood),
-                label: _weatherLabel(highlight.weatherMood),
+                label: _weatherLabel(context, highlight.weatherMood),
               ),
               const Spacer(),
               GestureDetector(
@@ -754,8 +774,8 @@ class _BottomBar extends StatelessWidget {
               ),
               child: Text(
                 pushed
-                    ? 'Widget updated ✓'
-                    : 'Send to iOS widget',
+                    ? context.l10n.widgetUpdatedCheck
+                    : context.l10n.widgetSendToIos,
                 style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -767,7 +787,7 @@ class _BottomBar extends StatelessWidget {
           if (!pushed) ...[
             const SizedBox(height: 8),
             Text(
-              'Richiede installazione del widget su iPhone',
+              context.l10n.widgetRequiresInstall,
               style: GoogleFonts.manrope(
                 fontSize: 11,
                 color: Colors.white.withAlpha(60),
@@ -879,11 +899,14 @@ IconData _weatherIcon(String mood) => switch (mood) {
       _        => Icons.nights_stay_outlined,
     };
 
-String _weatherLabel(String mood) => switch (mood) {
-      'sunny'  => 'Sole',
-      'rain'   => 'Pioggia',
-      'cloudy' => 'Nuvoloso',
-      'snow'   => 'Neve',
-      _        => 'Cielo',
-    };
+String _weatherLabel(BuildContext context, String mood) {
+  final l10n = context.l10n;
+  return switch (mood) {
+    'sunny'  => l10n.widgetWeatherSunny,
+    'rain'   => l10n.widgetWeatherRain,
+    'cloudy' => l10n.widgetWeatherCloudy,
+    'snow'   => l10n.widgetWeatherSnow,
+    _        => l10n.widgetWeatherClear,
+  };
+}
 

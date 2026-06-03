@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/highlights_provider.dart';
@@ -90,7 +91,7 @@ class HighlightDetailScreen extends ConsumerWidget {
             strokeWidth: 1.5,
           ),
         ),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
     );
   }
@@ -229,17 +230,17 @@ class _HighlightBody extends ConsumerWidget {
                     if ((highlight.location as String?) != null)
                       _MetaItem(
                         icon: Icons.straighten_outlined,
-                        label: 'Pos. ${highlight.location}',
+                        label: context.l10n.bookLocationPrefix('${highlight.location}'),
                       ),
                     if ((highlight.addedAt as DateTime?) != null)
                       _MetaItem(
                         icon: Icons.calendar_today_outlined,
-                        label: _formatDate(highlight.addedAt as DateTime),
+                        label: _formatDate(context, highlight.addedAt as DateTime),
                       ),
                     if ((highlight.color as String?) != null)
                       _MetaItem(
                         icon: Icons.circle,
-                        label: _colorName(highlight.color as String),
+                        label: _colorName(context, highlight.color as String),
                         iconColor: hlColor,
                       ),
                   ],
@@ -254,20 +255,14 @@ class _HighlightBody extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime date) =>
-      '${date.day} ${_monthName(date.month)} ${date.year}';
+  String _formatDate(BuildContext context, DateTime date) =>
+      DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(date);
 
-  String _monthName(int m) => const [
-        '',
-        'gen', 'feb', 'mar', 'apr', 'mag', 'giu',
-        'lug', 'ago', 'set', 'ott', 'nov', 'dic',
-      ][m];
-
-  String _colorName(String c) => switch (c) {
-        'yellow' => 'Giallo',
-        'blue'   => 'Blu',
-        'pink'   => 'Rosa',
-        'orange' => 'Arancione',
+  String _colorName(BuildContext context, String c) => switch (c) {
+        'yellow' => context.l10n.colorYellow,
+        'blue'   => context.l10n.colorBlue,
+        'pink'   => context.l10n.colorPink,
+        'orange' => context.l10n.colorOrange,
         _        => c,
       };
 
@@ -318,7 +313,7 @@ class _BookHeader extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'DA',
+                context.l10n.highlightFromLabel,
                 style: MarginaliaTextStyles.sectionTitle.copyWith(
                   fontSize: 9,
                   letterSpacing: 2.5,

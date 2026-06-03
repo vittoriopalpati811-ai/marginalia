@@ -119,7 +119,7 @@ class BookDetailScreen extends ConsumerWidget {
                                   const EdgeInsets.fromLTRB(22, 28, 22, 12),
                               child: Row(
                                 children: [
-                                  Text('HIGHLIGHT',
+                                  Text(context.l10n.bookHighlightLabel,
                                       style:
                                           MarginaliaTextStyles.sectionTitle),
                                   const SizedBox(width: 12),
@@ -169,7 +169,7 @@ class BookDetailScreen extends ConsumerWidget {
                               ),
                             ),
                             error: (e, _) => SliverFillRemaining(
-                              child: Center(child: Text('$e')),
+                              child: Center(child: Text(context.l10n.errorPrefix('$e'))),
                             ),
                           ),
                         ],
@@ -213,7 +213,7 @@ class BookDetailScreen extends ConsumerWidget {
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text('$e')),
+        body: Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 
 /// In-app privacy policy. Renders the bundled HTML (IT/EN by [isItalian])
 /// inside a WebView so the policy lives *inside* the app instead of opening an
@@ -68,7 +69,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
         foregroundColor: MarginaliaColors.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text('Privacy'),
+        title: Text(context.l10n.privacyTitle),
       ),
       body: _webViewSupported
           ? (_controller == null
@@ -83,17 +84,15 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
               url: widget.isItalian
                   ? PrivacyPolicyScreen._itUrl
                   : PrivacyPolicyScreen._enUrl,
-              isItalian: widget.isItalian,
             ),
     );
   }
 }
 
 class _BrowserFallback extends StatelessWidget {
-  const _BrowserFallback({required this.url, required this.isItalian});
+  const _BrowserFallback({required this.url});
 
   final String url;
-  final bool isItalian;
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +103,7 @@ class _BrowserFallback extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              isItalian
-                  ? 'Anteprima non disponibile su questa piattaforma.'
-                  : 'Preview is not available on this platform.',
+              context.l10n.privacyPreviewUnavailable,
               textAlign: TextAlign.center,
               style: const TextStyle(color: MarginaliaColors.inkMuted),
             ),
@@ -116,7 +113,7 @@ class _BrowserFallback extends StatelessWidget {
                 Uri.parse(url),
                 mode: LaunchMode.externalApplication,
               ),
-              child: Text(isItalian ? 'Apri nel browser' : 'Open in browser'),
+              child: Text(context.l10n.privacyOpenInBrowser),
             ),
           ],
         ),

@@ -346,7 +346,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Error clearing data: $e')));
+              .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
         }
         setState(() => _isImporting = false);
         return;
@@ -473,7 +473,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error loading demo: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);
@@ -557,8 +557,7 @@ class _EditorialHeader extends StatelessWidget {
                     color: MarginaliaColors.ink,
                     iconSize: 24,
                     splashRadius: 22,
-                    tooltip:
-                        'Import · Long press to reimport from scratch',
+                    tooltip: context.l10n.libraryImportTooltip,
                     onPressed: onImport,
                   ),
                 ),

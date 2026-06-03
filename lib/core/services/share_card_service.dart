@@ -179,7 +179,8 @@ class _ShareSheetState extends State<_ShareSheet> {
         : widget.content;
     final book =
         widget.bookTitle != null ? '\n— ${widget.bookTitle}' : '';
-    return '❝ $excerpt ❞$book\n\nApri in Marginalia → https://marginalia.app';
+    final cta = context.l10n.shareHighlightCallToAction;
+    return '❝ $excerpt ❞$book\n\n$cta → https://marginalia.app';
   }
 
   // ── Copy to clipboard ───────────────────────────────────────────────────────
@@ -220,9 +221,11 @@ class _ShareSheetState extends State<_ShareSheet> {
           const SizedBox(height: 20),
 
           // ── Title ──────────────────────────────────────────────────────────
-          const Text(
-            'Share highlight',
-            style: TextStyle(
+          Text(
+            widget.isStats
+                ? context.l10n.shareCardStatsTitle
+                : context.l10n.shareCardTitle,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               color: MarginaliaColors.ink,
@@ -272,7 +275,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                   child: OutlinedButton.icon(
                     onPressed: _copyText,
                     icon: const Icon(Icons.copy_outlined, size: 16),
-                    label: const Text('Copia'),
+                    label: Text(context.l10n.copy),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: MarginaliaColors.inkMuted,
                       side: const BorderSide(color: MarginaliaColors.rule),
@@ -299,8 +302,9 @@ class _ShareSheetState extends State<_ShareSheet> {
                             ),
                           )
                         : const Icon(Icons.ios_share, size: 16),
-                    label:
-                        Text(_capturing ? 'Preparing…' : 'Share image'),
+                    label: Text(_capturing
+                        ? context.l10n.shareImagePreparing
+                        : context.l10n.shareImageCta),
                     style: FilledButton.styleFrom(
                       backgroundColor: MarginaliaColors.primary,
                       foregroundColor: const Color(0xFFF1EEE7),
@@ -580,7 +584,7 @@ class _StatsShareCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'La lettura di $userName',
+                    context.l10n.shareStatsReadingOf(userName),
                     style: GoogleFonts.ebGaramond(
                       fontSize: 18,
                       fontStyle: FontStyle.italic,
@@ -603,7 +607,7 @@ class _StatsShareCard extends StatelessWidget {
                       value: yearGoal != null
                           ? '$booksThisYear/$yearGoal'
                           : booksThisYear.toString(),
-                      label: 'LIBRI ${DateTime.now().year}',
+                      label: context.l10n.shareStatsBooksLabel(DateTime.now().year),
                     ),
                     const SizedBox(height: 32),
                     Row(
@@ -612,7 +616,7 @@ class _StatsShareCard extends StatelessWidget {
                         Expanded(
                           child: _BigStat(
                             value: streakDays.toString(),
-                            label: 'GIORNI DI FILA',
+                            label: context.l10n.shareStatsStreakLabel,
                             smaller: true,
                           ),
                         ),
@@ -624,7 +628,7 @@ class _StatsShareCard extends StatelessWidget {
                         Expanded(
                           child: _BigStat(
                             value: _fmtMinutes(monthMinutes),
-                            label: 'QUESTO MESE',
+                            label: context.l10n.shareStatsMonthLabel,
                             smaller: true,
                           ),
                         ),
