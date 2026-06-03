@@ -394,7 +394,7 @@
   "paywallRestoreNone": "Nessun acquisto da ripristinare.",
   "@paywallRestoreNone": {},
 
-  "onboardingWelcomeSubtitle": "Riscopri quello che hai letto. Discutilo con chi lo sta leggendo con te.",
+  "onboardingWelcomeSubtitle": "Riscopri quello che hai letto. Parlane con chi lo sta leggendo con te.",
   "@onboardingWelcomeSubtitle": {},
 
   "recsNotAuth": "Accedi al tuo account per ricevere consigli personalizzati.",
@@ -439,6 +439,10 @@
   "kindleSomethingWrong": "Qualcosa è andato storto",
   "profileNoSharedTitle": "Ancora niente di condiviso",
   "profileNoSharedBody": "Condividi un highlight in una Jam\ne comparirà qui.",
+  "exportMarkdownTile": "Esporta come Markdown",
+  "exportMarkdownSubtitle": "Scarica tutti i tuoi highlight in un file .md",
+  "iosWidgetTile": "Widget iOS",
+  "iosWidgetSubtitle": "Anteprima e aggiorna il widget della home",
   "bookStatHighlights": "{count, plural, =1{highlight} other{highlight}}",
   "bookStatAuthor": "autore",
   "bookStatReading": "in lettura",
@@ -891,7 +895,7 @@
   "onboardingScanBarcode": "Scansiona il codice a barre",
   "@onboardingScanBarcode": {},
 
-  "onboardingScanWebUnsupported": "La scansione è disponibile sull'app iPhone. Per ora inserisci il codice qui sotto.",
+  "onboardingScanWebUnsupported": "Per ora inserisci qui sotto il codice ISBN.",
   "@onboardingScanWebUnsupported": {},
 
   "onboardingIsbnHint": "Codice del libro (ISBN, es. 978...)",

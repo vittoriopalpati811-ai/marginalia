@@ -470,13 +470,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         controller: _pageController,
                         physics: const NeverScrollableScrollPhysics(),
                         children: [
-                  _WelcomeStep(
+                  _StepScroll(child: _WelcomeStep(
                     onStart: _next,
                     onLogin: () {
                       setState(() => _loginMode = true);
                       _next();
                     },
-                  ),
+                  )),
                   _AuthStep(
                     loginMode: _loginMode,
                     emailCtrl: _emailCtrl,
@@ -488,64 +488,64 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     error: _authError,
                     onSubmit: _submitAuth,
                   ),
-                  _UsernameStep(
+                  _StepScroll(child: _UsernameStep(
                     usernameCtrl: _usernameCtrl,
                     available: _usernameAvailable,
                     checking: _usernameChecking,
                     onChanged: _onUsernameChanged,
                     onContinue: _next,
                     onSkip: _next,
-                  ),
-                  _NameStep(
+                  )),
+                  _StepScroll(child: _NameStep(
                     nameCtrl: _nameCtrl,
                     onContinue: _next,
                     onSkip: _next,
-                  ),
-                  _AvatarStep(
+                  )),
+                  _StepScroll(child: _AvatarStep(
                     avatarBytes: _avatarBytes,
                     picking:     _pickingAvatar,
                     onPickAvatar: _pickAvatar,
                     onContinue: _next,
                     onSkip: _next,
-                  ),
-                  _CoverStep(
+                  )),
+                  _StepScroll(child: _CoverStep(
                     coverBytes: _coverBytes,
                     picking:    _pickingCover,
                     onPickCover: _pickCover,
                     onContinue: _next,
                     onSkip: _next,
-                  ),
-                  ReadingGoalStep(
+                  )),
+                  _StepScroll(child: ReadingGoalStep(
                     goalCtrl: _goalCtrl,
                     onContinue: _next,
                     onSkip: _next,
-                  ),
+                  )),
                   CurrentlyReadingStep(
                     titleCtrl:  _crTitleCtrl,
                     authorCtrl: _crAuthorCtrl,
                     onContinue: _next,
                     onSkip:     _next,
                   ),
-                  _PermissionsStep(
+                  _StepScroll(child: _PermissionsStep(
                     onAllow: () async {
                       await _requestContextPermissions();
                       _next();
                     },
                     onSkip: _next,
-                  ),
-                  _GenderStep(
+                  )),
+                  _StepScroll(child: _GenderStep(
                     selected: _gender,
                     onSelect: (g) {
                       setState(() => _gender = g);
                       ref.read(genderProvider.notifier).state = g;
                       _next();
                     },
-                  ),
-                  _CompleteStep(
+                  )),
+                  _StepScroll(child: _CompleteStep(
                     username: _usernameCtrl.text.trim(),
                     completing: _completing,
                     onEnter: _complete,
-                  ),
+                  )),
                 ],
               ),
             ),
@@ -891,6 +891,7 @@ class _WelcomeStep extends StatelessWidget {
             index: 2,
             child: Text(
               context.l10n.onboardingWelcomeSubtitle,
+              textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 15,
                 color: MarginaliaColors.inkMuted,
@@ -2234,6 +2235,40 @@ class _ErrorBanner extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn(duration: 200.ms).shake(duration: 300.ms);
+  }
+}
+
+// ─── Shared: adaptive scroll shell ───────────────────────────────────────────
+//
+// Wraps a fixed-layout onboarding step so it keeps its designed vertical
+// distribution (Spacer / MainAxisAlignment.center pin the CTA to the bottom or
+// centre) on tall screens, but scrolls — instead of throwing a RenderFlex
+// overflow — on short viewports (many Android phones, landscape, large text
+// scale, or a raised keyboard).
+//
+// How it works: SingleChildScrollView gives unbounded height; ConstrainedBox
+// forces a minimum equal to the viewport; IntrinsicHeight then sizes the child
+// to max(viewport, content). When content < viewport the Spacer fills the gap
+// (look unchanged); when content > viewport the view scrolls. All wrapped steps
+// use intrinsic-height-friendly children (no nested scrollables / unbounded
+// images) — steps that already scroll (_AuthStep, CurrentlyReadingStep) must
+// NOT be wrapped, as SingleChildScrollView has no intrinsic dimensions.
+class _StepScroll extends StatelessWidget {
+  const _StepScroll({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(child: child),
+          ),
+        );
+      },
+    );
   }
 }
 

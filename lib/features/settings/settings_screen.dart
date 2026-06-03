@@ -428,14 +428,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               _SettingsTile(
                 icon: Icons.download_outlined,
-                label: 'Export as Markdown',
-                subtitle: 'Download all your highlights as a .md file',
+                label: context.l10n.exportMarkdownTile,
+                subtitle: context.l10n.exportMarkdownSubtitle,
                 onTap: () => _exportAllHighlights(context, ref),
               ),
               _SettingsTile(
                 icon: Icons.widgets_outlined,
-                label: 'iOS Widget',
-                subtitle: 'Preview and update the home screen widget',
+                label: context.l10n.iosWidgetTile,
+                subtitle: context.l10n.iosWidgetSubtitle,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const WidgetPreviewScreen(),
