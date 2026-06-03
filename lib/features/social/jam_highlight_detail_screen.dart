@@ -90,7 +90,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reaction error: $e')),
+        SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
       );
     }
   }
@@ -116,7 +116,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Comment error: $e')),
+          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
         );
       }
     } finally {
@@ -173,7 +173,7 @@ class _JamHighlightDetailScreenState
                                 size: 14, color: MarginaliaColors.inkMuted),
                             const SizedBox(width: 4),
                             Text(
-                              'Condiviso da ${widget.sharedBy}',
+                              context.l10n.jamSharedBy(widget.sharedBy),
                               style: MarginaliaTextStyles.label,
                             ),
                           ],
@@ -201,7 +201,7 @@ class _JamHighlightDetailScreenState
                   // ── Comments header ────────────────────────────────────
                   Row(
                     children: [
-                      Text('COMMENTI',
+                      Text(context.l10n.feedCommentsSection,
                           style: MarginaliaTextStyles.sectionTitle),
                       const SizedBox(width: 12),
                       const Expanded(
@@ -216,9 +216,9 @@ class _JamHighlightDetailScreenState
                             padding: const EdgeInsets.symmetric(vertical: 24),
                             child: Center(
                               child: Text(
-                                'No comments yet.\nBe the first to reply.',
+                                context.l10n.feedNoComments,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: MarginaliaColors.inkMuted,
                                   fontSize: 13,
                                   height: 1.6,
@@ -256,7 +256,7 @@ class _JamHighlightDetailScreenState
                         ),
                       ),
                     ),
-                    error: (e, _) => Text('Load error: $e',
+                    error: (e, _) => Text(context.l10n.errorPrefix('$e'),
                         style: const TextStyle(color: MarginaliaColors.inkMuted)),
                   ),
                 ],
@@ -326,10 +326,10 @@ class _JamHighlightDetailScreenState
                     minLines: 1,
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      hintText: 'Write a comment…',
+                    decoration: InputDecoration(
+                      hintText: context.l10n.feedCommentHint,
                       contentPadding:
-                          EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     onSubmitted: (_) => _posting ? null : _postComment(),
                   ),
@@ -513,7 +513,7 @@ class _CommentBubble extends StatelessWidget {
                 ),
               ),
               if (createdAt != null)
-                Text(_formatTime(createdAt),
+                Text(_formatTime(context, createdAt),
                     style: MarginaliaTextStyles.label),
               if (isMine)
                 GestureDetector(
@@ -555,15 +555,15 @@ class _CommentBubble extends StatelessWidget {
         .slideY(begin: 0.04, end: 0, duration: 250.ms);
   }
 
-  String _formatTime(String iso) {
+  String _formatTime(BuildContext context, String iso) {
     try {
       final dt = DateTime.parse(iso).toLocal();
       final now = DateTime.now();
       final diff = now.difference(dt);
-      if (diff.inMinutes < 1) return 'adesso';
-      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-      if (diff.inHours < 24) return '${diff.inHours}h';
-      if (diff.inDays < 7) return '${diff.inDays}g';
+      if (diff.inMinutes < 1) return context.l10n.timeNow;
+      if (diff.inMinutes < 60) return context.l10n.timeMinutesAgo(diff.inMinutes);
+      if (diff.inHours < 24) return context.l10n.timeHoursAgo(diff.inHours);
+      if (diff.inDays < 7) return context.l10n.timeDaysAgo(diff.inDays);
       return '${dt.day}/${dt.month}';
     } catch (_) {
       return '';

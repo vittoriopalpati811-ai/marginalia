@@ -64,7 +64,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: MarginaliaColors.primary, strokeWidth: 1.5),
         ),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
     );
   }
@@ -575,7 +575,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                       },
                     ),
               loading: () => const Center(child: CircularProgressIndicator(color: MarginaliaColors.primary, strokeWidth: 1.5)),
-              error: (e, _) => Center(child: Text('$e')),
+              error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
             ),
           ),
           const SizedBox(height: 16),

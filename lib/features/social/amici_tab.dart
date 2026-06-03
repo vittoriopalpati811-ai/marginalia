@@ -69,7 +69,7 @@ class _AmiciTabState extends ConsumerState<AmiciTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
       }
     } finally {
       if (mounted) setState(() => _loadingIds.remove(targetId));
@@ -86,7 +86,7 @@ class _AmiciTabState extends ConsumerState<AmiciTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
       }
     } finally {
       if (mounted) setState(() => _loadingIds.remove(targetId));

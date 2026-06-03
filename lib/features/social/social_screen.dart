@@ -96,9 +96,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       return;
     }
     Share.share(
-      'Join my Jam "$name" on Marginalia.\n\n'
-      'Invite code: $code',
-      subject: 'Marginalia Jam – $name',
+      context.l10n.socialShareJamBody(name, code),
+      subject: context.l10n.socialShareJamSubject(name),
       sharePositionOrigin: shareOrigin(context),
     );
   }
@@ -127,7 +126,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
                 SnackBar(
-                    content: Text('Error: $e'),
+                    content: Text(context.l10n.errorPrefix('$e')),
                     duration: const Duration(seconds: 10)),
               );
             }
@@ -158,7 +157,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             if (jam == null) {
               if (ctx.mounted) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Invalid code.')),
+                  SnackBar(content: Text(context.l10n.jamInvalidCode)),
                 );
               }
               return;
@@ -170,7 +169,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             if (ctx.mounted) {
               ScaffoldMessenger.of(ctx).showSnackBar(
                 SnackBar(
-                    content: Text('Error: $e'),
+                    content: Text(context.l10n.errorPrefix('$e')),
                     duration: const Duration(seconds: 10)),
               );
             }
@@ -499,7 +498,7 @@ class _JamTabContent extends ConsumerWidget {
         child: CircularProgressIndicator(
             color: MarginaliaColors.sienna, strokeWidth: 1.5),
       ),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
     );
   }
 }
@@ -781,14 +780,14 @@ class _CreateJamSheet extends StatelessWidget {
                     color: Colors.white, size: 18),
               ),
               const SizedBox(width: 12),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('New Jam',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  Text('Create a new reading circle',
-                      style: TextStyle(
+                  Text(context.l10n.socialNewJamTitle,
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  Text(context.l10n.socialNewJamSubtitle,
+                      style: const TextStyle(
                           fontSize: 12, color: MarginaliaColors.inkMuted)),
                 ],
               ),
@@ -799,15 +798,15 @@ class _CreateJamSheet extends StatelessWidget {
             controller: controller,
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'e.g. "20th Century Classics"',
-              prefixIcon: Icon(Icons.auto_stories_outlined),
+            decoration: InputDecoration(
+              hintText: context.l10n.socialJamNameHint,
+              prefixIcon: const Icon(Icons.auto_stories_outlined),
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'You will receive an invite code to share with friends.',
-            style: TextStyle(
+          Text(
+            context.l10n.socialJamCreateHint,
+            style: const TextStyle(
                 fontSize: 12, color: MarginaliaColors.inkMuted, height: 1.5),
           ),
           const SizedBox(height: 20),

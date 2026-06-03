@@ -96,10 +96,8 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   Future<void> _shareInviteCode(String? code) async {
     final inviteCode = code ?? widget.jamId.substring(0, 8).toUpperCase();
     await Share.share(
-      'Join my Jam on Marginalia.\n\n'
-      'Code: $inviteCode\n\n'
-      'Download the app: https://marginalia.app',
-      subject: 'Join the Jam "$_displayTitle"',
+      context.l10n.jamShareBody(inviteCode),
+      subject: context.l10n.jamShareSubject(_displayTitle),
       sharePositionOrigin: shareOrigin(context),
     );
   }
@@ -136,7 +134,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
       }
     } finally {
       if (mounted) setState(() => _uploadingCover = false);
@@ -252,7 +250,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text('Error: $e')));
+                  .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
             }
           }
         },
@@ -295,7 +293,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     final jamAsync = ref.watch(jamHighlightsProvider(widget.jamId));
     final membersAsync = ref.watch(jamMembersProvider(widget.jamId));
     final jamDetailAsync = ref.watch(jamDetailProvider(widget.jamId));
-    final prompt = WeeklyPrompt.current();
+    final prompt = WeeklyPrompt.current(context);
     final unreadCount = ref.watch(unreadNotificationCountProvider).maybeWhen(
       data: (n) => n,
       orElse: () => 0,
@@ -377,7 +375,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               if (isOwner && jamCoverUrl != null && jamCoverUrl.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Rinomina la Jam',
+                  tooltip: context.l10n.jamRenameTitle,
                   onPressed: _renameJam,
                 ),
               // Cover photo upload button
@@ -393,12 +391,12 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                     )
                   : IconButton(
                       icon: const Icon(Icons.image_outlined),
-                      tooltip: 'Cambia copertina Jam',
+                      tooltip: context.l10n.jamChangeCover,
                       onPressed: _pickJamCover,
                     ),
               IconButton(
                 icon: const Icon(Icons.ios_share_outlined),
-                tooltip: 'Invita amici',
+                tooltip: context.l10n.jamInviteFriends,
                 onPressed: () => _shareInviteCode(inviteCode),
               ),
               const SizedBox(width: 4),
@@ -498,7 +496,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                               const SizedBox(width: 4),
                               IconButton(
                                 onPressed: _renameJam,
-                                tooltip: 'Rinomina la Jam',
+                                tooltip: context.l10n.jamRenameTitle,
                                 iconSize: 18,
                                 padding: EdgeInsets.zero,
                                 visualDensity: VisualDensity.compact,
@@ -622,7 +620,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  Text('TUTTI GLI HIGHLIGHT',
+                  Text(context.l10n.jamAllHighlightsSection,
                       style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -672,7 +670,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               ),
             ),
             error: (e, _) => SliverFillRemaining(
-              child: Center(child: Text('Error: $e')),
+              child: Center(child: Text(context.l10n.errorPrefix('$e'))),
             ),
           ),
         ],
@@ -711,7 +709,7 @@ class _TrendingSection extends StatelessWidget {
             children: [
               const Text('🔥', style: TextStyle(fontSize: 14)),
               const SizedBox(width: 6),
-              Text('DI TENDENZA',
+              Text(context.l10n.jamTrendingSection,
                   style: MarginaliaTextStyles.sectionTitle),
             ],
           ),
@@ -883,9 +881,9 @@ class _WeeklyPromptBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'PROMPT DELLA SETTIMANA',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.jamWeeklyPromptLabel,
+                    style: const TextStyle(
                       color: Color(0x99F1EEE7),
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -959,7 +957,9 @@ class _MembersStrip extends StatelessWidget {
                 child: Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Tooltip(
-                  message: isReading ? 'Sta leggendo: $readingTitle' : name,
+                  message: isReading
+                      ? context.l10n.jamReadingNow(readingTitle)
+                      : name,
                   preferBelow: true,
                   child: Column(
                     children: [
@@ -1086,19 +1086,19 @@ class _EmptyJamHighlights extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'The Jam is quiet',
-            style: TextStyle(
+          Text(
+            context.l10n.jamQuietTitle,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Be the first to share a highlight\nor invite friends to join.',
+          Text(
+            context.l10n.jamQuietBody,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: MarginaliaColors.inkMuted,
               fontSize: 14,
               height: 1.65,
@@ -1123,9 +1123,9 @@ class _EmptyJamHighlights extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    'INVITE CODE',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.jamInviteCodeLabel,
+                    style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
                       color: MarginaliaColors.inkMuted,
@@ -1238,7 +1238,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
     // Group by book title — alphabetical within each group.
     final grouped = <String, List<dynamic>>{};
     for (final h in filtered) {
-      final title = (h.bookTitle as String?) ?? 'Senza titolo';
+      final title = (h.bookTitle as String?) ?? context.l10n.bookUntitled;
       grouped.putIfAbsent(title, () => []).add(h);
     }
     final bookTitles = grouped.keys.toList()..sort();
@@ -1294,8 +1294,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${filtered.length} '
-                          '${filtered.length == 1 ? "risultato" : "risultati"}',
+                          context.l10n.jamResultCount(filtered.length),
                           style: const TextStyle(
                             fontSize: 12,
                             color: MarginaliaColors.inkMuted,
@@ -1625,9 +1624,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
-                                    'Hai $myMatchCount '
-                                    '${myMatchCount == 1 ? "citazione" : "citazioni"}'
-                                    ' da questo libro · Rispondi',
+                                    context.l10n.jamMatchCount(myMatchCount),
                                     style: const TextStyle(
                                       fontSize: 11,
                                       color: MarginaliaColors.sienna,
@@ -1735,7 +1732,7 @@ class _JamFeaturesRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: Row(
             children: [
-              Text('ACTIVITY', style: MarginaliaTextStyles.sectionTitle),
+              Text(context.l10n.jamActivitySection, style: MarginaliaTextStyles.sectionTitle),
               const SizedBox(width: 12),
               const Expanded(child: Divider(color: MarginaliaColors.rule)),
             ],
@@ -1882,9 +1879,9 @@ class _MemberProfileSheet extends StatelessWidget {
                 color: MarginaliaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                'OWNER',
-                style: TextStyle(
+              child: Text(
+                context.l10n.jamOwnerBadge,
+                style: const TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -1980,7 +1977,7 @@ class _MemberProfileSheet extends StatelessWidget {
                   context.push('/user/$userId');
                 },
                 icon: const Icon(Icons.person_outline, size: 16),
-                label: const Text('Visualizza profilo'),
+                label: Text(context.l10n.jamViewProfile),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: MarginaliaColors.primary,
                   side: const BorderSide(color: MarginaliaColors.rule),

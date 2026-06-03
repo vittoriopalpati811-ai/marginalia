@@ -1,27 +1,39 @@
+import 'package:flutter/widgets.dart';
+
+import '../../core/l10n/l10n_extension.dart';
+
 /// Rotating weekly prompts that nudge Jam members to share contextually.
 /// The current prompt is deterministic per ISO week so all members of the same
 /// jam see the same prompt at the same time.
 class WeeklyPrompt {
-  static const _prompts = [
-    'Share a highlight that changed your mind this week.',
-    'A quote that made you laugh recently — share it with the Jam.',
-    'The most uncomfortable idea you have underlined recently.',
-    'A highlight you disagree with the author on. Why?',
-    'The quote you would get tattooed, if you weren\'t afraid.',
-    'A passage you had to re-read three times. Why?',
-    'The most practical advice you extracted this week.',
-    'A sentence you thought was obvious, but keeps coming back to you.',
-    'A highlight from a book you wouldn\'t recommend — but with a good idea inside.',
-    'The most "difficult" quote you underlined. Explain it in 2 lines.',
-    'A passage you shared offline with someone. Bring it here.',
-    'An annotation you made years ago that you would read differently today.',
-  ];
+  /// The localized prompt pool. Built from [context] so the strings follow the
+  /// active locale. Order is stable so the ISO-week index keeps pointing at the
+  /// same conceptual prompt across locales.
+  static List<String> _prompts(BuildContext context) {
+    final l10n = context.l10n;
+    return [
+      l10n.weeklyPrompt1,
+      l10n.weeklyPrompt2,
+      l10n.weeklyPrompt3,
+      l10n.weeklyPrompt4,
+      l10n.weeklyPrompt5,
+      l10n.weeklyPrompt6,
+      l10n.weeklyPrompt7,
+      l10n.weeklyPrompt8,
+      l10n.weeklyPrompt9,
+      l10n.weeklyPrompt10,
+      l10n.weeklyPrompt11,
+      l10n.weeklyPrompt12,
+    ];
+  }
 
-  /// Current prompt — rotates by ISO week-of-year, stable within a week.
-  static String current([DateTime? now]) {
+  /// Current localized prompt — rotates by ISO week-of-year, stable within a
+  /// week. Needs a [context] to resolve the localized strings.
+  static String current(BuildContext context, [DateTime? now]) {
+    final prompts = _prompts(context);
     final n = now ?? DateTime.now();
     final week = _isoWeekNumber(n);
-    return _prompts[week % _prompts.length];
+    return prompts[week % prompts.length];
   }
 
   // Approximate ISO 8601 week number for the given date.

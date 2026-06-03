@@ -84,7 +84,7 @@ class NotificationsScreen extends ConsumerWidget {
             strokeWidth: 1.5,
           ),
         ),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
     );
   }

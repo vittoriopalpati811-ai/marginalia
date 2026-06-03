@@ -378,7 +378,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
         setState(() => _posting = false);
       }
     }
@@ -422,7 +422,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
             children: [
               Expanded(
                 child: Text(
-                  'Nuovo post',
+                  context.l10n.feedNewPostTitle,
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -470,17 +470,17 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 color: MarginaliaColors.ink,
                 height: 1.55,
               ),
-              decoration: const InputDecoration(
-                hintText: 'What are you reading? Share a thought…',
-                hintStyle: TextStyle(
+              decoration: InputDecoration(
+                hintText: context.l10n.feedComposerHint,
+                hintStyle: const TextStyle(
                   color: MarginaliaColors.inkFaint,
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.all(14),
-                counterStyle: TextStyle(
+                contentPadding: const EdgeInsets.all(14),
+                counterStyle: const TextStyle(
                   fontSize: 10,
                   color: MarginaliaColors.inkFaint,
                 ),
@@ -1047,7 +1047,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
         items: [
           _MenuAction(
             icon: Icons.edit_outlined,
-            label: 'Edit post',
+            label: context.l10n.feedEdit,
             color: MarginaliaColors.ink,
             onTap: () async {
               Navigator.pop(ctx);
@@ -1194,16 +1194,16 @@ class _PostCardState extends ConsumerState<_PostCard> {
     );
   }
 
-  String _timeAgo(String? iso) {
+  String _timeAgo(BuildContext context, String? iso) {
     if (iso == null) return '';
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'adesso';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m fa';
-    if (diff.inHours < 24)   return '${diff.inHours}h fa';
-    if (diff.inDays < 7)     return '${diff.inDays}g fa';
-    return '${(diff.inDays / 7).round()}sett fa';
+    if (diff.inMinutes < 1)  return context.l10n.timeNow;
+    if (diff.inMinutes < 60) return context.l10n.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24)   return context.l10n.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7)     return context.l10n.timeDaysAgo(diff.inDays);
+    return context.l10n.timeWeeksAgo((diff.inDays / 7).round());
   }
 
   Color _accentFor(String? c) => switch (c) {
@@ -1233,7 +1233,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final hlAuthor      = hlBook?['author'] as String?;
     final initial       = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final tint          = MarginaliaDecorations.bookCoverColor(name);
-    final timeAgo       = _timeAgo(createdAt);
+    final timeAgo       = _timeAgo(context, createdAt);
     final accent        = _accentFor(hlColor);
 
     // Current user check for menu
@@ -1390,7 +1390,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           size: 18, color: MarginaliaColors.inkFaint),
                       const SizedBox(width: 6),
                       Text(
-                        'Immagine non disponibile',
+                        context.l10n.feedImageUnavailable,
                         style: GoogleFonts.manrope(
                           fontSize: 11,
                           color: MarginaliaColors.inkFaint,
@@ -1482,7 +1482,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        'Commenta',
+                        context.l10n.feedCommentAction,
                         style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1734,21 +1734,22 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
         setState(() => _submitting = false);
       }
     }
   }
 
-  String _timeAgo(String? iso) {
+  String _timeAgo(BuildContext context, String? iso) {
     if (iso == null) return '';
     final dt = DateTime.tryParse(iso);
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24)   return '${diff.inHours}h';
-    return '${diff.inDays}d';
+    if (diff.inMinutes < 1)  return context.l10n.timeNow;
+    if (diff.inMinutes < 60) return context.l10n.timeMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24)   return context.l10n.timeHoursAgo(diff.inHours);
+    if (diff.inDays < 7)     return context.l10n.timeDaysAgo(diff.inDays);
+    return context.l10n.timeWeeksAgo((diff.inDays / 7).round());
   }
 
   @override
@@ -1786,7 +1787,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Commenti',
+                    context.l10n.feedComments,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -1840,7 +1841,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                           for (final c in _topLevelComments) ...[
                             _CommentBubble(
                               comment: c,
-                              timeAgo: _timeAgo(c['created_at'] as String?),
+                              timeAgo: _timeAgo(context, c['created_at'] as String?),
                               onReply: () => _startReply(
                                 c['id'] as String,
                                 (c['profiles'] as Map?)?['display_name']
@@ -1855,7 +1856,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                 child: _CommentBubble(
                                   comment: reply,
                                   timeAgo:
-                                      _timeAgo(reply['created_at'] as String?),
+                                      _timeAgo(context, reply['created_at'] as String?),
                                   onReply: () => _startReply(
                                     c['id'] as String,
                                     (reply['profiles'] as Map?)?[
@@ -1884,7 +1885,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Rispondendo a $_replyingToName',
+                      context.l10n.feedReplyingTo(_replyingToName ?? ''),
                       style: GoogleFonts.manrope(
                         fontSize: 12.5,
                         color: MarginaliaColors.inkMuted,
@@ -2009,8 +2010,8 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       ),
                       decoration: InputDecoration(
                         hintText: isReplying
-                            ? 'Reply to $_replyingToName…'
-                            : 'Write a comment…',
+                            ? context.l10n.feedReplyHint(_replyingToName ?? '')
+                            : context.l10n.feedCommentHint,
                         hintStyle: TextStyle(
                           color: MarginaliaColors.inkFaint,
                           fontSize: 14,
@@ -2290,7 +2291,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(0, 4, 8, 4),
                           child: Text(
-                            'Rispondi',
+                            context.l10n.feedReplyAction,
                             style: GoogleFonts.manrope(
                               fontSize: 11.5,
                               color: MarginaliaColors.inkFaint,
@@ -2420,7 +2421,7 @@ class _EmptyFeed extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Your feed is empty',
+            context.l10n.feedEmptyTitle,
             style: GoogleFonts.ebGaramond(
               fontSize: 18,
               fontWeight: FontWeight.w600,
