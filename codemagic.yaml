@@ -284,23 +284,28 @@ workflows:
         # internal-testing publish config was correct, the binary just collided).
         # pubspec pins `version: 1.0.0+1`, so every build otherwise re-uploads
         # CFBundleVersion 1 — fine for the FIRST upload (build #8) but a hard
-        # failure for every build after it. Derive a unique, monotonic
-        # CFBundleVersion from the highest build number already on App Store
-        # Connect + 1 (the App Store Connect API key comes from the same
-        # integrations.app_store_connect used by fetch-signing-files). Fall back to
-        # Codemagic's ever-increasing $BUILD_NUMBER, then to a unix timestamp, so
-        # the value is ALWAYS > the last upload even if the lookup returns nothing.
+        # failure for every build after it. CFBundleVersion must be unique and
+        # strictly monotonic. Deriving it from get-latest-build-number + 1 RACES:
+        # a build triggered before App Store Connect finishes PROCESSING the
+        # previous upload reads the stale (pre-previous) number, so two builds
+        # compute the same CFBundleVersion and the 2nd is rejected as a duplicate
+        # (this killed builds #3/#4 on 2026-06-03 — clean Build IPA, only
+        # Publishing failed; same family as #9). Fix: use a unix timestamp — it is
+        # always increasing and always far above any small build number, so it can
+        # never collide with an in-flight upload regardless of ASC processing lag.
+        # Only step past LATEST in the impossible case it is already >= now.
         # CFBundleVersion is $(FLUTTER_BUILD_NUMBER) (see ios/Runner/Info.plist),
         # which Flutter writes into ios/Flutter/Generated.xcconfig during pub get;
         # xcode-project build-ipa reads that file, so rewriting the line here is
         # enough — no pubspec bump per build, no hand-written export plist.
         script: |
+          NOW=$(date +%s)
           LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)
           case "$LATEST" in
-            ''|*[!0-9]*) NEXT="${BUILD_NUMBER:-$(date +%s)}" ;;
-            *) NEXT=$((LATEST + 1)) ;;
+            ''|*[!0-9]*) NEXT="$NOW" ;;
+            *) if [ "$LATEST" -ge "$NOW" ]; then NEXT=$((LATEST + 1)); else NEXT="$NOW"; fi ;;
           esac
-          echo "Latest App Store Connect build number: '${LATEST:-none}' -> setting CFBundleVersion to $NEXT"
+          echo "Latest App Store Connect build number: '${LATEST:-none}', now=$NOW -> CFBundleVersion $NEXT"
           perl -pi -e "s/^FLUTTER_BUILD_NUMBER=.*/FLUTTER_BUILD_NUMBER=$NEXT/" ios/Flutter/Generated.xcconfig
           grep FLUTTER_BUILD ios/Flutter/Generated.xcconfig
           # The widget extension's CFBundleVersion / CFBundleShortVersionString
