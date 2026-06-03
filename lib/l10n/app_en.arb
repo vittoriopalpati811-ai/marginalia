@@ -433,6 +433,8 @@
   "kindleImported": "{count} highlights imported.",
   "@kindleImported": { "placeholders": { "count": { "type": "int" } } },
   "kindleSomethingWrong": "Something went wrong",
+  "profileNoSharedTitle": "Nothing shared yet",
+  "profileNoSharedBody": "Share a highlight in a Jam\nand it'll show up here.",
   "bookStatHighlights": "{count, plural, =1{highlight} other{highlights}}",
   "@bookStatHighlights": { "placeholders": { "count": { "type": "int" } } },
   "bookStatAuthor": "author",

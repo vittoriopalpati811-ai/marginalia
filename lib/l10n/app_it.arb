@@ -437,6 +437,8 @@
   "kindleDone": "Sync completato!",
   "kindleImported": "{count} highlight importati.",
   "kindleSomethingWrong": "Qualcosa è andato storto",
+  "profileNoSharedTitle": "Ancora niente di condiviso",
+  "profileNoSharedBody": "Condividi un highlight in una Jam\ne comparirà qui.",
   "bookStatHighlights": "{count, plural, =1{highlight} other{highlight}}",
   "bookStatAuthor": "autore",
   "bookStatReading": "in lettura",

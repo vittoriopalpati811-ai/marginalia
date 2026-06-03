@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -78,6 +77,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         'Reader';
     final readingTitle = profile?['currently_reading_title'] as String?;
     final readingAuthor = profile?['currently_reading_author'] as String?;
+    final avatarUrl = profile?['avatar_url'] as String?;
+    final coverUrl = profile?['cover_url'] as String?;
     final stats = statsAsync.asData?.value ?? {};
     final sharedHighlights =
         sharedHighlightsAsync.asData?.value ?? [];
@@ -123,9 +124,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               titlePadding:
                   const EdgeInsetsDirectional.fromSTEB(56, 0, 56, 16),
-              background: Container(
-                decoration: MarginaliaDecorations.gradientHeader,
-                child: SafeArea(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Cover photo (if set) behind the header, else the gradient.
+                  if (coverUrl != null && coverUrl.isNotEmpty)
+                    Image.network(
+                      coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                          decoration: MarginaliaDecorations.gradientHeader),
+                    )
+                  else
+                    Container(decoration: MarginaliaDecorations.gradientHeader),
+                  // Scrim so the name/email stay legible over a photo.
+                  if (coverUrl != null && coverUrl.isNotEmpty)
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x22000000), Color(0xAA000000)],
+                        ),
+                      ),
+                    ),
+                  SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                     child: Column(
@@ -135,6 +158,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         Container(
                           width: 86,
                           height: 86,
+                          clipBehavior: Clip.antiAlias,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -158,16 +182,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: Text(
-                              initial,
-                              style: const TextStyle(
-                                color: Color(0xFFF1EEE7),
-                                fontSize: 36,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                          child: (avatarUrl != null && avatarUrl.isNotEmpty)
+                              ? Image.network(
+                                  avatarUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      _AvatarInitial(initial: initial),
+                                )
+                              : _AvatarInitial(initial: initial),
                         ),
                         const SizedBox(height: 14),
 
@@ -220,6 +242,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                 ),
+                ],
               ),
             ),
           ),
@@ -471,18 +494,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _SettingsTile(
                 icon: Icons.privacy_tip_outlined,
                 label: context.l10n.settingsPrivacyPolicy,
-                onTap: () async {
-                  // Route to the localized privacy page based on the
-                  // user's current app locale.
-                  final isIt = Localizations.localeOf(context).languageCode == 'it';
-                  final url = isIt
-                      ? 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/it/'
-                      : 'https://vittoriopalpati811-ai.github.io/marginalia/privacy/';
-                  final uri = Uri.parse(url);
-                  if (await canLaunchUrl(uri)) await launchUrl(uri);
+                // Open the privacy policy as an IN-APP screen (bundled HTML, no
+                // external GitHub link) — reached only from this button.
+                onTap: () {
+                  final isIt =
+                      Localizations.localeOf(context).languageCode == 'it';
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => PrivacyPolicyScreen(isItalian: isIt),
+                  ));
                 },
-                trailing: const Icon(Icons.open_in_new,
-                    size: 14, color: MarginaliaColors.inkFaint),
+                trailing: const Icon(Icons.chevron_right,
+                    size: 18, color: MarginaliaColors.inkFaint),
               ),
               _SettingsTile(
                 icon: Icons.delete_forever_outlined,
@@ -1012,6 +1034,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
 // ─── Stats row ────────────────────────────────────────────────────────────────
 
+class _AvatarInitial extends StatelessWidget {
+  const _AvatarInitial({required this.initial});
+  final String initial;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Color(0xFFF1EEE7),
+            fontSize: 36,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+}
+
 class _StatsRow extends StatelessWidget {
   const _StatsRow({required this.stats});
   final Map<String, int> stats;
@@ -1294,38 +1333,66 @@ class _EmptySharedHighlights extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarginaliaColors.rule),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              MarginaliaColors.primary.withOpacity(0.06),
+              MarginaliaColors.surface,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: MarginaliaColors.rule.withOpacity(0.6)),
         ),
         child: Column(
           children: [
-            const Icon(Icons.share_outlined,
-                size: 28, color: MarginaliaColors.inkFaint),
-            const SizedBox(height: 10),
-            const Text(
-              'No shared highlights',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: MarginaliaColors.inkMuted,
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: MarginaliaColors.primary.withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.auto_stories_outlined,
+                  size: 24, color: MarginaliaColors.primary),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              context.l10n.profileNoSharedTitle,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: MarginaliaColors.ink,
+                letterSpacing: -0.2,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Share a highlight in a Jam\nto see it here.',
+            Text(
+              context.l10n.profileNoSharedBody,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 12, color: MarginaliaColors.inkFaint, height: 1.5),
+              style: const TextStyle(
+                  fontSize: 12.5, color: MarginaliaColors.inkMuted, height: 1.5),
             ),
-            const SizedBox(height: 14),
-            TextButton(
+            const SizedBox(height: 18),
+            FilledButton.icon(
               onPressed: onShare,
-              child: Text(context.l10n.editProfileGoToJams),
+              icon: const Icon(Icons.groups_outlined, size: 17),
+              label: Text(context.l10n.editProfileGoToJams),
+              style: FilledButton.styleFrom(
+                backgroundColor: MarginaliaColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                textStyle:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
