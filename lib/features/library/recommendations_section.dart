@@ -39,6 +39,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/providers/weather_provider.dart';
 import '../../core/providers/health_provider.dart';
+import '../../core/providers/locale_provider.dart';
 import '../../core/services/recs_cache.dart';
 
 // Re-export so library_screen can import just this file if needed
@@ -229,7 +230,8 @@ final libraryRecommendationsProvider =
   // book + highlight counts, so an import (which changes them) busts the cache
   // automatically; it also rolls over at midnight. This is what keeps the free
   // Groq tier from being burned by repeated cold starts. (No-op on web.)
-  final cacheSig = '${orderedBookIds.length}:$totalHighlights';
+  final cacheSig =
+      '${orderedBookIds.length}:$totalHighlights:${ref.read(localeProvider).languageCode}';
   final cachedRecs = await RecsCache.read(cacheSig);
   if (cachedRecs != null) {
     debugPrint('[Recs] cache hit ($cacheSig) — skipping AI call');
@@ -299,6 +301,9 @@ final libraryRecommendationsProvider =
         'existingTitles': allTitles,
         'context':        contextPayload,
         'userName':       userName,
+        // Output language for the AI-written reasons (US rollout). The
+        // recommend-books function switches its prompt/reason language on this.
+        'lang':           ref.read(localeProvider).languageCode,
       },
     );
 
