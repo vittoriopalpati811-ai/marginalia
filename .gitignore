@@ -34,8 +34,19 @@ ios/Runner/GeneratedPluginRegistrant.*
 # leftover Swift project from pre-Flutter era (inline comments aren't valid in .gitignore)
 ios/Sources/
 
-# ─── Android — ignored entirely until we ship Android ───────────────
-android/
+# ─── Android — source is TRACKED now (cyber-sec hardening + build config
+#     committed; android/ is the build source for the APK). Only build
+#     artefacts, the machine-local SDK path, IDE files, the generated plugin
+#     registrant, and any signing keystore stay out of git.
+android/.gradle/
+android/.cxx/
+android/captures/
+android/**/local.properties
+android/**/GeneratedPluginRegistrant.java
+android/**/*.iml
+key.properties
+*.jks
+*.keystore
 
 # ─── Supabase ────────────────────────────────
 supabase/.temp/

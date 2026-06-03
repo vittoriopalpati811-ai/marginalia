@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Marginalia network security policy.
+  - cleartextTrafficPermitted="false": every connection MUST be HTTPS. All app
+    endpoints (Supabase, read.amazon.com webview, fonts.gstatic.com, GIPHY,
+    Open Library, weather) are already HTTPS, so this only blocks accidental /
+    injected plaintext, defeating passive eavesdropping on public Wi-Fi.
+  - trust-anchors = system only: user-installed CAs are NOT trusted, which
+    blocks the classic "install a proxy cert to read the traffic" MITM. This is
+    appropriate because the app carries reading history + on-device-derived
+    health context and never needs a corporate/debug proxy in production.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
