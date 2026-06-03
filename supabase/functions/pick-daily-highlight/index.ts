@@ -1,33 +1,7 @@
 // pick-daily-highlight — Supabase Edge Function
-// ─────────────────────────────────────────────────────────────────────────────
 //
-// Receives a sample of the user's highlights and NON-SENSITIVE context (time,
-// weather, and an abstract on-device "tone" hint), then asks Llama 3.3 70B (via
-// Groq) to pick the single highlight most resonant for this specific moment.
-// Raw health signals (steps, menstrual-cycle phase) are NEVER sent here — they
-// stay on-device and are distilled there into the coarse `tone` field.
-//
-// Returns the index of the selected highlight — Flutter maps it back to the
-// actual Highlight object and displays the original text unchanged.
-//
-// Request body (POST, JSON):
-//   {
-//     highlights: [{ content: string, bookTitle: string }],  ← up to 40
-//     context: {
-//       hour:         number,    ← 0–23
-//       weather?:     string,    ← 'sunny' | 'rain' | 'cloudy' | 'snow' | 'clear'
-//       weatherCity?: string,
-//       weatherTemp?: number,
-//       tone?:        string,    ← 'gentle'|'uplifting'|'reflective'
-//                                  (abstract mood derived ON-DEVICE; not health)
-//     }
-//   }
-//
-// Response (always 200, JSON):
-//   { selectedIndex: number }   ← index in the received highlights array
-//
-// Required secret: GROQ_API_KEY  (same key used by recommend-books)
-// Deploy: supabase functions deploy pick-daily-highlight
+// Picks the single highlight most resonant for this moment via Groq.
+// Raw health signals are NEVER sent — only an abstract on-device tone.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -52,9 +26,7 @@ Deno.serve(async (req) => {
     return json({ error: "POST only" }, 405);
   }
 
-  // ── Auth: require a valid Supabase user JWT ────────────────────────────────
-  // Previously unauthenticated: anyone could pump unbounded user text into the
-  // Groq LLM prompt. Require a verified caller before doing any model work.
+  // Auth: require a valid Supabase user JWT before any model work.
   const user = await requireUser(req);
   if (!user) {
     return json({ error: "unauthorized" }, 401);
@@ -70,8 +42,7 @@ Deno.serve(async (req) => {
     return json({ selectedIndex: 0 });
   }
 
-  // Defensive clamping: cap the array AND each text field to <=400 chars before
-  // building the prompt. Bounds prompt size, token cost, and injection length.
+  // Defensive clamping: cap the array AND each text field before building.
   const MAX_FIELD = 400;
   const clampField = (v: unknown): string => String(v ?? "").slice(0, MAX_FIELD);
   const highlights: HighlightInput[] = (Array.isArray(body.highlights) ? body.highlights : [])
@@ -108,7 +79,6 @@ function buildPrompt(
   highlights: HighlightInput[],
   ctx: Record<string, unknown>
 ): string {
-  // ── Context description ──────────────────────────────────────────────────
   const hour = (ctx.hour as number) ?? new Date().getHours();
   const timeLabel =
     hour < 6  ? "notte fonda" :
@@ -127,10 +97,7 @@ function buildPrompt(
     const cond = weatherMap[ctx.weather as string] ?? String(ctx.weather);
     contextParts.push(`Meteo: ${cond} a ${ctx.weatherCity}, ${ctx.weatherTemp}°C`);
   }
-  // Privacy by design: the app no longer transmits raw health signals (steps,
-  // menstrual-cycle phase). Those stay on-device and are distilled THERE into an
-  // abstract, non-health "tone" hint, so this third-party LLM never receives any
-  // health data — only a generic mood preference.
+  // Privacy by design: only an abstract non-health tone reaches the LLM.
   if (ctx.tone) {
     const toneMap: Record<string, string> = {
       gentle: "gentile, consolatorio, intimo",
@@ -141,8 +108,7 @@ function buildPrompt(
     if (tone) contextParts.push(`Tono preferito per oggi: ${tone}`);
   }
   if (Array.isArray(ctx.calendarEvents)) {
-    // Clamp the array AND each title before splicing into the prompt — bounds
-    // prompt size / token cost / injection length on otherwise-unbounded input.
+    // Clamp the array AND each title before splicing into the prompt.
     const events = (ctx.calendarEvents as unknown[])
       .slice(0, 8)
       .map((e) => String(e ?? "").slice(0, 80))
@@ -152,9 +118,8 @@ function buildPrompt(
     }
   }
 
-  // ── Highlight list ───────────────────────────────────────────────────────
   const list = highlights
-    .map((h, i) => `[${i}] "${h.content}" — ${h.bookTitle || "libro"}`)
+    .map((h, i) => `[${i}] "${h.content}" - ${h.bookTitle || "libro"}`)
     .join("\n");
 
   return `Sei un bibliotecario italiano con un senso raffinato del momento giusto per ogni lettura.
@@ -165,12 +130,12 @@ ${contextParts.join("\n")}
 HAI A DISPOSIZIONE ${highlights.length} HIGHLIGHT:
 ${list}
 
-Scegli l'highlight più adatto a questo preciso momento, considerando l'ora del giorno, il meteo, l'umore che trasmette e il contesto fisico dell'utente. Pensa a quale citazione risuonerebbe di più adesso — se è mattina prendi qualcosa di energico o meditativo, se piove qualcosa di malinconico o introspettivo, se è sera qualcosa di caldo.
+Scegli l'highlight piu adatto a questo preciso momento, considerando l'ora del giorno, il meteo e l'umore che trasmette. Pensa a quale citazione risuonerebbe di piu adesso.
 
 Rispondi SOLO con il numero intero dell'indice scelto (es: 7). Nessun altro testo, nessuna spiegazione.`;
 }
 
-// ─── Groq API ─────────────────────────────────────────────────────────────────
+// ─── Groq API ───────────────────────────────────────────────────────────────────
 
 async function callGroq(
   apiKey: string,
@@ -186,8 +151,8 @@ async function callGroq(
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 8,       // We only need a single integer
-      temperature: 0.4,    // Lower temp for more consistent selection
+      max_tokens: 8,
+      temperature: 0.4,
     }),
     signal: AbortSignal.timeout(20_000),
   });
@@ -200,7 +165,6 @@ async function callGroq(
   const data = await res.json();
   const rawText: string = (data?.choices?.[0]?.message?.content ?? "").trim();
 
-  // Parse the integer — Groq might return "7" or "7\n" or "index: 7"
   const match = rawText.match(/\d+/);
   if (!match) throw new Error(`Unexpected Groq response: "${rawText}"`);
 
@@ -210,10 +174,6 @@ async function callGroq(
 }
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
-//
-// Verifies the incoming `Authorization: Bearer <jwt>` against Supabase Auth
-// using the anon key + the caller's JWT. Returns the authenticated user, or
-// null if the token is missing/invalid (caller should answer 401).
 
 async function requireUser(req: Request): Promise<{ id: string } | null> {
   const authHeader = req.headers.get("Authorization") ?? "";
