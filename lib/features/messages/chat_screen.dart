@@ -351,6 +351,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                   },
                   child: ListView.builder(
                     controller: _scrollController,
+                    // Dragging the history up means the user is done typing —
+                    // drop the keyboard so the whole conversation is visible.
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     itemCount: merged.length,
                     itemBuilder: (context, index) {
