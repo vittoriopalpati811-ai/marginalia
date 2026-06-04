@@ -809,23 +809,16 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
       onLongPressStart: (_) => _onHoldStart(),
       onLongPressEnd:   (_) => _onHoldEnd(),
       onLongPressCancel:    _onHoldEnd,
-      // A plain TAP now publishes directly (this is what users actually do —
-      // previously a tap only showed a "hold to publish" toast and the post
-      // was never sent, which read as "non fa scrivere i post"). The
-      // long-press still works as an alternative with its liftoff animation.
-      onTap: () {
-        if (_holding || _completed) return; // a hold is already in progress
-        if (widget.enabled) {
-          widget.onComplete();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10n.feedHoldToPublishToast),
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        }
-      },
+      // Hold-to-publish ONLY (founder's choice): a plain tap just reminds you to
+      // hold; the liftoff animation + actual publish happen on long-press.
+      onTap: widget.enabled
+          ? () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(context.l10n.feedHoldToPublishToast),
+                  duration: const Duration(seconds: 1),
+                ),
+              )
+          : null,
       child: AnimatedScale(
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOut,
