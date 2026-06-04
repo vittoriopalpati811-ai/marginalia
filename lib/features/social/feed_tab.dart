@@ -188,6 +188,7 @@ class _StoryCircle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 14),
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           final id = user['id'] as String?;
           if (id != null) context.push('/user/$id');
@@ -1271,6 +1272,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: userId != null ? () => context.push('/user/$userId') : null,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1335,6 +1337,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
               // 3-dot menu
               GestureDetector(
                 onTap: () => _showPostMenu(context),
+                behavior: HitTestBehavior.opaque,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
                   child: Icon(

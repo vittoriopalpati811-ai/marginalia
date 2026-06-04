@@ -605,6 +605,7 @@ class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
             child: isGroup
                 ? GestureDetector(
                     onTap: () => _renameGroup(context, ref, title),
+                    behavior: HitTestBehavior.opaque,
                     child: Row(
                       children: [
                         Flexible(child: titleWidget),
@@ -1257,6 +1258,7 @@ class _MediaButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.all(6),
         child: Icon(

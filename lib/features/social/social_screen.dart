@@ -699,6 +699,7 @@ class _JamGridCard extends StatelessWidget {
                     ),
                     GestureDetector(
                       onTap: onShare,
+                      behavior: HitTestBehavior.opaque,
                       child: const Padding(
                         padding: EdgeInsets.all(4),
                         child: Icon(

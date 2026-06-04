@@ -100,6 +100,12 @@ class _HomeHeader extends StatelessWidget {
 
             // Create-post button
             GestureDetector(
+              // Without this the GestureDetector only hit-tests the painted
+              // icon/text glyphs (a DecoratedBox doesn't absorb hits on its
+              // padding), so taps on the button's padding did nothing — this is
+              // why "non si riesce a cliccare per scrivere un post". Opaque makes
+              // the whole pill tappable.
+              behavior: HitTestBehavior.opaque,
               onTap: onCreatePost,
               child: Container(
                 padding:
