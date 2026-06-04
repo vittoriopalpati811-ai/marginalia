@@ -34,6 +34,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
+import 'book_cover.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
@@ -62,11 +63,32 @@ class BookRecommendation {
     required this.author,
     required this.year,
     required this.reason,
+    this.plot = '',
+    this.categories = const [],
+    this.pages = '',
+    this.whyRead = '',
   });
   final String title;
   final String author;
   final String year;
   final String reason; // AI-generated personalised explanation
+  // Enrichment for the full detail page (filled by the recommend-books edge
+  // function when available; gracefully omitted on the page when empty).
+  final String plot; // short synopsis / trama
+  final List<String> categories; // genres
+  final String pages; // page count (string — may be a range/estimate)
+  final String whyRead; // "because you read X by Y"
+}
+
+/// Parse a categories field that may arrive as a list or comma-joined string.
+List<String> _parseCategories(dynamic v) {
+  if (v is List) {
+    return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+  }
+  if (v is String && v.trim().isNotEmpty) {
+    return v.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
+  return const [];
 }
 
 /// Why the recommendation list is empty (when it is). Used to render an
@@ -241,6 +263,10 @@ final libraryRecommendationsProvider =
               author: (r['author'] as String? ?? '').trim(),
               year: (r['year'] as String? ?? '').trim(),
               reason: (r['reason'] as String? ?? '').trim(),
+              plot: (r['plot'] as String? ?? '').trim(),
+              categories: _parseCategories(r['categories']),
+              pages: (r['pages']?.toString() ?? '').trim(),
+              whyRead: (r['why'] as String? ?? '').trim(),
             ))
         .where((r) => r.title.isNotEmpty)
         .toList();
@@ -347,6 +373,10 @@ final libraryRecommendationsProvider =
       author: (r['author'] as String? ?? '').trim(),
       year:   (r['year']   as String? ?? '').trim(),
       reason: (r['reason'] as String? ?? '').trim(),
+      plot:   (r['plot']   as String? ?? '').trim(),
+      categories: _parseCategories(r['categories']),
+      pages:  (r['pages']?.toString() ?? '').trim(),
+      whyRead: (r['why']   as String? ?? '').trim(),
     );
   }).where((r) => r.title.isNotEmpty).toList();
 
@@ -560,16 +590,280 @@ class _RecommendationCard extends StatelessWidget {
 
   void _openSheet(BuildContext context) {
     HapticFeedback.lightImpact();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _BookDetailSheet(rec: rec),
-    );
+    // Tapping a recommendation now opens a full detail page (was a sheet).
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => RecommendationDetailScreen(rec: rec),
+    ));
   }
 }
 
 // ─── Book detail bottom sheet ──────────────────────────────────────────────────
+
+// ─── Recommended-book full detail page ───────────────────────────────────────
+// Opened from a recommendation card: the AI phrase stays at the top, followed
+// by the book overview (trama), genres, page count, the "because you read…"
+// line, and a button that opens the Kindle e-book on Amazon.
+class RecommendationDetailScreen extends StatelessWidget {
+  const RecommendationDetailScreen({super.key, required this.rec});
+  final BookRecommendation rec;
+
+  Future<void> _openKindle() async {
+    final q = Uri.encodeQueryComponent('${rec.title} ${rec.author} ebook kindle');
+    final url = Uri.parse(
+        'https://www.amazon.it/s?k=$q&i=digital-text&tag=$_amazonTag');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final meta = [rec.author, rec.year]
+        .where((s) => s.isNotEmpty && s != '—')
+        .join(' · ');
+
+    Widget sectionHeader(String label) => Padding(
+          padding: const EdgeInsets.only(top: 26, bottom: 10),
+          child: Row(children: [
+            Text(label.toUpperCase(),
+                style: MarginaliaTextStyles.sectionTitle),
+            const SizedBox(width: 12),
+            const Expanded(
+                child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+          ]),
+        );
+
+    return Scaffold(
+      backgroundColor: MarginaliaColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 6, 16, 2),
+              child: Row(children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                  color: MarginaliaColors.ink,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                Expanded(
+                  child: Text(
+                    it ? 'Consigliato per te' : 'Recommended for you',
+                    style: GoogleFonts.manrope(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: MarginaliaColors.inkMuted,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 6, 22, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── The AI phrase — stays at the top ──
+                    if (rec.reason.isNotEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: MarginaliaColors.siennaFaint,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          rec.reason,
+                          style: GoogleFonts.ebGaramond(
+                            fontSize: 17,
+                            height: 1.55,
+                            fontStyle: FontStyle.italic,
+                            color: MarginaliaColors.ink,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    // ── Cover + title + author ──
+                    Center(
+                      child: Column(children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: SizedBox(
+                            width: 150,
+                            height: 210,
+                            child: BookEditorialCover(
+                                title: rec.title, author: rec.author),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          rec.title,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.ebGaramond(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: MarginaliaColors.ink,
+                            height: 1.2,
+                          ),
+                        ),
+                        if (meta.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            meta,
+                            style: GoogleFonts.manrope(
+                              fontSize: 13,
+                              color: MarginaliaColors.inkMuted,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ]),
+                    ),
+                    if (rec.pages.isNotEmpty || rec.categories.isNotEmpty) ...[
+                      const SizedBox(height: 18),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (rec.pages.isNotEmpty)
+                            _RecStat(
+                                value: rec.pages,
+                                label: it ? 'Pagine' : 'Pages'),
+                          if (rec.pages.isNotEmpty && rec.categories.isNotEmpty)
+                            const SizedBox(width: 30),
+                          if (rec.categories.isNotEmpty)
+                            _RecStat(
+                                value: '${rec.categories.length}',
+                                label: it ? 'Generi' : 'Genres'),
+                        ],
+                      ),
+                    ],
+                    if (rec.plot.isNotEmpty) ...[
+                      sectionHeader(it ? 'Trama' : 'Overview'),
+                      Text(
+                        rec.plot,
+                        style: GoogleFonts.ebGaramond(
+                          fontSize: 15.5,
+                          height: 1.6,
+                          color: MarginaliaColors.ink,
+                        ),
+                      ),
+                    ],
+                    if (rec.categories.isNotEmpty) ...[
+                      sectionHeader(it ? 'Categorie' : 'Categories'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: rec.categories
+                            .map((c) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: MarginaliaColors.surfaceElevated,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                        color: MarginaliaColors.ruleFaint,
+                                        width: 0.8),
+                                  ),
+                                  child: Text(
+                                    c,
+                                    style: GoogleFonts.manrope(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: MarginaliaColors.inkMuted,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ],
+                    if (rec.whyRead.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: MarginaliaColors.primaryFaint,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.auto_stories_outlined,
+                                size: 18, color: MarginaliaColors.primary),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                rec.whyRead,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 13.5,
+                                  height: 1.5,
+                                  color: MarginaliaColors.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  20, 8, 20, 12 + MediaQuery.of(context).padding.bottom),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: _openKindle,
+                  icon: const Icon(Icons.menu_book_rounded, size: 19),
+                  label: Text(
+                    it ? 'Acquista l\'e-book su Kindle' : 'Buy the Kindle e-book',
+                    style: GoogleFonts.manrope(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF232F3E),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecStat extends StatelessWidget {
+  const _RecStat({required this.value, required this.label});
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(value,
+              style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: MarginaliaColors.ink)),
+          const SizedBox(height: 2),
+          Text(label.toUpperCase(),
+              style: GoogleFonts.manrope(
+                  fontSize: 10,
+                  letterSpacing: 0.5,
+                  color: MarginaliaColors.inkFaint,
+                  fontWeight: FontWeight.w600)),
+        ],
+      );
+}
 
 class _BookDetailSheet extends StatefulWidget {
   const _BookDetailSheet({required this.rec});
