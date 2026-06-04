@@ -215,11 +215,15 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final stats = statsAsync.asData?.value ?? {};
 
     // Blend the gradient colors into the cream background so the whole page
-    // reads as tinted by the chosen preset — pushed up from a barely-there
-    // wash so the colour is actually present, while text still lives on solid
-    // white cards (MarginaliaDecorations.card) and stays perfectly readable.
-    final bgTop    = Color.alphaBlend(gp.a.withAlpha(104), MarginaliaColors.background);
-    final bgBottom = Color.alphaBlend(gp.b.withAlpha(168), MarginaliaColors.background);
+    // reads as gently tinted by the chosen preset. A previous pass pushed this
+    // to alpha 104/168, which made the wash so saturated (e.g. the gold/amber
+    // preset) that grey section labels and the spotlight box lost contrast and
+    // became hard to read. Dialled back to a subtle tint — a touch warmer than
+    // the original 28/45 so the colour is still present, but light enough that
+    // muted-grey labels stay legible. Text still lives on solid white cards
+    // (MarginaliaDecorations.card) and reads perfectly.
+    final bgTop    = Color.alphaBlend(gp.a.withAlpha(46), MarginaliaColors.background);
+    final bgBottom = Color.alphaBlend(gp.b.withAlpha(80), MarginaliaColors.background);
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
@@ -1033,8 +1037,6 @@ class _SpotlightCard extends StatelessWidget {
     final title   = books?['title']  as String?;
     final author  = books?['author'] as String?;
     final accent  = _accentFor(color);
-    final dark    = Color.fromARGB(255, (accent.red * 0.55).round(),
-        (accent.green * 0.55).round(), (accent.blue * 0.55).round());
     final excerpt =
         content.length > 200 ? '${content.substring(0, 200)}…' : content;
 
@@ -1055,78 +1057,93 @@ class _SpotlightCard extends StatelessWidget {
               ],
             ),
           ),
+          // Light surface instead of a saturated coloured fill. The previous
+          // version filled the whole box with the highlight's accent colour
+          // and set the quote in pale cream — which washed out badly on the
+          // brighter accents (gold/amber especially). Now the box is a white
+          // card in the app's house style: the accent survives as a left
+          // spine + the coloured book-title label + a faint decorative quote,
+          // and the quote itself is dark ink, so it reads on any accent.
           Container(
-            decoration: BoxDecoration(
-              gradient:
-                  LinearGradient(colors: [accent, dark], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Stack(
-              children: [
-                // Decorative quote
-                Positioned(
-                  top: -4, left: 10,
-                  child: Text(
-                    '"',
-                    style: TextStyle(
-                      fontFamily: 'Georgia',
-                      fontSize: 80,
-                      height: 0.8,
-                      color: Colors.white.withAlpha(14),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (title != null && title.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFEDE5D5),
-                                  letterSpacing: 0.3,
+            decoration: MarginaliaDecorations.card(radius: 18),
+            clipBehavior: Clip.antiAlias,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Accent spine — keeps the highlight's colour identity.
+                  Container(width: 4, color: accent),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        // Faint decorative quote in the accent colour.
+                        Positioned(
+                          top: -6, left: 8,
+                          child: Text(
+                            '"',
+                            style: TextStyle(
+                              fontFamily: 'Georgia',
+                              fontSize: 78,
+                              height: 0.8,
+                              color: accent.withAlpha(26),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (title != null && title.isNotEmpty) ...[
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                          color: accent,
+                                          letterSpacing: 0.3,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (author != null && author.isNotEmpty)
+                                      Text(
+                                        ' · ${author.toUpperCase()}',
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          color: MarginaliaColors.inkFaint,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                maxLines: 1,
+                                const SizedBox(height: 10),
+                              ],
+                              Text(
+                                excerpt,
+                                style: GoogleFonts.ebGaramond(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: MarginaliaColors.ink,
+                                  height: 1.75,
+                                  letterSpacing: 0.1,
+                                ),
+                                maxLines: 6,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            if (author != null && author.isNotEmpty)
-                              Text(
-                                ' · ${author.toUpperCase()}',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: Colors.white.withAlpha(160),
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 10),
                       ],
-                      Text(
-                        excerpt,
-                        style: GoogleFonts.ebGaramond(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: const Color(0xFFEDE5D5),
-                          height: 1.75,
-                          letterSpacing: 0.1,
-                        ),
-                        maxLines: 6,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

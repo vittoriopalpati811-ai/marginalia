@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/share_helper.dart';
 import 'privacy_policy_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -350,12 +351,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   childCount: sharedHighlights.length,
                 ),
+                // Wider gaps + a slightly taller cell now that each tile is a
+                // free-standing light card (soft shadow + rounded corners),
+                // not a flush dark square. 3px gaps would clip the shadows.
                 gridDelegate:
                     const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 3,
-                  mainAxisSpacing: 3,
-                  childAspectRatio: 1.0,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.92,
                 ),
               ),
             ),
@@ -1208,6 +1212,13 @@ class _CurrentlyReadingCard extends StatelessWidget {
 
 // ─── Shared highlight cell (Instagram-style grid) ─────────────────────────────
 
+// Shared-highlight tile, rebuilt as a clean light card in the app's house
+// style (cf. the book cells and recommendation cards): a white surface with a
+// soft shadow + rounded corners, the highlight set in dark EB Garamond serif
+// with quotation marks, a thin accent spine carrying the highlight's colour,
+// and the Jam name as a small sage chip pinned to the BOTTOM — clearly
+// separated from the quote rather than floating over it. Replaces the old
+// dark-maroon block with white-on-dark text and an overlapping "Jam di…" tag.
 class _SharedHighlightCell extends StatelessWidget {
   const _SharedHighlightCell({required this.data, required this.index});
   final Map<String, dynamic> data;
@@ -1223,99 +1234,109 @@ class _SharedHighlightCell extends StatelessWidget {
     final jamTitle = jam?['title'] as String? ?? '';
     final color = highlight?['color'] as String?;
 
-    final bgColor = _bgFor(color, bookTitle);
+    final accent  = _accentFor(color, bookTitle);
+    final excerpt = content.length > 90
+        ? '${content.substring(0, 90).trimRight()}…'
+        : content;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [bgColor, _darken(bgColor)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    content.length > 80
-                        ? '${content.substring(0, 80)}…'
-                        : content,
-                    style: const TextStyle(
-                      color: Color(0xEEF1EEE7),
-                      fontSize: 11,
-                      height: 1.5,
+      decoration: MarginaliaDecorations.quietCard(radius: 14),
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Accent spine — keeps the highlight's colour identity, quietly.
+            Container(width: 3, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Highlight — dark serif with quotation marks.
+                    Expanded(
+                      child: Text(
+                        '“$excerpt”',
+                        style: GoogleFonts.ebGaramond(
+                          color: MarginaliaColors.ink,
+                          fontSize: 13.5,
+                          fontStyle: FontStyle.italic,
+                          height: 1.45,
+                        ),
+                        overflow: TextOverflow.fade,
+                      ),
                     ),
-                    overflow: TextOverflow.fade,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (bookTitle.isNotEmpty)
-                  Text(
-                    bookTitle,
-                    style: const TextStyle(
-                      color: Color(0xAAF1EEE7),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          // Jam badge (top-right)
-          if (jamTitle.isNotEmpty)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(22),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  jamTitle.length > 8
-                      ? '${jamTitle.substring(0, 8)}…'
-                      : jamTitle,
-                  style: const TextStyle(
-                    color: Color(0xDDF1EEE7),
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
+                    if (bookTitle.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        bookTitle.toUpperCase(),
+                        style: const TextStyle(
+                          color: MarginaliaColors.inkMuted,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    // Jam chip — separated at the bottom, never overlapping.
+                    if (jamTitle.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: MarginaliaColors.primaryFaint,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.groups_outlined,
+                                size: 11,
+                                color: MarginaliaColors.primaryDark),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                jamTitle,
+                                style: const TextStyle(
+                                  color: MarginaliaColors.primaryDark,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     )
         .animate(delay: (index * 30).ms)
         .fadeIn(duration: 220.ms, curve: Curves.easeOut);
   }
 
-  Color _bgFor(String? color, String bookTitle) => switch (color) {
-        'yellow' => const Color(0xFFB8860B),
-        'blue' => const Color(0xFF3A6B8A),
-        'pink' => const Color(0xFF8A3A5A),
-        'orange' => const Color(0xFF8A5A28),
-        _ => MarginaliaDecorations.bookCoverColor(bookTitle),
+  // Accent colour for the spine — derived from the Kindle highlight colour,
+  // falling back to the book's procedural cover colour. Saturated enough to
+  // read as a thin coloured rule against the white card.
+  Color _accentFor(String? color, String bookTitle) => switch (color) {
+        'yellow' => const Color(0xFFD4A017),
+        'blue'   => const Color(0xFF4A90BF),
+        'pink'   => const Color(0xFFBF4A72),
+        'orange' => const Color(0xFFBF7A34),
+        _        => MarginaliaDecorations.bookCoverColor(bookTitle),
       };
-
-  Color _darken(Color c) => Color.fromARGB(
-        255,
-        (c.red * 0.65).round(),
-        (c.green * 0.65).round(),
-        (c.blue * 0.65).round(),
-      );
 }
 
 // ─── Empty shared highlights ──────────────────────────────────────────────────

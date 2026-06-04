@@ -399,11 +399,17 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final bottom = media.viewInsets.bottom + media.padding.bottom;
+    final keyboard = media.viewInsets.bottom;
+    final bottom = keyboard + media.padding.bottom;
     // Cap the sheet to the space below the status bar / notch so the header
     // (and its publish button) can never slide under the system clock when
     // isScrollControlled lets the sheet grow tall with the keyboard up.
-    final maxSheetHeight = media.size.height - media.padding.top - 12;
+    // Leave a comfortable ~52px gap below the top safe area so nothing is
+    // clipped at the top, and subtract the keyboard inset so the whole sheet
+    // (incl. the text box) stays fully visible above the keyboard.
+    final topGap = media.padding.top + 52;
+    final maxSheetHeight =
+        (media.size.height - topGap - keyboard).clamp(220.0, media.size.height);
     final canPost = !_posting &&
         (_controller.text.trim().isNotEmpty || _imageBytes != null);
 
@@ -460,8 +466,11 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           ),
           const SizedBox(height: 14),
 
-          // Text area
+          // Text area. A bounded maxHeight keeps the box fully visible (it
+          // scrolls internally past ~6 lines) so it is never clipped at the
+          // bottom, even with the keyboard up.
           Container(
+            constraints: const BoxConstraints(maxHeight: 200),
             decoration: BoxDecoration(
               color: MarginaliaColors.surfaceElevated,
               borderRadius: BorderRadius.circular(14),
@@ -1884,6 +1893,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                         as String? ??
                                     'Reader',
                               ),
+                              onDeleted: _load,
                             ),
                             for (final reply
                                 in _repliesByParent[c['id']] ?? [])
@@ -1899,6 +1909,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                                 'display_name'] as String? ??
                                         'Reader',
                                   ),
+                                  onDeleted: _load,
                                   isReply: true,
                                 ),
                               ),
@@ -2102,11 +2113,14 @@ class _CommentBubble extends ConsumerStatefulWidget {
     required this.comment,
     required this.timeAgo,
     required this.onReply,
+    required this.onDeleted,
     this.isReply = false,
   });
   final Map<String, dynamic> comment;
   final String timeAgo;
   final VoidCallback onReply;
+  // Called after the comment is deleted so the sheet can refresh its list.
+  final VoidCallback onDeleted;
   final bool isReply;
 
   @override
@@ -2147,6 +2161,95 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
     }
   }
 
+  // Overflow ("...") menu for a single comment. Mirrors _PostCard's
+  // _showPostMenu: the author sees "Delete", everyone else sees "Report".
+  Future<void> _showCommentMenu(BuildContext context) async {
+    final svc           = ref.read(supabaseServiceProvider);
+    final commentId     = widget.comment['id'] as String?;
+    final commentUserId = widget.comment['user_id'] as String?;
+    final isOwner = svc.userId != null && svc.userId == commentUserId;
+
+    // Capture messenger + l10n once, while this bubble is guaranteed mounted —
+    // the delete refreshes the list and unmounts this bubble, so reusing the
+    // raw context after the await would throw.
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+
+    if (!isOwner) {
+      // Non-owner: only a "Report" placeholder.
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _PostMenuSheet(
+          items: [
+            _MenuAction(
+              icon: Icons.flag_outlined,
+              label: l10n.feedReport,
+              color: MarginaliaColors.inkMuted,
+              onTap: () {
+                Navigator.pop(ctx);
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.feedReported)),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Owner: delete.
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _PostMenuSheet(
+        items: [
+          _MenuAction(
+            icon: Icons.delete_outline,
+            label: l10n.feedDeleteAction,
+            color: const Color(0xFFDC2626),
+            onTap: () async {
+              Navigator.pop(ctx);
+              if (commentId == null) return;
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  title: Text(l10n.feedDeleteConfirmTitle),
+                  content: Text(l10n.feedDeleteConfirmBody),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: Text(l10n.cancel),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626)),
+                      onPressed: () => Navigator.pop(dialogCtx, true),
+                      child: Text(l10n.feedDeleteAction),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm != true) return;
+              try {
+                await svc.deletePostComment(commentId);
+                // Refresh the comments list via the sheet's reload callback.
+                widget.onDeleted();
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.feedErrorPrefix(e.toString()))),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile   = widget.comment['profiles'] as Map?;
@@ -2175,15 +2278,18 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name + time
+                // Name + time + overflow menu
                 Row(
                   children: [
-                    Text(
-                      name,
-                      style: GoogleFonts.manrope(
-                        fontSize: widget.isReply ? 12.0 : 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: MarginaliaColors.ink,
+                    Flexible(
+                      child: Text(
+                        name,
+                        style: GoogleFonts.manrope(
+                          fontSize: widget.isReply ? 12.0 : 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: MarginaliaColors.ink,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -2192,6 +2298,20 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: MarginaliaColors.inkFaint,
+                      ),
+                    ),
+                    const Spacer(),
+                    // 3-dot overflow: delete (author) / report (others).
+                    GestureDetector(
+                      onTap: () => _showCommentMenu(context),
+                      behavior: HitTestBehavior.opaque,
+                      child: const Padding(
+                        padding: EdgeInsets.fromLTRB(8, 2, 2, 2),
+                        child: Icon(
+                          PhosphorIconsRegular.dotsThree,
+                          size: 18,
+                          color: MarginaliaColors.inkFaint,
+                        ),
                       ),
                     ),
                   ],
