@@ -629,11 +629,19 @@ class RecommendationDetailScreen extends StatelessWidget {
   final BookRecommendation rec;
 
   Future<void> _openKindle() async {
-    final q = Uri.encodeQueryComponent('${rec.title} ${rec.author} ebook kindle');
-    final url = Uri.parse(
-        'https://www.amazon.it/s?k=$q&i=digital-text&tag=$_amazonTag');
+    // General Amazon search (NOT forced i=digital-text / Kindle-only): the user
+    // can buy ANY edition — Kindle or paperback — and the affiliate tag earns a
+    // commission either way. A neutral "View on Amazon" retail link also keeps
+    // clear of Apple 3.1.1 (steering to an external *digital* purchase).
+    final q = Uri.encodeQueryComponent('${rec.title} ${rec.author}');
+    final url = Uri.parse('https://www.amazon.it/s?k=$q&tag=$_amazonTag');
+    // Open in an in-app browser (SFSafariViewController on iOS, Custom Tabs on
+    // Android) — NOT externalApplication: a plain amazon.it universal link is
+    // captured by the native Amazon app, which Apple forbids from selling Kindle
+    // e-books in-app ("non acquistabile da quest'app"). The browser view renders
+    // the website (sharing Safari's cookies) where the purchase works.
     if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
     }
   }
 
@@ -839,24 +847,43 @@ class RecommendationDetailScreen extends StatelessWidget {
             Padding(
               padding: EdgeInsets.fromLTRB(
                   20, 8, 20, 12 + MediaQuery.of(context).padding.bottom),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton.icon(
-                  onPressed: _openKindle,
-                  icon: const Icon(Icons.menu_book_rounded, size: 19),
-                  label: Text(
-                    it ? 'Acquista l\'e-book su Kindle' : 'Buy the Kindle e-book',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: FilledButton.icon(
+                      onPressed: _openKindle,
+                      icon: const Icon(Icons.shopping_bag_outlined, size: 19),
+                      label: Text(
+                        it ? 'Vedi su Amazon' : 'View on Amazon',
+                        style: GoogleFonts.manrope(
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF232F3E),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Amazon Associates Operating Agreement requires this disclosure
+                  // wherever affiliate links are shown.
+                  Text(
+                    it
+                        ? 'In qualità di Affiliato Amazon, Marginalia riceve un guadagno dagli acquisti idonei.'
+                        : 'As an Amazon Associate, Marginalia earns from qualifying purchases.',
+                    textAlign: TextAlign.center,
                     style: GoogleFonts.manrope(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                      fontSize: 11,
+                      height: 1.4,
+                      color: MarginaliaColors.inkFaint,
+                    ),
                   ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF232F3E),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
+                ],
               ),
             ),
           ],
@@ -969,7 +996,11 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
     final query = Uri.encodeQueryComponent('${widget.rec.title} ${widget.rec.author}');
     final url   = Uri.parse(
         'https://www.amazon.it/s?k=$query&tag=$_amazonTag');
-    if (await canLaunchUrl(url)) await launchUrl(url);
+    // In-app browser (NOT the Amazon app): see _openKindle above — the native
+    // Amazon app blocks e-book purchases on iOS, the website allows them.
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+    }
   }
 
   @override
