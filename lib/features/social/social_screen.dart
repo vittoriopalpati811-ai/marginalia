@@ -863,12 +863,14 @@ class _JoinJamSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.link_outlined,
-                    color: MarginaliaColors.sienna, size: 18),
+                    color: MarginaliaColors.primaryDark, size: 18),
               ),
               const SizedBox(width: 12),
               Text(context.l10n.jamJoinTitle,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700)),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: MarginaliaColors.ink)),
             ],
           ),
           const SizedBox(height: 24),
@@ -949,8 +951,8 @@ class _EmptyJams extends StatelessWidget {
               icon: const Icon(Icons.link_outlined, size: 18),
               label: Text(context.l10n.jamJoinWithCode),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.sienna,
-                side: const BorderSide(color: MarginaliaColors.sienna),
+                foregroundColor: MarginaliaColors.primaryDark,
+                side: const BorderSide(color: MarginaliaColors.primaryDark),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(

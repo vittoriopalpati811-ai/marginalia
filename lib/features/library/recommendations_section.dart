@@ -507,6 +507,11 @@ class _RecommendationCard extends StatelessWidget {
   final BookRecommendation rec;
   final int index;
 
+  // Per-card, collision-proof Hero tag. Index makes it unique even when two
+  // recommendations share a title/author; the detail screen receives the same
+  // value so the cover still flies between the two routes.
+  String get _heroTag => 'rec-cover-$index-${rec.title}-${rec.author}';
+
   @override
   Widget build(BuildContext context) {
     final meta = [rec.author, rec.year]
@@ -543,8 +548,17 @@ class _RecommendationCard extends StatelessWidget {
               children: [
                 // Generated cover — Hero SOURCE. On tap it smoothly expands into
                 // the large cover on the detail page (the "video" animation).
+                //
+                // The tag MUST be unique across every card on screen. Keying it
+                // only on title+author crashed the whole section ("There are
+                // multiple heroes that share the same tag within a subtree.")
+                // whenever the AI returned two picks with the same title/author
+                // (or both empty) — which rendered the list as a red error box
+                // instead of recommendations. Folding in the list index makes
+                // the tag collision-proof regardless of AI output; the detail
+                // screen is handed the same tag so the flight still pairs 1:1.
                 Hero(
-                  tag: 'rec-cover-${rec.title}-${rec.author}',
+                  tag: _heroTag,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(7),
                     child: SizedBox(
@@ -619,8 +633,10 @@ class _RecommendationCard extends StatelessWidget {
   void _openSheet(BuildContext context) {
     HapticFeedback.lightImpact();
     // Tapping a recommendation now opens a full detail page (was a sheet).
+    // Pass the SAME hero tag the card used so the cover flight pairs 1:1 and
+    // never collides with another card that has an identical title/author.
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => RecommendationDetailScreen(rec: rec),
+      builder: (_) => RecommendationDetailScreen(rec: rec, heroTag: _heroTag),
     ));
   }
 }
@@ -632,8 +648,13 @@ class _RecommendationCard extends StatelessWidget {
 // by the book overview (trama), genres, page count, the "because you read…"
 // line, and a button that opens the Kindle e-book on Amazon.
 class RecommendationDetailScreen extends StatefulWidget {
-  const RecommendationDetailScreen({super.key, required this.rec});
+  const RecommendationDetailScreen({super.key, required this.rec, this.heroTag});
   final BookRecommendation rec;
+
+  /// Hero tag for the cover, supplied by the originating card so the flight is
+  /// unique per card (two recommendations can share a title/author). Falls back
+  /// to a title/author tag when opened without one.
+  final String? heroTag;
 
   @override
   State<RecommendationDetailScreen> createState() =>
@@ -648,6 +669,11 @@ class _RecommendationDetailScreenState
   bool _addedToLibrary = false;
 
   BookRecommendation get rec => widget.rec;
+
+  // Matches the source card's tag (or a title/author fallback) so the cover
+  // Hero flight is unique and never collides with a sibling card.
+  String get _heroTag =>
+      widget.heroTag ?? 'rec-cover-${rec.title}-${rec.author}';
 
   Future<void> _openKindle() async {
     // General Amazon search (NOT forced i=digital-text / Kindle-only): the user
@@ -688,6 +714,23 @@ class _RecommendationDetailScreenState
       final container = ProviderScope.containerOf(context, listen: false);
       // ignore: invalid_use_of_internal_member
       final service = container.read(supabaseServiceProvider);
+      // updateCurrentlyReading does `.eq('id', userId!)`, so a signed-out
+      // session would throw a Null-check error deep in the service and surface
+      // the generic "could not add" copy — making the button look broken. Guard
+      // explicitly and tell the user to sign in instead.
+      if (!service.isAuthenticated) {
+        if (!mounted) return;
+        setState(() => _addingToLibrary = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(it
+                ? 'Accedi per aggiungere il libro alla tua libreria.'
+                : 'Sign in to add this book to your library.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
       await service.updateCurrentlyReading(
         title: rec.title,
         author: rec.author,
@@ -805,7 +848,7 @@ class _RecommendationDetailScreenState
                     Center(
                       child: Column(children: [
                         Hero(
-                          tag: 'rec-cover-${rec.title}-${rec.author}',
+                          tag: _heroTag,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(14),
                             child: SizedBox(

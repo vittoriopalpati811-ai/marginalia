@@ -370,7 +370,13 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
       title: 'Marginalia',
       theme: buildMarginaliaTheme(),
       darkTheme: buildMarginaliaDarkTheme(),
-      themeMode: ThemeMode.system,
+      // Pinned to LIGHT (same as the onboarding MaterialApp above): the app is
+      // designed entirely on the warm "paper" light palette and no screen
+      // implements real dark-mode colours, so following the system theme on a
+      // dark-mode phone produced black input boxes with white text, a black
+      // navbar, unreadable grey text and an invisible back arrow. Pin to light
+      // until a full dark theme exists.
+      themeMode: ThemeMode.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       locale: locale,
@@ -438,9 +444,10 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
     // Flutter's intrinsic-size logic decides about the body.
     // Reserved height for the overlay navbar — needed so route content
      // gets a matching bottom inset and doesn't render UNDER the bar.
-     // 56 = icon block (12 pad + 28 icon + 12 pad) + 4 separator;
-     // add safe-area-bottom for iPhone home indicator clearance.
-    final navInset = 56 + MediaQuery.of(context).padding.bottom;
+     // The nav is now a FLOATING pill: ~60 bar height + 10 bottom margin +
+     // a little breathing gap above it; add safe-area-bottom for the
+     // iPhone home indicator clearance.
+    final navInset = 84 + MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -619,26 +626,37 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
     super.dispose();
   }
 
+  /// Localized short label shown under each tab icon. IT/EN by the active
+  /// locale; falls back to the tab's English label for any unmapped route.
+  String _tabLabel(BuildContext context, _Tab tab) {
+    final isItalian = Localizations.localeOf(context).languageCode == 'it';
+    switch (tab.path) {
+      case '/':
+        return isItalian ? 'Libreria' : 'Library';
+      case '/social':
+        return 'Jam';
+      case '/home':
+        return 'Home';
+      case '/messages':
+        return isItalian ? 'Messaggi' : 'Messages';
+      case '/profile':
+        return isItalian ? 'Profilo' : 'Profile';
+      default:
+        return tab.label;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottom = MediaQuery.of(context).padding.bottom;
 
-    // ── Airbnb-clean bottom nav ─────────────────────────────────────────
-    // Flat surface with a single hairline divider at the top, 5 evenly-
-    // spaced tab items below. No glass, no pill, no border ornamentation.
-    // Active state: filled icon + primary color + bold label. Inactive:
-    // outline icon + muted color + medium label.
-    final activeColor   = isDark ? Colors.white : MarginaliaColors.ink;
-    final inactiveColor = isDark
-        ? const Color(0xFF8E8E93)
-        : MarginaliaColors.inkMuted;
-    final surfaceColor  = isDark
-        ? const Color(0xFF1B1F1B)
-        : Colors.white;
-    final ruleColor     = isDark
-        ? Colors.white.withAlpha(20)
-        : MarginaliaColors.ruleFaint;
+    // ── Floating "pill" bottom nav (iOS-style, light only) ──────────────
+    // A detached white rounded card hovering just above the home indicator,
+    // with a soft drop shadow. Five tabs, each an icon ABOVE a small label.
+    // The selected tab is highlighted purely by colour (filled icon +
+    // accent + bold label) — no pill background behind it.
+    const selectedColor   = MarginaliaColors.primaryDark; // sage accent
+    const unselectedColor = MarginaliaColors.inkMuted;
 
     return AnimatedBuilder(
       animation: _bounceAnim,
@@ -647,91 +665,117 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
         alignment: Alignment.bottomCenter,
         child: child,
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          border: Border(top: BorderSide(color: ruleColor, width: 0.5)),
-        ),
-        padding: EdgeInsets.only(top: 6, bottom: bottom + 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(widget.tabs.length, (i) {
-            final active = i == widget.selectedIndex;
-            final tab    = widget.tabs[i];
-            // Red dot top-left of the Messages icon when there are
-            // unread conversations. Watching the provider here keeps
-            // it alive across the whole shell so the badge updates
-            // even when the user is not on the Messages tab.
-            final isMessages = tab.path == '/messages';
-            final unreadCount = isMessages
-                ? ref.watch(unreadConversationsCountProvider)
-                : 0;
-            return Expanded(
-              child: Semantics(
-                // Keep the label accessible even though we no longer render it,
-                // so VoiceOver/TalkBack still announce each tab by name.
-                label: tab.label,
-                button: true,
-                selected: active,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => widget.onTap(i),
-                  child: Padding(
-                    // More vertical room now that text is gone, plus a bit
-                    // wider hit area for the larger icons.
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: SizedBox(
-                        // Fixed 28x28 box so the unread dot can sit at the
-                        // icon's own top-left corner instead of the tab's.
-                        width: 28,
-                        height: 28,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 200),
-                              switchInCurve: Curves.easeOutCubic,
-                              switchOutCurve: Curves.easeInCubic,
-                              transitionBuilder: (child, anim) => ScaleTransition(
-                                scale: Tween<double>(begin: 0.82, end: 1.0).animate(
-                                    CurvedAnimation(
-                                        parent: anim, curve: Curves.easeOutCubic)),
-                                child: FadeTransition(opacity: anim, child: child),
+      child: Padding(
+        // Float clear of the screen edges and the home indicator.
+        padding: EdgeInsets.fromLTRB(14, 0, 14, bottom + 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1F000000),
+                blurRadius: 24,
+                offset: Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Color(0x0D000000),
+                blurRadius: 3,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            children: List.generate(widget.tabs.length, (i) {
+              final active = i == widget.selectedIndex;
+              final tab    = widget.tabs[i];
+              final color  = active ? selectedColor : unselectedColor;
+              // Red dot top-left of the Messages icon when there are
+              // unread conversations. Watching the provider here keeps
+              // it alive across the whole shell so the badge updates
+              // even when the user is not on the Messages tab.
+              final isMessages = tab.path == '/messages';
+              final unreadCount = isMessages
+                  ? ref.watch(unreadConversationsCountProvider)
+                  : 0;
+              return Expanded(
+                child: Semantics(
+                  label: tab.label,
+                  button: true,
+                  selected: active,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => widget.onTap(i),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          // Fixed 26x26 box so the unread dot can sit at the
+                          // icon's own top-left corner instead of the tab's.
+                          width: 26,
+                          height: 26,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                switchInCurve: Curves.easeOutCubic,
+                                switchOutCurve: Curves.easeInCubic,
+                                transitionBuilder: (child, anim) => ScaleTransition(
+                                  scale: Tween<double>(begin: 0.82, end: 1.0).animate(
+                                      CurvedAnimation(
+                                          parent: anim, curve: Curves.easeOutCubic)),
+                                  child: FadeTransition(opacity: anim, child: child),
+                                ),
+                                child: Icon(
+                                  active ? tab.activeIcon : tab.icon,
+                                  key: ValueKey('${tab.path}_$active'),
+                                  size: 26,
+                                  color: color,
+                                ),
                               ),
-                              child: Icon(
-                                active ? tab.activeIcon : tab.icon,
-                                key: ValueKey('${tab.path}_$active'),
-                                size: 28,
-                                color: active ? activeColor : inactiveColor,
-                              ),
-                            ),
-                            if (unreadCount > 0)
-                              Positioned(
-                                left: -3,
-                                top:  -2,
-                                child: Container(
-                                  width:  10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE53935),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: surfaceColor,
-                                      width: 1.5,
+                              if (unreadCount > 0)
+                                Positioned(
+                                  left: -3,
+                                  top:  -2,
+                                  child: Container(
+                                    width:  10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE53935),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 1.5,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _tabLabel(context, tab),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            height: 1.0,
+                            color: color,
+                            fontWeight:
+                                active ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ),
     );

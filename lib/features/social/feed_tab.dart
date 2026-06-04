@@ -143,7 +143,18 @@ class FeedTab extends ConsumerWidget {
           ),
 
           // ── Bottom padding (above nav bar) ───────────────────────────────
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          // The shell (_ScaffoldWithNav) augments MediaQuery.padding.bottom
+          // with its nav inset (56 + safe-area-bottom) so route content can
+          // clear the floating bottom navbar. The CustomScrollView does NOT
+          // automatically consume that inset, so without this the bottom-most
+          // post stays hidden behind the bar. Consume it here (plus a
+          // comfortable 20px) so the last post fully scrolls into view above
+          // the navbar.
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: MediaQuery.of(context).padding.bottom + 20,
+            ),
+          ),
         ],
       ),
     );

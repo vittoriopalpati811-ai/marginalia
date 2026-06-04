@@ -17,7 +17,6 @@ import 'posts_timeline.dart';
 import 'reviews_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
-import '../library/recommendations_section.dart';
 import '../stats/reading_stats_card.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
@@ -506,13 +505,18 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           ),
 
           // ── Libri consigliati ────────────────────────────────────────────
-          const SliverToBoxAdapter(
-            child: LibraryRecommendationsSection(),
-          ),
+          // Removed from the profile: "libri consigliati" now lives ONLY in
+          // the Library, per the founder's request.
           ], // end TAB 0 · PROFILO
 
           // ── Bottom padding for nav bar ────────────────────────────────────
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          // The shell (app.dart) augments MediaQuery's bottom padding by the
+          // floating nav-bar inset. Consume it here so the last section clears
+          // the navbar instead of hiding behind it. +16 for breathing room.
+          SliverToBoxAdapter(
+            child: SizedBox(
+                height: MediaQuery.of(context).padding.bottom + 16),
+          ),
         ],
       ), // CustomScrollView
           ), // RefreshIndicator

@@ -150,50 +150,61 @@ class _MessagesHeader extends StatelessWidget {
       bottom: false,
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, topPadding > 0 ? 4 : 16, 20, 20),
-        child: Stack(
+        // Row layout: [bell] [Expanded centered title] [equal-width spacer].
+        // The trailing spacer matches the bell's footprint so the title column
+        // is mathematically centered between them and can never overlap the
+        // bell, no matter how long the localized title is.
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Centered title + subtitle ───────────────────────────────────
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  context.l10n.messagesTitle,
-                  textAlign: TextAlign.center,
-                  style: MarginaliaTextStyles.wordmark,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  context.l10n.msgSubtitle,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.manrope(
-                    color: MarginaliaColors.inkMuted,
-                    fontSize: 12,
-                    letterSpacing: 0.1,
-                  ),
-                ),
-              ],
-            ),
-
             // ── Top-left bell → notifications ───────────────────────────────
-            Align(
-              alignment: Alignment.topLeft,
-              child: GestureDetector(
-                onTap: () => context.push('/notifications'),
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: MarginaliaColors.ink.withAlpha(12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    PhosphorIconsRegular.bell,
-                    color: MarginaliaColors.ink,
-                    size: 18,
-                  ),
+            GestureDetector(
+              onTap: () => context.push('/notifications'),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.ink.withAlpha(12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  PhosphorIconsRegular.bell,
+                  color: MarginaliaColors.ink,
+                  size: 18,
                 ),
               ),
             ),
+
+            // ── Centered title + subtitle ───────────────────────────────────
+            Expanded(
+              child: Padding(
+                // Clears the bell on both sides while staying centered.
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      context.l10n.messagesTitle,
+                      textAlign: TextAlign.center,
+                      style: MarginaliaTextStyles.wordmark,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      context.l10n.msgSubtitle,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.manrope(
+                        color: MarginaliaColors.inkMuted,
+                        fontSize: 12,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Equal-width spacer balancing the bell (18px icon + 8+8 pad) ──
+            const SizedBox(width: 34),
           ],
         ),
       ),

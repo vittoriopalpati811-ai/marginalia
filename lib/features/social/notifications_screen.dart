@@ -45,6 +45,10 @@ class NotificationsScreen extends ConsumerWidget {
         backgroundColor: MarginaliaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
+        // Force the back arrow (and any leading icon) to ink. On the founder's
+        // phone it had rendered white/invisible; pinning it here keeps it
+        // visible regardless of theme, matching every other screen.
+        iconTheme: const IconThemeData(color: MarginaliaColors.ink),
         title: Text(
           context.l10n.notificationsTitle,
           style: GoogleFonts.manrope(
@@ -270,7 +274,15 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              context.l10n.notificationsEmptyBody,
+              // This is the whole-app notification center (opened by the bell),
+              // not just Jam activity — it shows likes, comments, follows and
+              // Jam alerts (everything except message notifications). The copy
+              // must therefore be app-wide. There's no l10n key for this exact
+              // string yet, so use literal it/en (same pattern as other recent
+              // screens) to avoid a codegen step.
+              Localizations.localeOf(context).languageCode == 'it'
+                  ? 'Le notifiche appariranno qui.'
+                  : 'Your notifications will appear here.',
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 14,
