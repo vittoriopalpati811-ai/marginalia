@@ -47,6 +47,10 @@ interface Recommendation {
   author: string;
   year: string;
   reason: string;
+  plot: string;
+  categories: string[];
+  pages: string;
+  why: string;
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -306,6 +310,7 @@ INSTRUCTIONS:
 - Choose books that resonate with the themes, ideas and style of the highlights.
 - Mix classics and contemporary, and authors from different countries.
 - ${reasonInstruction}
+- Also fill, for each book: "plot" (1-2 sentence synopsis in ENGLISH), "categories" (2-4 genres such as "Fiction", "Mystery", "Coming-of-age"), "pages" (approximate page count as a plain number string), and "why" (ONE sentence starting with "Because you read" that cites ONE specific book from their list above).
 - Reply ONLY with valid JSON in the format below, no markdown and no extra text. Use straight quotes (") only, never typographic quotes.
 
 {
@@ -314,7 +319,11 @@ INSTRUCTIONS:
       "title": "Title",
       "author": "Author",
       "year": "year",
-      "reason": "Personalised explanation."
+      "reason": "Personalised explanation.",
+      "plot": "One or two sentence synopsis.",
+      "categories": ["Fiction", "Mystery"],
+      "pages": "320",
+      "why": "Because you read X by Y."
     }
   ]
 }`;
@@ -330,6 +339,7 @@ ISTRUZIONI:
 - Scegli libri che risuonano con i temi, le idee e lo stile degli highlight.
 - Varia tra classici e contemporanei, italiani e stranieri.
 - ${reasonInstruction}
+- Compila inoltre, per ogni libro: "plot" (trama in 1-2 frasi, in italiano), "categories" (2-4 generi, es. "Narrativa", "Giallo", "Formazione"), "pages" (numero di pagine approssimativo come stringa numerica), e "why" (UNA frase che inizia con "Perché hai letto" e cita UN libro specifico dalla sua lista qui sopra).
 - Rispondi SOLO con JSON valido nel formato sotto, senza markdown e senza testo extra. Usa esclusivamente virgolette dritte ("), mai virgolette tipografiche.
 
 {
@@ -338,7 +348,11 @@ ISTRUZIONI:
       "title": "Titolo",
       "author": "Autore",
       "year": "anno",
-      "reason": "Spiegazione personalizzata."
+      "reason": "Spiegazione personalizzata.",
+      "plot": "Trama in una o due frasi.",
+      "categories": ["Narrativa", "Giallo"],
+      "pages": "320",
+      "why": "Perché hai letto X di Y."
     }
   ]
 }`;
@@ -371,7 +385,7 @@ async function callGroq(
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 1024,
+      max_tokens: 2048,
       temperature: 0.7,
       // Force the model to emit a syntactically valid JSON object. Without
       // this the 8B model occasionally produces malformed JSON (smart-quote
@@ -407,12 +421,21 @@ async function callGroq(
     throw new Error("Response missing recommendations array");
   }
 
-  return (list as Recommendation[]).slice(0, 5).map((r) => ({
-    title:  String(r.title  ?? ""),
-    author: String(r.author ?? ""),
-    year:   String(r.year   ?? ""),
-    reason: String(r.reason ?? ""),
-  }));
+  return (list as Recommendation[]).slice(0, 5).map((r) => {
+    const rr = r as Record<string, unknown>;
+    return {
+      title:  String(r.title  ?? ""),
+      author: String(r.author ?? ""),
+      year:   String(r.year   ?? ""),
+      reason: String(r.reason ?? ""),
+      plot:   String(rr.plot ?? ""),
+      categories: Array.isArray(rr.categories)
+        ? (rr.categories as unknown[]).map((c) => String(c)).slice(0, 5)
+        : [],
+      pages:  String(rr.pages ?? ""),
+      why:    String(rr.why ?? ""),
+    };
+  });
 }
 
 function extractJson(text: string): string {
