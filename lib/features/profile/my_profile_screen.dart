@@ -30,15 +30,18 @@ class _GP {
   List<Color> get colors => [a, b];
 }
 
+// Palette più ricca ispirata ai Pantone del founder (Cocoa Brown, Chive,
+// 2965C navy, Vintage Wine, Reseda, Pastel Yellow, Powder Blue): colori
+// nettamente più saturi e "presenti" rispetto ai toni quasi-neri di prima.
 const _kGradients = [
-  _GP('sepia',    'Sepia',    Color(0xFF6B4C3B), Color(0xFF2C1810)),
-  _GP('forest',   'Forest',   Color(0xFF2D5A3D), Color(0xFF132A1E)),
-  _GP('ocean',    'Ocean',    Color(0xFF1A3A5C), Color(0xFF09141F)),
-  _GP('dusk',     'Dusk',     Color(0xFF6B3A7A), Color(0xFF1A0B26)),
-  _GP('rose',     'Rose',     Color(0xFF7A3A4E), Color(0xFF2E1020)),
-  _GP('graphite', 'Graphite', Color(0xFF3C3C3C), Color(0xFF141414)),
-  _GP('amber',    'Amber',    Color(0xFF7A4E1A), Color(0xFF2C1A06)),
-  _GP('slate',    'Slate',    Color(0xFF2A3A4E), Color(0xFF0D141E)),
+  _GP('sepia',    'Sepia',    Color(0xFF9A7059), Color(0xFF4A352A)), // Cocoa Brown
+  _GP('forest',   'Forest',   Color(0xFF5C6238), Color(0xFF2A2D17)), // Chive olive
+  _GP('ocean',    'Ocean',    Color(0xFF2A5A7E), Color(0xFF102B3E)), // 2965C navy
+  _GP('dusk',     'Dusk',     Color(0xFF6E3A66), Color(0xFF2A1226)), // plum
+  _GP('rose',     'Rose',     Color(0xFF7A2636), Color(0xFF3F1521)), // Vintage Wine
+  _GP('graphite', 'Graphite', Color(0xFF5A6052), Color(0xFF24281F)), // graphite-olive
+  _GP('amber',    'Amber',    Color(0xFFCBA24B), Color(0xFF6E4E1A)), // Pastel Yellow deep
+  _GP('slate',    'Slate',    Color(0xFF5E8298), Color(0xFF2A3E4C)), // Powder Blue
 ];
 
 _GP _gpFor(String key) =>
@@ -207,8 +210,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
     // Blend the gradient colors very subtly into the cream background so the
     // whole page feels cohesive while text on cards stays perfectly readable.
-    final bgTop    = Color.alphaBlend(gp.a.withAlpha(28), MarginaliaColors.background);
-    final bgBottom = Color.alphaBlend(gp.b.withAlpha(45), MarginaliaColors.background);
+    final bgTop    = Color.alphaBlend(gp.a.withAlpha(64), MarginaliaColors.background);
+    final bgBottom = Color.alphaBlend(gp.b.withAlpha(108), MarginaliaColors.background);
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,

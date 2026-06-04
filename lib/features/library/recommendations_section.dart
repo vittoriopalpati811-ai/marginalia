@@ -532,17 +532,49 @@ class _RecommendationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Text(
-                    rec.title,
-                    style: GoogleFonts.manrope(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.ink,
-                      height: 1.3,
-                      letterSpacing: -0.2,
+                // Generated cover — Hero SOURCE. On tap it smoothly expands into
+                // the large cover on the detail page (the "video" animation).
+                Hero(
+                  tag: 'rec-cover-${rec.title}-${rec.author}',
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: SizedBox(
+                      width: 50,
+                      height: 70,
+                      child: BookEditorialCover(
+                          title: rec.title, author: rec.author),
                     ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rec.title,
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: MarginaliaColors.ink,
+                          height: 1.3,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (meta.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          meta,
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: MarginaliaColors.inkMuted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -550,17 +582,6 @@ class _RecommendationCard extends StatelessWidget {
                     size: 18, color: MarginaliaColors.inkFaint),
               ],
             ),
-            if (meta.isNotEmpty) ...[
-              const SizedBox(height: 5),
-              Text(
-                meta,
-                style: GoogleFonts.manrope(
-                  fontSize: 11,
-                  color: MarginaliaColors.inkMuted,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
             const SizedBox(height: 10),
             Container(height: 0.7, color: MarginaliaColors.ruleFaint),
             const SizedBox(height: 10),
@@ -689,13 +710,16 @@ class RecommendationDetailScreen extends StatelessWidget {
                     // ── Cover + title + author ──
                     Center(
                       child: Column(children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: SizedBox(
-                            width: 150,
-                            height: 210,
-                            child: BookEditorialCover(
-                                title: rec.title, author: rec.author),
+                        Hero(
+                          tag: 'rec-cover-${rec.title}-${rec.author}',
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: SizedBox(
+                              width: 150,
+                              height: 210,
+                              child: BookEditorialCover(
+                                  title: rec.title, author: rec.author),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
