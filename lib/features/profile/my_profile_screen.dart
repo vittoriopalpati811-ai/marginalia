@@ -554,19 +554,8 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                 ),
 
-              // Pattern overlay — wrapped in RepaintBoundary so it doesn't
-              // re-paint on unrelated state changes, and IgnorePointer so
-              // it never absorbs touches that should reach the avatar.
-              if (patternKey.isNotEmpty && patternKey != 'none')
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: RepaintBoundary(
-                      child: CustomPaint(
-                        painter: _PatternPainter(patternKey),
-                      ),
-                    ),
-                  ),
-                ),
+              // Cover pattern overlay removed — personalization with
+              // dots/lines/circles was dropped at the founder's request.
             ],
           ),
 
@@ -1435,109 +1424,8 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
 
           const SizedBox(height: 20),
 
-          // Pattern label
-          Padding(
-            padding: const EdgeInsets.only(left: 20, bottom: 10),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                context.l10n.profilePatternLabel,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.inkFaint,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          ),
-
-          // Pattern swatches
-          SizedBox(
-            height: 52,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemCount: _kPatterns.length,
-              itemBuilder: (_, i) {
-                final pk  = _kPatterns[i];
-                final sel = pk == _pat;
-                return GestureDetector(
-                  onTap: () => setState(() => _pat = pk),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: 64,
-                    decoration: BoxDecoration(
-                      color: sel
-                          ? MarginaliaColors.primaryFaint
-                          : MarginaliaColors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: sel
-                            ? MarginaliaColors.primary
-                            : MarginaliaColors.rule,
-                        width: sel ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (pk == 'none')
-                            const Icon(Icons.block,
-                                size: 16,
-                                color: MarginaliaColors.inkFaint)
-                          else
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CustomPaint(
-                                  painter: _PatternPainter(pk,
-                                      color: MarginaliaColors.primary
-                                          .withAlpha(120))),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Pattern labels
-          Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 20),
-            child: SizedBox(
-              height: 18,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemCount: _kPatterns.length,
-                itemBuilder: (_, i) {
-                  final pk  = _kPatterns[i];
-                  final sel = pk == _pat;
-                  return SizedBox(
-                    width: 64,
-                    child: Text(
-                      _patternLabel(context, pk),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight:
-                            sel ? FontWeight.w700 : FontWeight.w500,
-                        color: sel
-                            ? MarginaliaColors.primary
-                            : MarginaliaColors.inkFaint,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
+          // (Cover pattern picker removed — personalization with
+          // dots/lines/circles was dropped at the founder's request.)
 
           // Save button
           Padding(
