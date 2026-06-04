@@ -14,6 +14,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'followers_screen.dart';
 import 'posts_timeline.dart';
+import 'reviews_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
 import '../library/recommendations_section.dart';
@@ -30,18 +31,20 @@ class _GP {
   List<Color> get colors => [a, b];
 }
 
-// Palette più ricca ispirata ai Pantone del founder (Cocoa Brown, Chive,
-// 2965C navy, Vintage Wine, Reseda, Pastel Yellow, Powder Blue): colori
-// nettamente più saturi e "presenti" rispetto ai toni quasi-neri di prima.
+// Palette ispirata ai Pantone del founder (Cocoa Brown, Chive, 2965C navy,
+// Vintage Wine, Reseda, Pastel Yellow, Powder Blue). Spinta ancora un po':
+// i top-stop sono ora chiaramente più saturi/luminosi e i bottom-stop meno
+// "quasi-neri", così sia le swatch sia il blend di sfondo della pagina
+// mostrano colore vero invece di un grigio appena tinto.
 const _kGradients = [
-  _GP('sepia',    'Sepia',    Color(0xFF9A7059), Color(0xFF4A352A)), // Cocoa Brown
-  _GP('forest',   'Forest',   Color(0xFF5C6238), Color(0xFF2A2D17)), // Chive olive
-  _GP('ocean',    'Ocean',    Color(0xFF2A5A7E), Color(0xFF102B3E)), // 2965C navy
-  _GP('dusk',     'Dusk',     Color(0xFF6E3A66), Color(0xFF2A1226)), // plum
-  _GP('rose',     'Rose',     Color(0xFF7A2636), Color(0xFF3F1521)), // Vintage Wine
-  _GP('graphite', 'Graphite', Color(0xFF5A6052), Color(0xFF24281F)), // graphite-olive
-  _GP('amber',    'Amber',    Color(0xFFCBA24B), Color(0xFF6E4E1A)), // Pastel Yellow deep
-  _GP('slate',    'Slate',    Color(0xFF5E8298), Color(0xFF2A3E4C)), // Powder Blue
+  _GP('sepia',    'Sepia',    Color(0xFFAE7A5C), Color(0xFF52382A)), // Cocoa Brown
+  _GP('forest',   'Forest',   Color(0xFF6B7340), Color(0xFF313619)), // Chive olive
+  _GP('ocean',    'Ocean',    Color(0xFF2C6791), Color(0xFF13344C)), // 2965C navy
+  _GP('dusk',     'Dusk',     Color(0xFF814478), Color(0xFF33152E)), // plum
+  _GP('rose',     'Rose',     Color(0xFF932B3F), Color(0xFF3F1521)), // Vintage Wine
+  _GP('graphite', 'Graphite', Color(0xFF67705C), Color(0xFF2C3025)), // graphite-olive
+  _GP('amber',    'Amber',    Color(0xFFDCAE50), Color(0xFF7E5A1E)), // Pastel Yellow deep
+  _GP('slate',    'Slate',    Color(0xFF6691AB), Color(0xFF324A5A)), // Powder Blue
 ];
 
 _GP _gpFor(String key) =>
@@ -110,6 +113,9 @@ final _mySpotlightProvider =
 final _gradientKeyProvider = StateProvider<String>((ref) => 'sepia');
 final _patternKeyProvider   = StateProvider<String>((ref) => 'none');
 
+/// Which profile tab is active: 0 = Profilo, 1 = Recensioni.
+final _profileTabProvider = StateProvider.autoDispose<int>((ref) => 0);
+
 /// Locally selected favourite books (up to 6). Prefilled from profile on load.
 /// Each entry: {title, author}.
 final _favBooksProvider = StateProvider<List<Map<String, String>>>((ref) => []);
@@ -169,6 +175,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final postsAsync   = ref.watch(_myPostsProvider);
     final gradKey      = ref.watch(_gradientKeyProvider);
     final patKey       = ref.watch(_patternKeyProvider);
+    final activeTab    = ref.watch(_profileTabProvider);
 
     // Sync appearance from Supabase profile whenever the profile data arrives.
     // Using ref.listen so it fires on every load (initial + after invalidation),
@@ -208,10 +215,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     final uid   = svc.userId ?? '';
     final stats = statsAsync.asData?.value ?? {};
 
-    // Blend the gradient colors very subtly into the cream background so the
-    // whole page feels cohesive while text on cards stays perfectly readable.
-    final bgTop    = Color.alphaBlend(gp.a.withAlpha(64), MarginaliaColors.background);
-    final bgBottom = Color.alphaBlend(gp.b.withAlpha(108), MarginaliaColors.background);
+    // Blend the gradient colors into the cream background so the whole page
+    // reads as tinted by the chosen preset — pushed up from a barely-there
+    // wash so the colour is actually present, while text still lives on solid
+    // white cards (MarginaliaDecorations.card) and stays perfectly readable.
+    final bgTop    = Color.alphaBlend(gp.a.withAlpha(104), MarginaliaColors.background);
+    final bgBottom = Color.alphaBlend(gp.b.withAlpha(168), MarginaliaColors.background);
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
@@ -287,6 +296,26 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               error: (_, __) => const SizedBox(height: 80),
             ),
           ),
+
+          // ── Tab switcher (Profilo · Recensioni) ──────────────────────────
+          // The profile gained a second face: book reviews. A quiet segmented
+          // control sits under the shared identity block (header + stats) and
+          // swaps the body below it, so "who you are" stays constant while the
+          // content (your library/posts vs. your reviews) changes.
+          SliverToBoxAdapter(
+            child: _ProfileTabBar(
+              active: activeTab,
+              onChanged: (i) =>
+                  ref.read(_profileTabProvider.notifier).state = i,
+            ),
+          ),
+
+          // ════════════════ TAB 1 · RECENSIONI ════════════════════════════
+          if (activeTab == 1)
+            const SliverToBoxAdapter(child: ReviewsTab()),
+
+          // ════════════════ TAB 0 · PROFILO ═══════════════════════════════
+          if (activeTab == 0) ...[
 
           // ── Reading stats card (annual goal + 3 quick metrics) ──────────
           // Promoted from a one-line text link to a full hero card so
@@ -480,6 +509,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           const SliverToBoxAdapter(
             child: LibraryRecommendationsSection(),
           ),
+          ], // end TAB 0 · PROFILO
 
           // ── Bottom padding for nav bar ────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -798,6 +828,111 @@ class _StatBox extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Profile tab bar (Profilo · Recensioni) ──────────────────────────────────
+//
+// A quiet pill-style segmented control. Lives on the cream page so it uses the
+// surface/sage tokens (not the dark hero palette). The selected segment gets a
+// white card + sage label; the other stays muted ink. Minimal, on-brand.
+
+class _ProfileTabBar extends StatelessWidget {
+  const _ProfileTabBar({required this.active, required this.onChanged});
+  final int active;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 18, 16, 4),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: MarginaliaColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+      ),
+      child: Row(
+        children: [
+          _Segment(
+            label: 'Profilo',
+            icon: Icons.person_outline_rounded,
+            selected: active == 0,
+            onTap: () => onChanged(0),
+          ),
+          _Segment(
+            label: 'Recensioni',
+            icon: Icons.rate_review_outlined,
+            selected: active == 1,
+            onTap: () => onChanged(1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Segment extends StatelessWidget {
+  const _Segment({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? MarginaliaColors.surface : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected
+                ? const [
+                    BoxShadow(
+                        color: Color(0x0F000000),
+                        blurRadius: 6,
+                        offset: Offset(0, 1)),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: selected
+                    ? MarginaliaColors.primaryDark
+                    : MarginaliaColors.inkMuted,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: selected
+                      ? MarginaliaColors.ink
+                      : MarginaliaColors.inkMuted,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

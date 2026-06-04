@@ -1,12 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
+
+// ─── Navigation helper ────────────────────────────────────────────────────────
+
+/// Resolves the route a notification should open when tapped, or null if there
+/// is no sensible destination.
+///
+/// `like` / `comment` notifications (created by notify_post_interaction) carry
+/// `actor_id` (+ `post_id`) in their `data` jsonb. There is no standalone
+/// post route in the app — posts are shown in bottom sheets inside profile /
+/// feed timelines — so the most useful tap target is the ACTOR's profile (the
+/// person who liked/commented). Jam-related notifications carry `jam_id` and
+/// open the Jam.
+String? _notificationDestination(Map<String, dynamic> n) {
+  final data = n['data'];
+  if (data is! Map) return null;
+  final actorId = data['actor_id'] as String?;
+  if (actorId != null && actorId.isNotEmpty) return '/user/$actorId';
+  final jamId = (data['jam_id'] ?? n['jam_id']) as String?;
+  if (jamId != null && jamId.isNotEmpty) return '/jam/$jamId';
+  return null;
+}
 
 // ─── Notifications Screen ─────────────────────────────────────────────────────
 
@@ -60,18 +82,25 @@ class NotificationsScreen extends ConsumerWidget {
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                 itemCount: notifications.length,
-                itemBuilder: (_, i) => _NotificationCard(
+                itemBuilder: (context, i) => _NotificationCard(
                   data: notifications[i],
-                  onRead: () async {
-                    final id = notifications[i]['id'] as String?;
-                    if (id == null) return;
-                    try {
-                      await ref
-                          .read(supabaseServiceProvider)
-                          .markNotificationRead(id);
-                      ref.invalidate(notificationsProvider);
-                      ref.invalidate(unreadNotificationCountProvider);
-                    } catch (_) {}
+                  onTap: () async {
+                    final n = notifications[i];
+                    final id = n['id'] as String?;
+                    // Mark read (best-effort) then navigate to the relevant
+                    // destination if we can resolve one from `data`.
+                    if (id != null && (n['is_read'] as bool? ?? false) == false) {
+                      try {
+                        await ref
+                            .read(supabaseServiceProvider)
+                            .markNotificationRead(id);
+                        ref.invalidate(notificationsProvider);
+                        ref.invalidate(unreadNotificationCountProvider);
+                      } catch (_) {}
+                    }
+                    if (!context.mounted) return;
+                    final dest = _notificationDestination(n);
+                    if (dest != null) context.push(dest);
                   },
                 )
                     .animate(delay: (i * 40).ms)
@@ -95,21 +124,42 @@ class NotificationsScreen extends ConsumerWidget {
 class _NotificationCard extends StatelessWidget {
   const _NotificationCard({
     required this.data,
-    required this.onRead,
+    required this.onTap,
   });
 
   final Map<String, dynamic> data;
-  final VoidCallback onRead;
+  final VoidCallback onTap;
+
+  /// Leading icon + tint chosen from the notification `type`. Covers the
+  /// social types created by notify_post_interaction ('like', 'comment') and
+  /// falls back to a generic bell for everything else (Jam alerts, etc.).
+  (IconData, Color) _iconFor(String type) {
+    switch (type) {
+      case 'like':
+        return (Icons.favorite, const Color(0xFFBF4A72));
+      case 'comment':
+        return (Icons.mode_comment_outlined, MarginaliaColors.primary);
+      default:
+        return (Icons.notifications_none_outlined, MarginaliaColors.sienna);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isRead = data['is_read'] as bool? ?? false;
-    final title = data['title'] as String? ?? '';
+    final type = data['type'] as String? ?? '';
+    final rawTitle = data['title'] as String? ?? '';
+    // Defensive fallback: notify_post_interaction always sets a title, but an
+    // older/foreign row might not. Uses an existing l10n key (no codegen).
+    final title =
+        rawTitle.isNotEmpty ? rawTitle : context.l10n.notificationsTitle;
     final body = data['body'] as String? ?? '';
     final createdAt = data['created_at'] as String?;
+    final (icon, iconColor) = _iconFor(type);
 
     return GestureDetector(
-      onTap: isRead ? null : onRead,
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
@@ -128,17 +178,16 @@ class _NotificationCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Unread dot
+            // Type icon
             Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.only(top: 5, right: 12),
+              width: 34,
+              height: 34,
+              margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: isRead
-                    ? Colors.transparent
-                    : MarginaliaColors.primary,
+                color: iconColor.withAlpha(28),
                 shape: BoxShape.circle,
               ),
+              child: Icon(icon, size: 17, color: iconColor),
             ),
             Expanded(
               child: Column(

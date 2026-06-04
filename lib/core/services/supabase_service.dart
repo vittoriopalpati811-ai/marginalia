@@ -826,7 +826,56 @@ class SupabaseService {
     return row;
   }
 
+  /// Real aggregate counts for ANOTHER user's public profile stats row.
+  ///
+  /// The four numbers and their server-side sources:
+  ///   • highlights → rows in `highlights` owned by the user (user_id).
+  ///   • shared     → rows in `jam_highlights` the user shared (shared_by).
+  ///                  Same source as fetchUserSharedHighlights /
+  ///                  fetchMySharedHighlights — "condivisi" = highlights this
+  ///                  user has shared into any Jam, so the count agrees with
+  ///                  the shared grid.
+  ///   • following  → rows in `follows` where the user is the follower.
+  ///   • followers  → rows in `follows` where the user is being followed.
+  ///
+  /// ⚠️ RLS caveat that forced the RPC: `highlights` and `jam_highlights` are
+  /// NOT world-readable (migration 002: highlights are owner-only, visible to
+  /// others only when shared in a common Jam). So counting them directly from
+  /// the client returns the WRONG total when viewing a stranger — it would only
+  /// see the subset shared into Jams you both belong to. `follows`, by
+  /// contrast, is readable by any authenticated user (migration 003).
+  ///
+  /// To get the TRUE totals we call the SECURITY DEFINER RPC
+  /// `public_user_stats(target_id)` (migration 035) which computes the counts
+  /// server-side, bypassing RLS. It returns only four integers — counts, never
+  /// highlight content — so it leaks nothing sensitive.
+  ///
+  /// Fallback: if the RPC isn't deployed yet, we degrade to the direct
+  /// per-table counts (accurate for follows; RLS-limited for highlights/shared)
+  /// so the screen still renders instead of erroring.
   Future<Map<String, int>> fetchUserStats(String targetId) async {
+    try {
+      final res = await _client
+          .rpc('public_user_stats', params: {'target_id': targetId});
+      // The RPC returns a single JSON object (or a 1-row set, depending on
+      // how PostgREST wraps it). Normalise both shapes.
+      final row = res is List
+          ? (res.isNotEmpty ? res.first as Map<String, dynamic> : null)
+          : res as Map<String, dynamic>?;
+      if (row != null) {
+        int asInt(dynamic v) =>
+            v is int ? v : (v is num ? v.toInt() : int.tryParse('$v') ?? 0);
+        return {
+          'highlights': asInt(row['highlights']),
+          'shared': asInt(row['shared']),
+          'following': asInt(row['following']),
+          'followers': asInt(row['followers']),
+        };
+      }
+    } catch (_) {
+      // RPC missing / not yet applied → fall back to direct counts below.
+    }
+
     final results = await Future.wait([
       _client.from('highlights').select('id').eq('user_id', targetId),
       _client.from('jam_highlights').select('highlight_id').eq('shared_by', targetId),
@@ -1130,6 +1179,12 @@ class SupabaseService {
         .from('posts')
         .update({'likes_count': rows.length})
         .eq('id', postId);
+
+    // Notify the post owner — only when ADDING a like, never on un-like.
+    if (!currentlyLiked) {
+      // ignore: discarded_futures
+      _notifyPostInteraction(postId, 'like');
+    }
   }
 
   /// Fetch posts by a specific user (for profile views), newest first.
@@ -1238,6 +1293,46 @@ class SupabaseService {
       if (gifUrl != null) 'gif_url': gifUrl,
       if (parentCommentId != null) 'parent_comment_id': parentCommentId,
     });
+
+    // Notify the post owner that someone commented. A short preview of the
+    // text (if any) is passed so the notification body can show it.
+    // ignore: discarded_futures
+    _notifyPostInteraction(postId, 'comment', preview: content?.trim());
+  }
+
+  /// Fire-and-forget: create an in-app notification for the OWNER of [postId]
+  /// when the current user likes or comments on their post.
+  ///
+  /// [kind] is 'like' or 'comment'. [preview] is an optional short text snippet
+  /// (used for comments) shown in the notification body.
+  ///
+  /// WHY AN RPC (and not a direct insert): the client cannot write to
+  /// `notifications` directly — migration 032 deliberately removed the INSERT
+  /// policy (RLS fail-closed) and migration 028 revoked EXECUTE on
+  /// `create_notification` from authenticated users, both to stop forged/spam
+  /// alerts. So we route through `notify_post_interaction` (migration 035): a
+  /// SECURITY DEFINER function that derives the post owner server-side, uses
+  /// `auth.uid()` as the actor (cannot be spoofed), and SKIPS the insert when
+  /// the actor is the owner (no self-notifications). It stores the post id +
+  /// actor id in the notification `data` jsonb for navigation.
+  ///
+  /// Never throws: a notification failure must not break liking/commenting.
+  /// If the migration isn't applied yet, the RPC is simply absent and we
+  /// swallow the error — the like/comment already succeeded.
+  Future<void> _notifyPostInteraction(
+    String postId,
+    String kind, {
+    String? preview,
+  }) async {
+    try {
+      await _client.rpc('notify_post_interaction', params: {
+        'p_post_id': postId,
+        'p_kind': kind,
+        if (preview != null && preview.isNotEmpty) 'p_preview': preview,
+      });
+    } catch (_) {
+      // Best-effort — ignore (RPC missing, network blip, etc.).
+    }
   }
 
   /// Like a comment (idempotent — server has UNIQUE constraint).
