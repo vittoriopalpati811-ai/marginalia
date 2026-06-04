@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -12,13 +13,51 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/unread_messages_provider.dart';
 import 'giphy_picker.dart';
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+// ─── Providers ────────────────────────────────────────────────────────────────
 
 final _messagesProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, conversationId) async {
   final svc = ref.watch(supabaseServiceProvider);
   if (!svc.isAuthenticated) return [];
   return svc.fetchMessages(conversationId);
+});
+
+/// Header metadata for the open chat: whether it's a group, the group name /
+/// avatar, and (for 1:1) the OTHER member's id + display name + avatar.
+///
+/// The chat is opened with only a conversationId (see app.dart `/chat/:id`),
+/// so the screen has to resolve the title itself instead of trusting the
+/// passed-in `conversationName`, which is just a placeholder. Reads the
+/// `conversations` row directly and the member profiles via the existing
+/// `get_conversation_member_profiles` SECURITY DEFINER RPC (the same one
+/// fetchConversations uses), so no new service method is required.
+final _chatHeaderProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>?, String>((ref, conversationId) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated) return null;
+  final myId = svc.userId ?? '';
+
+  final convRows = await svc.client
+      .from('conversations')
+      .select('id, is_group, group_name, group_avatar_url')
+      .eq('id', conversationId)
+      .limit(1);
+  if ((convRows as List).isEmpty) return null;
+  final conv = Map<String, dynamic>.from(convRows.first as Map);
+
+  final profiles = List<Map<String, dynamic>>.from(
+    await svc.client.rpc('get_conversation_member_profiles',
+        params: {'p_conversation_id': conversationId}) as List,
+  );
+  // Exclude myself so `others` holds the people I'm talking to.
+  final others = profiles.where((p) => p['id'] != myId).toList();
+
+  return {
+    'is_group': conv['is_group'] == true,
+    'group_name': conv['group_name'] as String?,
+    'group_avatar_url': conv['group_avatar_url'] as String?,
+    'others': others,
+  };
 });
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -312,7 +351,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
-      appBar: _ChatAppBar(title: widget.conversationName),
+      appBar: _ChatAppBar(
+        conversationId: widget.conversationId,
+        fallbackTitle: widget.conversationName,
+      ),
       body: Column(
         children: [
           // ── Messages list ──────────────────────────────────────────────
@@ -463,37 +505,232 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
 // ─── Chat AppBar ─────────────────────────────────────────────────────────────
 
-class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const _ChatAppBar({required this.title});
+class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
+  const _ChatAppBar({
+    required this.conversationId,
+    required this.fallbackTitle,
+  });
 
-  final String title;
+  final String conversationId;
+
+  /// Shown only until the real header (group name / other user) resolves.
+  final String fallbackTitle;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
+  static const _ink = Color(0xFFF1EEE7);
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final headerAsync = ref.watch(_chatHeaderProvider(conversationId));
+    final header = headerAsync.asData?.value;
+
+    final isGroup = header?['is_group'] == true;
+    final others =
+        (header?['others'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+    final other = others.isNotEmpty ? others.first : null;
+
+    // Resolve the title: group name for groups, the OTHER member's name for
+    // 1:1. Fall back to the passed-in name while loading, then to localized
+    // placeholders (group / deleted account) so the bar is never blank.
+    String title = fallbackTitle;
+    String? avatarUrl;
+    String? otherUserId;
+
+    if (header != null) {
+      if (isGroup) {
+        final name = (header['group_name'] as String?)?.trim();
+        title = (name != null && name.isNotEmpty)
+            ? name
+            : context.l10n.msgGroupFallback;
+        avatarUrl = header['group_avatar_url'] as String?;
+      } else {
+        final rawName = (other?['display_name'] as String?)?.trim();
+        title = (rawName != null && rawName.isNotEmpty)
+            ? rawName
+            : context.l10n.accountDeleted;
+        avatarUrl = other?['avatar_url'] as String?;
+        otherUserId = other?['id'] as String?;
+      }
+    }
+
+    final initial =
+        title.isNotEmpty ? title[0].toUpperCase() : '?';
+    final avatarColor = MarginaliaDecorations.bookCoverColor(title);
+
+    // Tapping the title renames the group (groups only). 1:1 titles aren't
+    // editable — they're the other person's name.
+    final titleWidget = Text(
+      title,
+      style: GoogleFonts.ebGaramond(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: _ink,
+        letterSpacing: -0.2,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
     return AppBar(
       backgroundColor: MarginaliaColors.primary,
-      foregroundColor: const Color(0xFFF1EEE7),
+      foregroundColor: _ink,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
+      titleSpacing: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded,
-            size: 18, color: Color(0xFFF1EEE7)),
+            size: 18, color: _ink),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: Text(
-        title,
-        style: GoogleFonts.ebGaramond(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFFF1EEE7),
-          letterSpacing: -0.2,
+      title: Row(
+        children: [
+          // Header avatar — tapping a 1:1 avatar opens the other user's
+          // profile (groups have no single profile to open).
+          GestureDetector(
+            onTap: otherUserId != null
+                ? () => context.push('/user/$otherUserId')
+                : null,
+            child: _ChatHeaderAvatar(
+              avatarUrl: avatarUrl,
+              initial: initial,
+              color: avatarColor,
+              isGroup: isGroup,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: isGroup
+                ? GestureDetector(
+                    onTap: () => _renameGroup(context, ref, title),
+                    child: Row(
+                      children: [
+                        Flexible(child: titleWidget),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.edit_outlined,
+                            size: 15, color: Color(0xAAF1EEE7)),
+                      ],
+                    ),
+                  )
+                : titleWidget,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Rename group (any member) ──────────────────────────────────────────────
+  //
+  // Mirrors the Jam-rename dialog in jam_detail_screen.dart. There is no
+  // dedicated service method for conversation renames (only `updateJamTitle`
+  // exists for jams), so this writes `group_name` directly. The
+  // `conversations_update` RLS policy (migration 014) permits any member of
+  // the conversation to update the row, so this succeeds without a SECURITY
+  // DEFINER RPC. See report: a `SupabaseService.updateGroupName` wrapper would
+  // be the cleaner home for this query.
+  Future<void> _renameGroup(
+      BuildContext context, WidgetRef ref, String currentTitle) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final controller = TextEditingController(text: currentTitle);
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          l10n.msgGroupFallback,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 60,
+          textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (value) => Navigator.pop(dialogCtx, value),
+          decoration: const InputDecoration(counterText: ''),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx, controller.text),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    final trimmed = newName?.trim() ?? '';
+    if (trimmed.isEmpty || trimmed == currentTitle) return;
+
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      await svc.client
+          .from('conversations')
+          .update({'group_name': trimmed}).eq('id', conversationId);
+      // Refresh the header here and the inbox tile on the messages list.
+      ref.invalidate(_chatHeaderProvider(conversationId));
+      ref.invalidate(conversationsProvider);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.errorPrefix('$e'))),
+      );
+    }
+  }
+}
+
+// ─── Chat Header Avatar ───────────────────────────────────────────────────────
+
+class _ChatHeaderAvatar extends StatelessWidget {
+  const _ChatHeaderAvatar({
+    required this.avatarUrl,
+    required this.initial,
+    required this.color,
+    required this.isGroup,
+  });
+
+  final String? avatarUrl;
+  final String initial;
+  final Color color;
+  final bool isGroup;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 34.0;
+    Widget fallback() => Center(
+          child: isGroup
+              ? const Icon(Icons.group_rounded, size: 18, color: Colors.white)
+              : Text(
+                  initial,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    height: 1,
+                  ),
+                ),
+        );
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      child: ClipOval(
+        child: avatarUrl != null && avatarUrl!.isNotEmpty
+            ? Image.network(
+                avatarUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => fallback(),
+              )
+            : fallback(),
       ),
     );
   }
@@ -519,6 +756,7 @@ class _MessageBubble extends StatelessWidget {
     final content    = message['content']   as String?;
     final imageUrl   = message['image_url'] as String?;
     final sender     = message['sender']    as Map<String, dynamic>? ?? {};
+    final senderId   = message['sender_id'] as String?;
     // Tombstone detection: when a profile is soft-deleted via
     // delete_my_account() the display_name is nulled, leaving the row in
     // place so chat history still resolves. We surface "Account eliminato"
@@ -542,15 +780,23 @@ class _MessageBubble extends StatelessWidget {
             isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Avatar (only for others)
+          // Avatar (only for others) — tapping it opens the sender's profile.
+          // Skipped for tombstoned (deleted) senders, whose profile is gone.
           if (!isMe) ...[
             SizedBox(
               width: 32,
               child: showSender
-                  ? _SmallAvatar(
-                      avatarUrl: senderAvatar,
-                      initial: senderInitial,
-                      color: avatarBg,
+                  ? GestureDetector(
+                      onTap: (!isDeleted &&
+                              senderId != null &&
+                              senderId.isNotEmpty)
+                          ? () => context.push('/user/$senderId')
+                          : null,
+                      child: _SmallAvatar(
+                        avatarUrl: senderAvatar,
+                        initial: senderInitial,
+                        color: avatarBg,
+                      ),
                     )
                   : const SizedBox.shrink(),
             ),

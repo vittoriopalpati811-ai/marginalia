@@ -808,14 +808,23 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
       onLongPressStart: (_) => _onHoldStart(),
       onLongPressEnd:   (_) => _onHoldEnd(),
       onLongPressCancel:    _onHoldEnd,
-      onTap: widget.enabled
-          ? () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.l10n.feedHoldToPublishToast),
-                  duration: const Duration(seconds: 1),
-                ),
-              )
-          : null,
+      // A plain TAP now publishes directly (this is what users actually do —
+      // previously a tap only showed a "hold to publish" toast and the post
+      // was never sent, which read as "non fa scrivere i post"). The
+      // long-press still works as an alternative with its liftoff animation.
+      onTap: () {
+        if (_holding || _completed) return; // a hold is already in progress
+        if (widget.enabled) {
+          widget.onComplete();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.feedHoldToPublishToast),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      },
       child: AnimatedScale(
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOut,
@@ -1240,7 +1249,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final currentUserId = ref.read(supabaseServiceProvider).userId;
     final isOwner = currentUserId != null && currentUserId == userId;
 
-    return Column(
+    final card = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
 
@@ -1427,6 +1436,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
               // Like button
               GestureDetector(
                 onTap: _toggleLike,
+                // Opaque so the whole padded pill is tappable, not just the
+                // painted icon/number (the row uses transparent fills).
+                behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1464,9 +1476,13 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 ),
               ),
               const SizedBox(width: 4),
-              // Comment button
+              // Comment button — tapping the icon/label opens the comments
+              // sheet. Opaque hit-testing makes the whole padded area
+              // clickable (the fill is transparent, so without this only the
+              // glyphs registered taps and the bar felt "dead").
               GestureDetector(
                 onTap: () => _openComments(context),
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
@@ -1508,7 +1524,16 @@ class _PostCardState extends ConsumerState<_PostCard> {
           color: MarginaliaColors.ruleFaint,
         ),
       ],
-    )
+    );
+
+    // Only the first screenful gets the staggered entrance animation.
+    // `flutter_animate`'s `.animate()` REPLAYS on every rebuild — and a
+    // SliverList rebuilds recycled cards constantly while scrolling, which
+    // made every card re-run its fade/slide mid-scroll and felt like the
+    // scroll was "stuttering". Cards beyond the initial reveal render
+    // statically so scrolling stays smooth.
+    if (widget.index >= 6) return card;
+    return card
         .animate(delay: (widget.index * 40).ms)
         .fadeIn(duration: 250.ms, curve: Curves.easeOut)
         .slideY(begin: 0.02, end: 0, duration: 250.ms);

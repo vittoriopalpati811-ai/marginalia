@@ -1,7 +1,8 @@
 // ─── HomeTab ──────────────────────────────────────────────────────────────────
 //
 // First tab — social feed.
-// Gradient header with wordmark + "Scrivi" button, then the full FeedTab.
+// Plain header with wordmark + "Scrivi" button floating over the paper
+// background (no colored bar), then the full FeedTab.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -55,11 +56,17 @@ class _HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
 
+    // No colored bar: the wordmark + "Scrivi" button float over the normal
+    // paper background, so the status-bar icons must be DARK (matching the
+    // global default set in main.dart) to stay visible.
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: MarginaliaDecorations.lightStatusBar,
-      child: Container(
-      decoration: MarginaliaDecorations.gradientHeader,
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarBrightness: Brightness.light, // iOS: light bg → dark icons
+        statusBarIconBrightness: Brightness.dark, // Android
+      ),
       child: Padding(
+        // Keep the top SafeArea inset so the title never overlaps the notch.
         padding: EdgeInsets.fromLTRB(20, top + 16, 16, 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -69,12 +76,20 @@ class _HomeHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Marginalia', style: MarginaliaTextStyles.wordmarkLight),
+                  Text(
+                    'Marginalia',
+                    style: GoogleFonts.manrope(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: MarginaliaColors.ink,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     context.l10n.homeFeedSubtitle,
                     style: GoogleFonts.manrope(
-                      color: const Color(0xFFF1EEE7).withAlpha(140),
+                      color: MarginaliaColors.inkMuted,
                       fontSize: 12,
                       letterSpacing: 0.1,
                     ),
@@ -90,22 +105,22 @@ class _HomeHeader extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1EEE7).withAlpha(28),
+                  color: MarginaliaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: const Color(0xFFF1EEE7).withAlpha(50),
+                    color: MarginaliaColors.sienna.withAlpha(60),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.edit_outlined,
-                        size: 15, color: Color(0xFFF1EEE7)),
+                        size: 15, color: MarginaliaColors.sienna),
                     const SizedBox(width: 6),
                     Text(
                       context.l10n.commonScrivi,
                       style: const TextStyle(
-                        color: Color(0xFFF1EEE7),
+                        color: MarginaliaColors.sienna,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -116,7 +131,6 @@ class _HomeHeader extends StatelessWidget {
             ),
           ],
         ),
-      ),
       ),
     );
   }

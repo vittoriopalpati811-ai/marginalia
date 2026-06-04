@@ -1,9 +1,9 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -144,54 +144,58 @@ class _MessagesHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: MarginaliaDecorations.lightStatusBar,
-      child: Container(
-      width: double.infinity,
-      decoration: MarginaliaDecorations.gradientHeader,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20, topPadding > 0 ? 4 : 16, 20, 20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.messagesTitle,
-                      style: MarginaliaTextStyles.wordmarkLight,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.l10n.msgSubtitle,
-                      style: GoogleFonts.manrope(
-                        color: const Color(0xFFF1EEE7).withAlpha(140),
-                        fontSize: 12,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                  ],
+    // No colored bar: icons float over the normal page background, with the
+    // global (dark) status-bar icons that are correct over the cream content.
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, topPadding > 0 ? 4 : 16, 20, 20),
+        child: Stack(
+          children: [
+            // ── Centered title + subtitle ───────────────────────────────────
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  context.l10n.messagesTitle,
+                  textAlign: TextAlign.center,
+                  style: MarginaliaTextStyles.wordmark,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  context.l10n.msgSubtitle,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.manrope(
+                    color: MarginaliaColors.inkMuted,
+                    fontSize: 12,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
+            ),
+
+            // ── Top-left bell → notifications ───────────────────────────────
+            Align(
+              alignment: Alignment.topLeft,
+              child: GestureDetector(
+                onTap: () => context.push('/notifications'),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.ink.withAlpha(12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    PhosphorIconsRegular.bell,
+                    color: MarginaliaColors.ink,
+                    size: 18,
+                  ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1EEE7).withAlpha(20),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.send_outlined,
-                  color: Color(0xFFF1EEE7),
-                  size: 18,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
       ),
     );
   }

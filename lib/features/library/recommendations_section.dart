@@ -514,6 +514,13 @@ class _RecommendationCard extends StatelessWidget {
         .join(' · ');
 
     return GestureDetector(
+      // Opaque hit-testing: the whole card rectangle claims the tap. Without
+      // this the default (deferToChild) made taps fall through wherever the
+      // pointer landed on a transparent gap between the inner widgets — which
+      // is why the cards opened nothing when rendered inside the profile
+      // screen (its gradient Stack + shrink-wrapped slivers exposed those
+      // gaps), while the library happened to register on the solid Container.
+      behavior: HitTestBehavior.opaque,
       onTap: () => _openSheet(context),
       child: Container(
         width: double.infinity,
@@ -624,9 +631,23 @@ class _RecommendationCard extends StatelessWidget {
 // Opened from a recommendation card: the AI phrase stays at the top, followed
 // by the book overview (trama), genres, page count, the "because you read…"
 // line, and a button that opens the Kindle e-book on Amazon.
-class RecommendationDetailScreen extends StatelessWidget {
+class RecommendationDetailScreen extends StatefulWidget {
   const RecommendationDetailScreen({super.key, required this.rec});
   final BookRecommendation rec;
+
+  @override
+  State<RecommendationDetailScreen> createState() =>
+      _RecommendationDetailScreenState();
+}
+
+class _RecommendationDetailScreenState
+    extends State<RecommendationDetailScreen> {
+  // Tracks the "Add as Reading" action so the button can show a spinner and
+  // then a persistent "added" confirmation state.
+  bool _addingToLibrary = false;
+  bool _addedToLibrary = false;
+
+  BookRecommendation get rec => widget.rec;
 
   Future<void> _openKindle() async {
     // General Amazon search (NOT forced i=digital-text / Kindle-only): the user
@@ -642,6 +663,59 @@ class RecommendationDetailScreen extends StatelessWidget {
     // the website (sharing Safari's cookies) where the purchase works.
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+    }
+  }
+
+  // ── Add this recommended book to the user's library as "Reading" ──────────
+  //
+  // The app models the "In lettura" status as the profile-level
+  // `currently_reading_*` pointer (shown on the profile header, the social
+  // feed, and Jam member lists). SupabaseService.updateCurrentlyReading is the
+  // existing, single method that sets it, so we call it directly here via the
+  // ProviderScope container (same access pattern as _BookDetailSheet below —
+  // this screen is a StatefulWidget, so it can't use a WidgetRef).
+  //
+  // NOTE (backend): this does NOT yet insert a row into the `books` table /
+  // Isar `Book` collection. There is no single-book "add to library" service —
+  // ImportService only creates books from My Clippings text, and the Book model
+  // has no reading-status field. If a true library row is required, a new
+  // service method is needed (see the session report).
+  Future<void> _addAsReading() async {
+    if (_addingToLibrary || _addedToLibrary) return;
+    setState(() => _addingToLibrary = true);
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    try {
+      final container = ProviderScope.containerOf(context, listen: false);
+      // ignore: invalid_use_of_internal_member
+      final service = container.read(supabaseServiceProvider);
+      await service.updateCurrentlyReading(
+        title: rec.title,
+        author: rec.author,
+      );
+      if (!mounted) return;
+      setState(() {
+        _addingToLibrary = false;
+        _addedToLibrary = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(it
+              ? 'Aggiunto come "In lettura"'
+              : 'Added as "Reading"'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _addingToLibrary = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(it
+              ? 'Impossibile aggiungere il libro. Riprova.'
+              : 'Could not add the book. Please try again.'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -696,13 +770,25 @@ class RecommendationDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── The AI phrase — stays at the top ──
+                    // White card (was a green siennaFaint box): a subtle
+                    // border + soft shadow give it definition without the
+                    // green fill the founder flagged. Text stays dark ink for
+                    // full readability on white.
                     if (rec.reason.isNotEmpty)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.siennaFaint,
+                          color: MarginaliaColors.surface,
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: MarginaliaColors.ruleFaint, width: 0.8),
+                          boxShadow: const [
+                            BoxShadow(
+                                color: Color(0x0A000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2)),
+                          ],
                         ),
                         child: Text(
                           rec.reason,
@@ -864,6 +950,47 @@ class RecommendationDetailScreen extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF232F3E),
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // ── Add to library: "In lettura" / "Reading" ──────────────
+                  // Sets the user's currently-reading book (the app's "In
+                  // lettura" status) to this recommendation.
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          (_addingToLibrary || _addedToLibrary) ? null : _addAsReading,
+                      icon: _addingToLibrary
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: MarginaliaColors.primaryDark),
+                            )
+                          : Icon(
+                              _addedToLibrary
+                                  ? Icons.check_rounded
+                                  : Icons.auto_stories_outlined,
+                              size: 19),
+                      label: Text(
+                        _addedToLibrary
+                            ? (it ? 'Aggiunto' : 'Added')
+                            : (it
+                                ? 'Aggiungi come "In lettura"'
+                                : 'Add as "Reading"'),
+                        style: GoogleFonts.manrope(
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: MarginaliaColors.primaryDark,
+                        side: const BorderSide(
+                            color: MarginaliaColors.primaryDark, width: 1.2),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),

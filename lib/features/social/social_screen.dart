@@ -192,15 +192,16 @@ class _SocialHeader extends StatelessWidget {
   final VoidCallback onJoin;
   final VoidCallback onSearch;
 
-  static const _cream = Color(0xFFF1EEE7);
-
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    // No more green gradient bar: the header now sits directly on the page
+    // background, so the system status-bar icons must be DARK (matches the
+    // global default for light/cream content screens).
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: MarginaliaDecorations.lightStatusBar,
+      value: SystemUiOverlayStyle.dark,
       child: Container(
-      decoration: MarginaliaDecorations.gradientHeader,
+      color: MarginaliaColors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -215,7 +216,7 @@ class _SocialHeader extends StatelessWidget {
                   onTap: onSearch,
                   child: Icon(
                     PhosphorIconsRegular.magnifyingGlass,
-                    color: _cream,
+                    color: MarginaliaColors.ink,
                     size: 24,
                   ),
                 ),
@@ -230,19 +231,19 @@ class _SocialHeader extends StatelessWidget {
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.6,
-                          color: _cream,
+                          color: MarginaliaColors.ink,
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // ── Right: book-add icon ────────────────────────────────
+                // ── Right: open-book + plus "join jam" icon ─────────────
                 _GlassIconButton(
                   onTap: onJoin,
                   child: CustomPaint(
                     size: const Size(26, 26),
-                    painter: _BookAddPainter(color: _cream),
+                    painter: _BookAddPainter(color: MarginaliaColors.ink),
                   ),
                 ),
               ],
@@ -252,9 +253,9 @@ class _SocialHeader extends StatelessWidget {
           // ── TabBar ────────────────────────────────────────────────────
           TabBar(
             controller: tabController,
-            labelColor: _cream,
-            unselectedLabelColor: _cream.withAlpha(110),
-            indicatorColor: _cream,
+            labelColor: MarginaliaColors.ink,
+            unselectedLabelColor: MarginaliaColors.inkFaint,
+            indicatorColor: MarginaliaColors.primaryDark,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
@@ -298,14 +299,9 @@ class _GlassIconButton extends StatelessWidget {
         width: 44,
         height: 44,
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF1EEE7).withAlpha(22),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: const Color(0xFFF1EEE7).withAlpha(35),
-            width: 1,
-          ),
-        ),
+        // Transparent: the icons now float cleanly over the page background
+        // (no green bar) instead of sitting in tinted glass chips.
+        color: Colors.transparent,
         child: Center(child: child),
       ),
     );
@@ -832,13 +828,31 @@ class _JoinJamSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    // Keep the sheet short and anchored to the BOTTOM of the screen so the
+    // title + invite-code field + "Entra" button sit comfortably in the
+    // lower-middle (previously the sheet climbed up toward the notch because
+    // the field auto-focused on open and the sheet grew to clear the
+    // keyboard). We no longer autofocus: the sheet opens low and calm, and
+    // only lifts via `viewInsets` once the user taps the field.
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-          24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+      padding: EdgeInsets.fromLTRB(24, 28, 24, viewInsets + 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Grab handle for a clearly bottom-anchored, non-fullscreen sheet.
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: MarginaliaColors.rule,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Row(
             children: [
               Container(
@@ -859,7 +873,7 @@ class _JoinJamSheet extends StatelessWidget {
           const SizedBox(height: 24),
           TextField(
             controller: controller,
-            autofocus: true,
+            autofocus: false,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
               hintText: context.l10n.jamJoinHint,

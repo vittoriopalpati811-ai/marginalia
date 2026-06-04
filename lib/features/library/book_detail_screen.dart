@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
+import '../../core/motion/airbnb_motion.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -57,6 +58,27 @@ class BookDetailScreen extends ConsumerWidget {
                 height: 440,
                 child: Hero(
                   tag: 'book-cover-${book.id}',
+                  // Same flight treatment as the recommendation cover: a soft
+                  // cross-fade of a rounded cover. Without a destination shuttle
+                  // the grid card's plain (square-cornered) shuttle was flown
+                  // into this unclipped band, so the morph read harder than the
+                  // recommendations' rounded scale. Matching the shuttle here
+                  // makes the open/close animation feel identical.
+                  flightShuttleBuilder: (_, animation, __, ___, ____) =>
+                      FadeTransition(
+                    opacity: CurvedAnimation(
+                        parent: animation, curve: AirbnbMotion.enter),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(15),
+                        topRight: Radius.circular(15),
+                      ),
+                      child: BookEditorialCover(
+                        title: book.title,
+                        author: book.author,
+                      ),
+                    ),
+                  ),
                   child: BookEditorialCover(
                     title: book.title,
                     author: book.author,
