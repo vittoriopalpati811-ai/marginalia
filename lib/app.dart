@@ -383,7 +383,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
 
 // ─── Shell scaffold with flat nav ────────────────────────────────────────────
 
-class _ScaffoldWithNav extends StatelessWidget {
+class _ScaffoldWithNav extends StatefulWidget {
   const _ScaffoldWithNav({
     required this.child,
     required this.routePath,
@@ -392,25 +392,37 @@ class _ScaffoldWithNav extends StatelessWidget {
   final Widget child;
   final String routePath;
 
+  @override
+  State<_ScaffoldWithNav> createState() => _ScaffoldWithNavState();
+}
+
+class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
+  // Tab order (left → right): Library · Jam · Home (centre) · Messages · Profile.
   // Phosphor Icons in Regular weight for inactive + Fill for active.
-  // Thicker strokes + rounded line caps match the visual reference the
-  // user provided (house with rounded outline, paper-plane-tilt, etc.)
-  // and read much stronger than Material's hairline outlined glyphs.
-  //
-  // `label` is kept on the record but not rendered; Semantics() below
-  // exposes it for VoiceOver/TalkBack.
+  // `label` is kept on the record but not rendered; Semantics() exposes it.
   static final _tabs = <_Tab>[
-    (path: '/home',     icon: PhosphorIconsRegular.house,           activeIcon: PhosphorIconsFill.house,           label: 'Home'),
     (path: '/',         icon: PhosphorIconsRegular.bookOpen,        activeIcon: PhosphorIconsFill.bookOpen,        label: 'Library'),
     (path: '/social',   icon: PhosphorIconsRegular.usersThree,      activeIcon: PhosphorIconsFill.usersThree,      label: 'Jam'),
+    (path: '/home',     icon: PhosphorIconsRegular.house,           activeIcon: PhosphorIconsFill.house,           label: 'Home'),
     (path: '/messages', icon: PhosphorIconsRegular.paperPlaneTilt,  activeIcon: PhosphorIconsFill.paperPlaneTilt,  label: 'Messages'),
     (path: '/profile',  icon: PhosphorIconsRegular.userCircle,      activeIcon: PhosphorIconsFill.userCircle,      label: 'Profile'),
   ];
 
+  // Track the previous tab so a switch slides in the direction that matches the
+  // nav bar: moving to a tab on the RIGHT slides L→R, moving to one on the LEFT
+  // slides R→L (instead of always cross-fading).
+  int _prevIndex = 0;
+  int _direction = 1;
+
   @override
   Widget build(BuildContext context) {
+    final routePath = widget.routePath;
     final selectedIndex =
         _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
+    if (selectedIndex != _prevIndex) {
+      _direction = selectedIndex > _prevIndex ? 1 : -1;
+      _prevIndex = selectedIndex;
+    }
 
     // Nuclear layout: previous attempts (StackFit.expand on AnimatedSwitcher,
     // 100dvh + flt-glass-pane sizing) didn't fix the navbar-floating-
@@ -450,9 +462,9 @@ class _ScaffoldWithNav extends StatelessWidget {
                 ),
               ),
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
+                duration: const Duration(milliseconds: 300),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
                 layoutBuilder: (currentChild, previousChildren) => Stack(
                   fit: StackFit.expand,
                   children: [
@@ -460,11 +472,23 @@ class _ScaffoldWithNav extends StatelessWidget {
                     if (currentChild != null) currentChild,
                   ],
                 ),
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
+                transitionBuilder: (child, animation) {
+                  // Incoming tab enters from the `_direction` side; the outgoing
+                  // tab (its animation runs in reverse) exits to the opposite
+                  // side → a directional push that matches the nav-bar order.
+                  final incoming = animation.status != AnimationStatus.reverse;
+                  final dx = (incoming ? _direction : -_direction) * 0.22;
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: Offset(dx, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: FadeTransition(opacity: animation, child: child),
+                  );
+                },
                 child: KeyedSubtree(
                   key: ValueKey(routePath),
-                  child: child,
+                  child: widget.child,
                 ),
               ),
             ),

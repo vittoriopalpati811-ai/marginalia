@@ -493,18 +493,18 @@ class _MoodPainter extends CustomPainter {
     switch (composition) {
       case _Composition.squircleDots:    _drawSquircleDots(canvas, size);
       case _Composition.blobAccentDots:  _drawBlobAccentDots(canvas, size);
-      case _Composition.softTriWaves:    _drawSoftTriWaves(canvas, size);
+      case _Composition.softTriWaves:    _drawSquiggleDot(canvas, size); // no triangles
       case _Composition.circleRingDot:   _drawCircleRingDot(canvas, size);
-      case _Composition.crescentStars:   _drawCrescentStars(canvas, size);
+      case _Composition.crescentStars:   _drawTripleBubbles(canvas, size); // no moons/stars
       case _Composition.squiggleDot:     _drawSquiggleDot(canvas, size);
       case _Composition.petalCluster:    _drawPetalCluster(canvas, size);
       case _Composition.stackedBlobs:    _drawStackedBlobs(canvas, size);
       case _Composition.softHexDots:     _drawSoftHexDots(canvas, size);
-      case _Composition.starOnCircle:    _drawStarOnCircle(canvas, size);
-      case _Composition.wavyBandArc:     _drawWavyBandArc(canvas, size);
+      case _Composition.starOnCircle:    _drawCircleRingDot(canvas, size); // no stars
+      case _Composition.wavyBandArc:     _drawStackedBlobs(canvas, size); // no crescents
       case _Composition.tripleBubbles:   _drawTripleBubbles(canvas, size);
       case _Composition.pillFloat:       _drawPillFloat(canvas, size);
-      case _Composition.mountainSun:     _drawMountainSun(canvas, size);
+      case _Composition.mountainSun:     _drawPillFloat(canvas, size); // no triangles
       case _Composition.cloudRain:       _drawCloudRain(canvas, size);
     }
   }
@@ -721,7 +721,7 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.accent
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.038
+        ..strokeWidth = size.shortestSide * 0.114 // 3× thicker
         ..strokeCap = StrokeCap.round,
     );
     final tri = _softTrianglePath(
@@ -745,7 +745,7 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.accent
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.034,
+        ..strokeWidth = size.shortestSide * 0.102, // 3× thicker
     );
     // Inner accent dot, at the geometric centre — logical anchor, not
     // a random freckle.
@@ -799,7 +799,7 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.ink
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.040
+        ..strokeWidth = size.shortestSide * 0.120 // 3× thicker
         ..strokeCap = StrokeCap.round,
     );
     // ONE deliberate solid circle above the squiggle — anchors the
@@ -912,7 +912,7 @@ class _MoodPainter extends CustomPainter {
       Paint()
         ..color = palette.accent
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.046
+        ..strokeWidth = size.shortestSide * 0.138 // 3× thicker
         ..strokeCap = StrokeCap.round,
     );
   }

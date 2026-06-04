@@ -51,7 +51,10 @@ class BookDetailScreen extends ConsumerWidget {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 300,
+                // Extend the cover well below the sheet's top so the coloured
+                // artwork continues *behind* the white panel — its rounded top
+                // then reads as overlapping the colour of the cover.
+                height: 440,
                 child: Hero(
                   tag: 'book-cover-${book.id}',
                   child: BookEditorialCover(

@@ -324,17 +324,30 @@ class MarginaliaDecorations {
         borderRadius: BorderRadius.circular(radius),
       );
 
-  /// Book cover — matcha-toned palette (unchanged)
+  /// Curated mood-board palette (Pantone references from the user) — reused
+  /// across avatars, profile backgrounds and procedural book covers for a
+  /// richer, more varied look than the previous matcha-only set.
+  static const Color pVintageWine = Color(0xFF3F1521);
+  static const Color pPastelYellow = Color(0xFFF2E6B1);
+  static const Color pReseda = Color(0xFFA1AD92);
+  static const Color pChive = Color(0xFF3E4123);
+  static const Color pPowderBlue = Color(0xFF94B2C4);
+  static const Color pDeepNavy = Color(0xFF13344C);
+  static const Color pCocoa = Color(0xFF6C5042);
+  static const Color pCoconut = Color(0xFFF0EDE5);
+
+  /// Book cover / avatar / profile background colour — richer multi-hue palette
+  /// (deep tones, so white initials stay legible) inspired by the mood-board.
   static Color bookCoverColor(String title) {
     const covers = [
-      Color(0xFF4A7035),
-      Color(0xFF3A6624),
-      Color(0xFF4E5E3A),
-      Color(0xFF254D16),
-      Color(0xFF5C8040),
-      Color(0xFF2D4B1E),
-      Color(0xFF506040),
-      Color(0xFF3D5C2A),
+      Color(0xFF3F1521), // vintage wine
+      Color(0xFF3E4123), // chive (deep olive)
+      Color(0xFF13344C), // deep navy
+      Color(0xFF6C5042), // cocoa brown
+      Color(0xFF254D16), // matcha deep (brand)
+      Color(0xFF4A7035), // matcha (brand)
+      Color(0xFF4E6E84), // powder-blue (deepened)
+      Color(0xFF5E6B4F), // reseda (deepened)
     ];
     return covers[title.hashCode.abs() % covers.length];
   }

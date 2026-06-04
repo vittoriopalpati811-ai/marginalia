@@ -376,7 +376,7 @@ class _BookAddPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final p = Paint()
       ..color = color
-      ..strokeWidth = 1.8
+      ..strokeWidth = 2.5 // bolder strokes to match the photo-5 reference
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;

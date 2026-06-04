@@ -1344,7 +1344,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
         // ── Body text ──────────────────────────────────────────────────────
         if (body != null && body.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            // Indented to line up with the username (avatar stays in the gutter).
+            padding: const EdgeInsets.fromLTRB(64, 8, 16, 0),
             child: Text(
               body,
               style: GoogleFonts.manrope(
@@ -1355,48 +1356,51 @@ class _PostCardState extends ConsumerState<_PostCard> {
             ),
           ),
 
-        // ── Post image (full-width, no horizontal padding) ─────────────────
+        // ── Post image — smaller, rounded box, indented under the username ──
         if (imageUrl != null && imageUrl.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Image.network(
-              imageUrl,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              loadingBuilder: (_, child, progress) => progress == null
-                  ? child
-                  : Container(
-                      height: 220,
-                      color: MarginaliaColors.surfaceElevated,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          color: MarginaliaColors.sienna,
-                          value: progress.expectedTotalBytes != null
-                              ? progress.cumulativeBytesLoaded /
-                                  progress.expectedTotalBytes!
-                              : null,
+            padding: const EdgeInsets.fromLTRB(64, 10, 16, 0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : Container(
+                        height: 180,
+                        color: MarginaliaColors.surfaceElevated,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: MarginaliaColors.sienna,
+                            value: progress.expectedTotalBytes != null
+                                ? progress.cumulativeBytesLoaded /
+                                    progress.expectedTotalBytes!
+                                : null,
+                          ),
                         ),
                       ),
+                errorBuilder: (_, __, ___) => Container(
+                  height: 64,
+                  color: MarginaliaColors.surfaceElevated,
+                  child: Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.broken_image_outlined,
+                            size: 18, color: MarginaliaColors.inkFaint),
+                        const SizedBox(width: 6),
+                        Text(
+                          context.l10n.feedImageUnavailable,
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: MarginaliaColors.inkFaint,
+                          ),
+                        ),
+                      ],
                     ),
-              errorBuilder: (_, __, ___) => Container(
-                height: 72,
-                color: MarginaliaColors.surfaceElevated,
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.broken_image_outlined,
-                          size: 18, color: MarginaliaColors.inkFaint),
-                      const SizedBox(width: 6),
-                      Text(
-                        context.l10n.feedImageUnavailable,
-                        style: GoogleFonts.manrope(
-                          fontSize: 11,
-                          color: MarginaliaColors.inkFaint,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -1406,7 +1410,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
         // ── Attached highlight quote ────────────────────────────────────────
         if (hlContent != null && hlContent.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+            padding: const EdgeInsets.fromLTRB(64, 10, 16, 0),
             child: _HighlightQuoteCard(
               content: hlContent,
               title: hlBookTitle,
@@ -1417,7 +1421,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
 
         // ── Action bar ─────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 14, 12),
+          padding: const EdgeInsets.fromLTRB(54, 8, 14, 12),
           child: Row(
             children: [
               // Like button
