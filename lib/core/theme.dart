@@ -23,15 +23,17 @@ class MarginaliaColors {
   static const inkMuted = Color(0xFF6F756E); // body / secondary (Airbnb-spec #717171 tinted green)
   static const inkFaint = Color(0xFFB0B5AE); // tertiary / hints
 
-  // Matcha accent — the brand color
-  static const sienna      = Color(0xFF4A7A35);
-  static const siennaLight = Color(0xFF6A9E52);
-  static const siennaFaint = Color(0xFFE4EFD9);
+  // Sage green — the brand color (#c0cfb2, founder-chosen), used as the single
+  // green across the WHOLE app. It is light, so foregrounds on top of it use a
+  // dark ink and accent text uses the darker `primaryDark` sage for legibility.
+  static const sienna      = Color(0xFFC0CFB2);
+  static const siennaLight = Color(0xFFD2DEC9);
+  static const siennaFaint = Color(0xFFECF1E6);
 
-  // Primary CTA — deep matcha
-  static const primary      = Color(0xFF3A6624);
-  static const primaryDark  = Color(0xFF254D16);
-  static const primaryFaint = Color(0xFFE8F3E1);
+  // Primary — sage fill + a readable darker sage for accent text/icons.
+  static const primary      = Color(0xFFC0CFB2);
+  static const primaryDark  = Color(0xFF8AA178);
+  static const primaryFaint = Color(0xFFECF1E6);
 
   // Borders / rules — used SPARINGLY. Airbnb avoids borders; prefer shadow.
   static const rule      = Color(0xFFE6E6E1);
@@ -399,7 +401,7 @@ ThemeData buildMarginaliaTheme() {
       surface: MarginaliaColors.background,
       surfaceContainerHighest: MarginaliaColors.surfaceElevated,
       primary: MarginaliaColors.primary,
-      onPrimary: Colors.white,
+      onPrimary: MarginaliaColors.ink,
       secondary: MarginaliaColors.sienna,
       onSurface: MarginaliaColors.ink,
       outline: MarginaliaColors.rule,
@@ -507,7 +509,7 @@ ThemeData buildMarginaliaTheme() {
     // ── Buttons ─────────────────────────────────────────────────────────────
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: MarginaliaColors.primary,
+        foregroundColor: MarginaliaColors.primaryDark,
         textStyle: GoogleFonts.manrope(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -517,7 +519,7 @@ ThemeData buildMarginaliaTheme() {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: MarginaliaColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: MarginaliaColors.ink,
         elevation: 0,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10)),
@@ -532,7 +534,7 @@ ThemeData buildMarginaliaTheme() {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: MarginaliaColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: MarginaliaColors.ink,
         elevation: 0,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10)),
@@ -561,7 +563,7 @@ ThemeData buildMarginaliaTheme() {
     chipTheme: ChipThemeData(
       backgroundColor: MarginaliaColors.primaryFaint,
       labelStyle: GoogleFonts.manrope(
-        color: MarginaliaColors.primary,
+        color: MarginaliaColors.primaryDark,
         fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
