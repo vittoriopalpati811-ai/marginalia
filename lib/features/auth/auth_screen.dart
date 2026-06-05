@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../settings/privacy_policy_screen.dart';
 import '../settings/terms_of_service_screen.dart';
+import 'email_otp_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -84,7 +85,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           } catch (_) {}
         }
         if (res.session == null && mounted) {
-          _showConfirmEmail();
+          // Email confirmation required → take the user straight to in-app OTP
+          // entry. Typing the 6-digit code is far more reliable on mobile than
+          // a magic link that must round-trip through Safari / a deep link.
+          Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => EmailOtpScreen(email: _emailController.text.trim()),
+          ));
           return;
         }
       }
@@ -96,28 +102,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _showConfirmEmail() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(context.l10n.onboardingCheckEmailTitle),
-        content: Text(
-          context.l10n.onboardingCheckEmailBody(_emailController.text.trim()),
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _tab.animateTo(0);
-            },
-            child: Text(context.l10n.onboardingCheckEmailCta),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _showForgotPassword() async {

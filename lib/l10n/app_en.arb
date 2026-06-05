@@ -945,5 +945,20 @@
   "@storyShareInstagram": {},
 
   "storyShareMore": "More apps",
-  "@storyShareMore": {}
+  "@storyShareMore": {},
+
+  "otpTitle": "Confirm your email",
+  "@otpTitle": {},
+  "otpSubtitle": "Enter the 6-digit code we sent to {email}",
+  "@otpSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "otpVerifyCta": "Confirm",
+  "@otpVerifyCta": {},
+  "otpResend": "Resend code",
+  "@otpResend": {},
+  "otpResendIn": "Resend in {seconds}s",
+  "@otpResendIn": { "placeholders": { "seconds": { "type": "int" } } },
+  "otpErrorInvalid": "Invalid or expired code. Please try again.",
+  "@otpErrorInvalid": {},
+  "otpResent": "We sent you a new code.",
+  "@otpResent": {}
 }

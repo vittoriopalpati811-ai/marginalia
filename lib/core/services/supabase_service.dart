@@ -128,6 +128,32 @@ class SupabaseService {
     );
   }
 
+  /// Confirms a freshly-signed-up email by verifying the 6-digit code Supabase
+  /// emailed the user. Requires the "Confirm signup" email template to include
+  /// `{{ .Token }}`. On success the returned [AuthResponse] carries an
+  /// authenticated session, flipping the user into the signed-in state.
+  ///
+  /// Typing the code is deliberately preferred over the magic link: a link must
+  /// round-trip through Safari + a deep link / web redirect (fragile on a fresh
+  /// install), whereas the OTP is verified directly against Supabase — no
+  /// redirect, no allow-list, nothing to misconfigure.
+  Future<AuthResponse> verifyEmailSignupOtp({
+    required String email,
+    required String token,
+  }) {
+    return _client.auth.verifyOTP(
+      type: OtpType.signup,
+      email: email,
+      token: token,
+    );
+  }
+
+  /// Re-sends the signup confirmation email (fresh 6-digit code + link). Rate
+  /// limited server-side by Supabase; the UI also enforces a local cooldown.
+  Future<void> resendSignupOtp(String email) {
+    return _client.auth.resend(type: OtpType.signup, email: email);
+  }
+
   /// Permanently deletes the current user's account and all their data.
   /// Calls the delete_my_account() RPC (migration 025) which cascades
   /// deletes through FK relationships in auth.users, then signs out.

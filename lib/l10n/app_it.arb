@@ -1691,5 +1691,20 @@
   "@storyShareInstagram": {},
 
   "storyShareMore": "Altre app",
-  "@storyShareMore": {}
+  "@storyShareMore": {},
+
+  "otpTitle": "Conferma la tua email",
+  "@otpTitle": {},
+  "otpSubtitle": "Inserisci il codice a 6 cifre che abbiamo inviato a {email}",
+  "@otpSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "otpVerifyCta": "Conferma",
+  "@otpVerifyCta": {},
+  "otpResend": "Invia di nuovo il codice",
+  "@otpResend": {},
+  "otpResendIn": "Invia di nuovo tra {seconds}s",
+  "@otpResendIn": { "placeholders": { "seconds": { "type": "int" } } },
+  "otpErrorInvalid": "Codice non valido o scaduto. Riprova.",
+  "@otpErrorInvalid": {},
+  "otpResent": "Ti abbiamo inviato un nuovo codice.",
+  "@otpResent": {}
 }
