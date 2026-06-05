@@ -12,9 +12,12 @@ import WatchConnectivity
 //     Watch via updateApplicationContext, where the watch app stores them in the
 //     shared App Group and reloads its complications.
 @main
-@objc class AppDelegate: FlutterAppDelegate, WCSessionDelegate,
-  UNUserNotificationCenterDelegate
+@objc class AppDelegate: FlutterAppDelegate, WCSessionDelegate
 {
+  // NOTE: FlutterAppDelegate ALREADY conforms to UNUserNotificationCenterDelegate
+  // and implements the delegate methods, so we must NOT re-declare the conformance
+  // (redundant-conformance error) and the delegate methods below must use
+  // `override` (they override FlutterAppDelegate's).
   private var pushChannel: FlutterMethodChannel?
   private var watchChannel: FlutterMethodChannel?
   private var localNotifChannel: FlutterMethodChannel?
@@ -168,7 +171,7 @@ import WatchConnectivity
   // terminated. `userInfo` is the APNs payload; the `send-push-notification`
   // edge function spreads its `data` object to the top level, so the custom
   // navigation keys (conversation_id, type, post_id) live directly on it.
-  func userNotificationCenter(
+  override func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
@@ -180,7 +183,7 @@ import WatchConnectivity
   // Show banner/sound even when a push arrives while the app is in the
   // foreground, so the user can still tap it to deep-link (otherwise iOS
   // suppresses foreground notifications entirely).
-  func userNotificationCenter(
+  override func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler:
