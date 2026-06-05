@@ -114,8 +114,18 @@ jobs:
           if printf '%s' "$ISS" | grep -Eiq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then echo "Issuer ID format OK"; else echo "::error title=Issuer ID malformed::APP_STORE_CONNECT_ISSUER_ID must be a UUID like 69a6de70-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Current length=${#ISS}"; ok=0; fi
           if printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | openssl pkey -noout 2>/dev/null; then echo ".p8 parses OK"; else echo "::error title=.p8 unparseable::APP_STORE_CONNECT_PRIVATE_KEY is not a valid private key. Re-copy the ENTIRE AuthKey_XXXX.p8 incl. the BEGIN/END lines."; ok=0; fi
           if printf '%s' "$CERTIFICATE_PRIVATE_KEY" | openssl pkey -noout 2>/dev/null; then echo "cert key parses OK"; else echo "::error title=cert key unparseable::CERTIFICATE_PRIVATE_KEY is not a valid private key."; ok=0; fi
+          # The App Store Connect .p8 is an EC (P-256) key; CERTIFICATE_PRIVATE_KEY
+          # is RSA. If they were pasted into each other's box, both parse but the
+          # JWT auth 401s. Detect the swap precisely.
+          ASC_TXT=$(printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | openssl pkey -noout -text 2>/dev/null)
+          CERT_TXT=$(printf '%s' "$CERTIFICATE_PRIVATE_KEY" | openssl pkey -noout -text 2>/dev/null)
+          if echo "$ASC_TXT" | grep -qiE 'prime256v1|id-ecpublickey|nist curve|ec private'; then ASC_KIND=EC; elif echo "$ASC_TXT" | grep -qiE 'modulus|publicexponent|rsa'; then ASC_KIND=RSA; else ASC_KIND=unknown; fi
+          if echo "$CERT_TXT" | grep -qiE 'prime256v1|id-ecpublickey|nist curve|ec private'; then CERT_KIND=EC; elif echo "$CERT_TXT" | grep -qiE 'modulus|publicexponent|rsa'; then CERT_KIND=RSA; else CERT_KIND=unknown; fi
+          echo "key kinds -> ASC .p8: $ASC_KIND (expected EC)   CERT: $CERT_KIND (expected RSA)"
+          [ "$ASC_KIND" = "RSA" ] && { echo "::error title=.p8 box holds the RSA key::APP_STORE_CONNECT_PRIVATE_KEY contains an RSA key, but the App Store Connect .p8 is EC. You SWAPPED the two: put the AuthKey_XXXX.p8 in APP_STORE_CONNECT_PRIVATE_KEY and the RSA key in CERTIFICATE_PRIVATE_KEY."; ok=0; }
+          [ "$CERT_KIND" = "EC" ] && { echo "::error title=cert box holds the .p8::CERTIFICATE_PRIVATE_KEY contains an EC key (that is the App Store Connect .p8). Swap the two secrets."; ok=0; }
           [ "$ok" = 1 ] || { echo "Fix the flagged secret(s) and re-run."; exit 1; }
-          echo "All signing secrets present and well-formed (so a 401 now means the three App Store Connect values don't belong to the SAME key)."
+          echo "Secrets present, well-formed, correct TYPES (ASC=EC, cert=RSA). If it still 401s, the Key ID / Issuer ID don't match the .p8 key."
 
       - name: Diag probe — fetch app signing profile (surfaces the real error fast)
         # TEMPORARY diagnostic: runs the app fetch-signing-files BEFORE the long
