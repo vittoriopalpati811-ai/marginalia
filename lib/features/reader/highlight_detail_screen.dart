@@ -1,8 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/highlights_provider.dart';
@@ -49,6 +50,23 @@ class HighlightDetailScreen extends ConsumerWidget {
                             .read(highlightFavoriteNotifierProvider.notifier)
                             .toggleFavorite(highlightId),
                       ),
+                      // Direct, always-visible "share as story" affordance —
+                      // the founder wants every highlight one tap from an
+                      // Instagram story. Reuses shareHighlightAsStory().
+                      IconButton(
+                        tooltip: context.l10n.shareAsStory,
+                        icon: const Icon(
+                          PhosphorIconsRegular.instagramLogo,
+                          color: MarginaliaColors.primaryDark,
+                          size: 21,
+                        ),
+                        onPressed: () => shareHighlightAsStory(
+                          context,
+                          text: h.content,
+                          title: h.bookTitle,
+                          author: h.bookAuthor,
+                        ),
+                      ),
                       // Share — menu with card vs. Instagram-story image
                       PopupMenuButton<_ShareAction>(
                         icon: const Icon(
@@ -91,7 +109,7 @@ class HighlightDetailScreen extends ConsumerWidget {
                           PopupMenuItem(
                             value: _ShareAction.story,
                             child: _ShareMenuRow(
-                              icon: Icons.auto_stories_outlined,
+                              icon: PhosphorIconsRegular.instagramLogo,
                               label: context.l10n.shareAsStory,
                             ),
                           ),
@@ -146,8 +164,12 @@ class _HighlightBody extends ConsumerWidget {
   }
 
   static int _bookId(dynamic h) {
-    try { return (h.book?.value?.id as int?) ?? -1; } catch (_) {}
-    try { return (h.bookId as int?) ?? -1; } catch (_) {}
+    try {
+      return (h.book?.value?.id as int?) ?? -1;
+    } catch (_) {}
+    try {
+      return (h.bookId as int?) ?? -1;
+    } catch (_) {}
     return -1;
   }
 
@@ -166,14 +188,17 @@ class _HighlightBody extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // ── Intestazione libro ─────────────────────────────────────────────
           if (embTitle != null)
-            _BookHeader(title: embTitle, author: embAuthor ?? '', accentColor: hlColor)
+            _BookHeader(
+                title: embTitle, author: embAuthor ?? '', accentColor: hlColor)
           else if (bookAsync != null)
             bookAsync.when(
               data: (book) => book != null
-                  ? _BookHeader(title: book.title, author: book.author, accentColor: hlColor)
+                  ? _BookHeader(
+                      title: book.title,
+                      author: book.author,
+                      accentColor: hlColor)
                   : const SizedBox(height: 16),
               loading: () => const SizedBox(height: 16),
               error: (_, __) => const SizedBox(height: 16),
@@ -208,7 +233,11 @@ class _HighlightBody extends ConsumerWidget {
                 )
                     .animate()
                     .fadeIn(duration: 700.ms, curve: Curves.easeOut)
-                    .slideY(begin: 0.03, end: 0, duration: 700.ms, curve: Curves.easeOut),
+                    .slideY(
+                        begin: 0.03,
+                        end: 0,
+                        duration: 700.ms,
+                        curve: Curves.easeOut),
 
                 const SizedBox(height: 40),
 
@@ -221,7 +250,8 @@ class _HighlightBody extends ConsumerWidget {
                       color: hlColor.withAlpha(180),
                     ),
                     Expanded(
-                      child: Container(height: 0.8, color: MarginaliaColors.ruleFaint),
+                      child: Container(
+                          height: 0.8, color: MarginaliaColors.ruleFaint),
                     ),
                   ],
                 ),
@@ -264,12 +294,14 @@ class _HighlightBody extends ConsumerWidget {
                     if ((highlight.location as String?) != null)
                       _MetaItem(
                         icon: Icons.straighten_outlined,
-                        label: context.l10n.bookLocationPrefix('${highlight.location}'),
+                        label: context.l10n
+                            .bookLocationPrefix('${highlight.location}'),
                       ),
                     if ((highlight.addedAt as DateTime?) != null)
                       _MetaItem(
                         icon: Icons.calendar_today_outlined,
-                        label: _formatDate(context, highlight.addedAt as DateTime),
+                        label:
+                            _formatDate(context, highlight.addedAt as DateTime),
                       ),
                     if ((highlight.color as String?) != null)
                       _MetaItem(
@@ -290,22 +322,23 @@ class _HighlightBody extends ConsumerWidget {
   }
 
   String _formatDate(BuildContext context, DateTime date) =>
-      DateFormat.yMMMd(Localizations.localeOf(context).languageCode).format(date);
+      DateFormat.yMMMd(Localizations.localeOf(context).languageCode)
+          .format(date);
 
   String _colorName(BuildContext context, String c) => switch (c) {
         'yellow' => context.l10n.colorYellow,
-        'blue'   => context.l10n.colorBlue,
-        'pink'   => context.l10n.colorPink,
+        'blue' => context.l10n.colorBlue,
+        'pink' => context.l10n.colorPink,
         'orange' => context.l10n.colorOrange,
-        _        => c,
+        _ => c,
       };
 
   Color _colorFor(String? c) => switch (c) {
         'yellow' => const Color(0xFFD4A017),
-        'blue'   => const Color(0xFF4A90BF),
-        'pink'   => const Color(0xFFBF4A72),
+        'blue' => const Color(0xFF4A90BF),
+        'pink' => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _        => MarginaliaColors.siennaLight,
+        _ => MarginaliaColors.siennaLight,
       };
 }
 
@@ -339,7 +372,8 @@ class _BookHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 8, height: 8,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
                   color: accentColor,
                   shape: BoxShape.circle,
@@ -434,4 +468,3 @@ class _ShareMenuRow extends StatelessWidget {
     );
   }
 }
-

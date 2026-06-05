@@ -676,6 +676,8 @@
   "feedReplyAction": "Reply",
   "feedEmptyTitle": "Your feed is empty",
   "feedCommentsSection": "COMMENTS",
+  "postDetailTitle": "Post",
+  "postUnavailable": "Post unavailable",
 
   "jamChangeCover": "Change Jam cover",
   "jamInviteFriends": "Invite friends",

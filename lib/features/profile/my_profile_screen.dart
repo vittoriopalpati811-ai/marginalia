@@ -543,6 +543,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     child: PostsTimeline(
                       posts: posts,
                       profile: profileAsync.value,
+                      onTapPost: (post) =>
+                          context.push('/post/${post['id']}'),
                     ),
                   ),
           ),

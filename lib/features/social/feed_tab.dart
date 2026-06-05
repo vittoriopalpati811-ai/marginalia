@@ -15,6 +15,7 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../messages/giphy_picker.dart';
+import 'share_post_sheet.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,19 @@ final followingProfilesProvider =
     return await svc.fetchFollowing();
   } catch (_) {
     return [];
+  }
+});
+
+/// A single post by id — used by [PostDetailScreen] (deep `/post/:id` route +
+/// profile post taps). Returns null when the post can't be loaded / found.
+final singlePostProvider = FutureProvider.autoDispose
+    .family<Map<String, dynamic>?, String>((ref, postId) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated) return null;
+  try {
+    return await svc.fetchPost(postId);
+  } catch (_) {
+    return null;
   }
 });
 
@@ -1225,6 +1239,18 @@ class _PostCardState extends ConsumerState<_PostCard> {
     );
   }
 
+  Future<void> _sharePost(BuildContext context) async {
+    final postId = widget.post['id'] as String?;
+    if (postId == null) return;
+    // First ~80 chars of the body become the message preview that rides along
+    // with the shared-post card in the chat.
+    final body = (widget.post['body'] as String? ?? '').trim();
+    final preview = body.isEmpty
+        ? null
+        : (body.length > 80 ? '${body.substring(0, 80)}…' : body);
+    await showSharePostSheet(context, postId: postId, previewText: preview);
+  }
+
   String _timeAgo(BuildContext context, String? iso) {
     if (iso == null) return '';
     final dt = DateTime.tryParse(iso);
@@ -1537,6 +1563,25 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
+              // Share button — paper plane opens the "send to chats" sheet for
+              // this post. Same icon vocabulary + sizing/color as like/comment.
+              GestureDetector(
+                onTap: () => _sharePost(context),
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    PhosphorIconsRegular.paperPlaneTilt,
+                    size: 18,
+                    color: MarginaliaColors.inkFaint,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -1641,6 +1686,135 @@ class _HighlightQuoteCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Single post detail screen ───────────────────────────────────────────────
+//
+// Opens ONE post full-screen and reuses the very same `_PostCard` the feed
+// renders, so every interaction (like, comment sheet, owner menu) works
+// identically — they all operate by postId and don't depend on the feed list.
+//
+// Reached from:
+//   • the `/post/:id` deep route (notification taps), and
+//   • tapping a post in a profile timeline.
+//
+// Because `_PostCard` is private to this file, this screen lives here too so it
+// can construct it directly with the fetched post Map.
+
+class PostDetailScreen extends ConsumerWidget {
+  const PostDetailScreen({super.key, required this.postId});
+  final String postId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final postAsync = ref.watch(singlePostProvider(postId));
+
+    return Scaffold(
+      backgroundColor: MarginaliaColors.background,
+      appBar: AppBar(
+        backgroundColor: MarginaliaColors.background,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: MarginaliaColors.ink),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Text(
+          context.l10n.postDetailTitle,
+          style: GoogleFonts.ebGaramond(
+            fontSize: 19,
+            fontWeight: FontWeight.w600,
+            color: MarginaliaColors.ink,
+            letterSpacing: -0.3,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: RefreshIndicator(
+        color: MarginaliaColors.sienna,
+        backgroundColor: MarginaliaColors.surface,
+        strokeWidth: 1.5,
+        onRefresh: () async {
+          ref.invalidate(singlePostProvider(postId));
+          await ref
+              .read(singlePostProvider(postId).future)
+              .catchError((_) => null);
+        },
+        child: postAsync.when(
+          loading: () => ListView(
+            physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics()),
+            children: const [
+              Padding(
+                padding: EdgeInsets.only(top: 120),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: MarginaliaColors.sienna,
+                    strokeWidth: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          error: (_, __) => _PostDetailEmpty(),
+          data: (post) => post == null
+              ? _PostDetailEmpty()
+              : ListView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics()),
+                  children: [
+                    // Same card as the feed → identical like / comment / menu.
+                    _PostCard(post: post, index: 0),
+                    SizedBox(
+                      height: MediaQuery.of(context).padding.bottom + 20,
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PostDetailEmpty extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // Scrollable so pull-to-refresh still works in the not-found state.
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics()),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(40, 120, 40, 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '"',
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 64,
+                  color: MarginaliaColors.ruleFaint,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                context.l10n.postUnavailable,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: MarginaliaColors.ink,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -12,16 +12,33 @@ import WatchConnectivity
 //     Watch via updateApplicationContext, where the watch app stores them in the
 //     shared App Group and reloads its complications.
 @main
-@objc class AppDelegate: FlutterAppDelegate, WCSessionDelegate {
+@objc class AppDelegate: FlutterAppDelegate, WCSessionDelegate,
+  UNUserNotificationCenterDelegate
+{
   private var pushChannel: FlutterMethodChannel?
   private var watchChannel: FlutterMethodChannel?
   private var localNotifChannel: FlutterMethodChannel?
+
+  // Cold-launch buffer. When the app is launched (or resumed from terminated)
+  // by tapping a push, `didReceive` can fire before the Flutter engine has
+  // attached its `onNotificationTap` handler — the invokeMethod would be lost.
+  // We stash the tapped notification's payload here and flush it the moment the
+  // Dart side signals it is ready (via the `tapHandlerReady` method on the
+  // `marginalia/push` channel).
+  private var pendingTapUserInfo: [AnyHashable: Any]?
+  private var tapHandlerReady = false
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+
+    // Receive notification taps (and foreground presentation) ourselves so we
+    // can deep-link. Safe to set here even though auth is requested later from
+    // Dart — the delegate only needs to be in place before a notification is
+    // delivered/tapped.
+    UNUserNotificationCenter.current().delegate = self
 
     // Activate WatchConnectivity so we can push context to the watch.
     if WCSession.isSupported() {
@@ -34,7 +51,7 @@ import WatchConnectivity
       let push = FlutterMethodChannel(
         name: "marginalia/push",
         binaryMessenger: controller.binaryMessenger)
-      push.setMethodCallHandler { call, result in
+      push.setMethodCallHandler { [weak self] call, result in
         switch call.method {
         case "register":
           UNUserNotificationCenter.current().requestAuthorization(
@@ -47,6 +64,13 @@ import WatchConnectivity
             }
             result(granted)
           }
+        case "tapHandlerReady":
+          // Dart has attached its onNotificationTap handler. Flush any tap that
+          // arrived during cold launch (terminated → tap → relaunch), then keep
+          // the flag so future taps route immediately.
+          self?.tapHandlerReady = true
+          self?.flushPendingTap()
+          result(nil)
         default:
           result(FlutterMethodNotImplemented)
         }
@@ -135,6 +159,71 @@ import WatchConnectivity
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
     NSLog("APNs registration failed: \(error.localizedDescription)")
+  }
+
+  // ── Notification tap → deep link ────────────────────────────────────────────
+
+  // Fired when the user TAPS a notification (banner, lock screen, or
+  // Notification Center) — whether the app was in the foreground, background, or
+  // terminated. `userInfo` is the APNs payload; the `send-push-notification`
+  // edge function spreads its `data` object to the top level, so the custom
+  // navigation keys (conversation_id, type, post_id) live directly on it.
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    forwardTap(response.notification.request.content.userInfo)
+    completionHandler()
+  }
+
+  // Show banner/sound even when a push arrives while the app is in the
+  // foreground, so the user can still tap it to deep-link (otherwise iOS
+  // suppresses foreground notifications entirely).
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler:
+      @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.alert, .badge, .sound])
+  }
+
+  // Sends the tapped notification's navigation data to Dart. The payload can
+  // contain non-Flutter-serialisable APNs internals (e.g. the `aps` dictionary),
+  // so we extract only the small set of keys the router understands into a clean
+  // [String: String] dict. If Dart hasn't attached its handler yet (cold launch
+  // from a terminated state), the tap is buffered and replayed on
+  // `tapHandlerReady`.
+  private func forwardTap(_ userInfo: [AnyHashable: Any]) {
+    let hasNavData = userInfo["conversation_id"] != nil
+      || userInfo["post_id"] != nil
+    guard hasNavData else { return }
+
+    guard tapHandlerReady, let channel = pushChannel else {
+      pendingTapUserInfo = userInfo
+      return
+    }
+
+    var payload: [String: String] = [:]
+    if let conversationId = userInfo["conversation_id"] as? String {
+      payload["conversation_id"] = conversationId
+    }
+    if let postId = userInfo["post_id"] as? String {
+      payload["post_id"] = postId
+    }
+    if let type = userInfo["type"] as? String {
+      payload["type"] = type
+    }
+
+    channel.invokeMethod("onNotificationTap", arguments: payload)
+  }
+
+  // Replays a tap that arrived before the Dart handler was ready.
+  private func flushPendingTap() {
+    guard let userInfo = pendingTapUserInfo else { return }
+    pendingTapUserInfo = nil
+    forwardTap(userInfo)
   }
 
   // ── Daily phrase local notification ───────────────────────────────────────────

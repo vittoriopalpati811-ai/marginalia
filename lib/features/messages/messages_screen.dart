@@ -8,6 +8,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/unread_messages_provider.dart';
+import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 
 // conversationsProvider lives in core/providers/unread_messages_provider.dart
@@ -170,22 +171,7 @@ class _MessagesHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Top-left bell → notifications ───────────────────────────────
-            GestureDetector(
-              onTap: () => context.push('/notifications'),
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: MarginaliaColors.ink.withAlpha(12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  PhosphorIconsRegular.bell,
-                  color: MarginaliaColors.ink,
-                  size: 18,
-                ),
-              ),
-            ),
+            const _NotificationBell(),
 
             // ── Centered title + subtitle ───────────────────────────────────
             Expanded(
@@ -219,6 +205,71 @@ class _MessagesHeader extends StatelessWidget {
             const SizedBox(width: 34),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Notification Bell (with unread red dot) ─────────────────────────────────
+//
+// Top-left header bell that taps to /notifications. Watches
+// [unreadNotificationCountProvider] so it rebuilds when the unread count
+// changes: opening /notifications marks them read (markNotificationRead /
+// markAll in notifications_screen), which lowers the count → the dot
+// disappears. The dot only shows when the count resolves to > 0; while the
+// provider is loading or errored, no dot is shown.
+//
+// The red dot matches the bottom-nav unread badge style (see app.dart): a
+// 10px red circle with a 1.5px white border, here pinned to the TOP-RIGHT
+// corner of the bell icon via a Stack + Positioned (clipBehavior.none so it
+// can overhang the icon's edge).
+
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Only treat a successfully-loaded positive count as "unread"; loading and
+    // error states resolve to 0 → no dot.
+    final unreadCount =
+        ref.watch(unreadNotificationCountProvider).valueOrNull ?? 0;
+
+    return GestureDetector(
+      onTap: () => context.push('/notifications'),
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: MarginaliaColors.ink.withAlpha(12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              PhosphorIconsRegular.bell,
+              color: MarginaliaColors.ink,
+              size: 18,
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: 4,
+              top: 4,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

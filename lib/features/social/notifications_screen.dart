@@ -15,14 +15,28 @@ import '../../core/l10n/l10n_extension.dart';
 /// is no sensible destination.
 ///
 /// `like` / `comment` notifications (created by notify_post_interaction) carry
-/// `actor_id` (+ `post_id`) in their `data` jsonb. There is no standalone
-/// post route in the app — posts are shown in bottom sheets inside profile /
-/// feed timelines — so the most useful tap target is the ACTOR's profile (the
-/// person who liked/commented). Jam-related notifications carry `jam_id` and
-/// open the Jam.
+/// `post_id` (+ `actor_id`) in their `data` jsonb (see migration 036), so they
+/// open the POST itself (`/post/:id`). If `post_id` is somehow missing we fall
+/// back to the ACTOR's profile (the person who liked/commented). Jam-related
+/// notifications carry `jam_id` and open the Jam.
 String? _notificationDestination(Map<String, dynamic> n) {
   final data = n['data'];
   if (data is! Map) return null;
+  final type = n['type'] as String? ?? '';
+  if (type == 'like' || type == 'comment') {
+    final postId = data['post_id'] as String?;
+    if (postId != null && postId.isNotEmpty) return '/post/$postId';
+    // Fall back to the actor's profile if the post id is missing.
+    final actorId = data['actor_id'] as String?;
+    if (actorId != null && actorId.isNotEmpty) return '/user/$actorId';
+    return null;
+  }
+  if (type.startsWith('jam_')) {
+    final jamId = (data['jam_id'] ?? n['jam_id']) as String?;
+    if (jamId != null && jamId.isNotEmpty) return '/jam/$jamId';
+    return null;
+  }
+  // Unknown type: best-effort generic resolution (actor profile, then jam).
   final actorId = data['actor_id'] as String?;
   if (actorId != null && actorId.isNotEmpty) return '/user/$actorId';
   final jamId = (data['jam_id'] ?? n['jam_id']) as String?;
@@ -58,27 +72,6 @@ class NotificationsScreen extends ConsumerWidget {
             color: MarginaliaColors.ink,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await ref
-                    .read(supabaseServiceProvider)
-                    .markAllNotificationsRead();
-                ref.invalidate(notificationsProvider);
-                ref.invalidate(unreadNotificationCountProvider);
-              } catch (_) {}
-            },
-            child: Text(
-              context.l10n.notificationsMarkAllRead,
-              style: GoogleFonts.manrope(
-                fontSize: 13,
-                color: MarginaliaColors.primaryDark,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
       body: notificationsAsync.when(
         data: (notifications) => notifications.isEmpty

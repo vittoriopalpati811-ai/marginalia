@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -754,8 +755,9 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content    = message['content']   as String?;
-    final imageUrl   = message['image_url'] as String?;
+    final content      = message['content']        as String?;
+    final imageUrl     = message['image_url']      as String?;
+    final sharedPostId = message['shared_post_id'] as String?;
     final sender     = message['sender']    as Map<String, dynamic>? ?? {};
     final senderId   = message['sender_id'] as String?;
     // Tombstone detection: when a profile is soft-deleted via
@@ -824,6 +826,17 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ),
                 ],
+                // A shared post renders as a compact tappable card (icon +
+                // "Post condiviso" + any preview text) that opens /post/:id.
+                // It replaces the normal text/image rendering for this message.
+                if (sharedPostId != null && sharedPostId.isNotEmpty)
+                  _SharedPostCard(
+                    isMe: isMe,
+                    isOptimistic: isOptimistic,
+                    previewText: content,
+                    onTap: () => context.push('/post/$sharedPostId'),
+                  )
+                else ...[
                 // Images and GIFs render WITHOUT the coloured bubble so the
                 // chat feels lighter and the media stands on its own (the
                 // bubble border read as visual clutter around imagery).
@@ -865,6 +878,7 @@ class _MessageBubble extends StatelessWidget {
                       ),
                     ),
                   ),
+                ],
                 const SizedBox(height: 3),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -945,6 +959,135 @@ class _BubbleContainer extends StatelessWidget {
             : Border.all(color: MarginaliaColors.rule, width: 0.5),
       ),
       child: child,
+    );
+  }
+}
+
+// ─── Shared Post Card ─────────────────────────────────────────────────────────
+//
+// Compact, tappable card rendered in place of a normal bubble when a message
+// carries a `shared_post_id`. Tapping opens the post via /post/:id (the route
+// already exists). Shows a small "post" glyph, the "Post condiviso" label, the
+// optional preview text the sender attached, and a chevron affordance.
+
+class _SharedPostCard extends StatelessWidget {
+  const _SharedPostCard({
+    required this.isMe,
+    required this.isOptimistic,
+    required this.previewText,
+    required this.onTap,
+  });
+
+  final bool isMe;
+  final bool isOptimistic;
+  final String? previewText;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = previewText?.trim();
+    final hasPreview =
+        preview != null && preview.isNotEmpty && preview != 'Post condiviso';
+
+    return Opacity(
+      opacity: isOptimistic ? 0.7 : 1.0,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.68,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: isMe
+                ? MarginaliaColors.primary
+                : MarginaliaColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isMe
+                  ? MarginaliaColors.primaryDark.withAlpha(80)
+                  : MarginaliaColors.rule,
+              width: 0.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? Colors.white.withAlpha(60)
+                          : MarginaliaColors.primaryFaint,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(
+                      PhosphorIconsRegular.article,
+                      size: 17,
+                      color: isMe ? Colors.white : MarginaliaColors.primaryDark,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Post condiviso',
+                          style: GoogleFonts.manrope(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isMe ? Colors.white : MarginaliaColors.ink,
+                          ),
+                        ),
+                        Text(
+                          'Tocca per aprire',
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: isMe
+                                ? Colors.white.withAlpha(210)
+                                : MarginaliaColors.inkFaint,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    PhosphorIconsRegular.caretRight,
+                    size: 15,
+                    color: isMe
+                        ? Colors.white.withAlpha(210)
+                        : MarginaliaColors.inkFaint,
+                  ),
+                ],
+              ),
+              if (hasPreview) ...[
+                const SizedBox(height: 10),
+                Text(
+                  preview,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: isMe
+                        ? Colors.white.withAlpha(235)
+                        : MarginaliaColors.inkMuted,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

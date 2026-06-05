@@ -141,6 +141,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
     final codeController = TextEditingController();
     await showModalBottomSheet<void>(
       context: context,
+      // Present on the ROOT navigator so the sheet floats above the shell's
+      // bottom navbar overlay. Opened on the shell navigator it would render
+      // UNDER the floating navbar and the "Entra" button would be untappable.
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: MarginaliaColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
@@ -834,14 +838,24 @@ class _JoinJamSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    // Reserve the floating navbar height (64) + the device safe-area bottom so
+    // the "Entra" button always clears the navbar overlay, even on the rare
+    // path where this sheet is shown on the shell navigator. `navInset` is the
+    // same convention route content uses (64 + MediaQuery.padding.bottom).
+    const navBarHeight = 64.0;
+    final navInset = navBarHeight + safeBottom;
     // Keep the sheet short and anchored to the BOTTOM of the screen so the
     // title + invite-code field + "Entra" button sit comfortably in the
     // lower-middle (previously the sheet climbed up toward the notch because
     // the field auto-focused on open and the sheet grew to clear the
     // keyboard). We no longer autofocus: the sheet opens low and calm, and
-    // only lifts via `viewInsets` once the user taps the field.
+    // only lifts via `viewInsets` once the user taps the field. The bottom
+    // padding is the max of the keyboard inset and the navbar inset so the CTA
+    // is never obscured by either.
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, 28, 24, viewInsets + 28),
+      padding:
+          EdgeInsets.fromLTRB(24, 28, 24, math.max(viewInsets, navInset) + 28),
       // Scrollable so the field + "Entra" button stay above the keyboard once
       // it opens, with no top clipping on short screens.
       child: SingleChildScrollView(
@@ -914,9 +928,14 @@ class _EmptyJams extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reserve the floating navbar inset (64 + safe-area bottom) as extra bottom
+    // padding so the centered column — in particular the "Unisciti con codice"
+    // button at the very bottom — is pushed comfortably ABOVE the navbar
+    // overlay and stays fully tappable instead of falling into the bottom 64px.
+    final navInset = 64.0 + MediaQuery.of(context).padding.bottom;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: EdgeInsets.fromLTRB(40, 40, 40, 40 + navInset),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -59,7 +59,8 @@ Future<void> shareHighlightAsStory(
   // widget may be disposed by the time the async render completes.
   final origin = shareOrigin(context);
   final l10n = context.l10n;
-  final fallbackText = _storyShareText(l10n.shareHighlightCallToAction, text, title);
+  final fallbackText =
+      _storyShareText(l10n.shareHighlightCallToAction, text, title);
 
   // Web can't rasterise an off-screen RepaintBoundary reliably here — share
   // text instead so the action still does something useful.
@@ -108,8 +109,8 @@ Future<void> shareHighlightAsStory(
     await _waitForFrames(2);
     await Future<void>.delayed(const Duration(milliseconds: 120));
 
-    final boundary =
-        boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    final boundary = boundaryKey.currentContext?.findRenderObject()
+        as RenderRepaintBoundary?;
     if (boundary != null) {
       // If layout somehow hasn't happened yet, give it one more frame.
       if (boundary.debugNeedsPaint) {
@@ -283,84 +284,97 @@ class HighlightStoryCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(40, 96, 40, 96),
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Opening quotation mark — subtle, decorative.
-                    Text(
-                      '“',
-                      style: GoogleFonts.ebGaramond(
-                        fontSize: 92,
-                        height: 0.7,
-                        fontWeight: FontWeight.w600,
-                        color: _cream.withAlpha(77), // ~30%
-                      ),
+                // FittedBox guards the fixed 9:16 frame: even after the
+                // word-boundary trim + fluid type sizing, an extreme-length
+                // highlight (plus a long title/author) is scaled down to fit
+                // rather than overflowing the column. Constrained to the
+                // content width so only vertical scaling kicks in.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: _kStoryWidth - 80, // matches L/R padding
                     ),
-                    const SizedBox(height: 4),
-
-                    // The highlight — legible roman (NON-italic) Garamond.
-                    Text(
-                      _excerpt,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.ebGaramond(
-                        fontSize: _quoteFontSize,
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                        color: _cream,
-                        letterSpacing: 0.15,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withAlpha(115), // ~45%
-                            blurRadius: 14,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    if (safeTitle.isNotEmpty || safeAuthor.isNotEmpty) ...[
-                      const SizedBox(height: 28),
-                      // Short rule between quote and attribution.
-                      Container(
-                        width: 34,
-                        height: 1.4,
-                        decoration: BoxDecoration(
-                          color: _cream.withAlpha(140), // ~55%
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (safeTitle.isNotEmpty)
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Opening quotation mark — subtle, decorative.
                         Text(
-                          safeTitle,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          '“',
                           style: GoogleFonts.ebGaramond(
-                            fontSize: 17,
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.w500,
-                            color: _cream.withAlpha(235), // ~92%
-                            height: 1.3,
-                          ),
-                        ),
-                      if (safeAuthor.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          safeAuthor.toUpperCase(),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.manrope(
-                            fontSize: 10,
+                            fontSize: 92,
+                            height: 0.7,
                             fontWeight: FontWeight.w600,
-                            color: _cream.withAlpha(158), // ~62%
-                            letterSpacing: 1.6,
+                            color: _cream.withAlpha(77), // ~30%
                           ),
                         ),
+                        const SizedBox(height: 4),
+
+                        // The highlight — legible roman (NON-italic) Garamond.
+                        Text(
+                          _excerpt,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.ebGaramond(
+                            fontSize: _quoteFontSize,
+                            height: 1.5,
+                            fontWeight: FontWeight.w500,
+                            color: _cream,
+                            letterSpacing: 0.15,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withAlpha(115), // ~45%
+                                blurRadius: 14,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        if (safeTitle.isNotEmpty || safeAuthor.isNotEmpty) ...[
+                          const SizedBox(height: 28),
+                          // Short rule between quote and attribution.
+                          Container(
+                            width: 34,
+                            height: 1.4,
+                            decoration: BoxDecoration(
+                              color: _cream.withAlpha(140), // ~55%
+                              borderRadius: BorderRadius.circular(1),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          if (safeTitle.isNotEmpty)
+                            Text(
+                              safeTitle,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.ebGaramond(
+                                fontSize: 17,
+                                fontStyle: FontStyle.italic,
+                                fontWeight: FontWeight.w500,
+                                color: _cream.withAlpha(235), // ~92%
+                                height: 1.3,
+                              ),
+                            ),
+                          if (safeAuthor.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              safeAuthor.toUpperCase(),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.manrope(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _cream.withAlpha(158), // ~62%
+                                letterSpacing: 1.6,
+                              ),
+                            ),
+                          ],
+                        ],
                       ],
-                    ],
-                  ],
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -1422,6 +1422,8 @@
   "feedReplyAction": "Rispondi",
   "feedEmptyTitle": "Il tuo feed è vuoto",
   "feedCommentsSection": "COMMENTI",
+  "postDetailTitle": "Post",
+  "postUnavailable": "Post non disponibile",
 
   "jamChangeCover": "Cambia copertina Jam",
   "jamInviteFriends": "Invita amici",

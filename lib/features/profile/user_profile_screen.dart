@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
@@ -354,6 +355,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         child: PostsTimeline(
                           posts: posts,
                           profile: profile,
+                          onTapPost: (post) =>
+                              context.push('/post/${post['id']}'),
                         ),
                       ),
                 loading: () => const SliverToBoxAdapter(

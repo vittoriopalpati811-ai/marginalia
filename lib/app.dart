@@ -33,6 +33,7 @@ import 'features/social/jam_book_voting_screen.dart';
 import 'features/social/jam_challenge_screen.dart';
 import 'features/social/jam_poll_screen.dart';
 import 'features/social/notifications_screen.dart';
+import 'features/social/feed_tab.dart';
 import 'features/profile/user_profile_screen.dart';
 import 'features/profile/my_profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
@@ -236,6 +237,17 @@ final router = GoRouter(
       pageBuilder: (_, state) {
         final id = state.pathParameters['id'] ?? '';
         return _pushPage(UserProfileScreen(userId: id), state);
+      },
+    ),
+    // Single post — full-screen push. Used by notification taps (deep link)
+    // and by tapping a post in a profile timeline. Opens the post in the same
+    // interactive card the feed uses (like / comment / menu all work).
+    GoRoute(
+      path: '/post/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return _pushPage(PostDetailScreen(postId: id), state);
       },
     ),
     GoRoute(

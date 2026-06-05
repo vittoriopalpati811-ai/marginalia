@@ -1157,6 +1157,50 @@ class SupabaseService {
     }).toList();
   }
 
+  /// Fetch a SINGLE post by id, shaped exactly like the rows from
+  /// [fetchPosts] (same highlight/book join, author profile, and the
+  /// current user's like state) so the same post card can render it.
+  /// Returns null when the post doesn't exist (or is not visible under RLS).
+  Future<Map<String, dynamic>?> fetchPost(String postId) async {
+    final row = await _client
+        .from('posts')
+        .select('''
+          *,
+          highlights(id, content, color, books(title, author))
+        ''')
+        .eq('id', postId)
+        .maybeSingle();
+    if (row == null) return null;
+
+    final post = Map<String, dynamic>.from(row);
+
+    // Author profile (same fields as fetchPosts).
+    final ownerId = post['user_id'] as String?;
+    if (ownerId != null) {
+      final profile = await _client
+          .from('profiles')
+          .select('id, display_name, avatar_url, currently_reading_title')
+          .eq('id', ownerId)
+          .maybeSingle();
+      post['profile'] = profile;
+    }
+
+    // Whether the current user liked it.
+    var isLiked = false;
+    if (isAuthenticated && userId != null) {
+      final like = await _client
+          .from('post_likes')
+          .select('post_id')
+          .eq('post_id', postId)
+          .eq('user_id', userId!)
+          .maybeSingle();
+      isLiked = like != null;
+    }
+    post['is_liked'] = isLiked;
+
+    return post;
+  }
+
   Future<void> togglePostLike(String postId, bool currentlyLiked) async {
     if (currentlyLiked) {
       await _client
@@ -1629,7 +1673,8 @@ class SupabaseService {
     final rows = List<Map<String, dynamic>>.from(
       await _client
           .from('messages')
-          .select('id, conversation_id, sender_id, content, image_url, created_at')
+          .select(
+              'id, conversation_id, sender_id, content, image_url, shared_post_id, created_at')
           .eq('conversation_id', conversationId)
           .order('created_at', ascending: true)
           .limit(200) as List,
@@ -1654,10 +1699,16 @@ class SupabaseService {
   }
 
   /// Send a text or image message in a conversation.
+  ///
+  /// [sharedPostId], when provided, attaches a reference to a feed post so the
+  /// message renders in the chat as a tappable "post condiviso" card (see
+  /// migration 040). It is independent of [content]/[imageUrl] — a share
+  /// usually carries a short preview [content] plus the post id.
   Future<void> sendMessage(
     String conversationId, {
     String? content,
     String? imageUrl,
+    String? sharedPostId,
   }) async {
     final now = DateTime.now().toIso8601String();
     await _client.from('messages').insert({
@@ -1665,6 +1716,7 @@ class SupabaseService {
       'sender_id': userId,
       if (content != null && content.trim().isNotEmpty) 'content': content.trim(),
       if (imageUrl != null) 'image_url': imageUrl,
+      if (sharedPostId != null) 'shared_post_id': sharedPostId,
       'created_at': now,
     });
     await _client
@@ -1676,6 +1728,28 @@ class SupabaseService {
     // this reaches recipients whose app is closed). Never blocks/fails the send.
     // ignore: discarded_futures
     _notifyConversationMembers(conversationId, content: content);
+  }
+
+  /// Share a feed post into an existing conversation.
+  ///
+  /// Sends a normal message carrying a short [previewText] (falling back to
+  /// "Post condiviso") AND the post reference, so the recipient sees a tappable
+  /// card in the chat that opens /post/:id. Reuses [sendMessage], so the push
+  /// notification + conversation `updated_at` bump happen exactly as for any
+  /// other message.
+  Future<void> sharePostToConversation(
+    String conversationId,
+    String postId, {
+    String? previewText,
+  }) async {
+    final preview = (previewText != null && previewText.trim().isNotEmpty)
+        ? previewText.trim()
+        : 'Post condiviso';
+    await sendMessage(
+      conversationId,
+      content: preview,
+      sharedPostId: postId,
+    );
   }
 
   /// Best-effort APNs push to the OTHER members of [conversationId] when a
