@@ -271,10 +271,22 @@ jobs:
 
       - name: Build IPA
         run: |
+          set +e
           xcode-project build-ipa \
             --workspace ios/Runner.xcworkspace \
             --scheme Runner \
-            --config Release
+            --config Release 2>&1 | tee /tmp/buildipa.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "=== Build IPA failed (rc=$rc) — extracting real error ==="
+            ERR=$(grep -hE "error:|fatal error|The following build commands failed|Command .* failed|Undefined symbol|No profiles|provisioning profile|requires a provisioning|code ?sign|ITMS|Error \(Xcode\)" /tmp/buildipa.log /tmp/xcodebuild_logs/*.log 2>/dev/null | grep -viE "0 errors|errors generated\." | tail -n 30)
+            echo "----- extracted -----"
+            echo "$ERR"
+            echo "---------------------"
+            MSG=$(printf '%s' "$ERR" | tr '\n\r\t' '   ' | tail -c 1700)
+            echo "::error title=Build IPA error::${MSG:-see logs (no pattern matched)}"
+            exit "$rc"
+          fi
 
       - name: Publish to TestFlight (internal)
         # Uploads the IPA to App Store Connect; once Apple finishes processing,
