@@ -18,6 +18,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/highlight.dart';
+import '../services/daily_phrase_cache.dart';
 import '../providers/auth_provider.dart';
 import '../providers/highlights_provider.dart';
 import '../providers/weather_provider.dart';
@@ -27,12 +28,19 @@ import '../providers/onboarding_provider.dart';
 
 // ─── 3-hour stability cache ─────────────────────────────────────────────────
 //
-// The chosen phrase must stay STABLE for a 3-hour window regardless of
-// pull-to-refresh, scroll, or re-watch — the user should NOT get a new phrase
-// every time they swipe to refresh. This module-level cache lives OUTSIDE the
-// provider's state, so it survives `ref.invalidate(dailyHighlightProvider)`:
-// once a phrase is chosen for a 3h bucket it's reused until the bucket rolls
-// over (or the 3h self-invalidate timer fires).
+// The chosen phrase must stay STABLE for a 3-hour clock-aligned window (buckets
+// at 00/03/06/09/…) regardless of pull-to-refresh, scroll, re-watch, OR app
+// restart — the user should NOT get a new phrase every time they swipe to
+// refresh or reopen the app.
+//
+// Two layers keep it stable:
+//   1. This module-level cache (fast path) lives OUTSIDE the provider's state,
+//      so it survives `ref.invalidate(dailyHighlightProvider)` within a running
+//      session.
+//   2. DailyPhraseCache persists the pick to DISK, so it also survives a cold
+//      start: on the first run of a bucket after restart we read it back and
+//      reuse the SAME highlight instead of asking the (non-deterministic) Groq
+//      picker again. Disk is a no-op on web.
 String? _cachedBucketKey;
 int? _cachedHighlightId;
 
@@ -78,21 +86,42 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
   final now       = DateTime.now();
   final bucketKey = _bucketKey(now);
 
-  // Already chose for this 3h bucket? Reuse it (survives pull-to-refresh / scroll
-  // / re-watch) as long as that highlight still exists in the library.
+  // Fast path: already chose for this 3h bucket in-memory? Reuse it (survives
+  // pull-to-refresh / scroll / re-watch) as long as that highlight still exists
+  // in the library.
   if (_cachedBucketKey == bucketKey && _cachedHighlightId != null) {
     for (final h in all) {
       if (h.id == _cachedHighlightId) {
-        debugPrint('[DailyHL] reusing pick for bucket $bucketKey');
+        debugPrint('[DailyHL] reusing in-memory pick for bucket $bucketKey');
         return h;
       }
     }
   }
 
-  // Records the chosen highlight for this bucket so subsequent runs are stable.
+  // Cold-start path: the in-memory cache was lost on restart. Read the on-disk
+  // pick — if it's for THIS bucket and still exists in the library, reuse it
+  // (re-seeding the in-memory cache) WITHOUT calling Groq, so the phrase is
+  // identical to before the restart. Guarded inside DailyPhraseCache; a miss or
+  // I/O failure just falls through to a fresh pick.
+  final diskId = await DailyPhraseCache.read(bucketKey);
+  if (diskId != null) {
+    for (final h in all) {
+      if (h.id == diskId) {
+        _cachedBucketKey = bucketKey;
+        _cachedHighlightId = h.id;
+        debugPrint('[DailyHL] reusing disk pick for bucket $bucketKey');
+        return h;
+      }
+    }
+  }
+
+  // Records the chosen highlight for this bucket (in-memory + disk) so
+  // subsequent runs — including after a cold start — are stable.
   Highlight remember(Highlight h) {
     _cachedBucketKey = bucketKey;
     _cachedHighlightId = h.id;
+    // Fire-and-forget disk write; never blocks or breaks the phrase on failure.
+    unawaited(DailyPhraseCache.write(bucketKey, h.id));
     return h;
   }
 

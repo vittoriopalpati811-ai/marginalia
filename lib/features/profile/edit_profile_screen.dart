@@ -21,19 +21,32 @@ class _GP {
   List<Color> get colors => [a, b];
 }
 
+// MUST stay in sync with `_kGradients` in my_profile_screen.dart — same keys,
+// same Pantone colours. The picker swatch is a 2-stop gradient, so it uses the
+// new palette's top stop (`a`) and bottom stop (`b`); the profile background
+// itself adds the middle Pantone stop. Previously this list still held the OLD
+// dark colours (Sepia/Forest/Ocean = brown/green/blue) while the profile had
+// already moved to the Pantone palette — so every swatch showed a colour and
+// label that did NOT match the background the selection actually applied.
 const _kGradients = [
-  _GP('sepia',    'Sepia',    Color(0xFF6B4C3B), Color(0xFF2C1810)),
-  _GP('forest',   'Forest',   Color(0xFF2D5A3D), Color(0xFF132A1E)),
-  _GP('ocean',    'Ocean',    Color(0xFF1A3A5C), Color(0xFF09141F)),
-  _GP('dusk',     'Dusk',     Color(0xFF6B3A7A), Color(0xFF1A0B26)),
-  _GP('rose',     'Rose',     Color(0xFF7A3A4E), Color(0xFF2E1020)),
-  _GP('graphite', 'Graphite', Color(0xFF3C3C3C), Color(0xFF141414)),
-  _GP('amber',    'Amber',    Color(0xFF7A4E1A), Color(0xFF2C1A06)),
-  _GP('slate',    'Slate',    Color(0xFF2A3A4E), Color(0xFF0D141E)),
+  _GP('sepia',    'Vintage Wine',  Color(0xFF694852), Color(0xFF2C0F17)),
+  _GP('forest',   'Pastel Yellow', Color(0xFFF3E8B9), Color(0xFFCBC195)),
+  _GP('ocean',    'Reseda',        Color(0xFFB0BAA3), Color(0xFF7E8772)),
+  _GP('dusk',     'Chive',         Color(0xFF686B53), Color(0xFF2B2E18)),
+  _GP('rose',     'Powder Blue',   Color(0xFFA5BECD), Color(0xFF738B99)),
+  _GP('graphite', 'Navy 2965C',    Color(0xFF476173), Color(0xFF0D2435)),
+  _GP('amber',    'Cocoa Brown',   Color(0xFF8C766C), Color(0xFF4C382E)),
+  _GP('slate',    'Coconut Milk',  Color(0xFFF2EFE8), Color(0xFFCAC7C0)),
 ];
 
 _GP _gpFor(String key) =>
     _kGradients.firstWhere((g) => g.key == key, orElse: () => _kGradients.first);
+
+// Pick a foreground (check icon) colour that reads on a given swatch. The new
+// Pantone palette includes very light presets (Pastel Yellow, Coconut Milk,
+// Reseda, Powder Blue) where a white check is invisible; for those we use ink.
+Color _onSwatch(Color c) =>
+    c.computeLuminance() > 0.55 ? MarginaliaColors.ink : Colors.white;
 
 // Render-time localized label for a gradient, keyed by the stable gradient id.
 // The const _kGradients list above cannot use context.l10n, so the display
@@ -572,8 +585,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight),
                                   borderRadius: BorderRadius.circular(12),
+                                  // Ink ring (not white): a white selection
+                                  // border vanishes on the light Pantone
+                                  // swatches, so the user couldn't tell which
+                                  // preset was selected.
                                   border: Border.all(
-                                    color: sel ? Colors.white : Colors.transparent,
+                                    color: sel
+                                        ? MarginaliaColors.ink
+                                        : Colors.transparent,
                                     width: 2.5,
                                   ),
                                   boxShadow: sel
@@ -586,9 +605,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       : null,
                                 ),
                                 child: sel
-                                    ? const Center(
+                                    ? Center(
                                         child: Icon(Icons.check,
-                                            color: Colors.white, size: 16))
+                                            color: _onSwatch(g.a), size: 16))
                                     : null,
                               ),
                               const SizedBox(height: 6),
