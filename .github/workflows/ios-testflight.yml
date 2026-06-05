@@ -1,0 +1,235 @@
+# iOS → TestFlight on GitHub Actions (FREE macOS runners — public repo)
+# ──────────────────────────────────────────────────────────────────────────────
+# This is a 1:1 port of codemagic.yaml so the OUTPUT is identical: same Flutter
+# 3.22.0, same widget + Apple-Watch target injection, same App Store Connect
+# signing (we install Codemagic's OWN open-source CLI — `codemagic-cli-tools` —
+# and call the exact same `app-store-connect` / `keychain` / `xcode-project`
+# commands), same CFBundleVersion=timestamp, same internal-TestFlight upload.
+#
+# Why this exists: Codemagic free tier is 500 build-min/month and gets exhausted.
+# This repo is PUBLIC, so GitHub's macOS runners are free with no monthly cap.
+# codemagic.yaml is kept as-is — both paths build the same thing.
+#
+# ┌─ ONE-TIME founder setup: add these 4 repository secrets ────────────────────┐
+# │  GitHub → repo → Settings → Secrets and variables → Actions → New secret    │
+# │                                                                             │
+# │  1. APP_STORE_CONNECT_KEY_IDENTIFIER  — the App Store Connect API Key ID    │
+# │  2. APP_STORE_CONNECT_ISSUER_ID       — the Issuer ID (same key page)       │
+# │  3. APP_STORE_CONNECT_PRIVATE_KEY     — the WHOLE contents of the .p8 file   │
+# │       (App Store Connect → Users and Access → Integrations → App Store      │
+# │        Connect API → generate a key with App Manager/Admin access, download │
+# │        the AuthKey_XXXX.p8 ONCE, paste its full text incl. BEGIN/END lines) │
+# │  4. CERTIFICATE_PRIVATE_KEY           — an RSA private key for the iOS dist  │
+# │       certificate. Generate once on any machine:                            │
+# │           openssl genrsa 2048                                               │
+# │       and paste the full PEM (-----BEGIN RSA PRIVATE KEY----- … END).       │
+# │       (Same key reused every build so Apple's cert cap isn't hit. If        │
+# │        `--create` later says the cert cap is full, revoke an old            │
+# │        distribution cert in the Apple Developer portal and re-run.)         │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+# The same App Store Connect API key you already use in Codemagic works here —
+# if you saved its .p8 you can reuse it; otherwise just generate a new one
+# (free, takes a minute). Nothing else is needed; certs/profiles are created
+# automatically on the first green run, exactly like Codemagic.
+
+name: iOS → TestFlight
+
+on:
+  push:
+    branches:
+      - feat/profile-ui-privacy
+      - main
+      - master
+  workflow_dispatch: {}   # manual "Run workflow" button (pick any branch)
+
+# Don't pile up overlapping iOS builds on rapid pushes — keep only the latest.
+concurrency:
+  group: ios-testflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    env:
+      BUNDLE_ID: io.marginalia.app
+      # Numeric Apple ID (adam id) of the Marginalia app record in App Store
+      # Connect (appstoreconnect.apple.com/apps/6774710376).
+      APP_STORE_APPLE_ID: "6774710376"
+      # The Codemagic CLI auto-reads these three for App Store Connect auth
+      # (same values Codemagic's integration injects). From repo secrets.
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      # RSA key the new distribution certificate is built on (reused every run).
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Set up Flutter 3.22.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.22.0
+          channel: stable
+          cache: true
+
+      - name: Install Codemagic CLI tools
+        # Provides the SAME `app-store-connect`, `keychain`, `xcode-project`
+        # commands Codemagic runs internally — this is what guarantees the
+        # signing + upload behave identically.
+        run: pip3 install codemagic-cli-tools
+
+      - name: Generate iOS native shell
+        run: |
+          flutter create --platforms=ios --org io.marginalia .
+          rm -f test/widget_test.dart
+          # Normalize whatever middle segment flutter create derived (from the
+          # build dir name) to the canonical io.marginalia.app — RunnerTests
+          # first (longer match), then the app target.
+          perl -pi -e 's/io\.marginalia\.[A-Za-z0-9_]+\.RunnerTests/io.marginalia.app.RunnerTests/g' ios/Runner.xcodeproj/project.pbxproj
+          perl -pi -e 's/PRODUCT_BUNDLE_IDENTIFIER = io\.marginalia\.[A-Za-z0-9_]+;/PRODUCT_BUNDLE_IDENTIFIER = io.marginalia.app;/g' ios/Runner.xcodeproj/project.pbxproj
+          echo "Bundle identifiers in project.pbxproj:"
+          grep PRODUCT_BUNDLE_IDENTIFIER ios/Runner.xcodeproj/project.pbxproj
+          # purchases_flutter needs iOS 13 min; raise the Podfile + project floor.
+          perl -pi -e "s/^# platform :ios, .*/platform :ios, '13.0'/" ios/Podfile
+          perl -pi -e 's/IPHONEOS_DEPLOYMENT_TARGET = 1[12]\.0;/IPHONEOS_DEPLOYMENT_TARGET = 13.0;/g' ios/Runner.xcodeproj/project.pbxproj
+          echo "Podfile platform line:"
+          grep "platform :ios" ios/Podfile
+          # Wire the committed push entitlements into the app target only.
+          perl -pi -e 's{PRODUCT_BUNDLE_IDENTIFIER = io\.marginalia\.app;}{PRODUCT_BUNDLE_IDENTIFIER = io.marginalia.app;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;}g' ios/Runner.xcodeproj/project.pbxproj
+          echo "Entitlements wiring count:"
+          grep -c CODE_SIGN_ENTITLEMENTS ios/Runner.xcodeproj/project.pbxproj || echo "  (none)"
+
+      - name: Inject widget + watch extension targets
+        run: |
+          gem install xcodeproj --no-document 2>/dev/null || sudo gem install xcodeproj --no-document 2>/dev/null || true
+          ruby ios/scripts/add_widgets_extension.rb
+          echo "Widget extension references:"
+          grep -c "MarginaliaWidgetsExtension" ios/Runner.xcodeproj/project.pbxproj || echo "  (widget NOT found — injection failed!)"
+          ruby ios/scripts/add_watch_targets.rb
+          echo "Watch target references:"
+          grep -c "MarginaliaWatch" ios/Runner.xcodeproj/project.pbxproj || echo "  (watch NOT found — injection failed!)"
+
+      - name: Set up Flutter deps
+        run: |
+          flutter --version
+          flutter pub get
+
+      - name: Generate app icons
+        run: dart run flutter_launcher_icons
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Generate Isar schemas
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Install CocoaPods
+        run: cd ios && pod install
+
+      - name: Validate widget extension compiles (simulator, no signing)
+        continue-on-error: true
+        run: |
+          set +e
+          ruby -e "require 'xcodeproj'; puts 'Targets: ' + Xcodeproj::Project.open('ios/Runner.xcodeproj').targets.map(&:name).join(', ')"
+          echo "Building Runner (incl. embedded widget) for simulator, no codesign…"
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+            -sdk iphonesimulator -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -n 60
+          echo "xcodebuild exit: ${PIPESTATUS[0]}"
+          if ls -d ~/Library/Developer/Xcode/DerivedData/*/Build/Products/*-iphonesimulator/Runner.app/PlugIns/*.appex >/dev/null 2>&1; then
+            echo "### WIDGET COMPILE PASS: .appex embedded in Runner.app ###"
+          else
+            echo "### WIDGET COMPILE: .appex not found — inspect the tail above ###"
+          fi
+          exit 0
+
+      - name: Initialize keychain
+        run: keychain initialize
+
+      - name: Fetch signing files (app + widget + watch app + watch widget)
+        run: |
+          app-store-connect fetch-signing-files \
+            "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          app-store-connect fetch-signing-files \
+            "io.marginalia.app.MarginaliaWidgets" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          app-store-connect fetch-signing-files \
+            "io.marginalia.app.watchkitapp" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+          app-store-connect fetch-signing-files \
+            "io.marginalia.app.watchkitapp.MarginaliaWatchWidgets" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create
+
+      - name: Add certificate to keychain
+        run: keychain add-certificates
+
+      - name: Use fetched profiles
+        run: xcode-project use-profiles
+
+      - name: Set iOS build number (unix timestamp, race-proof)
+        run: |
+          NOW=$(date +%s)
+          LATEST=$(app-store-connect get-latest-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)
+          case "$LATEST" in
+            ''|*[!0-9]*) NEXT="$NOW" ;;
+            *) if [ "$LATEST" -ge "$NOW" ]; then NEXT=$((LATEST + 1)); else NEXT="$NOW"; fi ;;
+          esac
+          echo "Latest ASC build number: '${LATEST:-none}', now=$NOW -> CFBundleVersion $NEXT"
+          perl -pi -e "s/^FLUTTER_BUILD_NUMBER=.*/FLUTTER_BUILD_NUMBER=$NEXT/" ios/Flutter/Generated.xcconfig
+          grep FLUTTER_BUILD ios/Flutter/Generated.xcconfig
+          BUILD_NAME=$(grep '^FLUTTER_BUILD_NAME=' ios/Flutter/Generated.xcconfig | cut -d= -f2)
+          BUILD_NAME=${BUILD_NAME:-1.0.0}
+          perl -pi -e "s/__BUILD_NUMBER__/$NEXT/g; s/__BUILD_NAME__/$BUILD_NAME/g" ios/MarginaliaWidgets/Info.plist
+          echo "Widget extension version → $BUILD_NAME ($NEXT)"
+          for plist in ios/MarginaliaWatch/Info.plist ios/MarginaliaWatchWidgets/Info.plist; do
+            perl -pi -e "s/__BUILD_NUMBER__/$NEXT/g; s/__BUILD_NAME__/$BUILD_NAME/g" "$plist"
+          done
+          echo "Watch versions set to $BUILD_NAME ($NEXT)"
+
+      - name: Build IPA
+        run: |
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner \
+            --config Release
+
+      - name: Publish to TestFlight (internal)
+        # Uploads the IPA to App Store Connect; once Apple finishes processing,
+        # the build is automatically available to Internal Testers — no Beta
+        # App Review, mirroring codemagic.yaml's internal-only publishing.
+        run: |
+          app-store-connect publish \
+            --path "build/ios/ipa/*.ipa" \
+            --max-build-processing-wait 0
+
+      - name: Upload artifacts (IPA + logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: |
+            build/ios/ipa/*.ipa
+            /tmp/xcodebuild_logs/*.log
+          if-no-files-found: ignore
