@@ -7,6 +7,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
 
+/// Thrown when an image upload is rejected by server-side content moderation
+/// (the moderate-image edge function flagged it as NSFW / gore / violent).
+class ImageModerationException implements Exception {
+  const ImageModerationException();
+}
+
 // Thin wrapper around Supabase client. Encapsulates table names and RLS
 // assumptions so screens don't need to know the schema.
 class SupabaseService {
@@ -432,6 +438,7 @@ class SupabaseService {
     await _ensureBucket('comment-images');
     final ts = DateTime.now().millisecondsSinceEpoch;
     final path = '${userId!}/$ts.$ext';
+    await _assertImageClean(bytes);
     await _client.storage.from('comment-images').uploadBinary(
           path,
           bytes,
@@ -1109,6 +1116,36 @@ class SupabaseService {
     }
   }
 
+  // ─── Image moderation ──────────────────────────────────────────────────────
+
+  /// Asks the moderate-image edge function whether [bytes] is objectionable
+  /// (NSFW / gore / violence / offensive). FAIL-OPEN: returns false on any
+  /// error or when the provider keys aren't configured, so uploads never break.
+  Future<bool> moderateImageBytes(List<int> bytes) async {
+    // Skip very large payloads (base64 balloons them); the picker already caps
+    // sizes, and an outsized image is better allowed than blocking the upload.
+    if (bytes.length > 8 * 1024 * 1024) return false;
+    try {
+      final res = await _client.functions.invoke(
+        'moderate-image',
+        body: {'image': base64Encode(bytes)},
+      );
+      final data = res.data;
+      return data is Map && data['flagged'] == true;
+    } catch (_) {
+      return false; // fail-open
+    }
+  }
+
+  /// Throws [ImageModerationException] when [bytes] is flagged by moderation.
+  /// Call this BEFORE committing an image to public storage so objectionable
+  /// images never persist.
+  Future<void> _assertImageClean(List<int> bytes) async {
+    if (await moderateImageBytes(bytes)) {
+      throw const ImageModerationException();
+    }
+  }
+
   /// Uploads avatar image to Supabase Storage and returns a public URL.
   ///
   /// Uses getPublicUrl (no expiry) — requires the 'avatars' bucket to be public,
@@ -1117,6 +1154,7 @@ class SupabaseService {
   Future<String> uploadAvatar(Uint8List bytes, String ext) async {
     await _ensureBucket('avatars');
     final path = '${userId!}/avatar.$ext';
+    await _assertImageClean(bytes);
     await _client.storage.from('avatars').uploadBinary(
           path,
           bytes,
@@ -1132,6 +1170,7 @@ class SupabaseService {
   Future<String> uploadCover(Uint8List bytes, String ext) async {
     await _ensureBucket('covers');
     final path = '${userId!}/cover.$ext';
+    await _assertImageClean(bytes);
     await _client.storage.from('covers').uploadBinary(
           path,
           bytes,
@@ -1148,6 +1187,7 @@ class SupabaseService {
       String jamId, Uint8List bytes, String ext) async {
     await _ensureBucket('jam-covers');
     final path = '$jamId/cover.$ext';
+    await _assertImageClean(bytes);
     await _client.storage.from('jam-covers').uploadBinary(
           path,
           bytes,
@@ -1230,6 +1270,7 @@ class SupabaseService {
     await _ensureBucket('post-images');
     final ts = DateTime.now().millisecondsSinceEpoch;
     final path = '${userId!}/$ts.$ext';
+    await _assertImageClean(bytes);
     await _client.storage.from('post-images').uploadBinary(
           path,
           bytes,
@@ -1820,6 +1861,7 @@ class SupabaseService {
   Future<String> uploadMessageImage(
       String fileName, List<int> bytes) async {
     final path = '${userId!}/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    await _assertImageClean(bytes);
     await _client.storage
         .from('message-images')
         .uploadBinary(path, bytes as dynamic);
