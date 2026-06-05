@@ -1074,7 +1074,7 @@ class _SharedPostCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Post condiviso',
+                          context.l10n.chatSharedPost,
                           style: GoogleFonts.manrope(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -1082,7 +1082,7 @@ class _SharedPostCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Tocca per aprire',
+                          context.l10n.chatSharedPostTap,
                           style: GoogleFonts.manrope(
                             fontSize: 11,
                             color: isMe

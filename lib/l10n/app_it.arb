@@ -1519,5 +1519,44 @@
   "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } },
   "shareAsStory": "Condividi come storia",
   "shareStoryPreparing": "Creazione storia…",
-  "shareStoryError": "Impossibile creare la storia"
+  "shareStoryError": "Impossibile creare la storia",
+
+  "reviewsSectionTitle": "LE TUE RECENSIONI",
+  "reviewsWriteCta": "Scrivi recensione",
+  "reviewsEmptyTitle": "Nessuna recensione",
+  "reviewsEmptyBody": "Condividi cosa hai pensato dei libri che hai letto. Una stella, due righe, e l’highlight che non dimentichi.",
+  "reviewsSaveError": "Impossibile salvare la recensione. Riprova.",
+  "reviewsSheetTitle": "Scrivi una recensione",
+  "reviewsFieldBook": "LIBRO",
+  "reviewsFieldRating": "VOTO",
+  "reviewsFieldReason": "PERCHÉ",
+  "reviewsFieldHighlightOptional": "HIGHLIGHT (FACOLTATIVO)",
+  "reviewsPickBook": "Scegli un libro dalla tua libreria",
+  "reviewsHint": "Cosa ti ha lasciato questo libro…",
+  "reviewsAttachHighlight": "Allega un highlight di questo libro",
+  "reviewsPublish": "Pubblica recensione",
+  "reviewsPickerTitle": "Scegli un libro",
+  "reviewsPickerEmpty": "Importa i tuoi highlight Kindle per recensire i libri che hai letto.",
+  "reviewsHighlightPickerTitle": "Allega un highlight",
+  "reviewsNoHighlights": "Nessun highlight per questo libro.",
+
+  "sharePostTitle": "Condividi",
+  "sharePostSearchHint": "Cerca chat o persone",
+  "sharePostSent": "Inviato ✓",
+  "sharePostSentLabel": "Inviato",
+  "sharePostSendCta": "Invia",
+  "sharePostLoadError": "Impossibile caricare le chat",
+  "sharePostNoConvos": "Nessuna chat ancora.\nSegui qualcuno o avvia una conversazione per condividere.",
+  "sharePostNoResults": "Nessun risultato",
+  "sharePostStartConvo": "Avvia conversazione",
+  "sharePostError": "Errore: {error}",
+  "@sharePostError": { "placeholders": { "error": { "type": "String" } } },
+
+  "chatSharedPost": "Post condiviso",
+  "chatSharedPostTap": "Tocca per aprire",
+
+  "profileTabPosts": "Profilo",
+  "profileTabReviews": "Recensioni",
+
+  "jamBadge": "JAM"
 }

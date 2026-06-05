@@ -1015,9 +1015,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               leading: const Icon(Icons.upload_file_outlined,
                   color: MarginaliaColors.primary),
               title: Text(context.l10n.settingsImportClippings),
-              onTap: () {
+              onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final l10n = context.l10n;
                 Navigator.pop(ctx);
-                context.go('/');
+                try {
+                  final res = await pickAndImportClippings(ref);
+                  if (res == null) return; // user cancelled
+                  ref.invalidate(allHighlightsProvider);
+                  messenger.showSnackBar(SnackBar(
+                    content: Text(l10n.importSuccess(
+                        res.highlightsAdded, res.booksAdded)),
+                  ));
+                } catch (e) {
+                  messenger.showSnackBar(SnackBar(
+                      content: Text(l10n.importErrorGeneric(e.toString()))));
+                }
               },
             ),
             ListTile(

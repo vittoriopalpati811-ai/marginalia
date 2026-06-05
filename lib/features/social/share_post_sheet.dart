@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/unread_messages_provider.dart';
 
@@ -99,6 +100,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
   }
 
   Future<void> _load() async {
+    final l10n = context.l10n;
     final svc = ref.read(supabaseServiceProvider);
     if (!svc.isAuthenticated) {
       setState(() {
@@ -134,15 +136,15 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
 
         if (isGroup) {
           final raw = (conv['group_name'] as String?)?.trim();
-          name = (raw != null && raw.isNotEmpty) ? raw : 'Gruppo';
+          name = (raw != null && raw.isNotEmpty) ? raw : l10n.msgGroupFallback;
           avatarUrl = conv['group_avatar_url'] as String?;
           if (members.isNotEmpty) {
-            subtitle = '${members.length} partecipanti';
+            subtitle = l10n.msgParticipantCount(members.length);
           }
         } else {
           final other = members.isNotEmpty ? members.first : null;
           final raw = (other?['display_name'] as String?)?.trim();
-          name = (raw != null && raw.isNotEmpty) ? raw : 'Account eliminato';
+          name = (raw != null && raw.isNotEmpty) ? raw : l10n.accountDeleted;
           avatarUrl = other?['avatar_url'] as String?;
           final otherId = other?['id'] as String?;
           if (otherId != null) dmUserIds.add(otherId);
@@ -162,7 +164,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
         final uid = profile['id'] as String?;
         if (uid == null || dmUserIds.contains(uid)) continue;
         final raw = (profile['display_name'] as String?)?.trim();
-        final name = (raw != null && raw.isNotEmpty) ? raw : 'Utente';
+        final name = (raw != null && raw.isNotEmpty) ? raw : l10n.msgUserFallback;
         recipients.add(_Recipient(
           key: 'user_$uid',
           name: name,
@@ -180,7 +182,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Impossibile caricare le chat';
+        _error = l10n.sharePostLoadError;
         _loading = false;
       });
     }
@@ -190,6 +192,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
     if (_sending.contains(r.key) || _sent.contains(r.key)) return;
     final svc = ref.read(supabaseServiceProvider);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
 
     setState(() => _sending.add(r.key));
     try {
@@ -213,9 +216,9 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
         _sent.add(r.key);
       });
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Inviato ✓'),
-          duration: Duration(seconds: 1),
+        SnackBar(
+          content: Text(l10n.sharePostSent),
+          duration: const Duration(seconds: 1),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -223,7 +226,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
       if (!mounted) return;
       setState(() => _sending.remove(r.key));
       messenger.showSnackBar(
-        SnackBar(content: Text('Errore: $e')),
+        SnackBar(content: Text(l10n.sharePostError(e.toString()))),
       );
     }
   }
@@ -276,7 +279,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Condividi',
+                      context.l10n.sharePostTitle,
                       style: GoogleFonts.ebGaramond(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
@@ -295,7 +298,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                     color: MarginaliaColors.ink,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Cerca chat o persone',
+                    hintText: context.l10n.sharePostSearchHint,
                     hintStyle: GoogleFonts.manrope(
                       color: MarginaliaColors.inkFaint,
                       fontSize: 15,
@@ -356,12 +359,10 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
 
     final items = _filtered;
     if (_recipients.isEmpty) {
-      return const _CenteredHint(
-        text: 'Nessuna chat ancora.\nSegui qualcuno o avvia una conversazione per condividere.',
-      );
+      return _CenteredHint(text: context.l10n.sharePostNoConvos);
     }
     if (items.isEmpty) {
-      return const _CenteredHint(text: 'Nessun risultato');
+      return _CenteredHint(text: context.l10n.sharePostNoResults);
     }
 
     return ListView.builder(
@@ -431,18 +432,18 @@ class _RecipientRow extends StatelessWidget {
             )
           : (recipient.conversationId == null
               ? Text(
-                  'Avvia conversazione',
+                  context.l10n.sharePostStartConvo,
                   style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: MarginaliaColors.inkFaint,
                   ),
                 )
               : null),
-      trailing: _trailing(),
+      trailing: _trailing(context),
     );
   }
 
-  Widget _trailing() {
+  Widget _trailing(BuildContext context) {
     if (sending) {
       return const SizedBox(
         width: 22,
@@ -467,7 +468,7 @@ class _RecipientRow extends StatelessWidget {
                 size: 13, color: MarginaliaColors.primaryDark),
             const SizedBox(width: 4),
             Text(
-              'Inviato',
+              context.l10n.sharePostSentLabel,
               style: GoogleFonts.manrope(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -485,7 +486,7 @@ class _RecipientRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'Invia',
+        context.l10n.sharePostSendCta,
         style: GoogleFonts.manrope(
           fontSize: 12,
           fontWeight: FontWeight.w700,

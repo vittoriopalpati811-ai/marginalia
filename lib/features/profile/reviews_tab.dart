@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/reviews_service.dart';
 import '../library/book_cover.dart';
@@ -90,7 +91,7 @@ class ReviewsTab extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
               child: Row(
                 children: [
-                  Text('LE TUE RECENSIONI',
+                  Text(context.l10n.reviewsSectionTitle,
                       style: MarginaliaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -133,12 +134,12 @@ class _ComposeChip extends StatelessWidget {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.add, size: 12, color: MarginaliaColors.primaryDark),
-            SizedBox(width: 3),
+          children: [
+            const Icon(Icons.add, size: 12, color: MarginaliaColors.primaryDark),
+            const SizedBox(width: 3),
             Text(
-              'Scrivi recensione',
-              style: TextStyle(
+              context.l10n.reviewsWriteCta,
+              style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: MarginaliaColors.primaryDark,
@@ -330,11 +331,12 @@ class _ReviewMenu extends StatelessWidget {
         PopupMenuItem<String>(
           value: 'delete',
           child: Row(
-            children: const [
-              Icon(Icons.delete_outline, size: 17, color: Color(0xFFB3503F)),
-              SizedBox(width: 8),
-              Text('Elimina',
-                  style: TextStyle(
+            children: [
+              const Icon(Icons.delete_outline,
+                  size: 17, color: Color(0xFFB3503F)),
+              const SizedBox(width: 8),
+              Text(context.l10n.delete,
+                  style: const TextStyle(
                       fontSize: 13.5, color: MarginaliaColors.ink)),
             ],
           ),
@@ -368,7 +370,7 @@ class _ReviewsEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Nessuna recensione',
+            context.l10n.reviewsEmptyTitle,
             style: GoogleFonts.manrope(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -378,8 +380,7 @@ class _ReviewsEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Condividi cosa hai pensato dei libri che hai letto. '
-            'Una stella, due righe, e l’highlight che non dimentichi.',
+            context.l10n.reviewsEmptyBody,
             textAlign: TextAlign.center,
             style: GoogleFonts.ebGaramond(
               fontSize: 15,
@@ -392,7 +393,7 @@ class _ReviewsEmpty extends StatelessWidget {
             onPressed: onCompose,
             icon: const Icon(Icons.add, size: 18),
             label: Text(
-              'Scrivi recensione',
+              context.l10n.reviewsWriteCta,
               style: GoogleFonts.manrope(
                   fontSize: 14, fontWeight: FontWeight.w700),
             ),
@@ -526,9 +527,9 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impossibile salvare la recensione. Riprova.'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(context.l10n.reviewsSaveError),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -577,7 +578,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
               child: Row(
                 children: [
                   Text(
-                    'Scrivi una recensione',
+                    context.l10n.reviewsSheetTitle,
                     style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -605,7 +606,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── (a) Book picker ─────────────────────────────────
-                    _FieldLabel('LIBRO'),
+                    _FieldLabel(context.l10n.reviewsFieldBook),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _saving ? null : _pickBook,
@@ -671,7 +672,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'Scegli un libro dalla tua libreria',
+                                  context.l10n.reviewsPickBook,
                                   style: GoogleFonts.manrope(
                                     fontSize: 13.5,
                                     color: MarginaliaColors.inkMuted,
@@ -689,7 +690,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                     const SizedBox(height: 20),
 
                     // ── (b) Star rating ─────────────────────────────────
-                    _FieldLabel('VOTO'),
+                    _FieldLabel(context.l10n.reviewsFieldRating),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -717,7 +718,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                     const SizedBox(height: 20),
 
                     // ── (c) "Perché" multiline ──────────────────────────
-                    _FieldLabel('PERCHÉ'),
+                    _FieldLabel(context.l10n.reviewsFieldReason),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _bodyCtrl,
@@ -731,8 +732,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                         color: MarginaliaColors.ink,
                       ),
                       decoration: InputDecoration(
-                        hintText:
-                            'Cosa ti ha lasciato questo libro…',
+                        hintText: context.l10n.reviewsHint,
                         hintStyle: GoogleFonts.ebGaramond(
                           fontSize: 16,
                           color: MarginaliaColors.inkFaint,
@@ -764,7 +764,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                     // whose highlights we load (highlightsProvider equivalent:
                     // SupabaseService.fetchHighlights(bookId:)).
                     if (hasBook) ...[
-                      _FieldLabel('HIGHLIGHT (FACOLTATIVO)'),
+                      _FieldLabel(context.l10n.reviewsFieldHighlightOptional),
                       const SizedBox(height: 8),
                       if (_attachedHighlight == null)
                         GestureDetector(
@@ -786,7 +786,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Allega un highlight di questo libro',
+                                    context.l10n.reviewsAttachHighlight,
                                     style: GoogleFonts.manrope(
                                       fontSize: 13.5,
                                       color: MarginaliaColors.inkMuted,
@@ -879,7 +879,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                               strokeWidth: 1.5, color: Color(0xFF1B1F1B)),
                         )
                       : Text(
-                          'Pubblica recensione',
+                          context.l10n.reviewsPublish,
                           style: GoogleFonts.manrope(
                               fontSize: 14, fontWeight: FontWeight.w700),
                         ),
@@ -943,7 +943,7 @@ class _BookPickerSheet extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Scegli un libro',
+                  context.l10n.reviewsPickerTitle,
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -959,8 +959,7 @@ class _BookPickerSheet extends StatelessWidget {
                   ? Padding(
                       padding: const EdgeInsets.all(40),
                       child: Text(
-                        'Importa i tuoi highlight Kindle per recensire i '
-                        'libri che hai letto.',
+                        context.l10n.reviewsPickerEmpty,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.ebGaramond(
                           fontSize: 15,
@@ -1078,7 +1077,7 @@ class _HighlightPickerSheet extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Allega un highlight',
+                  context.l10n.reviewsHighlightPickerTitle,
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -1094,7 +1093,7 @@ class _HighlightPickerSheet extends StatelessWidget {
                   ? Padding(
                       padding: const EdgeInsets.all(40),
                       child: Text(
-                        'Nessun highlight per questo libro.',
+                        context.l10n.reviewsNoHighlights,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.ebGaramond(
                           fontSize: 15,

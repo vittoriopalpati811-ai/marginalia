@@ -978,13 +978,13 @@ class _ProfileTabBar extends StatelessWidget {
       child: Row(
         children: [
           _Segment(
-            label: 'Profilo',
+            label: context.l10n.profileTabPosts,
             icon: Icons.person_outline_rounded,
             selected: active == 0,
             onTap: () => onChanged(0),
           ),
           _Segment(
-            label: 'Recensioni',
+            label: context.l10n.profileTabReviews,
             icon: Icons.rate_review_outlined,
             selected: active == 1,
             onTap: () => onChanged(1),

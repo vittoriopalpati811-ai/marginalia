@@ -773,5 +773,44 @@
   "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } },
   "shareAsStory": "Share as story",
   "shareStoryPreparing": "Creating story…",
-  "shareStoryError": "Couldn't create the story"
+  "shareStoryError": "Couldn't create the story",
+
+  "reviewsSectionTitle": "YOUR REVIEWS",
+  "reviewsWriteCta": "Write a review",
+  "reviewsEmptyTitle": "No reviews yet",
+  "reviewsEmptyBody": "Share what you thought of the books you've read. One star, a couple of lines, and the highlight you can't forget.",
+  "reviewsSaveError": "Couldn't save the review. Please try again.",
+  "reviewsSheetTitle": "Write a review",
+  "reviewsFieldBook": "BOOK",
+  "reviewsFieldRating": "RATING",
+  "reviewsFieldReason": "WHY",
+  "reviewsFieldHighlightOptional": "HIGHLIGHT (OPTIONAL)",
+  "reviewsPickBook": "Choose a book from your library",
+  "reviewsHint": "What did this book leave you with…",
+  "reviewsAttachHighlight": "Attach a highlight from this book",
+  "reviewsPublish": "Publish review",
+  "reviewsPickerTitle": "Choose a book",
+  "reviewsPickerEmpty": "Import your Kindle highlights to review the books you've read.",
+  "reviewsHighlightPickerTitle": "Attach a highlight",
+  "reviewsNoHighlights": "No highlights for this book.",
+
+  "sharePostTitle": "Share",
+  "sharePostSearchHint": "Search chats or people",
+  "sharePostSent": "Sent ✓",
+  "sharePostSentLabel": "Sent",
+  "sharePostSendCta": "Send",
+  "sharePostLoadError": "Couldn't load chats",
+  "sharePostNoConvos": "No chats yet.\nFollow someone or start a conversation to share.",
+  "sharePostNoResults": "No results",
+  "sharePostStartConvo": "Start conversation",
+  "sharePostError": "Error: {error}",
+  "@sharePostError": { "placeholders": { "error": { "type": "String" } } },
+
+  "chatSharedPost": "Shared post",
+  "chatSharedPostTap": "Tap to open",
+
+  "profileTabPosts": "Profile",
+  "profileTabReviews": "Reviews",
+
+  "jamBadge": "JAM"
 }

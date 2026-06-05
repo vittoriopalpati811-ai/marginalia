@@ -230,7 +230,7 @@ class _SocialHeader extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        'Jam',
+                        context.l10n.jamTitle,
                         style: GoogleFonts.manrope(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -582,7 +582,7 @@ class _JamGridCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'JAM',
+                    context.l10n.jamBadge,
                     style: MarginaliaTextStyles.sectionTitle.copyWith(
                       color: Colors.white.withAlpha(200),
                       fontSize: 8,
@@ -654,7 +654,7 @@ class _JamGridCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  'JAM',
+                                  context.l10n.jamBadge,
                                   style: MarginaliaTextStyles.sectionTitle
                                       .copyWith(
                                     color: Colors.white.withAlpha(220),
