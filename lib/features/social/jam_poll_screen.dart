@@ -42,7 +42,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: MarginaliaColors.primary),
+            icon: const Icon(Icons.add, color: MarginaliaColors.primaryDark),
             onPressed: _showCreatePollSheet,
             tooltip: context.l10n.jamPollNewPollTooltip,
           ),
@@ -62,7 +62,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
                 ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
               ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MarginaliaColors.primary, strokeWidth: 1.5),
+          child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
         ),
         error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
@@ -183,7 +183,7 @@ class _PollCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
             child: Row(
               children: [
-                const Icon(Icons.how_to_vote_outlined, color: MarginaliaColors.primary, size: 18),
+                const Icon(Icons.how_to_vote_outlined, color: MarginaliaColors.primaryDark, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -206,7 +206,7 @@ class _PollCard extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: closed ? MarginaliaColors.inkMuted : MarginaliaColors.primary,
+                      color: closed ? MarginaliaColors.inkMuted : MarginaliaColors.primaryDark,
                     ),
                   ),
                 ),
@@ -282,14 +282,14 @@ class _PollCard extends StatelessWidget {
                                 Icon(
                                   Icons.favorite_rounded,
                                   size: 12,
-                                  color: myVote ? Colors.white : MarginaliaColors.primary,
+                                  color: myVote ? Colors.white : MarginaliaColors.primaryDark,
                                 ),
                                 Text(
                                   '$voteCount',
                                   style: GoogleFonts.manrope(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: myVote ? Colors.white : MarginaliaColors.primary,
+                                    color: myVote ? Colors.white : MarginaliaColors.primaryDark,
                                   ),
                                 ),
                               ],
@@ -330,7 +330,7 @@ class _PollCard extends StatelessWidget {
                 icon: const Icon(Icons.add, size: 16),
                 label: Text(context.l10n.jamAddYourHighlight),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primary,
+                  foregroundColor: MarginaliaColors.primaryDark,
                   side: const BorderSide(color: MarginaliaColors.rule),
                 ),
               ),
@@ -574,7 +574,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                         );
                       },
                     ),
-              loading: () => const Center(child: CircularProgressIndicator(color: MarginaliaColors.primary, strokeWidth: 1.5)),
+              loading: () => const Center(child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5)),
               error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
             ),
           ),

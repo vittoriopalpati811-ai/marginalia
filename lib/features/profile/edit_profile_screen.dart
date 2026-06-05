@@ -680,7 +680,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               fontSize: 9,
                               fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                               color: sel
-                                  ? MarginaliaColors.primary
+                                  ? MarginaliaColors.primaryDark
                                   : MarginaliaColors.inkFaint,
                             ),
                           ),

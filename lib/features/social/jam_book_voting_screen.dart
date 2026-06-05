@@ -42,7 +42,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: MarginaliaColors.primary),
+            icon: const Icon(Icons.add, color: MarginaliaColors.primaryDark),
             onPressed: () => _showProposeSheet(),
             tooltip: context.l10n.jamVoteProposeBook,
           ),
@@ -64,7 +64,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
                 ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
               ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MarginaliaColors.primary, strokeWidth: 1.5),
+          child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
         ),
         error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
@@ -170,7 +170,7 @@ class _ProposalCard extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.menu_book_rounded,
-                color: MarginaliaColors.primary,
+                color: MarginaliaColors.primaryDark,
                 size: 24,
               ),
             ),
@@ -250,7 +250,7 @@ class _ProposalCard extends StatelessWidget {
                     child: Icon(
                       Icons.thumb_up_rounded,
                       size: 18,
-                      color: hasVoted ? Colors.white : MarginaliaColors.primary,
+                      color: hasVoted ? Colors.white : MarginaliaColors.primaryDark,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -260,7 +260,7 @@ class _ProposalCard extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: hasVoted
-                          ? MarginaliaColors.primary
+                          ? MarginaliaColors.primaryDark
                           : MarginaliaColors.inkMuted,
                     ),
                   ),

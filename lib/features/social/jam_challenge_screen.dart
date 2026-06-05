@@ -41,7 +41,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: MarginaliaColors.primary),
+            icon: const Icon(Icons.add, color: MarginaliaColors.primaryDark),
             onPressed: _showCreateSheet,
             tooltip: context.l10n.jamChallengeCreateTooltip,
           ),
@@ -63,7 +63,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
                 ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
               ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MarginaliaColors.primary, strokeWidth: 1.5),
+          child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
         ),
         error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
@@ -152,7 +152,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events_outlined, color: MarginaliaColors.primary, size: 18),
+              const Icon(Icons.emoji_events_outlined, color: MarginaliaColors.primaryDark, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -261,7 +261,7 @@ class _ProgressButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18,
-          color: onTap != null ? MarginaliaColors.primary : MarginaliaColors.inkFaint,
+          color: onTap != null ? MarginaliaColors.primaryDark : MarginaliaColors.inkFaint,
         ),
       ),
     );

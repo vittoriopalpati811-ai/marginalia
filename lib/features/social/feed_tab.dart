@@ -1043,14 +1043,14 @@ class _PostCardState extends ConsumerState<_PostCard> {
       await showModalBottomSheet<void>(
         context: context,
         backgroundColor: Colors.transparent,
-        builder: (_) => _PostMenuSheet(
+        builder: (ctx) => _PostMenuSheet(
           items: [
             _MenuAction(
               icon: Icons.flag_outlined,
-              label: context.l10n.feedReport,
+              label: l10n.feedReport,
               color: MarginaliaColors.inkMuted,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(ctx);
                 messenger.showSnackBar(
                   SnackBar(content: Text(l10n.feedReported)),
                 );
@@ -1316,7 +1316,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                             const Icon(
                               Icons.menu_book_rounded,
                               size: 10,
-                              color: MarginaliaColors.siennaLight,
+                              color: MarginaliaColors.primaryDark,
                             ),
                             const SizedBox(width: 3),
                             Flexible(
@@ -1325,7 +1325,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                                 style: GoogleFonts.manrope(
                                   fontSize: 11,
                                   fontStyle: FontStyle.italic,
-                                  color: MarginaliaColors.siennaLight,
+                                  color: MarginaliaColors.primaryDark,
                                   fontWeight: FontWeight.w500,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -1473,7 +1473,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                             : PhosphorIconsRegular.heart,
                         size: 17,
                         color: _liked
-                            ? MarginaliaColors.sienna
+                            ? MarginaliaColors.primaryDark
                             : MarginaliaColors.inkFaint,
                       ),
                       const SizedBox(width: 5),
@@ -1483,7 +1483,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: _liked
-                              ? MarginaliaColors.sienna
+                              ? MarginaliaColors.primaryDark
                               : MarginaliaColors.inkFaint,
                         ),
                       ),
@@ -2428,7 +2428,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                                   : PhosphorIconsRegular.heart,
                               size: 15,
                               color: _liked
-                                  ? MarginaliaColors.sienna
+                                  ? MarginaliaColors.primaryDark
                                   : MarginaliaColors.inkFaint,
                             ),
                             if (_likeCount > 0) ...[
@@ -2438,7 +2438,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                                 style: GoogleFonts.manrope(
                                   fontSize: 11.5,
                                   color: _liked
-                                      ? MarginaliaColors.sienna
+                                      ? MarginaliaColors.primaryDark
                                       : MarginaliaColors.inkFaint,
                                   fontWeight: _liked
                                       ? FontWeight.w600
@@ -2632,7 +2632,7 @@ class _NotLoggedIn extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(Icons.lock_outline,
-                  size: 32, color: MarginaliaColors.siennaLight),
+                  size: 32, color: MarginaliaColors.primaryDark),
             ),
             const SizedBox(height: 20),
             Text(

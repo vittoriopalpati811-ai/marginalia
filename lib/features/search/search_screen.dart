@@ -183,7 +183,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 : resultsAsync.when(
                     loading: () => const Center(
                       child: CircularProgressIndicator(
-                          color: MarginaliaColors.sienna, strokeWidth: 1.5),
+                          color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
                     ),
                     error: (e, _) => Center(
                         child: Text(context.l10n.errorPrefix('$e'),
@@ -280,7 +280,7 @@ class _UserCard extends StatelessWidget {
                       '@$username',
                       style: GoogleFonts.manrope(
                         fontSize: 12,
-                        color: MarginaliaColors.sienna,
+                        color: MarginaliaColors.primaryDark,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

@@ -762,7 +762,7 @@ class _LangCard extends StatelessWidget {
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                     color: isSelected
-                        ? MarginaliaColors.primary
+                        ? MarginaliaColors.primaryDark
                         : MarginaliaColors.ink,
                     letterSpacing: -0.3,
                     height: 1,
@@ -1319,7 +1319,7 @@ class _UsernameStep extends StatelessWidget {
               prefixText: '@',
               prefixStyle: GoogleFonts.manrope(
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.primary,
+                color: MarginaliaColors.primaryDark,
               ),
               suffixIcon: _suffixIcon(),
             ),
@@ -1585,8 +1585,8 @@ class _AvatarStep extends StatelessWidget {
                 style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.primary,
-                side: const BorderSide(color: MarginaliaColors.primary),
+                foregroundColor: MarginaliaColors.primaryDark,
+                side: const BorderSide(color: MarginaliaColors.primaryDark),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1759,8 +1759,8 @@ class _CoverStep extends StatelessWidget {
                 style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.primary,
-                side: const BorderSide(color: MarginaliaColors.primary),
+                foregroundColor: MarginaliaColors.primaryDark,
+                side: const BorderSide(color: MarginaliaColors.primaryDark),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2061,7 +2061,7 @@ class _GenderOption extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isSelected ? MarginaliaColors.primary : MarginaliaColors.ink,
+              color: isSelected ? MarginaliaColors.primaryDark : MarginaliaColors.ink,
             ),
           ),
         ),

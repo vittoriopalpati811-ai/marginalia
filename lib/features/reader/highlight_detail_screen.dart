@@ -41,7 +41,7 @@ class HighlightDetailScreen extends ConsumerWidget {
                               ? Icons.bookmark_rounded
                               : Icons.bookmark_outline_rounded,
                           color: h.isFavorite
-                              ? MarginaliaColors.sienna
+                              ? MarginaliaColors.primaryDark
                               : MarginaliaColors.inkFaint,
                           size: 22,
                         ),
@@ -121,7 +121,7 @@ class HighlightDetailScreen extends ConsumerWidget {
         },
         loading: () => const Center(
           child: CircularProgressIndicator(
-            color: MarginaliaColors.sienna,
+            color: MarginaliaColors.primaryDark,
             strokeWidth: 1.5,
           ),
         ),

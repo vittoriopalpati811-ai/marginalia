@@ -104,7 +104,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                         child: Text(
                           context.l10n.retry,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.primary,
+                            color: MarginaliaColors.primaryDark,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -129,7 +129,13 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       isScrollControlled: true,
       builder: (ctx) => _NewConversationSheet(
         onConversationCreated: (id) {
-          if (ctx.mounted) Navigator.pop(ctx);
+          // Dismiss whichever bottom sheet is currently on top (this may be the
+          // nested user-search / create-group sheet, NOT the original one — the
+          // first sheet was already popped when the user chose an option). Pop
+          // the active modal route via the screen navigator so the chat doesn't
+          // open on top of a still-visible sheet that then lingers behind it.
+          final navigator = Navigator.of(context);
+          if (navigator.canPop()) navigator.pop();
           context.push('/chat/$id');
           ref.invalidate(conversationsProvider);
         },
@@ -1135,7 +1141,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                         backgroundColor: MarginaliaColors.primaryFaint,
                         labelStyle: GoogleFonts.manrope(
                           fontSize: 12,
-                          color: MarginaliaColors.primary,
+                          color: MarginaliaColors.primaryDark,
                           fontWeight: FontWeight.w600,
                         ),
                         side: BorderSide.none,
@@ -1215,7 +1221,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                                 : null,
                             trailing: isSelected
                                 ? const Icon(Icons.check_circle,
-                                    color: MarginaliaColors.primary, size: 20)
+                                    color: MarginaliaColors.primaryDark, size: 20)
                                 : const Icon(Icons.add_circle_outline,
                                     color: MarginaliaColors.inkFaint, size: 20),
                             onTap: () => _toggleUser(user),

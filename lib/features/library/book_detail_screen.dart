@@ -188,7 +188,7 @@ class BookDetailScreen extends ConsumerWidget {
                             loading: () => const SliverFillRemaining(
                               child: Center(
                                 child: CircularProgressIndicator(
-                                  color: MarginaliaColors.sienna,
+                                  color: MarginaliaColors.primaryDark,
                                   strokeWidth: 1.5,
                                 ),
                               ),
@@ -231,7 +231,7 @@ class BookDetailScreen extends ConsumerWidget {
         backgroundColor: MarginaliaColors.background,
         body: const Center(
           child: CircularProgressIndicator(
-            color: MarginaliaColors.sienna,
+            color: MarginaliaColors.primaryDark,
             strokeWidth: 1.5,
           ),
         ),
@@ -321,7 +321,7 @@ class _StatBox extends StatelessWidget {
               ),
             )
           else if (icon != null)
-            Icon(icon, size: 18, color: MarginaliaColors.sienna),
+            Icon(icon, size: 18, color: MarginaliaColors.primaryDark),
           const SizedBox(height: 3),
           // Label in Barlow Condensed uppercase
           Text(
@@ -394,7 +394,7 @@ class _HighlightCard extends StatelessWidget {
                         const Icon(
                           Icons.bookmark_rounded,
                           size: 14,
-                          color: MarginaliaColors.sienna,
+                          color: MarginaliaColors.primaryDark,
                         ),
                     ],
                   ),

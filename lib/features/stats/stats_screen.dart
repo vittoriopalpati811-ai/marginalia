@@ -113,7 +113,7 @@ class StatsScreen extends ConsumerWidget {
         ),
       ),
       body: RefreshIndicator(
-        color: MarginaliaColors.sienna,
+        color: MarginaliaColors.primaryDark,
         onRefresh: () async {
           ref.invalidate(readingGoalProvider);
           ref.invalidate(readingSessionsProvider);
@@ -459,7 +459,7 @@ class _GoalCard extends StatelessWidget {
                 value: progress,
                 minHeight: 10,
                 backgroundColor: MarginaliaColors.surfaceElevated,
-                color: MarginaliaColors.primary,
+                color: MarginaliaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 14),
@@ -515,7 +515,7 @@ class _OverviewGrid extends StatelessWidget {
               label: context.l10n.statsStreak,
               value: context.l10n.statsStreakDays(streak),
               big:   streak.toString(),
-              accent: MarginaliaColors.sienna,
+              accent: MarginaliaColors.primaryDark,
             ),
           ),
         ),
@@ -527,7 +527,7 @@ class _OverviewGrid extends StatelessWidget {
               label: context.l10n.statsThisMonth,
               value: context.l10n.statsThisMonthMinutes(monthMinutes),
               big:   monthMinutes.toString(),
-              accent: MarginaliaColors.primary,
+              accent: MarginaliaColors.primaryDark,
             ),
           ),
         ),
@@ -539,7 +539,7 @@ class _OverviewGrid extends StatelessWidget {
               label: context.l10n.statsThisYear,
               value: context.l10n.statsThisYearBooks(yearBooks),
               big:   yearBooks.toString(),
-              accent: MarginaliaColors.siennaLight,
+              accent: MarginaliaColors.primaryDark,
             ),
           ),
         ),
@@ -827,7 +827,7 @@ class _ChartHeadline extends StatelessWidget {
                   fontSize: 22,
                   // Roman, matching the headline total above.
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.primary,
+                  color: MarginaliaColors.primaryDark,
                   letterSpacing: -0.3,
                   height: 1.1,
                 ),
@@ -927,7 +927,7 @@ class _BarColumn extends StatelessWidget {
               fontStyle: FontStyle.italic,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               color: selected
-                  ? MarginaliaColors.primary
+                  ? MarginaliaColors.primaryDark
                   : (dimmed
                       ? MarginaliaColors.inkFaint
                       : MarginaliaColors.inkMuted),
@@ -1057,7 +1057,7 @@ class _MonthTooltip extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: rawMinutes == 0
                               ? MarginaliaColors.inkFaint
-                              : MarginaliaColors.primary,
+                              : MarginaliaColors.primaryDark,
                           letterSpacing: 0.4,
                         ),
                       ),
@@ -1204,7 +1204,7 @@ class _SessionTile extends StatelessWidget {
                 style: GoogleFonts.manrope(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.sienna,
+                  color: MarginaliaColors.primaryDark,
                 ),
               ),
             ),
@@ -1248,7 +1248,7 @@ class _SessionTile extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: MarginaliaColors.sienna,
+                            color: MarginaliaColors.primaryDark,
                             letterSpacing: 0.5,
                           ),
                         ),

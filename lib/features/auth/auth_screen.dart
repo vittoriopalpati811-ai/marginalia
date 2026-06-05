@@ -311,7 +311,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                           onPressed: _showForgotPassword,
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                            foregroundColor: MarginaliaColors.sienna,
+                            foregroundColor: MarginaliaColors.primaryDark,
                           ),
                           child: Text(
                             context.l10n.authForgotPassword,
@@ -387,7 +387,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                               TextSpan(
                                 text: context.l10n.settingsPrivacyPolicy,
                                 style: const TextStyle(
-                                  color: MarginaliaColors.sienna,
+                                  color: MarginaliaColors.primaryDark,
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
@@ -486,7 +486,7 @@ class _AuthHeader extends StatelessWidget {
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
-                labelColor: MarginaliaColors.sienna,
+                labelColor: MarginaliaColors.primaryDark,
                 unselectedLabelColor: Colors.white.withAlpha(200),
                 labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),

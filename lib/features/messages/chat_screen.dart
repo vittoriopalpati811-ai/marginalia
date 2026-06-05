@@ -461,7 +461,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         child: Text(
                           context.l10n.retry,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.primary,
+                            color: MarginaliaColors.primaryDark,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

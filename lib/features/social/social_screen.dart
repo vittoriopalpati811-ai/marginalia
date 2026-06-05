@@ -492,7 +492,7 @@ class _JamTabContent extends ConsumerWidget {
             ),
       loading: () => const Center(
         child: CircularProgressIndicator(
-            color: MarginaliaColors.sienna, strokeWidth: 1.5),
+            color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
       ),
       error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
     );
@@ -1015,7 +1015,7 @@ class _UnauthenticatedState extends StatelessWidget {
                           color: MarginaliaColors.siennaFaint,
                           borderRadius: BorderRadius.circular(20)),
                       child: const Icon(Icons.lock_outline,
-                          size: 32, color: MarginaliaColors.sienna),
+                          size: 32, color: MarginaliaColors.primaryDark),
                     ),
                     const SizedBox(height: 24),
                     Text(context.l10n.profileLoginRequired,

@@ -251,7 +251,7 @@ class _JamHighlightDetailScreenState
                       child: Padding(
                         padding: EdgeInsets.all(20),
                         child: CircularProgressIndicator(
-                          color: MarginaliaColors.primary,
+                          color: MarginaliaColors.primaryDark,
                           strokeWidth: 1.5,
                         ),
                       ),
@@ -316,7 +316,7 @@ class _JamHighlightDetailScreenState
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.image_outlined, size: 18,
-                        color: MarginaliaColors.primary),
+                        color: MarginaliaColors.primaryDark),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -448,7 +448,7 @@ class _ReactionChip extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: isMine
-                        ? MarginaliaColors.primary
+                        ? MarginaliaColors.primaryDark
                         : MarginaliaColors.inkMuted,
                   ),
                 ),
@@ -503,12 +503,10 @@ class _CommentBubble extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isMine
-                        ? MarginaliaColors.primary
-                        : MarginaliaColors.sienna,
+                    color: MarginaliaColors.primaryDark,
                   ),
                 ),
               ),

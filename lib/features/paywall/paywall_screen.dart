@@ -362,7 +362,7 @@ class _PaywallBody extends StatelessWidget {
                 onPressed: purchasing || restoring ? null : onPurchase,
                 style: FilledButton.styleFrom(
                   backgroundColor: MarginaliaColors.primary,
-                  foregroundColor: const Color(0xFFF1EEE7),
+                  foregroundColor: MarginaliaColors.ink,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -376,7 +376,7 @@ class _PaywallBody extends StatelessWidget {
                     ? const SizedBox(
                         width: 20, height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2, color: MarginaliaColors.ink),
                       )
                     : Text(context.l10n.paywallPurchaseCta),
               ),
@@ -466,7 +466,7 @@ class _FeatureRow extends StatelessWidget {
               icon,
               size: 22,
               color: premium
-                  ? MarginaliaColors.primary
+                  ? MarginaliaColors.primaryDark
                   : MarginaliaColors.inkFaint,
             ),
           ),
@@ -501,7 +501,7 @@ class _FeatureRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.primary,
+                          color: MarginaliaColors.primaryDark,
                           letterSpacing: 0.5,
                         ),
                       ),

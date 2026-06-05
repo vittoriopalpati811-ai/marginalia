@@ -664,7 +664,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             loading: () => const SliverFillRemaining(
               child: Center(
                 child: CircularProgressIndicator(
-                  color: MarginaliaColors.primary,
+                  color: MarginaliaColors.primaryDark,
                   strokeWidth: 1.5,
                 ),
               ),
@@ -1016,7 +1016,7 @@ class _MembersStrip extends StatelessWidget {
                                 child: const Center(
                                   child: Icon(Icons.auto_stories,
                                       size: 8,
-                                      color: MarginaliaColors.primary),
+                                      color: Colors.white),
                                 ),
                               ),
                             ),
@@ -1082,7 +1082,7 @@ class _EmptyJamHighlights extends StatelessWidget {
             child: const Icon(
               Icons.auto_stories_outlined,
               size: 32,
-              color: MarginaliaColors.primary,
+              color: MarginaliaColors.primaryDark,
             ),
           ),
           const SizedBox(height: 20),
@@ -1138,7 +1138,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.primary,
+                      color: MarginaliaColors.primaryDark,
                       letterSpacing: 5,
                     ),
                   ),
@@ -1159,7 +1159,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                           icon: const Icon(Icons.copy_outlined, size: 16),
                           label: Text(context.l10n.copy),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: MarginaliaColors.primary,
+                            foregroundColor: MarginaliaColors.primaryDark,
                             side: const BorderSide(
                                 color: MarginaliaColors.rule),
                           ),
@@ -1395,7 +1395,7 @@ class _BookGroupHeader extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.sienna,
+                color: MarginaliaColors.primaryDark,
                 letterSpacing: 0.1,
               ),
               maxLines: 1,
@@ -1520,7 +1520,7 @@ class _JamHighlightCard extends ConsumerWidget {
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: MarginaliaColors.sienna,
+                            color: MarginaliaColors.primaryDark,
                             letterSpacing: 0.3,
                           ),
                           maxLines: 1,
@@ -1559,7 +1559,7 @@ class _JamHighlightCard extends ConsumerWidget {
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: MarginaliaColors.primary,
+                                color: MarginaliaColors.primaryDark,
                               ),
                             ),
                           ),
@@ -1619,7 +1619,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                 const Icon(
                                   Icons.auto_awesome_outlined,
                                   size: 14,
-                                  color: MarginaliaColors.sienna,
+                                  color: MarginaliaColors.primaryDark,
                                 ),
                                 const SizedBox(width: 6),
                                 Flexible(
@@ -1627,7 +1627,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                     context.l10n.jamMatchCount(myMatchCount),
                                     style: const TextStyle(
                                       fontSize: 11,
-                                      color: MarginaliaColors.sienna,
+                                      color: MarginaliaColors.primaryDark,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1762,7 +1762,7 @@ class _JamFeaturesRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(f.icon,
-                          size: 20, color: MarginaliaColors.primary),
+                          size: 20, color: MarginaliaColors.primaryDark),
                       const Spacer(),
                       Text(
                         f.label,
@@ -1885,7 +1885,7 @@ class _MemberProfileSheet extends StatelessWidget {
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
-                  color: MarginaliaColors.sienna,
+                  color: MarginaliaColors.primaryDark,
                 ),
               ),
             ),
@@ -1927,7 +1927,7 @@ class _MemberProfileSheet extends StatelessWidget {
               child: Row(
                 children: [
                   const Icon(Icons.auto_stories,
-                      size: 16, color: MarginaliaColors.primary),
+                      size: 16, color: MarginaliaColors.primaryDark),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -1979,7 +1979,7 @@ class _MemberProfileSheet extends StatelessWidget {
                 icon: const Icon(Icons.person_outline, size: 16),
                 label: Text(context.l10n.jamViewProfile),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primary,
+                  foregroundColor: MarginaliaColors.primaryDark,
                   side: const BorderSide(color: MarginaliaColors.rule),
                 ),
               ),

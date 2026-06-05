@@ -121,12 +121,12 @@ class _HomeHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.edit_outlined,
-                        size: 15, color: MarginaliaColors.sienna),
+                        size: 15, color: MarginaliaColors.primaryDark),
                     const SizedBox(width: 6),
                     Text(
                       context.l10n.commonScrivi,
                       style: const TextStyle(
-                        color: MarginaliaColors.sienna,
+                        color: MarginaliaColors.primaryDark,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),

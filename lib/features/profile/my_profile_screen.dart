@@ -498,7 +498,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.primary,
+                          color: MarginaliaColors.primaryDark,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -917,7 +917,7 @@ class _StatBox extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: onTap != null
-                    ? MarginaliaColors.sienna
+                    ? MarginaliaColors.primaryDark
                     : MarginaliaColors.ink,
                 letterSpacing: -0.5,
               ),
@@ -929,7 +929,7 @@ class _StatBox extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
                 color: onTap != null
-                    ? MarginaliaColors.siennaLight
+                    ? MarginaliaColors.primaryDark
                     : MarginaliaColors.inkFaint,
                 letterSpacing: 0.5,
               ),
@@ -1067,7 +1067,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
         child: Row(
           children: [
             const Icon(Icons.menu_book_outlined,
-                size: 20, color: MarginaliaColors.sienna),
+                size: 20, color: MarginaliaColors.primaryDark),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -2059,7 +2059,7 @@ class _FavoriteBooksSection extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.primary,
+                      color: MarginaliaColors.primaryDark,
                       letterSpacing: 0.3,
                     ),
                   ),

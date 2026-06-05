@@ -362,7 +362,7 @@ class _DoneOverlay extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.check_circle_outline,
-                size: 72, color: MarginaliaColors.accent),
+                size: 72, color: MarginaliaColors.primaryDark),
             const SizedBox(height: 24),
             Text(
               context.l10n.kindleDone,

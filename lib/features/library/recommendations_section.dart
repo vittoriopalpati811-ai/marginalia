@@ -1013,7 +1013,7 @@ class _RecommendationDetailScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(Icons.auto_stories_outlined,
-                                size: 18, color: MarginaliaColors.primary),
+                                size: 18, color: MarginaliaColors.primaryDark),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -1479,7 +1479,7 @@ class _RecommendationsHint extends StatelessWidget {
                     const Icon(
                       Icons.refresh_rounded,
                       size: 14,
-                      color: MarginaliaColors.primary,
+                      color: MarginaliaColors.primaryDark,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -1487,7 +1487,7 @@ class _RecommendationsHint extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: MarginaliaColors.primary,
+                        color: MarginaliaColors.primaryDark,
                         letterSpacing: 0.2,
                       ),
                     ),

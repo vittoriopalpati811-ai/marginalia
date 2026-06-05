@@ -77,7 +77,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       backgroundColor: MarginaliaColors.background,
       body: RefreshIndicator(
         onRefresh: () async => _refreshLibrary(),
-        color: MarginaliaColors.sienna,
+        color: MarginaliaColors.primaryDark,
         backgroundColor: MarginaliaColors.surfaceElevated,
         displacement: 60,
         child: CustomScrollView(
@@ -153,7 +153,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: CircularProgressIndicator(
-                      color: MarginaliaColors.sienna,
+                      color: MarginaliaColors.primaryDark,
                       strokeWidth: 1.5,
                     ),
                   ),
@@ -219,7 +219,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: MarginaliaColors.primary,
+                              color: MarginaliaColors.primaryDark,
                               letterSpacing: -0.1,
                             ),
                           ),
@@ -229,7 +229,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                 ? Icons.keyboard_arrow_up_rounded
                                 : Icons.keyboard_arrow_down_rounded,
                             size: 18,
-                            color: MarginaliaColors.primary,
+                            color: MarginaliaColors.primaryDark,
                           ),
                         ],
                       ),
@@ -616,7 +616,7 @@ class _EditorialHeader extends StatelessWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 1.5,
-                      color: MarginaliaColors.sienna,
+                      color: MarginaliaColors.primaryDark,
                     ),
                   ),
                 )
@@ -728,7 +728,7 @@ class _DailyCard extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.sienna,
+                          color: MarginaliaColors.primaryDark,
                           letterSpacing: -0.1,
                         ),
                       ),
@@ -736,7 +736,7 @@ class _DailyCard extends StatelessWidget {
                       const Icon(
                         Icons.arrow_forward_rounded,
                         size: 16,
-                        color: MarginaliaColors.sienna,
+                        color: MarginaliaColors.primaryDark,
                       ),
                     ],
                   ),
@@ -1076,7 +1076,7 @@ class _EmptyLibrary extends StatelessWidget {
               child: const Icon(
                 Icons.auto_stories_outlined,
                 size: 32,
-                color: MarginaliaColors.siennaLight,
+                color: MarginaliaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 24),
@@ -1111,11 +1111,11 @@ class _EmptyLibrary extends StatelessWidget {
                 onPressed: onDemo,
                 icon: Icon(Icons.auto_awesome_outlined,
                     size: 16,
-                    color: MarginaliaColors.siennaLight),
+                    color: MarginaliaColors.primaryDark),
                 label: Text(
                   context.l10n.libraryTryDemo,
                   style: const TextStyle(
-                      color: MarginaliaColors.siennaLight),
+                      color: MarginaliaColors.primaryDark),
                 ),
               ),
             ],

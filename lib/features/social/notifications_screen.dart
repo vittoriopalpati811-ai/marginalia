@@ -73,7 +73,7 @@ class NotificationsScreen extends ConsumerWidget {
               context.l10n.notificationsMarkAllRead,
               style: GoogleFonts.manrope(
                 fontSize: 13,
-                color: MarginaliaColors.primary,
+                color: MarginaliaColors.primaryDark,
                 fontWeight: FontWeight.w600,
               ),
             ),
