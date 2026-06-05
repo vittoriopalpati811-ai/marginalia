@@ -1213,6 +1213,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // Render above the shell's floating bottom navbar so the comment input
+      // field is fully tappable above the keyboard.
+      useRootNavigator: true,
       // Pass the post's owner id so the comments sheet can let the post owner
       // moderate (delete) ANY comment on their post, not just their own.
       builder: (_) => _CommentsSheet(

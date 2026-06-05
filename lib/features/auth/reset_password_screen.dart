@@ -175,6 +175,23 @@ class _FormState extends StatelessWidget {
                     : Icons.visibility_off_outlined),
                 onPressed: onToggle1,
               ),
+              filled: true,
+              fillColor: MarginaliaColors.surfaceElevated,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                    color: MarginaliaColors.primaryDark, width: 1.5),
+              ),
             ),
             validator: (v) {
               if (v == null || v.isEmpty) return context.l10n.resetEnterNew;
@@ -197,6 +214,23 @@ class _FormState extends StatelessWidget {
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined),
                 onPressed: onToggle2,
+              ),
+              filled: true,
+              fillColor: MarginaliaColors.surfaceElevated,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                    color: MarginaliaColors.primaryDark, width: 1.5),
               ),
             ),
             validator: (v) {

@@ -167,6 +167,23 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           decoration: InputDecoration(
             hintText: l10n.jamNameHint,
             counterText: '',
+            filled: true,
+            fillColor: MarginaliaColors.surfaceElevated,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide:
+                  const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+            ),
           ),
         ),
         actions: [

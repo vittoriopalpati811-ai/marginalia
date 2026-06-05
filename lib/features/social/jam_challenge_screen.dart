@@ -90,6 +90,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CreateChallengeSheet(
         jamId: widget.jamId,
@@ -386,13 +387,48 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             const SizedBox(height: 20),
             TextField(
               controller: _titleCtrl,
-              decoration: InputDecoration(hintText: context.l10n.jamChallengeNameFieldHint, prefixIcon: const Icon(Icons.emoji_events_outlined)),
+              decoration: InputDecoration(
+                hintText: context.l10n.jamChallengeNameFieldHint,
+                prefixIcon: const Icon(Icons.emoji_events_outlined),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+                ),
+              ),
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _descCtrl,
-              decoration: InputDecoration(hintText: context.l10n.jamChallengeDescFieldHint),
+              decoration: InputDecoration(
+                hintText: context.l10n.jamChallengeDescFieldHint,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+                ),
+              ),
               maxLines: 2,
               textCapitalization: TextCapitalization.sentences,
             ),

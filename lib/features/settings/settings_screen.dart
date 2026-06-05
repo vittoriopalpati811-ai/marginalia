@@ -844,6 +844,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 hintText: context.l10n.editProfileDisplayName,
                 prefixIcon: const Icon(Icons.person_outline),
                 labelText: context.l10n.editProfileName,
+                filled: true,
+                fillColor: MarginaliaColors.surfaceElevated,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark, width: 1.5)),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
               ),
             ),
             const SizedBox(height: 12),
@@ -863,6 +877,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: InputDecoration(
                 hintText: context.l10n.editProfileBookTitleHint,
                 prefixIcon: const Icon(Icons.menu_book_outlined),
+                filled: true,
+                fillColor: MarginaliaColors.surfaceElevated,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark, width: 1.5)),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
               ),
             ),
             const SizedBox(height: 10),
@@ -872,6 +900,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: InputDecoration(
                 hintText: context.l10n.editProfileAuthorHint,
                 prefixIcon: const Icon(Icons.person_outline),
+                filled: true,
+                fillColor: MarginaliaColors.surfaceElevated,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark, width: 1.5)),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
               ),
             ),
             const SizedBox(height: 20),

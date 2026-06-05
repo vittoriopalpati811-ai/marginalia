@@ -1184,6 +1184,23 @@ class _EmailForm extends StatelessWidget {
           decoration: InputDecoration(
             hintText: context.l10n.authEmail,
             prefixIcon: const Icon(Icons.email_outlined),
+            filled: true,
+            fillColor: MarginaliaColors.surfaceElevated,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                  color: MarginaliaColors.primaryDark, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 14),
@@ -1202,6 +1219,23 @@ class _EmailForm extends StatelessWidget {
                     : Icons.visibility_off_outlined,
               ),
               onPressed: onToggleObscure,
+            ),
+            filled: true,
+            fillColor: MarginaliaColors.surfaceElevated,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                  color: MarginaliaColors.primaryDark, width: 1.5),
             ),
           ),
         ),
@@ -1322,6 +1356,23 @@ class _UsernameStep extends StatelessWidget {
                 color: MarginaliaColors.primaryDark,
               ),
               suffixIcon: _suffixIcon(),
+              filled: true,
+              fillColor: MarginaliaColors.surfaceElevated,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                    color: MarginaliaColors.primaryDark, width: 1.5),
+              ),
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
 

@@ -121,7 +121,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     // Search bar
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(22),
+                        color: Colors.white.withOpacity(0.14),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                             color: Colors.white.withAlpha(30), width: 0.5),
@@ -157,12 +157,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   },
                                 )
                               : null,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.14),
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 14),
+                              horizontal: 12, vertical: 14),
                         ),
                         onChanged: (v) =>
                             ref.read(_userSearchQueryProvider.notifier).state =

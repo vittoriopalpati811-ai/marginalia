@@ -111,6 +111,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CreatePollSheet(
         jamId: widget.jamId,
@@ -123,6 +124,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _SubmitCandidateSheet(
         pollId: pollId,
@@ -463,7 +465,25 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
           const SizedBox(height: 20),
           TextField(
             controller: _titleCtrl,
-            decoration: InputDecoration(hintText: context.l10n.jamPollTitleFieldHint, prefixIcon: const Icon(Icons.how_to_vote_outlined)),
+            decoration: InputDecoration(
+              hintText: context.l10n.jamPollTitleFieldHint,
+              prefixIcon: const Icon(Icons.how_to_vote_outlined),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+              ),
+            ),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 14),

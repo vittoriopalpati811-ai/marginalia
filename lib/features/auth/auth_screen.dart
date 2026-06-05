@@ -137,6 +137,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 decoration: InputDecoration(
                   hintText: context.l10n.authEmail,
                   prefixIcon: const Icon(Icons.email_outlined),
+                  filled: true,
+                  fillColor: MarginaliaColors.surfaceElevated,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark, width: 1.5),
+                  ),
                 ),
               ),
             ],
@@ -257,6 +274,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                   decoration: InputDecoration(
                                     hintText: context.l10n.authName,
                                     prefixIcon: const Icon(Icons.person_outline),
+                                    filled: true,
+                                    fillColor: MarginaliaColors.surfaceElevated,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                      borderSide: const BorderSide(
+                                          color: MarginaliaColors.primaryDark,
+                                          width: 1.5),
+                                    ),
                                   ),
                                   validator: (v) => _tab.index == 1 && (v == null || v.trim().isEmpty)
                                       ? context.l10n.authNameRequired
@@ -275,6 +310,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       decoration: InputDecoration(
                         hintText: context.l10n.authEmail,
                         prefixIcon: const Icon(Icons.email_outlined),
+                        filled: true,
+                        fillColor: MarginaliaColors.surfaceElevated,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                              color: MarginaliaColors.primaryDark, width: 1.5),
+                        ),
                       ),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return context.l10n.authEmailRequired;
@@ -294,6 +346,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         suffixIcon: IconButton(
                           icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                           onPressed: () => setState(() => _obscure = !_obscure),
+                        ),
+                        filled: true,
+                        fillColor: MarginaliaColors.surfaceElevated,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                              color: MarginaliaColors.primaryDark, width: 1.5),
                         ),
                       ),
                       validator: (v) {

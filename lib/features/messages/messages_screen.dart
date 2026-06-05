@@ -754,6 +754,9 @@ class _NewConversationSheet extends StatelessWidget {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
+                    // Render above the shell's floating bottom navbar so the
+                    // search field stays tappable above the keyboard.
+                    useRootNavigator: true,
                     builder: (ctx) => _UserSearchSheet(
                       onConversationCreated: onConversationCreated,
                     ),
@@ -773,6 +776,9 @@ class _NewConversationSheet extends StatelessWidget {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
+                    // Render above the shell's floating bottom navbar so the
+                    // group-name and search fields stay tappable above the keyboard.
+                    useRootNavigator: true,
                     builder: (ctx) => _CreateGroupSheet(
                       onConversationCreated: onConversationCreated,
                     ),
@@ -986,6 +992,27 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                             ),
                           )
                         : null,
+                    filled: true,
+                    fillColor: MarginaliaColors.surfaceElevated,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark,
+                        width: 1.5,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],
@@ -1218,6 +1245,27 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                   decoration: InputDecoration(
                     hintText: context.l10n.msgGroupNameHint,
                     prefixIcon: const Icon(Icons.group_outlined, size: 20),
+                    filled: true,
+                    fillColor: MarginaliaColors.surfaceElevated,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark,
+                        width: 1.5,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1246,6 +1294,27 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                             ),
                           )
                         : null,
+                    filled: true,
+                    fillColor: MarginaliaColors.surfaceElevated,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: MarginaliaColors.primaryDark,
+                        width: 1.5,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
 
