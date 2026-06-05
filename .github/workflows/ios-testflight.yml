@@ -113,6 +113,30 @@ jobs:
           [ "$ok" = 1 ] || { echo "Fix the secret(s) above and re-run."; exit 1; }
           echo "All four signing secrets present and PEM-shaped."
 
+      - name: Diag probe — fetch app signing profile (surfaces the real error fast)
+        # TEMPORARY diagnostic: runs the app fetch-signing-files BEFORE the long
+        # build so the real App Store Connect error appears in ~3 min instead of
+        # ~15, and emits it via ::error:: (readable through the public check-runs
+        # annotations API). Removed once signing is green.
+        run: |
+          keychain initialize || true
+          set +e
+          OUT=$(app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --private-key "@env:APP_STORE_CONNECT_PRIVATE_KEY" \
+            --type IOS_APP_STORE \
+            --certificate-key "@env:CERTIFICATE_PRIVATE_KEY" \
+            --create 2>&1)
+          rc=$?
+          printf '%s\n' "$OUT" | tail -n 50
+          if [ "$rc" -ne 0 ]; then
+            MSG=$(printf '%s' "$OUT" | tr '\n\r\t' '   ' | tail -c 1600)
+            echo "::error title=fetch-signing-files error::$MSG"
+            exit 1
+          fi
+          echo "Probe OK — app signing profile fetched."
+
       - name: Generate iOS native shell
         run: |
           flutter create --platforms=ios --org io.marginalia .
