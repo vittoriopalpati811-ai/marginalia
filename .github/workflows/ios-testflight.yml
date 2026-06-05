@@ -85,8 +85,16 @@ jobs:
       - name: Install Codemagic CLI tools
         # Provides the SAME `app-store-connect`, `keychain`, `xcode-project`
         # commands Codemagic runs internally — this is what guarantees the
-        # signing + upload behave identically.
-        run: pip3 install codemagic-cli-tools
+        # signing + upload behave identically. Installed into an isolated venv:
+        # the runner's Homebrew Python is PEP-668 "externally managed", so a bare
+        # `pip3 install` is refused with "externally-managed-environment". The
+        # venv's bin is prepended to PATH so every later step sees the commands.
+        run: |
+          python3 -m venv "$HOME/cmcli"
+          "$HOME/cmcli/bin/pip" install --upgrade pip wheel
+          "$HOME/cmcli/bin/pip" install codemagic-cli-tools
+          echo "$HOME/cmcli/bin" >> "$GITHUB_PATH"
+          "$HOME/cmcli/bin/app-store-connect" --version
 
       - name: Generate iOS native shell
         run: |
