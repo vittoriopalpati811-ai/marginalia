@@ -41,8 +41,17 @@ class RecsCache {
   }
 
   /// Persists [recs] (raw maps) for today under [signature].
+  ///
+  /// Caller contract: ONLY a successful, non-empty recommendation list is ever
+  /// passed here. Transient failures (rate_limit / ai_error / network / …) must
+  /// never be written, so a one-off failure can never get stuck on disk and
+  /// keep being served on the next cold start.
   static Future<void> write(
       String signature, List<Map<String, dynamic>> recs) async {
+    // Defensive: never persist an empty set even if a caller slips up — an
+    // empty file would read back as a miss anyway, but this keeps the on-disk
+    // invariant ("the file, if present, holds a usable list") explicit.
+    if (recs.isEmpty) return;
     try {
       final f = await _path();
       await f.writeAsString(jsonEncode({
@@ -50,6 +59,17 @@ class RecsCache {
         'sig': signature,
         'recs': recs,
       }));
+    } catch (_) {}
+  }
+
+  /// Deletes the cache file outright. Used by the explicit "Riprova" retry so a
+  /// forced re-fetch can never just re-read a previously cached (even good) set
+  /// — the user asked for a fresh AI pick. The file only ever holds a single
+  /// day/signature, so removing it is sufficient to bust the whole cache.
+  static Future<void> clear() async {
+    try {
+      final f = await _path();
+      if (await f.exists()) await f.delete();
     } catch (_) {}
   }
 }

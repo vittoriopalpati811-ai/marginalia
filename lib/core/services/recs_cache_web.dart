@@ -10,4 +10,7 @@ class RecsCache {
 
   static Future<void> write(
       String signature, List<Map<String, dynamic>> recs) async {}
+
+  /// No-op on web (no persistent cache to clear).
+  static Future<void> clear() async {}
 }

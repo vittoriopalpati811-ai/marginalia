@@ -139,8 +139,33 @@ RecsEmptyReason _parseReason(String? raw) {
 // library_screen.dart calls exclusively after a real My Clippings import,
 // or via the explicit "Riprova" button in the rate-limited empty state.
 
+/// Monotonic "force a fresh fetch" token. The "Riprova" button bumps this so
+/// the next provider run BYPASSES the daily disk cache (and the button also
+/// clears that cache) — otherwise a forced retry could simply re-read a
+/// previously cached set instead of asking the AI again. A normal invalidate
+/// (e.g. after an import) leaves it at 0 and the disk cache keeps protecting
+/// the Groq quota as before.
+///
+/// The provider READS this (never `watch`es it) and resets it to 0 after the
+/// run, so the bypass is strictly one-shot: it is consumed by the single
+/// re-fetch the button triggers and does not leak into later import-driven
+/// runs. Using `read` (not `watch`) also means resetting it can't re-trigger
+/// the provider — the only thing that re-runs the body is the button's
+/// explicit `invalidate`.
+final recsForceRefreshProvider = StateProvider<int>((ref) => 0);
+
 final libraryRecommendationsProvider =
     FutureProvider<RecsResult>((ref) async {
+  // When the user explicitly retried, this is > 0 and we skip the disk-cache
+  // read so the run goes all the way to a live AI fetch. Read-and-consume:
+  // reset to 0 so this bypass applies to exactly one re-fetch.
+  final forceFresh = ref.read(recsForceRefreshProvider) > 0;
+  if (forceFresh) {
+    // Defer the reset out of the current build to keep Riverpod happy about
+    // not mutating provider state synchronously during a build.
+    Future.microtask(
+        () => ref.read(recsForceRefreshProvider.notifier).state = 0);
+  }
   // Re-emit when auth restoration completes.
   final user = ref.watch(currentUserProvider);
   if (user == null && kIsWeb) {
@@ -252,9 +277,14 @@ final libraryRecommendationsProvider =
   // book + highlight counts, so an import (which changes them) busts the cache
   // automatically; it also rolls over at midnight. This is what keeps the free
   // Groq tier from being burned by repeated cold starts. (No-op on web.)
+  //
+  // The disk cache ONLY ever holds a successful, non-empty list (writes are
+  // guarded below and in RecsCache.write), so a transient failure can never be
+  // served from disk on the next cold start. On an explicit "Riprova"
+  // (forceFresh) we skip the read entirely and go straight to a live fetch.
   final cacheSig =
       '${orderedBookIds.length}:$totalHighlights:${ref.read(localeProvider).languageCode}';
-  final cachedRecs = await RecsCache.read(cacheSig);
+  final cachedRecs = forceFresh ? null : await RecsCache.read(cacheSig);
   if (cachedRecs != null) {
     debugPrint('[Recs] cache hit ($cacheSig) — skipping AI call');
     final list = cachedRecs
@@ -382,8 +412,12 @@ final libraryRecommendationsProvider =
 
   debugPrint('[Recs] received ${recommendations.length} recommendations');
 
-  // Cache this successful set for the rest of today (only successes are cached,
-  // so a rate-limited day can still recover on the next attempt).
+  // Cache this successful set for the rest of today. ONLY a non-empty OK list
+  // ever reaches this write — every non-OK path (rate_limit / ai_error /
+  // network / ai_empty / no_books / notAuth) returned earlier WITHOUT touching
+  // the cache. That is the core guarantee: a transient failure can never
+  // overwrite a good cache nor get persisted as the value served next time, so
+  // a rate-limited moment self-heals on the next fetch instead of sticking.
   if (recommendations.isNotEmpty) {
     await RecsCache.write(
       cacheSig,
@@ -400,6 +434,26 @@ final libraryRecommendationsProvider =
 
   return RecsResult(list: recommendations, reason: RecsEmptyReason.ok);
 });
+
+/// Forces a genuine network re-fetch of the recommendations, used by the
+/// "Riprova" affordance in the empty/error states.
+///
+/// A bare `ref.invalidate` is NOT enough on iOS: the daily disk cache could
+/// still serve a stale (even if "successful") set for the same library
+/// signature, so the user's explicit retry would silently re-read the cache
+/// instead of asking the AI again. So we:
+///   1. clear the on-disk daily cache, and
+///   2. bump the force-refresh token (provider then skips the disk read), and
+///   3. invalidate so the provider body actually re-runs now.
+/// Fire-and-forget: the cache clear is async but the invalidate below already
+/// kicks the provider into a fresh run that re-checks the (now skipped) cache.
+void _forceRecsRefetch(WidgetRef ref) {
+  // Best-effort wipe of the persisted entry; safe no-op on web.
+  // ignore: discarded_futures
+  RecsCache.clear();
+  ref.read(recsForceRefreshProvider.notifier).state++;
+  ref.invalidate(libraryRecommendationsProvider);
+}
 
 // ─── Section widget ───────────────────────────────────────────────────────────
 
@@ -441,7 +495,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
         // Surface the error instead of pretending nothing happened.
         return _RecommendationsHint(
           context.l10n.recsAiError,
-          onRetry: () => ref.invalidate(libraryRecommendationsProvider),
+          onRetry: () => _forceRecsRefetch(ref),
         );
       },
       data: (result) {
@@ -453,9 +507,7 @@ class LibraryRecommendationsSection extends ConsumerWidget {
               result.reason != RecsEmptyReason.notAuth;
           return _RecommendationsHint(
             _copyFor(context, result.reason),
-            onRetry: canRetry
-                ? () => ref.invalidate(libraryRecommendationsProvider)
-                : null,
+            onRetry: canRetry ? () => _forceRecsRefetch(ref) : null,
           );
         }
         return Padding(
