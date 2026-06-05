@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:sentry/sentry.dart';
 
 import 'core/bootstrap_error_app.dart';
 import 'core/services/widget_service.dart';
@@ -37,7 +37,7 @@ Future<void> main() async {
     _bootstrap();
     return;
   }
-  await SentryFlutter.init(
+  await Sentry.init(
     (options) {
       options.dsn = _sentryDsn;
       options.tracesSampleRate = 0.2;
