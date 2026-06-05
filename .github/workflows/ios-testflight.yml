@@ -96,22 +96,26 @@ jobs:
           echo "$HOME/cmcli/bin" >> "$GITHUB_PATH"
           "$HOME/cmcli/bin/app-store-connect" --version
 
-      - name: Verify signing secrets are present
-        # Makes the cause of a signing failure readable from the step result
-        # alone: FAILS with a clear ::error:: naming any secret that is empty or
-        # misnamed. Never prints key material — only lengths + a yes/no PEM check
-        # (GitHub also masks the values in logs).
+      - name: Verify & validate signing secrets
+        # Apple returned 401 even though the secrets are present, so validate the
+        # FORMAT of each (a wrong/mismatched value is the usual cause). Emits a
+        # specific ::error:: per malformed field. Never prints the values — only
+        # lengths and pattern pass/fail (and GitHub masks the values anyway).
         run: |
           ok=1
-          check() { if [ -z "$2" ]; then echo "::error::Secret $1 is EMPTY or missing — check the EXACT name in repo Settings -> Secrets and variables -> Actions"; ok=0; else echo "$1: present (length ${#2})"; fi; }
-          check APP_STORE_CONNECT_KEY_IDENTIFIER "$APP_STORE_CONNECT_KEY_IDENTIFIER"
-          check APP_STORE_CONNECT_ISSUER_ID "$APP_STORE_CONNECT_ISSUER_ID"
-          check APP_STORE_CONNECT_PRIVATE_KEY "$APP_STORE_CONNECT_PRIVATE_KEY"
-          check CERTIFICATE_PRIVATE_KEY "$CERTIFICATE_PRIVATE_KEY"
-          case "$APP_STORE_CONNECT_PRIVATE_KEY" in *BEGIN*) echo "ASC key is PEM: yes" ;; *) echo "::error::APP_STORE_CONNECT_PRIVATE_KEY has no BEGIN line — paste the WHOLE .p8 incl. BEGIN/END"; ok=0 ;; esac
-          case "$CERTIFICATE_PRIVATE_KEY" in *BEGIN*) echo "CERT key is PEM: yes" ;; *) echo "::error::CERTIFICATE_PRIVATE_KEY has no BEGIN line"; ok=0 ;; esac
-          [ "$ok" = 1 ] || { echo "Fix the secret(s) above and re-run."; exit 1; }
-          echo "All four signing secrets present and PEM-shaped."
+          KID="$APP_STORE_CONNECT_KEY_IDENTIFIER"
+          ISS="$APP_STORE_CONNECT_ISSUER_ID"
+          [ -n "$KID" ] || { echo "::error::APP_STORE_CONNECT_KEY_IDENTIFIER empty"; ok=0; }
+          [ -n "$ISS" ] || { echo "::error::APP_STORE_CONNECT_ISSUER_ID empty"; ok=0; }
+          [ -n "$APP_STORE_CONNECT_PRIVATE_KEY" ] || { echo "::error::APP_STORE_CONNECT_PRIVATE_KEY empty"; ok=0; }
+          [ -n "$CERTIFICATE_PRIVATE_KEY" ] || { echo "::error::CERTIFICATE_PRIVATE_KEY empty"; ok=0; }
+          echo "lengths -> KeyID:${#KID}  IssuerID:${#ISS}  p8:${#APP_STORE_CONNECT_PRIVATE_KEY}  cert:${#CERTIFICATE_PRIVATE_KEY}"
+          if printf '%s' "$KID" | grep -Eq '^[A-Za-z0-9]{10}$'; then echo "Key ID format OK"; else echo "::error title=Key ID malformed::APP_STORE_CONNECT_KEY_IDENTIFIER must be EXACTLY 10 letters/digits, no spaces/label/newline. Current length=${#KID}"; ok=0; fi
+          if printf '%s' "$ISS" | grep -Eiq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then echo "Issuer ID format OK"; else echo "::error title=Issuer ID malformed::APP_STORE_CONNECT_ISSUER_ID must be a UUID like 69a6de70-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Current length=${#ISS}"; ok=0; fi
+          if printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | openssl pkey -noout 2>/dev/null; then echo ".p8 parses OK"; else echo "::error title=.p8 unparseable::APP_STORE_CONNECT_PRIVATE_KEY is not a valid private key. Re-copy the ENTIRE AuthKey_XXXX.p8 incl. the BEGIN/END lines."; ok=0; fi
+          if printf '%s' "$CERTIFICATE_PRIVATE_KEY" | openssl pkey -noout 2>/dev/null; then echo "cert key parses OK"; else echo "::error title=cert key unparseable::CERTIFICATE_PRIVATE_KEY is not a valid private key."; ok=0; fi
+          [ "$ok" = 1 ] || { echo "Fix the flagged secret(s) and re-run."; exit 1; }
+          echo "All signing secrets present and well-formed (so a 401 now means the three App Store Connect values don't belong to the SAME key)."
 
       - name: Diag probe — fetch app signing profile (surfaces the real error fast)
         # TEMPORARY diagnostic: runs the app fetch-signing-files BEFORE the long
