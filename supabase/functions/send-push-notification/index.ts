@@ -1,7 +1,9 @@
 // ─── send-push-notification Edge Function ────────────────────────────────────
 //
-// Sends an APNs push notification to all registered device tokens for a user.
-// Called internally by other edge functions or database triggers.
+// Sends an APNs push notification to a user's registered iOS device tokens.
+// The caller is always authenticated (verify_jwt + requireUser); the recipient
+// and the right to push to them are derived/authorized SERVER-SIDE so a client
+// can never spam arbitrary users.
 //
 // Environment variables required (set via `supabase secrets set`):
 //   APNS_TEAM_ID        — 10-char Apple Team ID (from developer.apple.com)
@@ -11,13 +13,28 @@
 //   SUPABASE_URL        — injected automatically by Supabase
 //   SUPABASE_SERVICE_ROLE_KEY — injected automatically by Supabase
 //
-// POST body:
-// {
-//   "user_id": "uuid",
-//   "title": "...",
-//   "body": "...",
-//   "data": { ... }          // optional
-// }
+// Two request modes:
+//
+// 1) MESSAGE mode (explicit recipient — used by the chat / sendMessage path):
+//    {
+//      "user_id": "uuid",      // recipient
+//      "title": "...",
+//      "body": "...",
+//      "data": { ... }         // optional
+//    }
+//    Authorized by requiring the caller and `user_id` to share a conversation.
+//
+// 2) POST-INTERACTION mode (recipient derived server-side — like / comment):
+//    {
+//      "post_id": "uuid",
+//      "kind": "like" | "comment",
+//      "preview": "..."        // optional, comment text (trimmed server-side)
+//    }
+//    The recipient is the post owner (posts.user_id). The caller must have
+//    actually liked/commented the post (verified against post_likes /
+//    post_comments) — otherwise 403. Self-interactions are a 200 no-op.
+//    Title/body are composed server-side (Italian) from the actor's
+//    profiles.display_name; data = { type: kind, post_id }.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -160,16 +177,29 @@ serve(async (req) => {
     return jsonResponse({ error: "Missing APNs configuration" }, 500);
   }
 
-  const { user_id, title, body, data = {} } = await req.json();
-  if (!user_id || !title || !body) {
-    return jsonResponse({ error: "user_id, title, body are required" }, 400);
-  }
+  const reqBody = await req.json();
 
-  // Fetch device tokens for the user (service role — bypasses RLS)
+  // Service-role client — bypasses RLS for the recipient/authorization reads.
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  const apns: ApnsConfig = { teamId, keyId, privateKey, bundleId };
+
+  // ── Mode 2: POST-INTERACTION (like / comment) ─────────────────────────────
+  // Recognised by `post_id` + `kind` and NO explicit user_id. The recipient is
+  // derived server-side (post owner) and the caller must have genuinely
+  // interacted, so a client cannot push to an arbitrary user nor spam.
+  if (reqBody.post_id && reqBody.kind && !reqBody.user_id) {
+    return await handlePostInteraction(req, supabase, apns, caller.id, reqBody);
+  }
+
+  // ── Mode 1: MESSAGE (explicit recipient, conversation-authorized) ─────────
+  const { user_id, title, body, data = {} } = reqBody;
+  if (!user_id || !title || !body) {
+    return jsonResponse({ error: "user_id, title, body are required" }, 400);
+  }
 
   // ── Authorize: caller and target must share a conversation ─────────────────
   // A user may only push to people they share a conversation with. Sending to
@@ -183,24 +213,150 @@ serve(async (req) => {
     }
   }
 
+  return await pushToUser(supabase, apns, user_id, title, body, data);
+});
+
+// ─── Shared recipient send ────────────────────────────────────────────────────
+//
+// Fetches the recipient's iOS device tokens (service role) and fan-outs one
+// APNs push per token. Used by BOTH request modes so the APNs sending logic
+// lives in exactly one place. Returns the standard {sent,total} JSON response.
+
+interface ApnsConfig {
+  teamId: string;
+  keyId: string;
+  privateKey: string;
+  bundleId: string;
+}
+
+async function pushToUser(
+  supabase: ReturnType<typeof createClient>,
+  apns: ApnsConfig,
+  userId: string,
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+): Promise<Response> {
   const { data: tokens, error } = await supabase
     .from("device_tokens")
     .select("token")
-    .eq("user_id", user_id)
+    .eq("user_id", userId)
     .eq("platform", "ios");
 
   if (error || !tokens?.length) {
     return jsonResponse({ sent: 0, message: "No tokens found" }, 200);
   }
 
-  const apnsJwt = await generateApnsJwt(teamId, keyId, privateKey);
+  const apnsJwt = await generateApnsJwt(apns.teamId, apns.keyId, apns.privateKey);
   const results = await Promise.all(
-    tokens.map((t) => sendApns(t.token, title, body, data, apnsJwt, bundleId)),
+    tokens.map((t) =>
+      sendApns(t.token, title, body, data, apnsJwt, apns.bundleId)
+    ),
   );
 
   const sent = results.filter((r) => r.ok).length;
   return jsonResponse({ sent, total: tokens.length }, 200);
-});
+}
+
+// ─── Post-interaction (like / comment) handler ────────────────────────────────
+//
+// Derives the recipient (post owner) server-side, verifies the caller actually
+// liked/commented the post, composes the Italian copy from the actor's display
+// name, then reuses pushToUser() to deliver. The caller can ONLY trigger a push
+// to a post they really interacted with — this is what prevents push spam.
+
+async function handlePostInteraction(
+  _req: Request,
+  supabase: ReturnType<typeof createClient>,
+  apns: ApnsConfig,
+  callerId: string,
+  reqBody: { post_id?: unknown; kind?: unknown; preview?: unknown },
+): Promise<Response> {
+  const postId = typeof reqBody.post_id === "string" ? reqBody.post_id : "";
+  const kind = reqBody.kind === "like" || reqBody.kind === "comment"
+    ? reqBody.kind
+    : null;
+
+  if (!postId || !kind) {
+    return jsonResponse(
+      { error: "post_id (uuid) and kind ('like'|'comment') are required" },
+      400,
+    );
+  }
+
+  // 1) Resolve the post owner. Unknown post → silent no-op.
+  const { data: post, error: postErr } = await supabase
+    .from("posts")
+    .select("user_id")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (postErr || !post) {
+    return jsonResponse({ sent: 0, message: "Post not found" }, 200);
+  }
+  const ownerId = post.user_id as string;
+
+  // 2) Never notify yourself.
+  if (ownerId === callerId) {
+    return jsonResponse({ sent: 0, message: "Self-interaction" }, 200);
+  }
+
+  // 3) SECURITY: the caller must have genuinely interacted with this post.
+  //    'like'    → a post_likes row (post_id, user_id = caller)
+  //    'comment' → a post_comments row (post_id, user_id = caller)
+  //    Absent → 403: a client may only push for posts it really liked/commented.
+  const interactionTable = kind === "like" ? "post_likes" : "post_comments";
+  const { data: interaction, error: interErr } = await supabase
+    .from(interactionTable)
+    .select("post_id")
+    .eq("post_id", postId)
+    .eq("user_id", callerId)
+    .limit(1)
+    .maybeSingle();
+
+  if (interErr || !interaction) {
+    return jsonResponse({ error: "forbidden" }, 403);
+  }
+
+  // 4) Actor display name (fallback "Qualcuno"). Italian is the app language.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", callerId)
+    .maybeSingle();
+
+  const rawName = typeof profile?.display_name === "string"
+    ? profile.display_name.trim()
+    : "";
+  const name = rawName.length > 0 ? rawName : "Qualcuno";
+
+  // 5) Compose short title/body.
+  let title: string;
+  let body: string;
+  if (kind === "like") {
+    title = "Nuovo like";
+    body = `${name} ha messo mi piace al tuo post`;
+  } else {
+    title = "Nuovo commento";
+    const rawPreview = typeof reqBody.preview === "string"
+      ? reqBody.preview.trim()
+      : "";
+    if (rawPreview.length > 0) {
+      const preview = rawPreview.length > 120
+        ? `${rawPreview.slice(0, 120)}…`
+        : rawPreview;
+      body = `${name}: ${preview}`;
+    } else {
+      body = `${name} ha commentato il tuo post`;
+    }
+  }
+
+  // 6) Deliver to the owner's devices with navigation data.
+  return await pushToUser(supabase, apns, ownerId, title, body, {
+    type: kind,
+    post_id: postId,
+  });
+}
 
 // ─── Authorization helper ─────────────────────────────────────────────────────
 //

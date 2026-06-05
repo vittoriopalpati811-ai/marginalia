@@ -1184,6 +1184,8 @@ class SupabaseService {
     if (!currentlyLiked) {
       // ignore: discarded_futures
       _notifyPostInteraction(postId, 'like');
+      // ignore: discarded_futures
+      _pushPostInteraction(postId, 'like');
     }
   }
 
@@ -1298,6 +1300,8 @@ class SupabaseService {
     // text (if any) is passed so the notification body can show it.
     // ignore: discarded_futures
     _notifyPostInteraction(postId, 'comment', preview: content?.trim());
+    // ignore: discarded_futures
+    _pushPostInteraction(postId, 'comment', preview: content?.trim());
   }
 
   /// Fire-and-forget: create an in-app notification for the OWNER of [postId]
@@ -1332,6 +1336,38 @@ class SupabaseService {
       });
     } catch (_) {
       // Best-effort — ignore (RPC missing, network blip, etc.).
+    }
+  }
+
+  /// Fire-and-forget: send an APNs PUSH to the OWNER of [postId] when the
+  /// current user likes or comments on their post. This complements the in-app
+  /// notification created by [_notifyPostInteraction]; it reaches owners whose
+  /// app is closed (same pattern as [_notifyConversationMembers] for messages).
+  ///
+  /// The recipient (post owner) and the right to push are resolved SERVER-SIDE
+  /// by the `send-push-notification` edge function: we only send {post_id, kind}
+  /// (+ an optional comment [preview]). The function derives the owner, verifies
+  /// we actually liked/commented the post, and never notifies ourselves — so no
+  /// recipient/title/body is trusted from the client.
+  ///
+  /// Never throws: a push failure must not break liking/commenting.
+  Future<void> _pushPostInteraction(
+    String postId,
+    String kind, {
+    String? preview,
+  }) async {
+    try {
+      final text = preview?.trim();
+      await _client.functions.invoke(
+        'send-push-notification',
+        body: {
+          'post_id': postId,
+          'kind': kind,
+          if (text != null && text.isNotEmpty) 'preview': text,
+        },
+      );
+    } catch (_) {
+      // Push is best-effort; a failure must never affect the like/comment.
     }
   }
 

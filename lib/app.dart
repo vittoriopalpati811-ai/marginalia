@@ -18,6 +18,7 @@ import 'core/providers/locale_provider.dart';
 import 'core/providers/unread_messages_provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/services/push_service.dart';
+import 'core/services/local_notif_service.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'core/providers/onboarding_provider.dart';
 import 'core/providers/widget_sync_provider.dart';
@@ -323,6 +324,21 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         // permission, registers, and forwards the token to registerDeviceToken.
         if (data.session != null) {
           _pushService.start();
+
+          // Engagement nudge: schedule the daily "frase del giorno" local
+          // notification (native iOS, reuses the push authorization). Fires at
+          // 09:00 every morning. Idempotent — the native side reuses the
+          // "daily_phrase" identifier, so re-scheduling on each session-active
+          // event simply replaces the pending request.
+          final isEnglish = ref.read(localeProvider).languageCode == 'en';
+          LocalNotifService.scheduleDailyPhrase(
+            hour: 9,
+            minute: 0,
+            title: 'Marginalia',
+            body: isEnglish
+                ? 'Your phrase of the day is waiting 📖'
+                : 'La tua frase di oggi ti aspetta 📖',
+          );
         }
       });
     } catch (error) {

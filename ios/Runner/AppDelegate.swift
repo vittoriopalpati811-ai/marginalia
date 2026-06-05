@@ -15,6 +15,7 @@ import WatchConnectivity
 @objc class AppDelegate: FlutterAppDelegate, WCSessionDelegate {
   private var pushChannel: FlutterMethodChannel?
   private var watchChannel: FlutterMethodChannel?
+  private var localNotifChannel: FlutterMethodChannel?
 
   override func application(
     _ application: UIApplication,
@@ -67,6 +68,23 @@ import WatchConnectivity
         }
       }
       watchChannel = watch
+
+      let localNotif = FlutterMethodChannel(
+        name: "marginalia/localnotif",
+        binaryMessenger: controller.binaryMessenger)
+      localNotif.setMethodCallHandler { [weak self] call, result in
+        switch call.method {
+        case "scheduleDailyPhrase":
+          self?.scheduleDailyPhrase(call.arguments, result: result)
+        case "cancelDailyPhrase":
+          UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["daily_phrase"])
+          result(true)
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+      localNotifChannel = localNotif
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -117,5 +135,42 @@ import WatchConnectivity
     didFailToRegisterForRemoteNotificationsWithError error: Error
   ) {
     NSLog("APNs registration failed: \(error.localizedDescription)")
+  }
+
+  // ── Daily phrase local notification ───────────────────────────────────────────
+
+  // Schedules (or re-schedules) the repeating daily "frase del giorno" nudge.
+  // Reuses the same UNUserNotificationCenter authorization already requested for
+  // push, so no extra permission prompt is needed. The fixed "daily_phrase"
+  // identifier means calling this on every launch simply replaces the pending
+  // request rather than stacking duplicates.
+  private func scheduleDailyPhrase(_ arguments: Any?, result: @escaping FlutterResult) {
+    let args = arguments as? [String: Any]
+    let hour = args?["hour"] as? Int ?? 9
+    let minute = args?["minute"] as? Int ?? 0
+    let title = args?["title"] as? String ?? "Marginalia"
+    let body = args?["body"] as? String ?? ""
+
+    let center = UNUserNotificationCenter.current()
+    center.removePendingNotificationRequests(withIdentifiers: ["daily_phrase"])
+
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.body = body
+    content.sound = .default
+
+    var dc = DateComponents()
+    dc.hour = hour
+    dc.minute = minute
+    let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+
+    let request = UNNotificationRequest(
+      identifier: "daily_phrase", content: content, trigger: trigger)
+    center.add(request) { error in
+      if let error = error {
+        NSLog("scheduleDailyPhrase failed: \(error.localizedDescription)")
+      }
+    }
+    result(true)
   }
 }
