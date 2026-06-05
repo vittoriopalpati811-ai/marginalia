@@ -168,9 +168,20 @@ final libraryRecommendationsProvider =
     Future.microtask(
         () => ref.read(recsForceRefreshProvider.notifier).state = 0);
   }
-  // Re-emit when auth restoration completes.
-  final user = ref.watch(currentUserProvider);
-  if (user == null && kIsWeb) {
+  // Re-run ONLY when the signed-in user *identity* changes — NOT on every
+  // Supabase auth event. `authStateChanges` fires repeatedly (INITIAL_SESSION,
+  // SIGNED_IN, TOKEN_REFRESHED, USER_UPDATED, on resume…), each time yielding a
+  // fresh `User` instance. Watching the whole object re-ran this FutureProvider
+  // on every one of those events, and because a re-run starts a NEW Groq fetch
+  // without cancelling the in-flight one, a single app session fired 5-6
+  // overlapping recommend-books calls within ~0.5s (confirmed in the edge-
+  // function logs). That burst blew past Groq's 6 000-tokens-per-MINUTE ceiling
+  // → the later calls 429'd → reason 'rate_limit' → "torna tra qualche ora",
+  // and whichever 429 resolved last is what the UI showed (so "Riprova" looked
+  // dead too). Selecting only the user id collapses token-refresh churn so the
+  // provider runs exactly once per real sign-in.
+  final userId = ref.watch(currentUserProvider.select((u) => u?.id));
+  if (userId == null && kIsWeb) {
     debugPrint('[Recs] not authenticated → empty');
     return const RecsResult(list: [], reason: RecsEmptyReason.notAuth);
   }
