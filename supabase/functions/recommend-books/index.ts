@@ -385,7 +385,15 @@ async function callGroq(
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 2048,
+      // 2048 was too tight for THIS prompt: 5 recommendations each carrying
+      // title+author+year+reason (2-3 sentences) +plot (1-2 sentences)
+      // +categories +pages +why easily exceeds 2 K output tokens for a large
+      // library. The response was being TRUNCATED mid-string, JSON.parse threw,
+      // and the caller surfaced reason 'ai_error' (HTTP 200 in ~8 s, empty
+      // list) — exactly the failure big libraries (50+ books) hit every time.
+      // 4096 gives comfortable headroom; the salvage parse below is the second
+      // line of defence if a response is still cut off.
+      max_tokens: 4096,
       temperature: 0.7,
       // Force the model to emit a syntactically valid JSON object. Without
       // this the 8B model occasionally produces malformed JSON (smart-quote
@@ -406,16 +414,11 @@ async function callGroq(
   const data = await res.json();
   const rawText: string = data?.choices?.[0]?.message?.content ?? "";
 
-  // json_object mode returns parseable JSON directly. extractJson is kept
-  // as a safety net in case the model still wraps the answer in markdown.
-  const extracted = extractJson(rawText);
-  const parsed = JSON.parse(extracted);
-
-  // Accept either {recommendations: [...]} (preferred) or a bare array
-  // (legacy / safety).
-  const list: unknown = Array.isArray(parsed)
-    ? parsed
-    : (parsed as { recommendations?: unknown[] }).recommendations;
+  // Tolerant parse: returns the recommendations array even when the model
+  // response is fenced in markdown OR truncated mid-object (the latter is what
+  // a large library used to trip — the JSON was cut off and a bare JSON.parse
+  // threw → reason 'ai_error'). See parseRecommendations for the strategy.
+  const list = parseRecommendations(rawText);
 
   if (!Array.isArray(list)) {
     throw new Error("Response missing recommendations array");
@@ -438,12 +441,107 @@ async function callGroq(
   });
 }
 
+// Best-effort extraction of the recommendations array from a raw model
+// response. Robust to three real-world failure modes the 8B model produces:
+//
+//   1. Markdown fences (```json … ```) around the JSON.
+//   2. A bare array instead of the {recommendations:[…]} wrapper.
+//   3. A TRUNCATED response — the single biggest cause of 'ai_error' for large
+//      libraries. When max_tokens is hit mid-object the JSON is invalid, so a
+//      strict JSON.parse throws and the whole batch is lost. Here we instead
+//      salvage every COMPLETE recommendation object that did make it through
+//      and discard only the trailing partial one. As long as the model emitted
+//      at least one whole object before the cut, the user still gets picks.
+//
+// Returns the parsed array, or null if nothing usable could be recovered (the
+// caller then throws → reason 'ai_error', same as before).
+function parseRecommendations(text: string): unknown[] | null {
+  const cleaned = extractJson(text);
+
+  // Fast path: the response is well-formed (the common case, and always the
+  // case now that max_tokens is 4096). Accept either the object wrapper or a
+  // bare array.
+  try {
+    const parsed = JSON.parse(cleaned);
+    const list = Array.isArray(parsed)
+      ? parsed
+      : (parsed as { recommendations?: unknown[] }).recommendations;
+    if (Array.isArray(list)) return list;
+  } catch {
+    // fall through to salvage
+  }
+
+  // Salvage path: the JSON is malformed/truncated. Walk the string and pull
+  // out each top-level `{...}` object inside the recommendations array using
+  // brace-depth tracking that ignores braces appearing inside string literals.
+  // Each balanced object is parsed independently; the final unbalanced one
+  // (the truncation point) is simply never closed, so it is skipped.
+  const salvaged = salvageObjects(cleaned);
+  return salvaged.length > 0 ? salvaged : null;
+}
+
+// Pull every balanced `{…}` JSON object out of `text`, parsing each one in
+// isolation. String-literal awareness (incl. escaped quotes) keeps braces and
+// quotes inside values from corrupting the depth count. Any object that fails
+// to parse on its own is dropped rather than aborting the whole salvage.
+function salvageObjects(text: string): unknown[] {
+  const objects: unknown[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}") {
+      if (depth > 0) {
+        depth--;
+        if (depth === 0 && start !== -1) {
+          const candidate = text.slice(start, i + 1);
+          try {
+            const obj = JSON.parse(candidate);
+            // Skip the outer wrapper object ({"recommendations": …}) — we only
+            // want the per-book objects, which carry a title.
+            if (obj && typeof obj === "object" && "title" in obj) {
+              objects.push(obj);
+            }
+          } catch {
+            // drop this fragment
+          }
+          start = -1;
+        }
+      }
+    }
+  }
+
+  return objects;
+}
+
 function extractJson(text: string): string {
   const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) return fenceMatch[1].trim();
 
   // Prefer an object wrapper (`{...}`); fall back to a bare array (`[...]`)
-  // if the model emitted one despite the prompt.
+  // if the model emitted one despite the prompt. We slice to the LAST closing
+  // brace/bracket so a well-formed response is returned intact; a truncated
+  // one (no closing brace) falls through to the salvage parser upstream.
   const objStart = text.indexOf("{");
   const objEnd   = text.lastIndexOf("}");
   if (objStart !== -1 && objEnd > objStart) {

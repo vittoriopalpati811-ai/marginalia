@@ -9,6 +9,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/services/share_card_service.dart';
 import '../../core/l10n/l10n_extension.dart';
+import 'highlight_story_share.dart';
 
 class HighlightDetailScreen extends ConsumerWidget {
   const HighlightDetailScreen({super.key, required this.highlightId});
@@ -48,20 +49,53 @@ class HighlightDetailScreen extends ConsumerWidget {
                             .read(highlightFavoriteNotifierProvider.notifier)
                             .toggleFavorite(highlightId),
                       ),
-                      // Share
-                      IconButton(
+                      // Share — menu with card vs. Instagram-story image
+                      PopupMenuButton<_ShareAction>(
                         icon: const Icon(
                           Icons.ios_share_rounded,
                           color: MarginaliaColors.inkFaint,
                           size: 20,
                         ),
-                        onPressed: () => ShareCardService.show(
-                          context,
-                          content: h.content,
-                          bookTitle: h.bookTitle,
-                          bookAuthor: h.bookAuthor,
-                          kindleColor: h.color,
+                        color: MarginaliaColors.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
+                        position: PopupMenuPosition.under,
+                        onSelected: (action) {
+                          switch (action) {
+                            case _ShareAction.card:
+                              ShareCardService.show(
+                                context,
+                                content: h.content,
+                                bookTitle: h.bookTitle,
+                                bookAuthor: h.bookAuthor,
+                                kindleColor: h.color,
+                              );
+                            case _ShareAction.story:
+                              shareHighlightAsStory(
+                                context,
+                                text: h.content,
+                                title: h.bookTitle,
+                                author: h.bookAuthor,
+                              );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: _ShareAction.card,
+                            child: _ShareMenuRow(
+                              icon: Icons.ios_share_rounded,
+                              label: context.l10n.shareImageCta,
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _ShareAction.story,
+                            child: _ShareMenuRow(
+                              icon: Icons.auto_stories_outlined,
+                              label: context.l10n.shareAsStory,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(width: 8),
                     ],
@@ -363,6 +397,37 @@ class _MetaItem extends StatelessWidget {
           style: MarginaliaTextStyles.label.copyWith(
             fontSize: 11,
             color: MarginaliaColors.inkFaint,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Share menu ──────────────────────────────────────────────────────────────
+
+/// The two ways to share a highlight from the detail screen.
+enum _ShareAction { card, story }
+
+class _ShareMenuRow extends StatelessWidget {
+  const _ShareMenuRow({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: MarginaliaColors.inkMuted),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: GoogleFonts.manrope(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: MarginaliaColors.ink,
           ),
         ),
       ],

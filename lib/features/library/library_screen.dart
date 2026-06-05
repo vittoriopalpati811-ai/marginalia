@@ -483,6 +483,85 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
 // myDisplayNameProvider lives in auth_provider.dart (shared with other screens)
 
+// ─── Greeting phrases ─────────────────────────────────────────────────────────
+
+/// The editorial line at the very top of the Library — a curated, literary
+/// greeting that welcomes the reader back to their highlights.
+///
+/// Each phrase ships in two grammatical forms so the result always reads
+/// naturally and is never assembled by gluing fragments together (which is how
+/// the old code produced the cacophonous "Così presto!, Vittorio?"):
+///   • [_Greeting.plain] — used when we don't know the reader's name.
+///   • [_Greeting.named] — used when we do; it contains a single `{name}`
+///     slot placed where Italian wants the vocative, with its own punctuation.
+///
+/// A phrase whose `named` form is empty simply never addresses the reader by
+/// name (e.g. "Le tue pagine ti aspettavano."), keeping the mix varied.
+class _LibraryGreetings {
+  const _LibraryGreetings._();
+
+  /// Returns the greeting for the current day. The pick is stable across
+  /// rebuilds (it only changes by calendar day), so the header doesn't flicker
+  /// while the reader scrolls — the daily ritual stays put, like the pull-quote.
+  static String forToday(String? userName) {
+    final name = userName?.trim() ?? '';
+    final now = DateTime.now();
+    // Day-of-year as a stable rotation index.
+    final dayOfYear =
+        now.difference(DateTime(now.year)).inDays; // 0-based, stable per day.
+    final phrase = _phrases[dayOfYear % _phrases.length];
+    if (name.isEmpty || phrase.named.isEmpty) return phrase.plain;
+    return phrase.named.replaceAll('{name}', name);
+  }
+
+  /// Curated, non-generic set. Warm, a little witty, literary, and contextual
+  /// to a reading app — coming back to your books, re-opening your highlights,
+  /// the quiet ritual of reading. Deliberately avoids bland filler.
+  static const List<_Greeting> _phrases = [
+    // ── Reworked from the old time-of-day lines (clean punctuation) ──────────
+    _Greeting('Così presto?', 'Così presto, {name}?'),
+    _Greeting('Già di ritorno?', 'Già di ritorno, {name}?'),
+    _Greeting('Bentornato tra le righe.', 'Bentornato tra le righe, {name}.'),
+    // ── New literary greetings ──────────────────────────────────────────────
+    _Greeting('Le tue pagine ti aspettavano.', 'Le tue pagine ti aspettavano, {name}.'),
+    _Greeting('Di nuovo qui, tra le righe?', 'Di nuovo qui tra le righe, {name}?'),
+    _Greeting('Ben tornato dove eri rimasto.', 'Ben tornato dove eri rimasto, {name}.'),
+    _Greeting('Qualcosa da rileggere, oggi?', 'Qualcosa da rileggere oggi, {name}?'),
+    _Greeting('I tuoi passaggi preferiti, di nuovo.', 'I tuoi passaggi preferiti, {name}.'),
+    _Greeting('Riprendiamo da dove eravamo?', 'Riprendiamo da dove eravamo, {name}?'),
+    _Greeting('Le parole che hai sottolineato sono ancora qui.', ''),
+    _Greeting('Un altro giro fra i tuoi appunti?', 'Un altro giro fra i tuoi appunti, {name}?'),
+    _Greeting('Si torna sempre ai buoni libri.', 'Si torna sempre ai buoni libri, vero {name}?'),
+    _Greeting('Le righe migliori ti hanno aspettato.', 'Le righe migliori ti hanno aspettato, {name}.'),
+    _Greeting('Pronto a rileggere te stesso?', 'Pronto a rileggere te stesso, {name}?'),
+    _Greeting('Ogni ritorno è una nuova lettura.', 'Ogni tuo ritorno è una nuova lettura, {name}.'),
+    _Greeting('I margini si ricordano di te.', 'I margini si ricordano di te, {name}.'),
+    _Greeting('Cosa avevi sottolineato, l’ultima volta?', 'Cosa avevi sottolineato, {name}?'),
+    _Greeting('Un pensiero, prima di ripartire?', 'Un pensiero prima di ripartire, {name}?'),
+    _Greeting('Le tue letture non vedevano l’ora.', 'Le tue letture non vedevano l’ora, {name}.'),
+    _Greeting('Torna a trovare le parole che ami.', 'Le parole che ami sono qui, {name}.'),
+    _Greeting('Ben ritrovato fra le tue pagine.', 'Ben ritrovato fra le tue pagine, {name}.'),
+    _Greeting('Qualche riga ti stava cercando.', 'Qualche riga ti stava cercando, {name}.'),
+    _Greeting('Si ricomincia da un sottolineato?', 'Si ricomincia da un sottolineato, {name}?'),
+    _Greeting('La tua biblioteca ti ha tenuto il posto.', 'La tua biblioteca ti ha tenuto il posto, {name}.'),
+    _Greeting('Rieccoti dove le storie ti aspettano.', 'Rieccoti, {name}, dove le storie ti aspettano.'),
+    _Greeting('Hai lasciato una frase a metà, ieri.', 'Avevi lasciato una frase a metà, {name}.'),
+  ];
+}
+
+/// A single greeting in two forms. [named] may be empty, meaning the phrase is
+/// never personalised with the reader's name.
+class _Greeting {
+  const _Greeting(this.plain, this.named);
+
+  /// Used when the reader's name is unknown — complete and self-contained.
+  final String plain;
+
+  /// Used when the name is known. Contains exactly one `{name}` slot, or is
+  /// empty to opt out of personalisation.
+  final String named;
+}
+
 // ─── Header editoriale ────────────────────────────────────────────────────────
 
 class _EditorialHeader extends StatelessWidget {
@@ -502,19 +581,11 @@ class _EditorialHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
 
-    // Localized contextual greeting
-    final h = DateTime.now().hour;
-    final String greetingBase;
-    if (h < 6)       greetingBase = context.l10n.greetingEarlyMorning;
-    else if (h < 12) greetingBase = context.l10n.greetingMorning;
-    else if (h < 13) greetingBase = context.l10n.greetingBreak;
-    else if (h < 18) greetingBase = context.l10n.greetingAfternoon;
-    else if (h < 21) greetingBase = context.l10n.greetingEvening;
-    else             greetingBase = context.l10n.greetingNight;
-    final trimmed = userName?.trim() ?? '';
-    final greeting = trimmed.isEmpty
-        ? greetingBase
-        : '$greetingBase, $trimmed${h < 6 ? '?' : ''}';
+    // Editorial greeting line — a curated, literary phrase that composes
+    // cleanly with the reader's name. See [_LibraryGreetings] for the full
+    // set and the templating rules (each phrase carries its own punctuation,
+    // so we never glue "!," together).
+    final greeting = _LibraryGreetings.forToday(userName);
 
     // Airbnb-clean header: small caption above + huge bold title below.
     // The greeting is the eyebrow ("Buongiorno, Vittorio"), the title is

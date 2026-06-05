@@ -420,6 +420,15 @@ void openReviewComposer(BuildContext context, WidgetRef ref) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
+    // Push on the ROOT navigator so the sheet renders ABOVE the shell's
+    // floating glass navbar. The shell (`_ScaffoldWithNav` in app.dart) does
+    // NOT use Scaffold.bottomNavigationBar — it paints the navbar as the LAST
+    // child of the body Stack (Positioned bottom:0), so anything opened on the
+    // shell navigator lands UNDER that opaque bar. The bar would then intercept
+    // taps meant for the lower part of the "Perché" field (founder: "non si può
+    // scrivere") and cover the Publish button (founder: "finisce sotto la
+    // navbar"). Rooting the sheet lifts the whole composer over the navbar.
+    useRootNavigator: true,
     builder: (_) => _ReviewComposerSheet(
       onSaved: () => ref.invalidate(myReviewsProvider),
     ),
@@ -465,6 +474,9 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // Same reason as openReviewComposer: stay above the shell's floating
+      // navbar so the picker list is fully tappable.
+      useRootNavigator: true,
       builder: (_) => _BookPickerSheet(books: books),
     );
     if (picked != null) {
@@ -487,6 +499,9 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      // Same reason as openReviewComposer: stay above the shell's floating
+      // navbar so the highlight list is fully tappable.
+      useRootNavigator: true,
       builder: (_) => _HighlightPickerSheet(highlights: highlights),
     );
     if (picked != null) {
@@ -522,7 +537,16 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    // Belt-and-suspenders bottom inset for the Publish button so it is NEVER
+    // hidden under the keyboard, the iPhone home indicator, or the shell's
+    // floating glass navbar. `viewInsets.bottom` is the keyboard height (0 when
+    // closed); `padding.bottom` is the home-indicator safe area. We take the
+    // larger of the two (the keyboard already overlaps the home indicator, so
+    // adding them would double-count) and keep a floor of 24 so that even when
+    // both are 0 the Publish button still floats clear of the bottom edge.
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeInset = MediaQuery.of(context).padding.bottom;
+    final bottom = keyboardInset > safeInset ? keyboardInset : safeInset;
     final maxH = MediaQuery.of(context).size.height * 0.9;
     final hasBook = _bookTitle.isNotEmpty;
 
@@ -829,6 +853,9 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
             const Divider(color: MarginaliaColors.ruleFaint, height: 1),
 
             // ── Save button ───────────────────────────────────────────────
+            // `bottom` already encodes max(keyboard, home-indicator); the +16
+            // floor guarantees clearance from the bottom edge / floating navbar
+            // even when both are 0 (founder: Publish button under the navbar).
             Padding(
               padding: EdgeInsets.fromLTRB(20, 14, 20, bottom + 16),
               child: SizedBox(

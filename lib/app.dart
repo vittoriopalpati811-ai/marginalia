@@ -449,7 +449,7 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
      // (26 icon + 12 vertical padding each side + thin border) + 10 bottom
      // margin + a little breathing gap above it; add safe-area-bottom for the
      // iPhone home indicator clearance.
-    final navInset = 70 + MediaQuery.of(context).padding.bottom;
+    final navInset = 64 + MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -653,7 +653,7 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
       ),
       child: Padding(
         // Float clear of the screen edges and the home indicator.
-        padding: EdgeInsets.fromLTRB(14, 0, 14, bottom + 10),
+        padding: EdgeInsets.fromLTRB(14, 0, 14, bottom + 4),
         child: DecoratedBox(
           // OUTER container: carries the soft drop shadow + thin border and
           // the rounded shape. Kept outside the ClipRRect so the BackdropFilter
@@ -681,7 +681,7 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
               filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
               child: Container(
                 // Translucent fill so the blurred backdrop shows through.
-                color: Colors.white.withOpacity(0.72),
+                color: Colors.white.withOpacity(0.60),
                 // A touch thicker now that labels are gone, so the icon-only
                 // pill still feels substantial and intentional.
                 padding:

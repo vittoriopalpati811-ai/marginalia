@@ -768,5 +768,8 @@
   "shareStatsReadingOf": "{userName}'s reading",
   "@shareStatsReadingOf": { "placeholders": { "userName": { "type": "String" } } },
   "shareStatsBooksLabel": "BOOKS {year}",
-  "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } }
+  "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } },
+  "shareAsStory": "Share as story",
+  "shareStoryPreparing": "Creating story…",
+  "shareStoryError": "Couldn't create the story"
 }

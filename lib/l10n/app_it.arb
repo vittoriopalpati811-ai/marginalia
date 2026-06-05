@@ -1514,5 +1514,8 @@
   "shareStatsReadingOf": "La lettura di {userName}",
   "@shareStatsReadingOf": { "placeholders": { "userName": { "type": "String" } } },
   "shareStatsBooksLabel": "LIBRI {year}",
-  "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } }
+  "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } },
+  "shareAsStory": "Condividi come storia",
+  "shareStoryPreparing": "Creazione storia…",
+  "shareStoryError": "Impossibile creare la storia"
 }

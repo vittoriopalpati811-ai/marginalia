@@ -1799,7 +1799,10 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom  = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
+    // Only the keyboard inset: the input bar should dock immediately on top of
+    // the keyboard, not float above it. (Adding padding.bottom here stacked the
+    // home-indicator inset on top of the keyboard, lifting the bar too high.)
+    final bottom  = MediaQuery.of(context).viewInsets.bottom;
     final canSend = !_submitting &&
         (_ctrl.text.trim().isNotEmpty || _imageBytes != null || _gifUrl != null);
     final isReplying = _replyingToId != null;
@@ -1990,9 +1993,9 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
               ),
             ),
 
-          // Input row
+          // Input row — docks right above the keyboard: keyboard inset + 8px.
           Padding(
-            padding: EdgeInsets.fromLTRB(12, 10, 12, bottom + 16),
+            padding: EdgeInsets.fromLTRB(12, 10, 12, bottom + 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -2281,26 +2284,33 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                 // Name + time + overflow menu
                 Row(
                   children: [
-                    Flexible(
-                      child: Text(
-                        name,
-                        style: GoogleFonts.manrope(
-                          fontSize: widget.isReply ? 12.0 : 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.ink,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    // Name + time fill the available width so the overflow
+                    // dots get pushed to the trailing edge (mirrors _PostCard).
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: GoogleFonts.manrope(
+                                fontSize: widget.isReply ? 12.0 : 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: MarginaliaColors.ink,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            widget.timeAgo,
+                            style: GoogleFonts.manrope(
+                              fontSize: 11,
+                              color: MarginaliaColors.inkFaint,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.timeAgo,
-                      style: GoogleFonts.manrope(
-                        fontSize: 11,
-                        color: MarginaliaColors.inkFaint,
-                      ),
-                    ),
-                    const Spacer(),
                     // 3-dot overflow: delete (author) / report (others).
                     GestureDetector(
                       onTap: () => _showCommentMenu(context),

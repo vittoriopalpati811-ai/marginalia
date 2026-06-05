@@ -9,7 +9,9 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
+import '../../core/models/book.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/books_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -50,6 +52,93 @@ const _kGradients = [
 _GP _gpFor(String key) =>
     _kGradients.firstWhere((g) => g.key == key,
         orElse: () => _kGradients.first);
+
+// ─── Section-title colour (contrast vs. selected background) ──────────────────
+//
+// The shared MarginaliaTextStyles.sectionTitle uses a faint grey (inkFaint)
+// that, while fine on the plain cream Library/Stats pages, washes out over the
+// tinted profile background — and the tint changes with every gradient preset
+// (sepia, amber, ocean, …). To guarantee a readable title on EVERY preset, the
+// profile derives its own title colour from the chosen gradient: take the
+// gradient's main colour and darken it heavily toward ink. The result is a
+// strong, on-brand label that always reads on the warm-white + tint wash,
+// even for the lightest presets (Amber/Pastel-Yellow). Only the profile uses
+// this — other screens keep the global faint style.
+Color _sectionTitleColor(_GP gp) =>
+    Color.alphaBlend(gp.a.withAlpha(0x40), MarginaliaColors.ink);
+
+// Profile section-title style: the shared section-title shape (size / weight /
+// tracking) with the contrast colour applied.
+TextStyle _profileSectionTitle(_GP gp) =>
+    MarginaliaTextStyles.sectionTitle.copyWith(color: _sectionTitleColor(gp));
+
+// ─── Open a profile book in the SAME detail screen the Library uses ───────────
+//
+// The /book/:id route resolves its argument as a LOCAL Isar int id
+// (int.tryParse(...) → BookDetailScreen(bookId: int)). Profile book tiles,
+// however, carry remote identity instead: the library grid has the Supabase
+// UUID from fetchMyBooks, and the "Libri del cuore" favourites store only
+// title + author (migration 024). Pushing either of those straight onto the
+// route produced int.tryParse(uuid) == 0 → "Libro non trovato".
+//
+// This helper bridges that gap: it looks up the matching LOCAL book (the same
+// list the Library renders, via booksProvider) and navigates with its int id,
+// so the detail screen opens exactly as it does from the Library. Matching is
+// tried by Supabase id first (exact), then by case-insensitive title+author,
+// then by title alone. If nothing matches locally, it surfaces a quiet
+// "book not found" message instead of opening an empty screen.
+void _openProfileBook(
+  BuildContext context,
+  WidgetRef ref, {
+  String? supabaseId,
+  String? title,
+  String? author,
+}) {
+  final books = ref.read(booksProvider).valueOrNull ?? const <Book>[];
+
+  String norm(String? s) => (s ?? '').trim().toLowerCase();
+  final wantId     = (supabaseId ?? '').trim();
+  final wantTitle  = norm(title);
+  final wantAuthor = norm(author);
+
+  Book? match;
+
+  // 1) Exact Supabase id (library grid tiles carry this).
+  if (wantId.isNotEmpty) {
+    for (final b in books) {
+      if (b.supabaseId == wantId) { match = b; break; }
+    }
+  }
+  // 2) Title + author (favourites store these).
+  if (match == null && wantTitle.isNotEmpty) {
+    for (final b in books) {
+      if (norm(b.title) == wantTitle &&
+          (wantAuthor.isEmpty || norm(b.author) == wantAuthor)) {
+        match = b;
+        break;
+      }
+    }
+  }
+  // 3) Title only — last resort if the author byline differs.
+  if (match == null && wantTitle.isNotEmpty) {
+    for (final b in books) {
+      if (norm(b.title) == wantTitle) { match = b; break; }
+    }
+  }
+
+  if (match != null) {
+    context.push('/book/${match.id}');
+    return;
+  }
+
+  // Graceful fallback: nothing in the local library matches.
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(context.l10n.bookNotFound),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
 
 // Render-time localized label for a gradient, keyed by the stable gradient id.
 // The const _kGradients list above cannot use context.l10n, so the display
@@ -355,6 +444,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           // ── Libri del cuore ───────────────────────────────────────────────
           SliverToBoxAdapter(
             child: _FavoriteBooksSection(
+              gp: gp,
               favBooks: ref.watch(_favBooksProvider),
               allBooks: booksAsync.asData?.value ?? [],
               onEdit: () => _openFavBooksSheet(
@@ -379,7 +469,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
               child: Row(
                 children: [
-                  Text(context.l10n.profilePostsSection, style: MarginaliaTextStyles.sectionTitle),
+                  Text(context.l10n.profilePostsSection, style: _profileSectionTitle(gp)),
                   const SizedBox(width: 12),
                   const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
                   const SizedBox(width: 8),
@@ -461,7 +551,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                           child: Row(
                             children: [
                               Text(context.l10n.profileLibrarySection,
-                                  style: MarginaliaTextStyles.sectionTitle),
+                                  style: _profileSectionTitle(gp)),
                               const SizedBox(width: 12),
                               const Expanded(
                                   child: Divider(
@@ -1059,7 +1149,7 @@ class _SpotlightCard extends StatelessWidget {
             child: Row(
               children: [
                 Text(context.l10n.profileSpotlight,
-                    style: MarginaliaTextStyles.sectionTitle),
+                    style: _profileSectionTitle(gp)),
                 const SizedBox(width: 12),
                 const Expanded(
                     child: Divider(color: MarginaliaColors.ruleFaint)),
@@ -1171,24 +1261,32 @@ class _SpotlightCard extends StatelessWidget {
 // "anonymous art tiles," which is the opposite of what a library should
 // communicate.
 
-class _BookCell extends StatelessWidget {
+class _BookCell extends ConsumerWidget {
   const _BookCell({required this.book, required this.index});
   final Map<String, dynamic> book;
   final int index;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final title  = book['title']  as String? ?? '';
     final author = book['author'] as String? ?? '';
 
-    // Books in the profile library grid push to the same /book/:id route
-    // the main Library tab uses, so the user keeps the highlights-detail
-    // experience consistent across surfaces. `book['id']` is the Supabase
-    // UUID from `fetchMyBooks` (id, title, author).
+    // Books in the profile library grid push to the same /book/:id route the
+    // main Library tab uses, so the highlights-detail experience stays
+    // consistent across surfaces. `book['id']` here is the Supabase UUID from
+    // `fetchMyBooks` — NOT the local Isar int id the route expects, so we
+    // resolve it to the matching local book before navigating (see
+    // _openProfileBook). Title/author are passed as a fallback match.
     final bookId = book['id'] as String? ?? '';
 
     final card = GestureDetector(
-      onTap: bookId.isEmpty ? null : () => context.push('/book/$bookId'),
+      onTap: () => _openProfileBook(
+        context,
+        ref,
+        supabaseId: bookId,
+        title: title,
+        author: author,
+      ),
       child: Container(
         decoration: MarginaliaDecorations.quietCard(radius: 10),
         child: Column(
@@ -1919,11 +2017,13 @@ class _ProfilePostCard extends StatelessWidget {
 
 class _FavoriteBooksSection extends StatelessWidget {
   const _FavoriteBooksSection({
+    required this.gp,
     required this.favBooks,
     required this.allBooks,
     required this.onEdit,
   });
 
+  final _GP gp;
   final List<Map<String, String>> favBooks;
   final List<Map<String, dynamic>> allBooks;
   final VoidCallback onEdit;
@@ -1938,7 +2038,7 @@ class _FavoriteBooksSection extends StatelessWidget {
           // ── Section header ──────────────────────────────────────────────
           Row(
             children: [
-              Text(context.l10n.profileFavouriteBooksSection, style: MarginaliaTextStyles.sectionTitle),
+              Text(context.l10n.profileFavouriteBooksSection, style: _profileSectionTitle(gp)),
               const SizedBox(width: 12),
               const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
               const SizedBox(width: 8),
@@ -2064,13 +2164,13 @@ class _FavBooksGrid extends StatelessWidget {
 
 // ─── Single tile ──────────────────────────────────────────────────────────────
 
-class _FavBookTile extends StatelessWidget {
+class _FavBookTile extends ConsumerWidget {
   const _FavBookTile({required this.book, required this.size});
   final Map<String, String> book;
   final _TileSize size;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final title  = book['title']  ?? '';
     final author = book['author'] ?? '';
 
@@ -2114,7 +2214,18 @@ class _FavBookTile extends StatelessWidget {
       _TileSize.small  => 64.0,
     };
 
-    return ClipRRect(
+    // Favourites store only {title, author} (migration 024), so tapping one
+    // resolves to the matching LOCAL book by title+author and opens the same
+    // detail screen the Library uses — see _openProfileBook. Previously these
+    // tiles had no onTap at all.
+    return GestureDetector(
+      onTap: () => _openProfileBook(
+        context,
+        ref,
+        title: title,
+        author: author,
+      ),
+      child: ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Stack(
         fit: StackFit.expand,
@@ -2176,6 +2287,7 @@ class _FavBookTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -488,7 +488,15 @@ class LibraryRecommendationsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(libraryRecommendationsProvider);
 
+    // skipLoadingOnRefresh: false is the fix for "Riprova does nothing".
+    // Riverpod 2.x defaults this to TRUE, so invalidating an already-resolved
+    // FutureProvider keeps `.when` on the PREVIOUS value (the error/empty card)
+    // while the new fetch runs in the background — the user sees no change and
+    // assumes the button is dead. Forcing it to false makes a retry (and a
+    // post-import refresh) visibly fall back to the loading skeleton, so the
+    // tap obviously kicks off a fresh fetch.
     return async.when(
+      skipLoadingOnRefresh: false,
       loading: () => _RecommendationsSkeleton(),
       error: (e, _) {
         debugPrint('[Recs] UI error: $e');
