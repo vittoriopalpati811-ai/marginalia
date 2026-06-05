@@ -386,7 +386,10 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottom + 24),
-      child: Column(
+      // Scrollable so the three stacked fields (title/author/why) are never
+      // clipped at the top when the keyboard pushes the sheet up.
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -440,6 +443,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

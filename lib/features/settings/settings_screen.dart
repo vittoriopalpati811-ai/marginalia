@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/share_helper.dart';
 import 'privacy_policy_screen.dart';
@@ -1552,7 +1553,11 @@ class _UnauthenticatedProfile extends StatelessWidget {
       backgroundColor: MarginaliaColors.background,
       body: Column(
         children: [
-          Container(
+          // Dark gradient header bleeds under the status bar; force light
+          // system icons so the iOS clock/battery don't disappear into it.
+          AnnotatedRegion<SystemUiOverlayStyle>(
+            value: MarginaliaDecorations.lightStatusBar,
+            child: Container(
             width: double.infinity,
             decoration: MarginaliaDecorations.gradientHeader,
             child: SafeArea(
@@ -1567,6 +1572,7 @@ class _UnauthenticatedProfile extends StatelessWidget {
                         letterSpacing: -0.6)),
               ),
             ),
+          ),
           ),
           Expanded(
             child: Center(

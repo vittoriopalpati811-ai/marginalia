@@ -1,6 +1,7 @@
 ﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/utils/share_helper.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -561,7 +562,14 @@ class _ProfileHeader extends StatelessWidget {
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final avatarTint = MarginaliaDecorations.bookCoverColor(name);
 
-    return SizedBox(
+    // The hero header is a dark gradient/cover that bleeds under the status
+    // bar. A plain Container header (no AppBar) doesn't auto-correct the
+    // system icons, so without this the iOS clock/battery render dark-on-dark
+    // and read as a graphic overlap at the very top. Force light status-bar
+    // icons while this dark header sits at the top of the screen.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: MarginaliaDecorations.lightStatusBar,
+      child: SizedBox(
       height: 290 + top,
       child: Stack(
         fit: StackFit.expand,
@@ -724,6 +732,7 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -794,8 +794,16 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Keyboard-aware height: a modal bottom sheet does NOT resize for the
+    // keyboard, so subtract the keyboard inset from the fixed height. This keeps
+    // the whole sheet — the autofocus search field at the top AND the scrollable
+    // results below it — above the keyboard instead of letting the keyboard
+    // overlap (and cover) the lower half of the sheet.
+    final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final sheetHeight = (screenHeight * 0.75) - viewInsetsBottom;
     return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
+      height: sheetHeight > 0 ? sheetHeight : screenHeight * 0.75,
       decoration: const BoxDecoration(
         color: MarginaliaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1027,8 +1035,16 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Keyboard-aware height: a modal bottom sheet does NOT resize for the
+    // keyboard, so subtract the keyboard inset from the fixed height. This keeps
+    // the whole sheet — the group-name field, the user-search field, the
+    // results list AND the create button — above the keyboard, so no field is
+    // ever covered while typing.
+    final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final sheetHeight = (screenHeight * 0.85) - viewInsetsBottom;
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: sheetHeight > 0 ? sheetHeight : screenHeight * 0.85,
       decoration: const BoxDecoration(
         color: MarginaliaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1037,8 +1053,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
         children: [
           // Handle + title
           Padding(
-            padding: EdgeInsets.fromLTRB(
-                24, 16, 24, MediaQuery.of(context).viewInsets.bottom > 0 ? 0 : 0),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1209,10 +1224,12 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                       ),
           ),
 
-          // Create button
+          // Create button. The sheet height already subtracts the keyboard
+          // inset (see build above), so the button sits above the keyboard
+          // without adding viewInsets here — only clear the home indicator.
           Padding(
             padding: EdgeInsets.fromLTRB(
-                24, 8, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+                24, 8, 24, MediaQuery.of(context).padding.bottom + 24),
             child: SizedBox(
               width: double.infinity,
               child: FilledButton(

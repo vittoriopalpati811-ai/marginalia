@@ -1149,11 +1149,17 @@ class _MessageInputBar extends StatelessWidget {
           top: BorderSide(color: MarginaliaColors.rule, width: 0.5),
         ),
       ),
+      // The enclosing Scaffold has resizeToAvoidBottomInset: true, so it
+      // already lifts this bar above the keyboard and zeroes viewInsets.bottom
+      // inside the body — there the +8 sits over the home-indicator safe area.
+      // Guarding with the larger of the two insets keeps the field clear of the
+      // keyboard even if a parent ever stops resizing, so the bar can never be
+      // covered (the reported "can't type in the chat field" symptom).
       padding: EdgeInsets.fromLTRB(
         8,
         8,
         8,
-        bottomInset > 0 ? bottomInset + 8 : bottomPadding + 8,
+        (bottomInset > bottomPadding ? bottomInset : bottomPadding) + 8,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,

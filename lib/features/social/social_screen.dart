@@ -756,7 +756,10 @@ class _CreateJamSheet extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(
           24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 32),
-      child: Column(
+      // Scrollable so the autofocused field + header + hint + button stay fully
+      // visible above the keyboard (and the top can't clip on short screens).
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -815,6 +818,7 @@ class _CreateJamSheet extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -838,7 +842,10 @@ class _JoinJamSheet extends StatelessWidget {
     // only lifts via `viewInsets` once the user taps the field.
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 28, 24, viewInsets + 28),
-      child: Column(
+      // Scrollable so the field + "Entra" button stay above the keyboard once
+      // it opens, with no top clipping on short screens.
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -890,6 +897,7 @@ class _JoinJamSheet extends StatelessWidget {
                 onPressed: onConfirm, child: Text(context.l10n.jamJoinCta)),
           ),
         ],
+        ),
       ),
     );
   }
