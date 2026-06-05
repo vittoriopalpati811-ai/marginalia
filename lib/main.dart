@@ -15,10 +15,17 @@ const _supabaseUrl = 'https://ibucvloawkfwobaelwbr.supabase.co';
 const _supabaseAnonKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc';
 
-// Sentry crash/error reporting DSN — injected at build time via
-// --dart-define=SENTRY_DSN=... so it stays OUT of this public repo. Empty =
-// disabled: Sentry is never initialised and behaviour is identical to before.
-const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+// Sentry crash/error reporting DSN. This is a *publishable* client key — it
+// ships inside every build and is extractable from the binary, so it is NOT a
+// secret and lives here directly. Still overridable at build time via
+// --dart-define=SENTRY_DSN=...; an empty value disables Sentry entirely.
+// To throttle abuse of a public DSN, set a rate limit / spend cap in the Sentry
+// dashboard (Settings → project → Client Keys / Rate Limits); rotate anytime.
+const _sentryDsn = String.fromEnvironment(
+  'SENTRY_DSN',
+  defaultValue:
+      'https://bb83ea2d5543859195a0cbc2fe815c31@o4511515003453440.ingest.de.sentry.io/4511515205042256',
+);
 
 Future<void> main() async {
   // FIRST Dart statement to execute — a CI smoke-test probe (see codemagic.yaml).
