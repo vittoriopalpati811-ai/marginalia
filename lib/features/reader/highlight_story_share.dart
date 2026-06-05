@@ -1,22 +1,27 @@
 // ─── Share a highlight as an Instagram-Story image (9:16) ──────────────────
 //
-// Renders a 1080×1920 card built around the Marginalia-generated book cover
-// for the highlight's book — heavily blurred with a dark scrim so the quote
-// sits legibly on top — then exports it to a PNG and hands it to the system
-// share sheet so the user can drop it straight into Instagram Stories.
+// Renders a 1080×1920 card built around the Marginalia-generated book cover for
+// the highlight's book — heavily blurred with a dark scrim so the quote sits
+// legibly on top — and lets the user post it.
 //
-// Public surface:
-//   • HighlightStoryCard            — the 1080×1920 layout widget.
-//   • shareHighlightAsStory(...)    — off-screen render → PNG → Share.shareXFiles.
+// WHY A VISIBLE PREVIEW (the fix): the old flow rendered the card OFF-SCREEN and
+// blind-shared the PNG. When the off-screen rasterisation hiccupped it fell back
+// to sharing plain TEXT — which is exactly why "Instagram Stories" never showed
+// (Stories only accept image/video) and no image preview appeared. Now the card
+// is shown in a bottom sheet (so the user SEES it) and captured from a VISIBLE
+// RepaintBoundary (which always paints), guaranteeing a real image every time.
 //
-// The render is done off-screen via an OverlayEntry (positioned far outside
-// the viewport) wrapped in a RepaintBoundary, so the full layout/paint
-// pipeline runs — fonts, CustomPaint cover art and ImageFilter.blur all
-// resolve — without the card ever being visible to the user. Every step is
-// guarded; on any failure we fall back to a plain text share so the button
-// never dead-ends.
+// Two ways out of the sheet:
+//   • "Instagram Stories" — only shown when Instagram is installed; hands the
+//     PNG straight to the Stories composer via the native channel
+//     (ios/Runner/AppDelegate.swift → instagram-stories:// + pasteboard).
+//   • "Altre app"        — the system share sheet (Share.shareXFiles) with the
+//     real PNG attached, so a thumbnail + Instagram/WhatsApp/etc. all appear.
+//
+// Public surface (unchanged for callers):
+//   • HighlightStoryCard         — the 1080×1920 layout widget.
+//   • shareHighlightAsStory(...) — opens the preview sheet.
 
-import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -28,7 +33,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/services/instagram_share.dart';
 import '../../core/services/share_file_helper.dart';
+import '../../core/theme.dart';
 import '../../core/utils/share_helper.dart';
 import '../library/book_cover.dart';
 
@@ -44,128 +51,267 @@ const Color _cream = Color(0xFFF1EEE7);
 // Public entry point
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Renders [text] (plus optional [title] / [author]) as a 9:16 story image and
-/// opens the system share sheet so the user can post it to Instagram Stories.
-///
-/// Off-screen rendering means [context] only needs to be mounted long enough
-/// to read the [Overlay] and locale; the card itself is never shown.
+/// Opens a bottom sheet previewing [text] (plus optional [title] / [author]) as
+/// a 9:16 story card, with buttons to post it to Instagram Stories or share it
+/// via the system sheet.
 Future<void> shareHighlightAsStory(
   BuildContext context, {
   required String text,
   String? title,
   String? author,
 }) async {
-  // Resolve everything that needs [context] up front, before any await — the
-  // widget may be disposed by the time the async render completes.
-  final origin = shareOrigin(context);
-  final l10n = context.l10n;
-  final fallbackText =
-      _storyShareText(l10n.shareHighlightCallToAction, text, title);
-
-  // Web can't rasterise an off-screen RepaintBoundary reliably here — share
-  // text instead so the action still does something useful.
+  // Web can't rasterise reliably and has no Instagram app — share text instead
+  // so the action still does something useful.
   if (kIsWeb) {
-    await Share.share(fallbackText, sharePositionOrigin: origin);
-    return;
-  }
-
-  final overlay = Overlay.maybeOf(context, rootOverlay: true);
-  final messenger = ScaffoldMessenger.maybeOf(context);
-
-  if (overlay == null) {
-    await Share.share(fallbackText, sharePositionOrigin: origin);
-    return;
-  }
-
-  final boundaryKey = GlobalKey();
-  late final OverlayEntry entry;
-  entry = OverlayEntry(
-    builder: (_) => Positioned(
-      // Park the card far outside the visible viewport. It still lays out and
-      // paints (so the blur + cover render), but the user never sees it.
-      left: -_kStoryWidth * 3,
-      top: -_kStoryHeight * 3,
-      child: Material(
-        type: MaterialType.transparency,
-        child: RepaintBoundary(
-          key: boundaryKey,
-          child: HighlightStoryCard(
-            text: text,
-            title: title,
-            author: author,
-          ),
-        ),
-      ),
-    ),
-  );
-
-  Uint8List? pngBytes;
-  try {
-    overlay.insert(entry);
-
-    // Let the off-screen subtree complete a full layout+paint pass. We wait
-    // for two frames plus a short delay so Google Fonts and the blur filter
-    // have settled before we snapshot.
-    await _waitForFrames(2);
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-
-    final boundary = boundaryKey.currentContext?.findRenderObject()
-        as RenderRepaintBoundary?;
-    if (boundary != null) {
-      // If layout somehow hasn't happened yet, give it one more frame.
-      if (boundary.debugNeedsPaint) {
-        await _waitForFrames(1);
-        await Future<void>.delayed(const Duration(milliseconds: 60));
-      }
-      final image = await boundary.toImage(pixelRatio: _kStoryPixelRatio);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-      pngBytes = byteData?.buffer.asUint8List();
-    }
-  } catch (_) {
-    // Swallow — handled by the null check below.
-  } finally {
-    entry.remove();
-  }
-
-  if (pngBytes == null) {
-    messenger?.showSnackBar(SnackBar(content: Text(l10n.shareStoryError)));
-    await Share.share(fallbackText, sharePositionOrigin: origin);
-    return;
-  }
-
-  try {
-    final tempDir = await getTemporaryDirectory();
-    final path =
-        '${tempDir.path}/marginalia_story_${DateTime.now().millisecondsSinceEpoch}.png';
-    await writeShareFile(path, pngBytes);
-    await Share.shareXFiles(
-      [XFile(path, mimeType: 'image/png')],
+    final origin = shareOrigin(context);
+    await Share.share(
+      _storyShareText(context.l10n.shareHighlightCallToAction, text, title),
       sharePositionOrigin: origin,
     );
-  } catch (_) {
-    await Share.share(fallbackText, sharePositionOrigin: origin);
+    return;
   }
-}
 
-/// Awaits [count] post-frame callbacks so the off-screen tree has time to
-/// build, lay out and paint before we rasterise it.
-Future<void> _waitForFrames(int count) async {
-  for (var i = 0; i < count; i++) {
-    final completer = Completer<void>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!completer.isCompleted) completer.complete();
-    });
-    // Nudge the pipeline in case we're idle (e.g. nothing else is animating).
-    WidgetsBinding.instance.scheduleFrame();
-    await completer.future;
-  }
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _StoryPreviewSheet(text: text, title: title, author: author),
+  );
 }
 
 String _storyShareText(String cta, String text, String? title) {
   final excerpt = text.length > 140 ? '${text.substring(0, 140)}…' : text;
   final book = (title != null && title.isNotEmpty) ? '\n— $title' : '';
   return '❝ $excerpt ❞$book\n\n$cta → https://marginalia.app';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Preview sheet
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _StoryPreviewSheet extends StatefulWidget {
+  const _StoryPreviewSheet({required this.text, this.title, this.author});
+
+  final String text;
+  final String? title;
+  final String? author;
+
+  @override
+  State<_StoryPreviewSheet> createState() => _StoryPreviewSheetState();
+}
+
+class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
+  final GlobalKey _boundaryKey = GlobalKey();
+  bool _instagramAvailable = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Decide whether to show the dedicated Instagram button (iOS + IG installed).
+    instagramStoriesAvailable().then((available) {
+      if (mounted) setState(() => _instagramAvailable = available);
+    });
+  }
+
+  /// Rasterises the VISIBLE card. A visible RepaintBoundary always has a painted
+  /// layer, so unlike the old off-screen path this can't silently produce null.
+  Future<Uint8List?> _capturePng() async {
+    try {
+      // One frame of breathing room so Google Fonts / blur have settled.
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+      if (boundary.debugNeedsPaint) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+      }
+      final image = await boundary.toImage(pixelRatio: _kStoryPixelRatio);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      return byteData?.buffer.asUint8List();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String?> _writeTempPng(Uint8List bytes) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final path =
+          '${tempDir.path}/marginalia_story_${DateTime.now().millisecondsSinceEpoch}.png';
+      await writeShareFile(path, bytes);
+      return path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _shareToInstagram() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = context.l10n;
+    final png = await _capturePng();
+    if (png == null) {
+      messenger?.showSnackBar(SnackBar(content: Text(l10n.shareStoryError)));
+      if (mounted) setState(() => _busy = false);
+      return;
+    }
+    final ok = await shareImageToInstagramStories(png);
+    if (ok) {
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+    // Instagram refused / closed unexpectedly → fall back to the system sheet.
+    await _shareViaSystem(prebuilt: png);
+  }
+
+  Future<void> _shareViaSystem({Uint8List? prebuilt}) async {
+    if (_busy && prebuilt == null) return;
+    if (!_busy) setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l10n = context.l10n;
+    final origin = shareOrigin(context);
+    final png = prebuilt ?? await _capturePng();
+    if (png == null) {
+      messenger?.showSnackBar(SnackBar(content: Text(l10n.shareStoryError)));
+      if (mounted) setState(() => _busy = false);
+      return;
+    }
+    final path = await _writeTempPng(png);
+    if (path == null) {
+      messenger?.showSnackBar(SnackBar(content: Text(l10n.shareStoryError)));
+      if (mounted) setState(() => _busy = false);
+      return;
+    }
+    if (mounted) Navigator.of(context).pop();
+    await Share.shareXFiles(
+      [XFile(path, mimeType: 'image/png')],
+      sharePositionOrigin: origin,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final media = MediaQuery.of(context);
+    // Display size for the preview: fit comfortably above the buttons.
+    final displayWidth =
+        (media.size.width * 0.6).clamp(180.0, 250.0).toDouble();
+    final displayHeight = displayWidth * (_kStoryHeight / _kStoryWidth);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 10, 20, 16 + media.padding.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Grab handle.
+            Container(
+              width: 38,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: MarginaliaColors.rule,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              l10n.storyPreviewTitle,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: MarginaliaColors.ink,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ── The actual preview (this IS what gets shared) ────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: SizedBox(
+                width: displayWidth,
+                height: displayHeight,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  // RepaintBoundary wraps the FULL-SIZE 360×640 card; FittedBox
+                  // only scales how it's DISPLAYED. Capture stays 1080×1920.
+                  child: RepaintBoundary(
+                    key: _boundaryKey,
+                    child: SizedBox(
+                      width: _kStoryWidth,
+                      height: _kStoryHeight,
+                      child: HighlightStoryCard(
+                        text: widget.text,
+                        title: widget.title,
+                        author: widget.author,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Actions ──────────────────────────────────────────────────────
+            if (_instagramAvailable) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _shareToInstagram,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFE1306C), // Instagram pink
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                  label: Text(
+                    l10n.storyShareInstagram,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: _busy ? null : () => _shareViaSystem(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: MarginaliaColors.ink,
+                  side: const BorderSide(color: MarginaliaColors.rule),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: _busy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: MarginaliaColors.inkMuted),
+                      )
+                    : const Icon(Icons.ios_share_rounded, size: 20),
+                label: Text(
+                  l10n.storyShareMore,
+                  style:
+                      const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -220,9 +366,9 @@ class HighlightStoryCard extends StatelessWidget {
           children: [
             // ── 1. Blurred book-cover background ──────────────────────────
             // ImageFiltered blurs the cover widget itself (not a backdrop),
-            // which rasterises reliably off-screen. OverflowBox lets the
-            // cover paint larger than the frame so the heavy blur never
-            // reveals transparent edges.
+            // which rasterises reliably. OverflowBox lets the cover paint
+            // larger than the frame so the heavy blur never reveals
+            // transparent edges.
             Positioned.fill(
               child: ImageFiltered(
                 imageFilter: ui.ImageFilter.blur(
@@ -244,8 +390,6 @@ class HighlightStoryCard extends StatelessWidget {
             ),
 
             // ── 2. Dark scrim for text legibility ─────────────────────────
-            // Vertical gradient: darker at top/bottom so the wordmark and any
-            // tall quote stay readable, slightly lighter through the middle.
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -284,11 +428,6 @@ class HighlightStoryCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(40, 96, 40, 96),
               child: Center(
-                // FittedBox guards the fixed 9:16 frame: even after the
-                // word-boundary trim + fluid type sizing, an extreme-length
-                // highlight (plus a long title/author) is scaled down to fit
-                // rather than overflowing the column. Constrained to the
-                // content width so only vertical scaling kicks in.
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: ConstrainedBox(
@@ -396,8 +535,7 @@ class HighlightStoryCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 9),
-                  // Small rounded-square gradient brand mark with an "M",
-                  // echoing the app's existing mark style.
+                  // Small rounded-square gradient brand mark with an "M".
                   Container(
                     width: 26,
                     height: 26,

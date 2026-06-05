@@ -21,6 +21,7 @@ import WatchConnectivity
   private var pushChannel: FlutterMethodChannel?
   private var watchChannel: FlutterMethodChannel?
   private var localNotifChannel: FlutterMethodChannel?
+  private var instagramChannel: FlutterMethodChannel?
 
   // Cold-launch buffer. When the app is launched (or resumed from terminated)
   // by tapping a push, `didReceive` can fire before the Flutter engine has
@@ -112,6 +113,41 @@ import WatchConnectivity
         }
       }
       localNotifChannel = localNotif
+
+      // Instagram Stories direct share. Dart renders the 9:16 highlight card to
+      // a PNG and passes the bytes here; we drop them on the system pasteboard
+      // under Instagram's documented sticker key and open the Stories composer
+      // directly (instagram-stories://). `isAvailable` gates the dedicated
+      // button so it only shows when Instagram is installed.
+      let instagram = FlutterMethodChannel(
+        name: "marginalia/instagram",
+        binaryMessenger: controller.binaryMessenger)
+      instagram.setMethodCallHandler { call, result in
+        switch call.method {
+        case "isAvailable":
+          let url = URL(string: "instagram-stories://share")!
+          result(UIApplication.shared.canOpenURL(url))
+        case "shareToStories":
+          guard
+            let args = call.arguments as? [String: Any],
+            let typed = args["image"] as? FlutterStandardTypedData
+          else { result(false); return }
+          let url = URL(
+            string: "instagram-stories://share?source_application=io.marginalia.app")!
+          guard UIApplication.shared.canOpenURL(url) else { result(false); return }
+          let item: [String: Any] = [
+            "com.instagram.sharedSticker.backgroundImage": typed.data
+          ]
+          let options: [UIPasteboard.OptionsKey: Any] = [
+            .expirationDate: Date().addingTimeInterval(60 * 5)
+          ]
+          UIPasteboard.general.setItems([item], options: options)
+          UIApplication.shared.open(url, options: [:]) { ok in result(ok) }
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+      instagramChannel = instagram
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

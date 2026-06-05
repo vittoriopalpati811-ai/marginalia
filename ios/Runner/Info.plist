@@ -108,6 +108,16 @@
 	-->
 	<key>FLTEnableImpeller</key>
 	<false/>
+	<!--
+	  Schemes the app is allowed to probe with canOpenURL — required so the
+	  "Instagram Stories" share button can detect whether Instagram is installed
+	  and open its Stories composer (instagram-stories://).
+	-->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+		<string>instagram</string>
+	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Marginalia needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
 	<key>NSCalendarsUsageDescription</key>

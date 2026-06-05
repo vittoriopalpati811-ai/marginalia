@@ -936,5 +936,14 @@
   "@contentCategoryScam": {},
 
   "contentCategorySexual": "sexual content",
-  "@contentCategorySexual": {}
+  "@contentCategorySexual": {},
+
+  "storyPreviewTitle": "Story preview",
+  "@storyPreviewTitle": {},
+
+  "storyShareInstagram": "Instagram Stories",
+  "@storyShareInstagram": {},
+
+  "storyShareMore": "More apps",
+  "@storyShareMore": {}
 }
