@@ -380,13 +380,13 @@ class _BookAddPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Book occupies the lower-left ~75% of the canvas so the floating
-    // "+" can sit clearly outside, top-right, like the user's reference.
+    // Open book in the UPPER ~75% of the canvas so the floating "+" can sit
+    // clearly outside at the BOTTOM-RIGHT — matching the founder's reference.
     // ── Left page ─────────────────────────────────────────────────────
     final bookLeft   = w * 0.10;
     final bookRight  = w * 0.80;
-    final bookTop    = h * 0.28;
-    final bookBottom = h * 0.86;
+    final bookTop    = h * 0.14;
+    final bookBottom = h * 0.72;
     final spineX     = (bookLeft + bookRight) / 2;
 
     final leftPage = Path()
@@ -422,12 +422,12 @@ class _BookAddPainter extends CustomPainter {
       ..close();
     canvas.drawPath(rightPage, p);
 
-    // ── Floating "+" badge in the top-right, *outside* the book ──────
-    // Matches the user's reference: small plus offset above the book's
-    // upper-right corner rather than embedded inside the page.
-    final px  = w * 0.88;
-    final py  = h * 0.18;
-    final arm = w * 0.085;
+    // ── Floating "+" badge at the BOTTOM-RIGHT, *outside* the book ──────
+    // Matches the founder's reference photo: a small plus just below the
+    // book's lower-right corner rather than embedded inside a page.
+    final px  = w * 0.86;
+    final py  = h * 0.86;
+    final arm = w * 0.10;
     p..strokeWidth = 2.0;
     canvas.drawLine(Offset(px - arm, py), Offset(px + arm, py), p);
     canvas.drawLine(Offset(px, py - arm), Offset(px, py + arm), p);
@@ -869,8 +869,10 @@ class _JoinJamSheet extends StatelessWidget {
                   color: MarginaliaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.link_outlined,
-                    color: MarginaliaColors.primaryDark, size: 18),
+                child: const CustomPaint(
+                  size: Size(20, 20),
+                  painter: _BookAddPainter(color: MarginaliaColors.primaryDark),
+                ),
               ),
               const SizedBox(width: 12),
               Text(context.l10n.jamJoinTitle,
@@ -956,7 +958,14 @@ class _EmptyJams extends StatelessWidget {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: onJoinJam,
-              icon: const Icon(Icons.link_outlined, size: 18),
+              icon: const SizedBox(
+                width: 18,
+                height: 18,
+                child: CustomPaint(
+                  size: Size(18, 18),
+                  painter: _BookAddPainter(color: MarginaliaColors.primaryDark),
+                ),
+              ),
               label: Text(context.l10n.jamJoinWithCode),
               style: OutlinedButton.styleFrom(
                 foregroundColor: MarginaliaColors.primaryDark,
