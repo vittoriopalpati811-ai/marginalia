@@ -1,0 +1,122 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+import '../../core/theme.dart';
+import '../../core/l10n/l10n_extension.dart';
+
+/// In-app Terms of Service (EULA). Renders the bundled HTML (IT/EN by
+/// [isItalian]) inside a WebView so the terms live *inside* the app instead of
+/// opening an external GitHub link — an App Store expectation (Guideline 1.2,
+/// user-generated content requires an agreed-to EULA). Falls back to an "open
+/// in browser" button on platforms where webview_flutter isn't supported (e.g.
+/// the Windows dev build) so it never crashes there.
+class TermsOfServiceScreen extends StatefulWidget {
+  const TermsOfServiceScreen({super.key, required this.isItalian});
+
+  final bool isItalian;
+
+  static const _itUrl =
+      'https://vittoriopalpati811-ai.github.io/marginalia/terms/it/';
+  static const _enUrl =
+      'https://vittoriopalpati811-ai.github.io/marginalia/terms/';
+
+  @override
+  State<TermsOfServiceScreen> createState() => _TermsOfServiceScreenState();
+}
+
+class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
+  WebViewController? _controller;
+
+  // webview_flutter only ships mobile implementations (iOS/Android).
+  bool get _webViewSupported =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.android);
+
+  String get _assetPath =>
+      widget.isItalian ? 'docs/terms/it/index.html' : 'docs/terms/index.html';
+
+  @override
+  void initState() {
+    super.initState();
+    if (_webViewSupported) _initWebView();
+  }
+
+  Future<void> _initWebView() async {
+    try {
+      final html = await rootBundle.loadString(_assetPath);
+      final controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.disabled)
+        ..setBackgroundColor(MarginaliaColors.background)
+        ..loadHtmlString(html);
+      if (mounted) setState(() => _controller = controller);
+    } catch (_) {
+      // Leaves _controller null → the loading spinner stays; harmless.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: MarginaliaColors.background,
+      appBar: AppBar(
+        backgroundColor: MarginaliaColors.background,
+        foregroundColor: MarginaliaColors.ink,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(context.l10n.termsTitle),
+      ),
+      body: _webViewSupported
+          ? (_controller == null
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: MarginaliaColors.sienna,
+                    strokeWidth: 1.5,
+                  ),
+                )
+              : WebViewWidget(controller: _controller!))
+          : _BrowserFallback(
+              url: widget.isItalian
+                  ? TermsOfServiceScreen._itUrl
+                  : TermsOfServiceScreen._enUrl,
+            ),
+    );
+  }
+}
+
+class _BrowserFallback extends StatelessWidget {
+  const _BrowserFallback({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.l10n.privacyPreviewUnavailable,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: MarginaliaColors.inkMuted),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => launchUrl(
+                Uri.parse(url),
+                mode: LaunchMode.externalApplication,
+              ),
+              child: Text(context.l10n.privacyOpenInBrowser),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

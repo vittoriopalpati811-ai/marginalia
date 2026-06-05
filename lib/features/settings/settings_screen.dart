@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/utils/share_helper.dart';
+import 'blocked_users_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -496,6 +498,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => _showYourDataSheet(context),
               ),
               _SettingsTile(
+                icon: Icons.description_outlined,
+                label: context.l10n.settingsTermsOfService,
+                // Open the Terms of Service / EULA as an IN-APP screen (bundled
+                // HTML, no external GitHub link) — reached only from this button.
+                onTap: () {
+                  final isIt =
+                      Localizations.localeOf(context).languageCode == 'it';
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => TermsOfServiceScreen(isItalian: isIt),
+                  ));
+                },
+                trailing: const Icon(Icons.chevron_right,
+                    size: 18, color: MarginaliaColors.inkFaint),
+              ),
+              _SettingsTile(
                 icon: Icons.privacy_tip_outlined,
                 label: context.l10n.settingsPrivacyPolicy,
                 // Open the privacy policy as an IN-APP screen (bundled HTML, no
@@ -507,6 +524,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     builder: (_) => PrivacyPolicyScreen(isItalian: isIt),
                   ));
                 },
+                trailing: const Icon(Icons.chevron_right,
+                    size: 18, color: MarginaliaColors.inkFaint),
+              ),
+              _SettingsTile(
+                icon: Icons.block_outlined,
+                label: context.l10n.blockedUsersTitle,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const BlockedUsersScreen(),
+                )),
                 trailing: const Icon(Icons.chevron_right,
                     size: 18, color: MarginaliaColors.inkFaint),
               ),

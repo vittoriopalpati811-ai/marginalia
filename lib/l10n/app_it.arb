@@ -457,6 +457,7 @@
   "resetSaveCta": "Salva password",
   "resetDone": "Password aggiornata!",
   "resetRedirecting": "Stai per essere reindirizzato…",
+  "resetErrGeneric": "Impossibile reimpostare la password. Riprova.",
 
   "onboardingStart": "Inizia →",
   "@onboardingStart": {},
@@ -1558,5 +1559,101 @@
   "profileTabPosts": "Profilo",
   "profileTabReviews": "Recensioni",
 
-  "jamBadge": "JAM"
+  "jamBadge": "JAM",
+
+  "reportSheetTitle": "Segnala contenuto",
+  "@reportSheetTitle": {},
+
+  "reportReasonSpam": "Spam",
+  "@reportReasonSpam": {},
+
+  "reportReasonHarassment": "Molestie o bullismo",
+  "@reportReasonHarassment": {},
+
+  "reportReasonHate": "Incitamento all'odio",
+  "@reportReasonHate": {},
+
+  "reportReasonSexual": "Nudità o contenuti sessuali",
+  "@reportReasonSexual": {},
+
+  "reportReasonViolence": "Violenza o contenuti pericolosi",
+  "@reportReasonViolence": {},
+
+  "reportReasonMisinformation": "Disinformazione",
+  "@reportReasonMisinformation": {},
+
+  "reportReasonOther": "Altro",
+  "@reportReasonOther": {},
+
+  "reportSuccess": "Segnalazione inviata — grazie per aiutare a mantenere sicura la community.",
+  "@reportSuccess": {},
+
+  "reportRateLimited": "Hai segnalato troppi contenuti oggi. Riprova più tardi.",
+  "@reportRateLimited": {},
+
+  "reportError": "Impossibile inviare la segnalazione. Riprova.",
+  "@reportError": {},
+
+  "reportAction": "Segnala",
+  "@reportAction": {},
+
+  "reportUser": "Segnala utente",
+  "@reportUser": {},
+
+  "reportMessage": "Segnala messaggio",
+  "@reportMessage": {},
+
+  "blockUser": "Blocca utente",
+  "@blockUser": {},
+
+  "unblockUser": "Sblocca utente",
+  "@unblockUser": {},
+
+  "blockUserConfirmTitle": "Bloccare questo utente?",
+  "@blockUserConfirmTitle": {},
+
+  "blockUserConfirmBody": "Non vedrai più i suoi post, commenti e messaggi, e non potrà più contattarti. Puoi sbloccarlo in qualsiasi momento.",
+  "@blockUserConfirmBody": {},
+
+  "blockUserConfirmConfirm": "Blocca",
+  "@blockUserConfirmConfirm": {},
+
+  "blockUserConfirmCancel": "Annulla",
+  "@blockUserConfirmCancel": {},
+
+  "userBlocked": "Utente bloccato",
+  "@userBlocked": {},
+
+  "userUnblocked": "Utente sbloccato",
+  "@userUnblocked": {},
+
+  "blockedUsersTitle": "Utenti bloccati",
+  "@blockedUsersTitle": {},
+
+  "blockedUsersEmpty": "Non hai bloccato nessuno.",
+  "@blockedUsersEmpty": {},
+
+  "unblockAction": "Sblocca",
+  "@unblockAction": {},
+
+  "termsTitle": "Termini di servizio",
+  "@termsTitle": {},
+
+  "settingsTermsOfService": "Termini di servizio",
+  "@settingsTermsOfService": {},
+
+  "signupAcceptPrefix": "Accetto i ",
+  "@signupAcceptPrefix": {},
+
+  "signupAcceptTerms": "Termini di servizio",
+  "@signupAcceptTerms": {},
+
+  "signupAcceptAnd": " e la ",
+  "@signupAcceptAnd": {},
+
+  "signupAcceptPrivacy": "Informativa Privacy",
+  "@signupAcceptPrivacy": {},
+
+  "authMustAcceptTerms": "Accetta i Termini di servizio per continuare.",
+  "@authMustAcceptTerms": {}
 }

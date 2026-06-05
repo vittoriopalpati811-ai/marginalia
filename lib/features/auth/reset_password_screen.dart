@@ -45,8 +45,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       if (mounted) setState(() { _done = true; _loading = false; });
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) context.go('/');
-    } on AuthException catch (e) {
-      setState(() { _error = e.message; _loading = false; });
+    } on AuthException catch (_) {
+      // "Non dire più del dovuto": never surface the raw Supabase auth error
+      // string to the user (it can leak account-existence / internal details).
+      // Mirror auth_screen.dart's _mapError() and show a generic message.
+      setState(() { _error = l10n.resetErrGeneric; _loading = false; });
     } catch (_) {
       setState(() {
         _error = l10n.authErrGeneric;

@@ -15,6 +15,7 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../messages/giphy_picker.dart';
+import 'report_sheet.dart';
 import 'share_post_sheet.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -1053,7 +1054,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final l10n = context.l10n;
 
     if (!isOwner) {
-      // Non-owner: only "Report" option (placeholder)
+      // Non-owner: Report (real backend) + Block user.
       await showModalBottomSheet<void>(
         context: context,
         backgroundColor: Colors.transparent,
@@ -1063,11 +1064,41 @@ class _PostCardState extends ConsumerState<_PostCard> {
               icon: Icons.flag_outlined,
               label: l10n.feedReport,
               color: MarginaliaColors.inkMuted,
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(ctx);
-                messenger.showSnackBar(
-                  SnackBar(content: Text(l10n.feedReported)),
+                if (postId == null) return;
+                await showReportSheet(
+                  context,
+                  ref,
+                  contentType: 'post',
+                  contentId: postId,
+                  reportedUserId: postUserId,
                 );
+              },
+            ),
+            _MenuAction(
+              icon: Icons.block,
+              label: l10n.blockUser,
+              color: const Color(0xFFB54848),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (postUserId == null) return;
+                final confirmed = await confirmBlockUser(context);
+                if (!confirmed) return;
+                try {
+                  await svc.blockUser(postUserId);
+                  // Drop the blocked author's posts from the feed/timeline.
+                  ref.invalidate(postsProvider);
+                  ref.invalidate(feedProvider);
+                  ref.invalidate(followingProfilesProvider);
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.userBlocked)),
+                  );
+                } catch (e) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.feedErrorPrefix(e.toString()))),
+                  );
+                }
               },
             ),
           ],
@@ -2377,7 +2408,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
     final l10n = context.l10n;
 
     if (!canDelete) {
-      // Neither the author nor the post owner: only a "Report" placeholder.
+      // Neither the author nor the post owner: Report (real backend) + Block.
       await showModalBottomSheet<void>(
         context: context,
         backgroundColor: Colors.transparent,
@@ -2387,11 +2418,40 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
               icon: Icons.flag_outlined,
               label: l10n.feedReport,
               color: MarginaliaColors.inkMuted,
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(ctx);
-                messenger.showSnackBar(
-                  SnackBar(content: Text(l10n.feedReported)),
+                if (commentId == null) return;
+                await showReportSheet(
+                  context,
+                  ref,
+                  contentType: 'comment',
+                  contentId: commentId,
+                  reportedUserId: commentUserId,
                 );
+              },
+            ),
+            _MenuAction(
+              icon: Icons.block,
+              label: l10n.blockUser,
+              color: const Color(0xFFB54848),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (commentUserId == null) return;
+                final confirmed = await confirmBlockUser(context);
+                if (!confirmed) return;
+                try {
+                  await svc.blockUser(commentUserId);
+                  // Comments by a blocked user are filtered server-side; reload
+                  // the list so this one disappears immediately.
+                  widget.onDeleted();
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.userBlocked)),
+                  );
+                } catch (e) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(l10n.feedErrorPrefix(e.toString()))),
+                  );
+                }
               },
             ),
           ],

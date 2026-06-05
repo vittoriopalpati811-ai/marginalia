@@ -1,11 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../settings/privacy_policy_screen.dart';
+import '../settings/terms_of_service_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
@@ -29,6 +29,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   bool _loading = false;
   bool _obscure = true;
   String? _error;
+  // ToS/EULA acceptance — enforced on the sign-up tab only (App Store
+  // Guideline 1.2). Client-side gate; no DB column is stored for it.
+  bool _acceptedTerms = false;
 
   @override
   void initState() {
@@ -48,6 +51,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    // Sign-up tab only: block account creation until the EULA/ToS is accepted
+    // (App Store Guideline 1.2). Sign-in is never gated.
+    if (_tab.index == 1 && !_acceptedTerms) {
+      setState(() => _error = context.l10n.authMustAcceptTerms);
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -437,46 +446,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
                     const SizedBox(height: 20),
 
-                    // GDPR Article 7 consent — shown only on signup tab
+                    // ToS/EULA + Privacy acceptance — shown only on signup tab.
+                    // Required by App Store Guideline 1.2: the user must agree
+                    // to the Terms (zero-tolerance EULA) before creating an
+                    // account. Both links are independently tappable.
                     if (_tab.index == 1) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: MarginaliaColors.inkMuted,
-                              height: 1.5,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: context.l10n.authTermsPrefix,
-                              ),
-                              TextSpan(
-                                text: context.l10n.settingsPrivacyPolicy,
-                                style: const TextStyle(
-                                  color: MarginaliaColors.primaryDark,
-                                  decoration: TextDecoration.underline,
-                                ),
-                                recognizer: TapGestureRecognizer()
-                                  ..onTap = () {
-                                    final isIt = Localizations.localeOf(context)
-                                            .languageCode == 'it';
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) =>
-                                            PrivacyPolicyScreen(isItalian: isIt),
-                                      ),
-                                    );
-                                  },
-                              ),
-                              TextSpan(
-                                text: context.l10n.authTermsSuffix,
-                              ),
-                            ],
-                          ),
-                        ),
+                      _TermsAcceptanceRow(
+                        accepted: _acceptedTerms,
+                        onChanged: (v) =>
+                            setState(() => _acceptedTerms = v ?? false),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -570,5 +548,125 @@ class _AuthHeader extends StatelessWidget {
         ),
       ),
     ).animate().fadeIn(duration: 400.ms);
+  }
+}
+
+// ─── Terms acceptance row (signup only) ─────────────────────────────────────
+//
+// A tappable checkbox plus a localized sentence whose "Terms of Service" and
+// "Privacy Policy" substrings each open their respective in-app screen. Built
+// as three l10n fragments so the two link spans stay trivially tappable across
+// IT/EN word order. The TapGestureRecognizers are owned + disposed here.
+class _TermsAcceptanceRow extends StatefulWidget {
+  const _TermsAcceptanceRow({required this.accepted, required this.onChanged});
+
+  final bool accepted;
+  final ValueChanged<bool?> onChanged;
+
+  @override
+  State<_TermsAcceptanceRow> createState() => _TermsAcceptanceRowState();
+}
+
+class _TermsAcceptanceRowState extends State<_TermsAcceptanceRow> {
+  late final TapGestureRecognizer _termsTap;
+  late final TapGestureRecognizer _privacyTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsTap = TapGestureRecognizer()..onTap = _openTerms;
+    _privacyTap = TapGestureRecognizer()..onTap = _openPrivacy;
+  }
+
+  @override
+  void dispose() {
+    _termsTap.dispose();
+    _privacyTap.dispose();
+    super.dispose();
+  }
+
+  bool get _isIt => Localizations.localeOf(context).languageCode == 'it';
+
+  void _openTerms() {
+    final isIt = _isIt;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TermsOfServiceScreen(isItalian: isIt),
+      ),
+    );
+  }
+
+  void _openPrivacy() {
+    final isIt = _isIt;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PrivacyPolicyScreen(isItalian: isIt),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const linkStyle = TextStyle(
+      color: MarginaliaColors.primaryDark,
+      fontWeight: FontWeight.w600,
+      decoration: TextDecoration.underline,
+    );
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: widget.accepted,
+            onChanged: widget.onChanged,
+            activeColor: MarginaliaColors.primary,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+            side: const BorderSide(color: MarginaliaColors.rule, width: 1.5),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: GestureDetector(
+            // Tapping the text (not the links) toggles the checkbox too.
+            onTap: () => widget.onChanged(!widget.accepted),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text.rich(
+                TextSpan(
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: MarginaliaColors.inkMuted,
+                    height: 1.45,
+                  ),
+                  children: [
+                    TextSpan(text: context.l10n.signupAcceptPrefix),
+                    TextSpan(
+                      text: context.l10n.signupAcceptTerms,
+                      style: linkStyle,
+                      recognizer: _termsTap,
+                    ),
+                    TextSpan(text: context.l10n.signupAcceptAnd),
+                    TextSpan(
+                      text: context.l10n.signupAcceptPrivacy,
+                      style: linkStyle,
+                      recognizer: _privacyTap,
+                    ),
+                    const TextSpan(text: '.'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

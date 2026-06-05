@@ -15,7 +15,7 @@
 ## 2026-05-11 (sessione 4) - Apple Developer Program non attivo
 **Status**: 🔴 BLOCCANTE per build iOS / TestFlight
 
-**Problema**: L'account `vittoriopalpati811@gmail.com` non è iscritto all'Apple Developer Program.
+**Problema**: L'account Apple del founder non è iscritto all'Apple Developer Program.
 App Store Connect ha risposto: *"devi essere un individuo o un componente di un team di Apple Developer Program"*.
 
 **Cosa serve**: iscriversi all'Apple Developer Program su [developer.apple.com/enroll](https://developer.apple.com/enroll) — €99/anno.

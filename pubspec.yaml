@@ -1,6 +1,6 @@
 name: marginalia
 description: Riscopri i tuoi highlight Kindle attraverso widget intelligenti e cerchie di lettura.
-version: 1.0.19+1
+version: 1.0.20+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -113,3 +113,5 @@ flutter:
     - assets/demo/My Clippings.txt
     - docs/privacy/index.html
     - docs/privacy/it/index.html
+    - docs/terms/index.html
+    - docs/terms/it/index.html

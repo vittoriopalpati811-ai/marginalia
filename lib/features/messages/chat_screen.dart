@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/unread_messages_provider.dart';
+import '../social/report_sheet.dart';
 import 'giphy_picker.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -460,6 +462,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                                         '') !=
                                     senderId
                                 : !isMe,
+                            // Report/block is only meaningful for OTHER people's
+                            // messages and not for the optimistic placeholder
+                            // (no server id yet to report).
+                            onModerate: (isMe || isOptimistic)
+                                ? null
+                                : () => _showMessageMenu(
+                                      context,
+                                      messageId: message['id'] as String?,
+                                      senderId: senderId,
+                                    ),
                           ),
                         ],
                       );
@@ -516,6 +528,70 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             onSend: _send,
             onPickImage: _pickImage,
             onPickGif: _pickGif,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Long-press moderation menu for a single incoming message bubble. Offers
+  // "Report message" (real backend) and "Block user" (the SENDER). Never shown
+  // for my own messages — the bubble only wires this up when `!isMe`.
+  Future<void> _showMessageMenu(
+    BuildContext context, {
+    required String? messageId,
+    required String? senderId,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final l10n = context.l10n;
+    final svc = ref.read(supabaseServiceProvider);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _MessageMenuSheet(
+        items: [
+          _MessageMenuAction(
+            icon: Icons.flag_outlined,
+            label: l10n.reportMessage,
+            color: MarginaliaColors.inkMuted,
+            onTap: () async {
+              Navigator.pop(ctx);
+              if (messageId == null) return;
+              await showReportSheet(
+                context,
+                ref,
+                contentType: 'message',
+                contentId: messageId,
+                reportedUserId: senderId,
+              );
+            },
+          ),
+          _MessageMenuAction(
+            icon: Icons.block,
+            label: l10n.blockUser,
+            color: const Color(0xFFB54848),
+            onTap: () async {
+              Navigator.pop(ctx);
+              if (senderId == null || senderId.isEmpty) return;
+              final confirmed = await confirmBlockUser(context);
+              if (!confirmed) return;
+              try {
+                await svc.blockUser(senderId);
+                // Blocking the person you're chatting with: leave the thread and
+                // refresh the inbox so the conversation list reflects the block.
+                ref.invalidate(conversationsProvider);
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.userBlocked)),
+                );
+                if (navigator.canPop()) navigator.pop();
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text(context.l10n.errorPrefix(e.toString()))),
+                );
+              }
+            },
           ),
         ],
       ),
@@ -780,12 +856,17 @@ class _MessageBubble extends StatelessWidget {
     required this.isMe,
     required this.isOptimistic,
     required this.showSender,
+    this.onModerate,
   });
 
   final Map<String, dynamic> message;
   final bool isMe;
   final bool isOptimistic;
   final bool showSender;
+
+  /// Long-press handler that opens the report/block sheet. Null for my own
+  /// messages and optimistic placeholders (nothing to moderate).
+  final VoidCallback? onModerate;
 
   @override
   Widget build(BuildContext context) {
@@ -842,7 +923,9 @@ class _MessageBubble extends StatelessWidget {
 
           // Bubble
           Flexible(
-            child: Column(
+            child: GestureDetector(
+              onLongPress: onModerate,
+              child: Column(
               crossAxisAlignment:
                   isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
@@ -938,6 +1021,7 @@ class _MessageBubble extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
             ),
           ),
 
@@ -1450,6 +1534,98 @@ class _MediaButton extends StatelessWidget {
           color: onTap != null
               ? MarginaliaColors.inkMuted
               : MarginaliaColors.inkFaint,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Message moderation sheet (long-press on an incoming bubble) ─────────────
+//
+// Liquid-glass sheet mirroring feed_tab.dart's `_PostMenuSheet`: report the
+// message or block its sender. Local copy so chat_screen has no dependency on
+// the feed's private widgets.
+
+class _MessageMenuAction {
+  const _MessageMenuAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+}
+
+class _MessageMenuSheet extends StatelessWidget {
+  const _MessageMenuSheet({required this.items});
+  final List<_MessageMenuAction> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(12, 0, 12, bottom + 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: MarginaliaColors.surface.withAlpha(225),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withAlpha(46), width: 0.6),
+            ),
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.rule,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ...items.map(
+                  (a) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: a.onTap,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Icon(a.icon,
+                                  size: 20,
+                                  color: a.color ?? MarginaliaColors.ink),
+                              const SizedBox(width: 14),
+                              Text(
+                                a.label,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: a.color ?? MarginaliaColors.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

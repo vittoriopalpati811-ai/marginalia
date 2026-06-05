@@ -471,6 +471,7 @@
   "resetSaveCta": "Save password",
   "resetDone": "Password updated!",
   "resetRedirecting": "Redirecting…",
+  "resetErrGeneric": "Couldn't reset your password. Please try again.",
 
   "editProfilePhotoUpdated": "Profile photo updated!",
   "editProfileCoverUpdated": "Cover photo updated!",
@@ -812,5 +813,101 @@
   "profileTabPosts": "Profile",
   "profileTabReviews": "Reviews",
 
-  "jamBadge": "JAM"
+  "jamBadge": "JAM",
+
+  "reportSheetTitle": "Report content",
+  "@reportSheetTitle": {},
+
+  "reportReasonSpam": "Spam",
+  "@reportReasonSpam": {},
+
+  "reportReasonHarassment": "Harassment or bullying",
+  "@reportReasonHarassment": {},
+
+  "reportReasonHate": "Hate speech",
+  "@reportReasonHate": {},
+
+  "reportReasonSexual": "Nudity or sexual content",
+  "@reportReasonSexual": {},
+
+  "reportReasonViolence": "Violence or dangerous content",
+  "@reportReasonViolence": {},
+
+  "reportReasonMisinformation": "Misinformation",
+  "@reportReasonMisinformation": {},
+
+  "reportReasonOther": "Other",
+  "@reportReasonOther": {},
+
+  "reportSuccess": "Report sent — thanks for keeping the community safe.",
+  "@reportSuccess": {},
+
+  "reportRateLimited": "You've reported too many items today. Please try again later.",
+  "@reportRateLimited": {},
+
+  "reportError": "Couldn't send your report. Please try again.",
+  "@reportError": {},
+
+  "reportAction": "Report",
+  "@reportAction": {},
+
+  "reportUser": "Report user",
+  "@reportUser": {},
+
+  "reportMessage": "Report message",
+  "@reportMessage": {},
+
+  "blockUser": "Block user",
+  "@blockUser": {},
+
+  "unblockUser": "Unblock user",
+  "@unblockUser": {},
+
+  "blockUserConfirmTitle": "Block this user?",
+  "@blockUserConfirmTitle": {},
+
+  "blockUserConfirmBody": "You won't see their posts, comments or messages, and they won't be able to contact you. You can unblock them anytime.",
+  "@blockUserConfirmBody": {},
+
+  "blockUserConfirmConfirm": "Block",
+  "@blockUserConfirmConfirm": {},
+
+  "blockUserConfirmCancel": "Cancel",
+  "@blockUserConfirmCancel": {},
+
+  "userBlocked": "User blocked",
+  "@userBlocked": {},
+
+  "userUnblocked": "User unblocked",
+  "@userUnblocked": {},
+
+  "blockedUsersTitle": "Blocked users",
+  "@blockedUsersTitle": {},
+
+  "blockedUsersEmpty": "You haven't blocked anyone.",
+  "@blockedUsersEmpty": {},
+
+  "unblockAction": "Unblock",
+  "@unblockAction": {},
+
+  "termsTitle": "Terms of Service",
+  "@termsTitle": {},
+
+  "settingsTermsOfService": "Terms of Service",
+  "@settingsTermsOfService": {},
+
+  "signupAcceptPrefix": "I accept the ",
+  "@signupAcceptPrefix": {},
+
+  "signupAcceptTerms": "Terms of Service",
+  "@signupAcceptTerms": {},
+
+  "signupAcceptAnd": " and ",
+  "@signupAcceptAnd": {},
+
+  "signupAcceptPrivacy": "Privacy Policy",
+  "@signupAcceptPrivacy": {},
+
+  "authMustAcceptTerms": "Please accept the Terms of Service to continue.",
+  "@authMustAcceptTerms": {}
 }

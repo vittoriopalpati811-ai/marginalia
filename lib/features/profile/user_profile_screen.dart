@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
+import '../social/report_sheet.dart';
 import 'posts_timeline.dart';
 import 'profile_shared_widgets.dart';
 
@@ -55,6 +56,21 @@ final _isFollowingUserProvider =
   }
 });
 
+/// Whether the viewed profile is currently blocked by me — drives the
+/// Block/Unblock toggle in the overflow menu. Forces a refresh so the state is
+/// authoritative when the menu opens.
+final _isUserBlockedProvider =
+    FutureProvider.autoDispose.family<bool, String>((ref, userId) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  if (!svc.isAuthenticated) return false;
+  try {
+    final ids = await svc.fetchBlockedUserIds(forceRefresh: true);
+    return ids.contains(userId);
+  } catch (_) {
+    return false;
+  }
+});
+
 // ─── UserProfileScreen ────────────────────────────────────────────────────────
 
 class UserProfileScreen extends ConsumerStatefulWidget {
@@ -89,6 +105,50 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
+  Future<void> _toggleBlock(bool isBlocked) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final svc = ref.read(supabaseServiceProvider);
+
+    // Blocking is asymmetric/destructive — confirm first. Unblocking is benign,
+    // so it applies immediately.
+    if (!isBlocked) {
+      final confirmed = await confirmBlockUser(context);
+      if (!confirmed) return;
+    }
+
+    try {
+      if (isBlocked) {
+        await svc.unblockUser(widget.userId);
+      } else {
+        await svc.blockUser(widget.userId);
+      }
+      // Blocking severs the follow edge server-side; refresh everything that
+      // depends on block/follow state so the UI reflects it without a reload.
+      ref.invalidate(_isUserBlockedProvider(widget.userId));
+      ref.invalidate(_isFollowingUserProvider(widget.userId));
+      ref.invalidate(_userStatsProvider(widget.userId));
+      ref.invalidate(_userPostsProvider(widget.userId));
+      messenger.showSnackBar(
+        SnackBar(content: Text(isBlocked ? l10n.userUnblocked : l10n.userBlocked)),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.errorPrefix('$e'))),
+      );
+    }
+  }
+
+  Future<void> _reportProfile() async {
+    await showReportSheet(
+      context,
+      ref,
+      contentType: 'profile',
+      contentId: widget.userId,
+      reportedUserId: widget.userId,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(_publicProfileProvider(widget.userId));
@@ -107,7 +167,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           }
           final name = profile['display_name'] as String? ?? context.l10n.profileUserFallback;
           final readingTitle = profile['currently_reading_title'] as String?;
-          final readingAuthor = profile['currently_reading_author'] as String?;
           final avatarUrl = profile['avatar_url'] as String?;
           final coverUrl  = profile['cover_url']  as String?;
           final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
@@ -124,6 +183,17 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 foregroundColor: const Color(0xFFF1EEE7),
                 elevation: 0,
                 scrolledUnderElevation: 0,
+                actions: isMe
+                    ? null
+                    : [
+                        _ProfileOverflowMenu(
+                          isBlockedAsync:
+                              ref.watch(_isUserBlockedProvider(widget.userId)),
+                          onToggleBlock: _toggleBlock,
+                          onReport: _reportProfile,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
                 flexibleSpace: FlexibleSpaceBar(
                   collapseMode: CollapseMode.parallax,
                   background: Stack(
@@ -284,7 +354,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 child: Builder(
                   builder: (_) {
                     final raw = profile['favorite_books'];
-                    if (raw is! List || (raw as List).isEmpty) {
+                    if (raw is! List || raw.isEmpty) {
                       return const SizedBox.shrink();
                     }
                     final favs = raw
@@ -456,6 +526,71 @@ class _StatBox extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Overflow menu (block / unblock / report) ────────────────────────────────
+
+class _ProfileOverflowMenu extends StatelessWidget {
+  const _ProfileOverflowMenu({
+    required this.isBlockedAsync,
+    required this.onToggleBlock,
+    required this.onReport,
+  });
+
+  final AsyncValue<bool> isBlockedAsync;
+  final Future<void> Function(bool isBlocked) onToggleBlock;
+  final Future<void> Function() onReport;
+
+  @override
+  Widget build(BuildContext context) {
+    // Default to "not blocked" while the state loads so the menu is usable.
+    final isBlocked = isBlockedAsync.asData?.value ?? false;
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_horiz, color: Color(0xFFF1EEE7)),
+      color: MarginaliaColors.surface,
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onSelected: (v) {
+        if (v == 'block') {
+          onToggleBlock(isBlocked);
+        } else if (v == 'report') {
+          onReport();
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem<String>(
+          value: 'block',
+          child: Row(
+            children: [
+              Icon(isBlocked ? Icons.lock_open_outlined : Icons.block,
+                  size: 18, color: const Color(0xFFB54848)),
+              const SizedBox(width: 10),
+              Text(
+                isBlocked ? context.l10n.unblockUser : context.l10n.blockUser,
+                style: const TextStyle(
+                    fontSize: 14, color: MarginaliaColors.ink),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'report',
+          child: Row(
+            children: [
+              const Icon(Icons.flag_outlined,
+                  size: 18, color: MarginaliaColors.inkMuted),
+              const SizedBox(width: 10),
+              Text(
+                context.l10n.reportUser,
+                style: const TextStyle(
+                    fontSize: 14, color: MarginaliaColors.ink),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

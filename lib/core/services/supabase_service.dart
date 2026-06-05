@@ -14,6 +14,14 @@ class SupabaseService {
 
   final SupabaseClient _client;
 
+  // Short-lived cache of the current user's blocked-user IDs. Feed/conversation
+  // fetches call [fetchBlockedUserIds] which hits this cache to avoid querying
+  // blocked_users on every list load. Invalidated on block/unblock and after a
+  // brief TTL so a block elsewhere (other device) is picked up within seconds.
+  Set<String>? _blockedIdsCache;
+  DateTime? _blockedIdsFetchedAt;
+  static const _blockedIdsTtl = Duration(seconds: 30);
+
   User? get currentUser => _client.auth.currentUser;
   String? get userId => _client.auth.currentUser?.id;
   bool get isAuthenticated => _client.auth.currentUser != null;
@@ -372,7 +380,15 @@ class SupabaseService {
         .select('*, profiles(display_name)')
         .eq('jam_highlight_id', jamHighlightId)
         .order('created_at', ascending: true);
-    return List<Map<String, dynamic>>.from(response as List);
+    final rows = List<Map<String, dynamic>>.from(response as List);
+
+    // Hide comments authored by users I've blocked.
+    final blockedIds = await fetchBlockedUserIds();
+    if (blockedIds.isNotEmpty) {
+      rows.removeWhere(
+          (r) => blockedIds.contains(r['user_id'] as String? ?? ''));
+    }
+    return rows;
   }
 
   Future<void> addComment(String jamHighlightId, String content,
@@ -717,6 +733,86 @@ class SupabaseService {
     );
   }
 
+  // ─── Moderation: blocking & reporting (App Store Guideline 1.2) ───────────
+
+  /// Block another user. Routes through the `block_user` RPC (migration 041),
+  /// which upserts the block row idempotently AND severs any follow edge in
+  /// both directions server-side. Invalidates the blocked-ids cache so feeds
+  /// reflect the block immediately.
+  Future<void> blockUser(String userId) async {
+    await _client.rpc('block_user', params: {'p_blocked_id': userId});
+    _invalidateBlockedIdsCache();
+  }
+
+  /// Remove a block. Routes through the `unblock_user` RPC (migration 041).
+  /// Does not restore prior follows. Invalidates the blocked-ids cache.
+  Future<void> unblockUser(String userId) async {
+    await _client.rpc('unblock_user', params: {'p_blocked_id': userId});
+    _invalidateBlockedIdsCache();
+  }
+
+  /// IDs of users the current user has blocked. Used to filter posts, feed,
+  /// comments and conversations client-side.
+  ///
+  /// Cached for [_blockedIdsTtl] to keep list loads cheap (one query, reused
+  /// across the several fetches that need it). Pass [forceRefresh] to bypass
+  /// the cache. Returns an empty set when signed out or on error (fail-open:
+  /// a transient failure must not blank the feed).
+  Future<Set<String>> fetchBlockedUserIds({bool forceRefresh = false}) async {
+    if (!isAuthenticated || userId == null) return <String>{};
+
+    final cached = _blockedIdsCache;
+    final fetchedAt = _blockedIdsFetchedAt;
+    if (!forceRefresh &&
+        cached != null &&
+        fetchedAt != null &&
+        DateTime.now().difference(fetchedAt) < _blockedIdsTtl) {
+      return cached;
+    }
+
+    try {
+      final rows = List<Map<String, dynamic>>.from(
+        await _client
+            .from('blocked_users')
+            .select('blocked_id')
+            .eq('blocker_id', userId!) as List,
+      );
+      final ids = rows.map((r) => r['blocked_id'] as String).toSet();
+      _blockedIdsCache = ids;
+      _blockedIdsFetchedAt = DateTime.now();
+      return ids;
+    } catch (_) {
+      // Fail-open: return the last known set (or empty) rather than erroring
+      // the caller's list load.
+      return cached ?? <String>{};
+    }
+  }
+
+  void _invalidateBlockedIdsCache() {
+    _blockedIdsCache = null;
+    _blockedIdsFetchedAt = null;
+  }
+
+  /// Report objectionable content. Routes through the `report_content` RPC
+  /// (migration 041), which records the report with the caller as reporter and
+  /// is rate-limited server-side (20/day). [contentType] must be one of
+  /// 'post','comment','message','profile','review','jam'.
+  Future<void> reportContent({
+    required String contentType,
+    required String contentId,
+    String? reportedUserId,
+    required String reason,
+    String? details,
+  }) async {
+    await _client.rpc('report_content', params: {
+      'p_content_type': contentType,
+      'p_content_id': contentId,
+      'p_reported_user_id': reportedUserId,
+      'p_reason': reason,
+      'p_details': details,
+    });
+  }
+
   // ─── Profile stats ─────────────────────────────────────────────────────────
 
   Future<void> updateDisplayName(String displayName) async {
@@ -779,7 +875,10 @@ class SupabaseService {
   /// Recent highlights shared by followed users across all Jams, newest first.
   Future<List<Map<String, dynamic>>> fetchFeed() async {
     if (!isAuthenticated) return [];
-    final followingIds = (await fetchFollowingIds()).toList();
+    final blockedIds = await fetchBlockedUserIds();
+    final followingIds = (await fetchFollowingIds())
+        .where((id) => !blockedIds.contains(id))
+        .toList();
     if (followingIds.isEmpty) return [];
 
     final rows = List<Map<String, dynamic>>.from(
@@ -791,6 +890,11 @@ class SupabaseService {
               .order('shared_at', ascending: false)
               .limit(60) as List,
     );
+    if (rows.isEmpty) return [];
+
+    // Defensive: drop highlights shared by a blocked user.
+    rows.removeWhere(
+        (r) => blockedIds.contains(r['shared_by'] as String? ?? ''));
     if (rows.isEmpty) return [];
 
     // Fetch profiles for the users who shared
@@ -1112,7 +1216,11 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> fetchPosts() async {
     if (!isAuthenticated) return [];
     final followingIds = await fetchFollowingIds();
-    final allIds = {...followingIds, userId!}.toList();
+    final blockedIds = await fetchBlockedUserIds();
+    // Exclude blocked users from the authors we query for (never my own posts).
+    final allIds = {...followingIds, userId!}
+        .where((id) => id == userId || !blockedIds.contains(id))
+        .toList();
 
     final rows = List<Map<String, dynamic>>.from(
       await _client
@@ -1125,6 +1233,11 @@ class SupabaseService {
               .order('created_at', ascending: false)
               .limit(80) as List,
     );
+    if (rows.isEmpty) return [];
+
+    // Defensive: drop any post authored by a blocked user that slipped through.
+    rows.removeWhere(
+        (r) => blockedIds.contains(r['user_id'] as String? ?? ''));
     if (rows.isEmpty) return [];
 
     // Fetch profiles in parallel (include currently_reading for "reading X" display)
@@ -1280,6 +1393,14 @@ class SupabaseService {
           .eq('post_id', postId)
           .order('created_at', ascending: true) as List,
     );
+    if (rows.isEmpty) return [];
+
+    // Hide comments authored by users I've blocked.
+    final blockedIds = await fetchBlockedUserIds();
+    if (blockedIds.isNotEmpty) {
+      rows.removeWhere(
+          (r) => blockedIds.contains(r['user_id'] as String? ?? ''));
+    }
     if (rows.isEmpty) return [];
 
     final commentIds = rows.map((r) => r['id'] as String).toList();
@@ -1538,6 +1659,7 @@ class SupabaseService {
   /// member profiles pre-fetched. Sorted by most recently updated.
   Future<List<Map<String, dynamic>>> fetchConversations() async {
     final uid = userId!;
+    final blockedIds = await fetchBlockedUserIds();
 
     // Conversations I'm in — also fetch last_read_at for unread badge
     final memberRows = List<Map<String, dynamic>>.from(
@@ -1582,9 +1704,21 @@ class SupabaseService {
             .limit(1) as List,
       );
 
+      final otherMembers =
+          profiles.where((p) => p['id'] != uid).toList();
+
+      // Hide conversations whose every other member is blocked. For a 1:1 DM
+      // this drops the chat with a blocked user; in a group it only hides when
+      // no non-blocked member remains.
+      if (otherMembers.isNotEmpty &&
+          otherMembers.every(
+              (p) => blockedIds.contains(p['id'] as String? ?? ''))) {
+        continue;
+      }
+
       result.add({
         ...conv,
-        'members': profiles.where((p) => p['id'] != uid).toList(),
+        'members': otherMembers,
         'last_message': lastMsgs.isEmpty ? null : lastMsgs.first,
         'my_last_read_at': lastReadMap[convId],
         'current_user_id': uid,

@@ -26,6 +26,7 @@ import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/reviews_service.dart';
+import '../social/report_sheet.dart';
 import '../library/book_cover.dart';
 
 // ─── Providers used only by the composer ──────────────────────────────────────
@@ -189,6 +190,8 @@ class _ReviewCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final myId = ref.read(supabaseServiceProvider).userId;
+    final isOwner = myId != null && myId == review.userId;
     final card = Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(16),
@@ -247,14 +250,22 @@ class _ReviewCard extends ConsumerWidget {
                   ],
                 ),
               ),
-              // Overflow menu — delete own review.
+              // Overflow menu — delete own review, or report someone else's.
               _ReviewMenu(
+                isOwner: isOwner,
                 onDelete: () async {
                   await ref
                       .read(reviewsServiceProvider)
                       .deleteReview(review.id);
                   ref.invalidate(myReviewsProvider);
                 },
+                onReport: () => showReportSheet(
+                  context,
+                  ref,
+                  contentType: 'review',
+                  contentId: review.id,
+                  reportedUserId: review.userId,
+                ),
               ),
             ],
           ),
@@ -311,8 +322,14 @@ class _ReviewCard extends ConsumerWidget {
 }
 
 class _ReviewMenu extends StatelessWidget {
-  const _ReviewMenu({required this.onDelete});
+  const _ReviewMenu({
+    required this.isOwner,
+    required this.onDelete,
+    required this.onReport,
+  });
+  final bool isOwner;
   final Future<void> Function() onDelete;
+  final Future<void> Function() onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -326,22 +343,39 @@ class _ReviewMenu extends StatelessWidget {
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (v) {
         if (v == 'delete') onDelete();
+        if (v == 'report') onReport();
       },
-      itemBuilder: (_) => [
-        PopupMenuItem<String>(
-          value: 'delete',
-          child: Row(
-            children: [
-              const Icon(Icons.delete_outline,
-                  size: 17, color: Color(0xFFB3503F)),
-              const SizedBox(width: 8),
-              Text(context.l10n.delete,
-                  style: const TextStyle(
-                      fontSize: 13.5, color: MarginaliaColors.ink)),
+      itemBuilder: (_) => isOwner
+          ? [
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    const Icon(Icons.delete_outline,
+                        size: 17, color: Color(0xFFB3503F)),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.delete,
+                        style: const TextStyle(
+                            fontSize: 13.5, color: MarginaliaColors.ink)),
+                  ],
+                ),
+              ),
+            ]
+          : [
+              PopupMenuItem<String>(
+                value: 'report',
+                child: Row(
+                  children: [
+                    const Icon(Icons.flag_outlined,
+                        size: 17, color: MarginaliaColors.inkMuted),
+                    const SizedBox(width: 8),
+                    Text(context.l10n.reportAction,
+                        style: const TextStyle(
+                            fontSize: 13.5, color: MarginaliaColors.ink)),
+                  ],
+                ),
+              ),
             ],
-          ),
-        ),
-      ],
     );
   }
 }

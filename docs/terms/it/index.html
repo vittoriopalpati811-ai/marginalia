@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Marginalia — Informativa sulla privacy. Cosa raccogliamo, perché, e come eliminarlo." />
-  <title>Privacy · Marginalia</title>
+  <meta name="description" content="Marginalia — Termini di servizio. Cosa accetti leggendo qui, e la linea che non lasciamo superare a nessuno." />
+  <title>Termini · Marginalia</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -180,8 +180,8 @@
       color: var(--matcha);
     }
     .hero .meta span:first-child::before { content: none; margin: 0; }
-    /* Diagonal ornament pushed behind hero content via z-index, so it
-       reads as background grain instead of a stripe over the lede. */
+    /* Ornamento diagonale spinto dietro al contenuto dell'hero (z-index)
+       così appare come grana di sfondo, non come una riga sopra il lede. */
     .hero { z-index: 0; }
     .hero > * { position: relative; z-index: 1; }
     .hero::after {
@@ -328,6 +328,46 @@
       background: linear-gradient(to top, rgba(168,126,44,.18) 0%, rgba(168,126,44,.18) 32%, transparent 32%);
       padding: 0 2px;
     }
+    section ul {
+      margin: 0 0 16px;
+      padding-left: 1.3em;
+      list-style: none;
+    }
+    section ul li {
+      position: relative;
+      margin: 0 0 8px;
+      padding-left: 4px;
+    }
+    section ul li::before {
+      content: '—';
+      position: absolute;
+      left: -1.1em;
+      color: var(--matcha);
+    }
+
+    .redline {
+      margin: 28px 0 8px;
+      padding: 28px 28px 20px;
+      border: 1px solid var(--pencil-soft);
+      border-left: 3px solid var(--pencil);
+      background: linear-gradient(to bottom, rgba(139,58,46,.05), transparent);
+      position: relative;
+    }
+    .redline .redline-tag {
+      font-family: 'EB Garamond', serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--pencil);
+      font-weight: 600;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .redline p { margin: 0 0 12px; }
+    .redline p:last-child { margin-bottom: 0; }
+    .redline strong {
+      background: linear-gradient(to top, rgba(139,58,46,.16) 0%, rgba(139,58,46,.16) 32%, transparent 32%);
+    }
 
     .deflist {
       margin: 24px 0 8px;
@@ -358,33 +398,6 @@
       color: var(--ink-muted);
       font-size: 16px;
       line-height: 1.55;
-    }
-    .deflist .value .req {
-      font-family: 'EB Garamond', serif;
-      font-size: 10px;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      color: var(--matcha);
-      display: inline-block;
-      margin-top: 4px;
-    }
-    .deflist .value .opt {
-      font-family: 'EB Garamond', serif;
-      font-size: 10px;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      color: var(--ochre);
-      display: inline-block;
-      margin-top: 4px;
-    }
-    .deflist .value .na {
-      font-family: 'EB Garamond', serif;
-      font-size: 10px;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      color: var(--ink-faint);
-      display: inline-block;
-      margin-top: 4px;
     }
 
     .scribble { display: none; }
@@ -458,15 +471,13 @@
       font-size: 17px;
       max-width: 360px;
     }
-    .contact a {
+    .contact .channel {
       display: inline-block;
       font-family: 'Bodoni Moda', serif;
       font-style: italic;
       font-size: clamp(18px, 4.6vw, 24px);
       font-weight: 500;
       color: var(--matcha-dark);
-      border-bottom-width: 1px;
-      word-break: break-all;
     }
 
     footer {
@@ -483,27 +494,29 @@
     }
     footer a:hover { color: var(--matcha-dark); }
 
+    /* IMPORTANTE: l'hero e la thesis sono VISIBILI PER DEFAULT (opacity 1).
+       Il fade d'ingresso è un *miglioramento progressivo* sopra di essi,
+       applicato solo se l'utente non ha chiesto di ridurre le animazioni.
+       Il keyframe d'ingresso anima SOLO LA TRASFORMAZIONE (una lieve salita),
+       mai l'opacity. Il testo resta quindi pienamente opaco a ogni frame e a
+       ogni ritardo, così i termini non possono mai apparire vuoti anche se una
+       WebView interna disegna il primo frame prima dell'animazione. */
     @keyframes ink {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { transform: translateY(8px); }
+      to   { transform: translateY(0); }
     }
     @keyframes underscore {
       from { transform: scaleX(0); }
       to   { transform: scaleX(1); }
     }
-    .hero .eyebrow { animation: ink .8s ease-out both; animation-delay: .05s; }
-    .hero .eyebrow::before { transform-origin: left; animation: underscore .6s ease-out both; animation-delay: .15s; }
-    .hero h1               { animation: ink 1.1s ease-out both; animation-delay: .25s; }
-    .hero .lede            { animation: ink 1.0s ease-out both; animation-delay: .45s; }
-    .hero .meta            { animation: ink .9s ease-out both;  animation-delay: .65s; }
-    .thesis                { animation: ink 1.0s ease-out both; animation-delay: .85s; }
 
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.001s !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.001s !important;
-      }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero .eyebrow { animation: ink .8s ease-out both; animation-delay: .05s; }
+      .hero .eyebrow::before { transform-origin: left; animation: underscore .6s ease-out both; animation-delay: .15s; }
+      .hero h1               { animation: ink 1.1s ease-out both; animation-delay: .25s; }
+      .hero .lede            { animation: ink 1.0s ease-out both; animation-delay: .45s; }
+      .hero .meta            { animation: ink .9s ease-out both;  animation-delay: .65s; }
+      .thesis                { animation: ink 1.0s ease-out both; animation-delay: .85s; }
     }
   </style>
 </head>
@@ -513,8 +526,8 @@
     <a href="../../" class="wordmark">Marginalia</a>
     <nav>
       <a href="../../">Home</a>
-      <a href="./">Privacy</a>
-      <a href="../../terms/">Termini</a>
+      <a href="../../privacy/">Privacy</a>
+      <a href="./">Termini</a>
       <span class="lang-switch" aria-label="Lingua">
         <a href="../">EN</a>
         <a href="./" class="lang-active">IT</a>
@@ -523,15 +536,15 @@
   </header>
 
   <section class="hero">
-    <div class="eyebrow">Informativa sulla privacy</div>
-    <h1>Privacy<span class="dot">.</span></h1>
+    <div class="eyebrow">Termini di servizio</div>
+    <h1>Termini<span class="dot">.</span></h1>
     <p class="lede">
-      Cosa conserviamo, cosa no, e la porta che lasciamo sempre aperta se cambi idea.
+      Le regole dello scaffale — cosa accetti leggendo qui, e la linea che non lasciamo superare a nessuno.
     </p>
     <div class="meta">
-      <span>Aggiornata 27 maggio 2026</span>
-      <span>v1.2</span>
-      <span>Linguaggio semplice, conforme GDPR</span>
+      <span>Aggiornati 5 giugno 2026</span>
+      <span>v1.0</span>
+      <span>Linguaggio semplice</span>
     </div>
   </section>
 
@@ -540,13 +553,14 @@
     <aside class="toc" aria-label="Indice">
       <div class="toc-title">Sezioni</div>
       <ol>
-        <li><a href="#who">Chi siamo</a></li>
-        <li><a href="#data">Dati raccolti</a></li>
-        <li><a href="#third">Servizi terzi</a></li>
-        <li><a href="#legal">Base giuridica</a></li>
-        <li><a href="#retention">Conservazione</a></li>
-        <li><a href="#rights">I tuoi diritti</a></li>
-        <li><a href="#children">Minori</a></li>
+        <li><a href="#acceptance">Accettazione</a></li>
+        <li><a href="#eligibility">Requisiti</a></li>
+        <li><a href="#conduct">Tolleranza zero</a></li>
+        <li><a href="#content">I tuoi contenuti</a></li>
+        <li><a href="#moderation">Moderazione</a></li>
+        <li><a href="#termination">Cessazione</a></li>
+        <li><a href="#disclaimer">Esclusioni</a></li>
+        <li><a href="#law">Legge applicabile</a></li>
         <li><a href="#changes">Modifiche</a></li>
       </ol>
     </aside>
@@ -554,277 +568,225 @@
     <main>
 
       <p class="thesis">
-        La tua vita di lettore non è un dataset in vendita. È un archivio privato
-        che ti aiutiamo a custodire — e <span class="em">non lo vendiamo mai</span>
-        agli inserzionisti, non lo scambiamo con data broker,
-        non lo usiamo per addestrare modelli di terzi.
+        Marginalia è un luogo tranquillo dove custodire ciò che hai letto e condividerlo con chi ci tiene.
+        Tenerlo così chiede una cosa sola a tutti: <span class="em">trattatevi bene a vicenda</span>.
       </p>
 
       <!-- 1 -->
-      <section id="who">
+      <section id="acceptance">
         <span class="num">01.</span>
-        <h2>Chi siamo</h2>
+        <h2>Accettazione dei termini</h2>
         <p class="first-p">
-          Marginalia è un'applicazione iOS indipendente progettata e sviluppata
-          da Vittorio Palpati, con sede in Italia. Domande, reclami e
-          curiosità sono benvenuti nell'app in
-          <strong>Impostazioni &rarr; Privacy e dati</strong>.
+          Questi Termini di servizio (i "Termini") sono un accordo tra te e
+          Marginalia, un'applicazione iOS indipendente progettata e sviluppata
+          da Vittorio Palpati, con sede in Italia. Creando un account, oppure
+          scaricando, accedendo o usando l'app, <strong>accetti di essere
+          vincolato da questi Termini</strong> e dalla nostra Informativa sulla
+          privacy.
         </p>
         <p>
-          Poiché l'app è distribuita a utenti dell'Unione Europea, siamo
-          pienamente conformi al <strong>Regolamento generale sulla protezione
-          dei dati (GDPR)</strong> e, ove applicabile, al Codice italiano in
-          materia di protezione dei dati personali.
+          Se non sei d'accordo, ti preghiamo di non usare Marginalia. Questi
+          Termini, insieme all'Informativa sulla privacy, costituiscono
+          l'intero accordo tra noi riguardo all'app e sostituiscono ogni intesa
+          precedente.
         </p>
-        <div class="scribble-fallback">— il GDPR è il pavimento, non il soffitto.</div>
-        <div class="scribble">il GDPR è il pavimento, non il soffitto.</div>
+        <div class="scribble-fallback">— usi l'app, e queste regole valgono. è semplice così.</div>
+        <div class="scribble">usi l'app, e queste regole valgono. è semplice così.</div>
       </section>
 
       <!-- 2 -->
-      <section id="data">
+      <section id="eligibility">
         <span class="num">02.</span>
-        <h2>Cosa raccogliamo, e perché</h2>
+        <h2>Chi può usarla</h2>
         <p class="first-p">
-          La versione breve: il minimo per farti accedere, conservare i tuoi
-          highlight e personalizzare quello che ti mostriamo ogni giorno.
-          Nessun identificativo pubblicitario, nessun pixel di tracciamento,
-          nessun SDK di analytics di terzi.
+          Devi avere <strong>almeno 16 anni</strong> per creare un account e
+          usare Marginalia. Iscrivendoti confermi di soddisfare questo requisito
+          e che le informazioni che ci fornisci sono accurate.
         </p>
-
-        <div class="deflist">
-          <div class="row">
-            <div class="label">Email</div>
-            <div class="value">
-              Solo per l'autenticazione. Mai condivisa.
-              <br><span class="req">Obbligatoria</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Nome visualizzato</div>
-            <div class="value">
-              Mostrato nel tuo profilo pubblico e in qualunque "Jam"
-              (circolo di lettura) a cui partecipi.
-              <br><span class="req">Obbligatorio</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Highlight di Kindle</div>
-            <div class="value">
-              Il cuore dell'app. Riproposti e riscoperti come unica ragione
-              d'esistere del prodotto.
-              <br><span class="req">Obbligatori</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Passi e allenamenti</div>
-            <div class="value">
-              Usati solo per scegliere un highlight adatto al momento
-              (es. una citazione sull'energia dopo una corsa).
-              Letti sul dispositivo; mai caricati sui nostri server.
-              <br><span class="opt">Opzionali</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Fase del ciclo mestruale</div>
-            <div class="value">
-              Affina la scelta dell'highlight del giorno se — e solo se —
-              dai esplicito consenso. Resta sul tuo dispositivo.
-              <br><span class="opt">Opzionale</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Posizione (livello città)</div>
-            <div class="value">
-              Alimenta la striscia meteo nel widget home. Inviata a
-              Open-Meteo senza alcun account o identificatore associato.
-              <br><span class="opt">Opzionale</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Eventi d'uso anonimi</div>
-            <div class="value">
-              Tap aggregati sulle feature, schermate visitate, e crash report
-              — usati solo per correggere bug e capire cosa costruire dopo.
-              Niente nome, niente email, niente IP. Un identificatore casuale
-              per dispositivo, che puoi resettare dalle Impostazioni.
-              <br><span class="opt">Opzionali · puoi disattivarli</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Identificatori pubblicitari</div>
-            <div class="value">
-              Non li raccogliamo. Niente SDK pubblicitari, niente pixel di
-              tracciamento di terzi, niente tracking cross-app.
-              <br><span class="na">Non raccolti</span>
-            </div>
-          </div>
-        </div>
-
-        <p style="margin-top: 24px;">
-          I dati sanitari (passi, allenamenti, ciclo mestruale) sono letti
-          da Apple HealthKit sul tuo dispositivo, usati nell'istante per
-          scegliere un highlight, e poi scartati. <strong>Non arrivano mai
-          ai nostri server</strong>, e non sono mai condivisi con nessuno.
+        <p>
+          Sei responsabile della custodia delle tue credenziali di accesso e di
+          tutto ciò che avviene sotto il tuo account. Una persona, un account —
+          non puoi condividerlo, venderlo o trasferirlo.
         </p>
-
-        <div class="scribble-fallback">— comunque sia, i dati sanitari restano sul tuo telefono. sempre.</div>
-        <div class="scribble right-tilt lower">comunque sia, i dati sanitari restano sul tuo telefono. sempre.</div>
       </section>
 
       <!-- 3 -->
-      <section id="third">
+      <section id="conduct">
         <span class="num">03.</span>
-        <h2>Con chi lavoriamo</h2>
+        <h2>Tolleranza zero per contenuti riprovevoli e comportamenti abusivi</h2>
         <p class="first-p">
-          Una lista corta e dichiarata. Ogni fornitore è nominato, è chiaro
-          cosa riceve, e puoi leggere la sua informativa in un click.
+          Marginalia include funzioni sociali — circoli di lettura ("Jam"),
+          highlight condivisi, commenti, profili e messaggi diretti. Tutto ciò
+          che pubblichi o invii è sotto la tua responsabilità. Applichiamo una
+          rigorosa <strong>politica di tolleranza zero</strong> verso i
+          contenuti riprovevoli e verso gli utenti che ne abusano degli altri.
         </p>
 
-        <div class="deflist">
-          <div class="row">
-            <div class="label">Supabase</div>
-            <div class="value">
-              Database e autenticazione, hostati in UE.
-              <br><a href="https://supabase.com/privacy" target="_blank" rel="noopener">supabase.com/privacy</a>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Anthropic</div>
-            <div class="value">
-              Selezione AI dell'highlight quotidiano. Riceve solo il testo
-              anonimizzato dei tuoi highlight — niente email, nome o
-              identificatore.
-              <br><a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">anthropic.com/legal/privacy</a>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Open-Meteo</div>
-            <div class="value">
-              Meteo per il widget. Senza account, senza cookie.
-              <br><a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">open-meteo.com/en/terms</a>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Amazon Kindle</div>
-            <div class="value">
-              Sync opzionale degli highlight tramite il tuo account Amazon
-              in un browser in-app. Le tue credenziali vengono inserite
-              nella pagina di Amazon stessa; noi non le vediamo mai.
-              <br><a href="https://www.amazon.com/gp/help/customer/display.html?nodeId=468496" target="_blank" rel="noopener">amazon.com/privacy</a>
-            </div>
-          </div>
+        <div class="redline">
+          <span class="redline-tag">Severamente vietato</span>
+          <p>Non puoi pubblicare, condividere, inviare o caricare alcun
+          contenuto, né comportarti in alcun modo, che:</p>
+          <ul>
+            <li>molesti, perseguiti, minacci, intimidisca o faccia bullismo verso qualunque persona;</li>
+            <li>costituisca incitamento all'odio o attacchi le persone in base a razza, etnia, origine nazionale, religione, sesso, identità di genere, orientamento sessuale, disabilità o qualsiasi base simile;</li>
+            <li>sia sessualmente esplicito o pornografico, o sessualizzi minori in qualsiasi modo;</li>
+            <li>raffiguri o esalti violenza grafica, autolesionismo o atti pericolosi;</li>
+            <li>sia illegale, promuova attività illecite o violi i diritti di proprietà intellettuale o la privacy di chiunque;</li>
+            <li>sia spam, una truffa o ingannevole, o impersoni un'altra persona, marchio o entità.</li>
+          </ul>
+          <p><strong>Non esiste un numero di avvertimenti.</strong> Gli utenti
+          che pubblicano contenuti riprovevoli, o che abusano, molestano o
+          mettono in pericolo altri utenti, vedranno quel contenuto rimosso e
+          potranno avere l'account sospeso o terminato in via definitiva, a
+          nostra discrezione e senza rimborso.</p>
         </div>
+
+        <p>
+          Usando Marginalia accetti inoltre che <strong>non c'è tolleranza per
+          gli utenti abusivi</strong>: violazioni ripetute o gravi pongono fine
+          al tuo accesso alla community per sempre.
+        </p>
+        <div class="scribble-fallback">— molesti qualcuno, e sei fuori. nessuna eccezione.</div>
+        <div class="scribble right-tilt lower">molesti qualcuno, e sei fuori. nessuna eccezione.</div>
       </section>
 
       <!-- 4 -->
-      <section id="legal">
+      <section id="content">
         <span class="num">04.</span>
-        <h2>Base giuridica (GDPR art. 6)</h2>
+        <h2>I tuoi contenuti, e la tua responsabilità</h2>
         <p class="first-p">
-          Trattiamo i tuoi dati su tre basi distinte, mai sovrapposte.
+          Resti proprietario degli highlight, delle note, delle recensioni,
+          delle immagini e dei messaggi che crei ("I tuoi contenuti"). Non ne
+          rivendichiamo la proprietà. Sei l'unico responsabile dei Tuoi
+          contenuti e del fatto di avere il diritto di condividerli.
         </p>
         <p>
-          <strong>Contratto (art. 6.1.b)</strong> — la tua email e i tuoi
-          highlight sono necessari per fornirti il servizio per cui ti sei
-          iscritto.
+          Per far funzionare il servizio, concedi a Marginalia una licenza
+          mondiale, non esclusiva e gratuita per <strong>ospitare,
+          memorizzare, riprodurre e mostrare i Tuoi contenuti</strong> al solo
+          scopo limitato di gestire, fornire e migliorare l'app — per esempio,
+          mostrare un highlight condiviso agli altri membri di una Jam a cui
+          partecipi. Questa licenza termina quando elimini il contenuto o il tuo
+          account, salvo per le copie già distribuite ad altri utenti o
+          conservate nei backup ordinari per un breve periodo.
         </p>
         <p>
-          <strong>Consenso (art. 6.1.a e art. 9.2.a)</strong> — i dati
-          sanitari sono trattati solo se concedi esplicitamente il permesso
-          HealthKit sul dispositivo. Puoi revocarlo in qualunque momento da
-          Impostazioni iOS → Privacy e sicurezza → Salute.
-        </p>
-        <p>
-          <strong>Legittimo interesse (art. 6.1.f)</strong> — meteo a
-          livello città via Open-Meteo per arricchire il widget, senza
-          alcun identificatore persistente associato.
+          Accetti di non abusare del servizio: niente reverse engineering,
+          niente scraping, nessun tentativo di violare la sicurezza,
+          sovraccaricare i nostri sistemi o accedere a dati non tuoi.
         </p>
       </section>
 
       <!-- 5 -->
-      <section id="retention">
+      <section id="moderation">
         <span class="num">05.</span>
-        <h2>Per quanto tempo li conserviamo</h2>
+        <h2>Segnalazioni, moderazione e applicazione</h2>
         <p class="first-p">
-          Finché il tuo account esiste, e non un giorno di più. Quando elimini
-          l'account (Impostazioni → Privacy e dati → Elimina account), ogni
-          riga collegata a te — highlight, profilo, attività nelle Jam,
-          immagini caricate — viene rimossa dal database in
-          <strong>tempo reale</strong>.
+          Diamo a ogni membro gli strumenti per mantenere la community sicura, e
+          li usiamo anche noi.
         </p>
-        <p>
-          I backup criptati del database conservati dal nostro provider
-          infrastrutturale (Supabase) ruotano entro <strong>30 giorni</strong>.
-          Dopo quella finestra, nessuna copia dei tuoi dati esiste sui
-          nostri sistemi.
-        </p>
-        <p>
-          I dati sul dispositivo (database Isar locale) spariscono nel
-          momento in cui disinstalli l'app.
-        </p>
-        <div class="scribble-fallback">— i dati live spariscono in secondi; i backup entro 30 giorni.</div>
-        <div class="scribble lower">i dati live spariscono in secondi; i backup entro 30 giorni.</div>
-      </section>
 
-      <!-- 6 -->
-      <section id="rights">
-        <span class="num">06.</span>
-        <h2>I tuoi diritti</h2>
-        <p class="first-p">
-          Sei diritti, ciascuno azionabile, ciascuno raggiungibile dall'app
-          o con una breve email a noi.
-        </p>
         <div class="deflist">
           <div class="row">
-            <div class="label">Accesso</div>
-            <div class="value">Richiedi una copia di tutti i dati che abbiamo su di te.</div>
-          </div>
-          <div class="row">
-            <div class="label">Rettifica</div>
-            <div class="value">Correggi dati personali inesatti da Impostazioni → Modifica profilo.</div>
-          </div>
-          <div class="row">
-            <div class="label">Cancellazione</div>
+            <div class="label">Segnala</div>
             <div class="value">
-              Elimina l'account e tutti i dati correlati:
-              Impostazioni → Privacy e dati → Elimina account.
+              Qualsiasi post, commento, messaggio o utente può essere segnalato
+              dall'interno dell'app, in pochi tap, con una motivazione.
             </div>
           </div>
           <div class="row">
-            <div class="label">Portabilità</div>
-            <div class="value">Esporta ogni highlight in Markdown: Impostazioni → Esporta.</div>
+            <div class="label">Blocca</div>
+            <div class="value">
+              Puoi bloccare qualunque utente. Una volta bloccato, non potrà
+              contattarti né vedere la tua attività, e tu non vedrai la sua.
+              Puoi sbloccare in qualsiasi momento.
+            </div>
           </div>
           <div class="row">
-            <div class="label">Opposizione</div>
-            <div class="value">Disattiva qualunque trattamento basato sul legittimo interesse, in ogni momento.</div>
-          </div>
-          <div class="row">
-            <div class="label">Limitazione</div>
-            <div class="value">Sospendi il trattamento dei tuoi dati mentre è in corso una contestazione.</div>
+            <div class="label">Revisione</div>
+            <div class="value">
+              Esaminiamo ogni segnalazione valida e <strong>interveniamo entro
+              24 ore</strong> — rimuovendo i contenuti e sospendendo o
+              rimuovendo gli account responsabili quando le nostre regole sono
+              violate.
+            </div>
           </div>
         </div>
+
+        <p>
+          Possiamo rimuovere qualsiasi contenuto o sospendere qualsiasi account
+          che violi questi Termini, con o senza preavviso, e filtriamo i
+          materiali riprovevoli. Le decisioni di moderazione sono prese in buona
+          fede per proteggere la community.
+        </p>
+        <div class="scribble-fallback">— segnalalo, e interveniamo entro 24 ore. sempre.</div>
+        <div class="scribble lower">segnalalo, e interveniamo entro 24 ore. sempre.</div>
+      </section>
+
+      <!-- 6 -->
+      <section id="termination">
+        <span class="num">06.</span>
+        <h2>Sospensione e cessazione</h2>
+        <p class="first-p">
+          Puoi smettere di usare Marginalia ed eliminare il tuo account in
+          qualsiasi momento da Impostazioni → Privacy e dati → Elimina account.
+          Quando lo fai, i tuoi contenuti vengono rimossi come descritto
+          nell'Informativa sulla privacy.
+        </p>
+        <p>
+          Possiamo sospendere o terminare il tuo accesso immediatamente se
+          violi questi Termini — in particolare le regole di tolleranza zero
+          qui sopra — o se siamo tenuti a farlo per legge. Le sezioni che per
+          loro natura devono sopravvivere (la licenza sui contenuti già
+          concessa, le esclusioni, la limitazione di responsabilità e la legge
+          applicabile) continuano a valere dopo la cessazione.
+        </p>
       </section>
 
       <!-- 7 -->
-      <section id="children">
+      <section id="disclaimer">
         <span class="num">07.</span>
-        <h2>Minori</h2>
+        <h2>Esclusioni e limitazione di responsabilità</h2>
         <p class="first-p">
-          Marginalia non è rivolta a persone sotto i 13 anni. Non raccogliamo
-          consapevolmente dati personali di minori sotto questa età. Se ritieni
-          che un minore ci abbia fornito dati personali, scrivici e li
-          elimineremo immediatamente.
+          Marginalia è fornita <strong>"così com'è" e "secondo
+          disponibilità"</strong>, senza garanzie di alcun tipo, esplicite o
+          implicite, nella massima misura consentita dalla legge. Non
+          garantiamo che l'app sia ininterrotta, priva di errori, né che i
+          contenuti pubblicati da altri utenti siano accurati o appropriati.
+        </p>
+        <p>
+          Nella massima misura consentita dalla legge applicabile, Marginalia e
+          il suo sviluppatore non saranno responsabili per danni indiretti,
+          incidentali o consequenziali, né per perdita di dati, derivanti dal
+          tuo uso — o impossibilità di usare — l'app. Nulla in questi Termini
+          limita i diritti che hai come consumatore e che non possono essere
+          esclusi ai sensi della legge del tuo paese di residenza.
         </p>
       </section>
 
       <!-- 8 -->
-      <section id="changes">
+      <section id="law">
         <span class="num">08.</span>
-        <h2>Modifiche a questa policy</h2>
+        <h2>Legge applicabile</h2>
+        <p class="first-p">
+          Questi Termini sono regolati dalla legge italiana, luogo di
+          stabilimento dello sviluppatore, senza riguardo alle norme sul
+          conflitto di leggi e senza privarti delle tutele inderogabili a
+          favore dei consumatori del paese in cui vivi. Si applicano anche i
+          Termini d'uso dell'App Store al download e all'uso dell'app.
+        </p>
+      </section>
+
+      <!-- 9 -->
+      <section id="changes">
+        <span class="num">09.</span>
+        <h2>Modifiche a questi termini</h2>
         <p class="first-p">
           Se apportiamo modifiche sostanziali, ti avviseremo dentro all'app
-          prima che la modifica abbia effetto. L'uso continuato dopo la
-          notifica costituisce accettazione della nuova policy.
+          prima che abbiano effetto. L'uso continuato dopo la modifica
+          costituisce accettazione dei Termini aggiornati. Se non sei d'accordo
+          con una modifica, puoi smettere di usare l'app ed eliminare il tuo
+          account.
         </p>
       </section>
 
@@ -833,8 +795,8 @@
         <span class="c-corner tr"></span>
         <span class="c-corner bl"></span>
         <span class="c-corner br"></span>
-        <p>Domande, richieste sui dati, reclami</p>
-        <span>Nell'app: Impostazioni &rarr; Privacy e dati</span>
+        <p>Domande su questi Termini, o qualcosa da segnalare?</p>
+        <span class="channel">Nell'app: Impostazioni → Privacy e dati</span>
       </div>
 
     </main>
@@ -843,8 +805,7 @@
   <footer>
     © 2026 Marginalia
     <a href="../../">Home</a>
-    <a href="../../terms/">Termini</a>
-    <span>Contatti</span>
+    <a href="../../privacy/">Privacy</a>
   </footer>
 
 </body>
