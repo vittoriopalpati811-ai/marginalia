@@ -269,6 +269,28 @@ jobs:
           done
           echo "Watch versions set to $BUILD_NAME ($NEXT)"
 
+      - name: Inject Sentry DSN (optional, from repo secret)
+        # When the SENTRY_DSN repo secret is set, append it as a Dart define to
+        # Generated.xcconfig so the IPA enables Sentry crash reporting. The DSN
+        # therefore lives ONLY in GitHub secrets, never in the repo. No-op (and
+        # Sentry stays disabled) when the secret is absent — so this never breaks
+        # a build. Runs after "Set iOS build number" (Generated.xcconfig exists).
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          if [ -z "$SENTRY_DSN" ]; then
+            echo "No SENTRY_DSN secret — Sentry stays disabled (no-op)."
+            exit 0
+          fi
+          DEF=$(printf 'SENTRY_DSN=%s' "$SENTRY_DSN" | base64 | tr -d '\n')
+          XC=ios/Flutter/Generated.xcconfig
+          EXISTING=$(grep '^DART_DEFINES=' "$XC" 2>/dev/null | head -1 | cut -d= -f2-)
+          if [ -n "$EXISTING" ]; then NEW="$EXISTING,$DEF"; else NEW="$DEF"; fi
+          grep -v '^DART_DEFINES=' "$XC" > "$XC.tmp" 2>/dev/null || true
+          echo "DART_DEFINES=$NEW" >> "$XC.tmp"
+          mv "$XC.tmp" "$XC"
+          echo "Sentry DSN injected into DART_DEFINES (Sentry enabled for this build)."
+
       - name: Build IPA
         run: |
           set +e
