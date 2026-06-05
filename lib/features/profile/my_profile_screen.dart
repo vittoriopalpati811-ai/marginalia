@@ -25,28 +25,36 @@ import '../stats/reading_stats_card.dart';
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
 class _GP {
-  const _GP(this.key, this.label, this.a, this.b);
+  const _GP(this.key, this.label, this.a, this.mid, this.b);
   final String key;
   final String label;
-  final Color a;
-  final Color b;
-  List<Color> get colors => [a, b];
+  final Color a;   // top stop — slightly lighter than the Pantone base
+  final Color mid; // the Pantone base colour itself
+  final Color b;   // bottom stop — slightly darker than the Pantone base
+  // Three-stop gradient (light top → Pantone → dark bottom) so the hero header
+  // still reads as a gradient rather than a flat fill.
+  List<Color> get colors => [a, mid, b];
 }
 
-// Palette ispirata ai Pantone del founder (Cocoa Brown, Chive, 2965C navy,
-// Vintage Wine, Reseda, Pastel Yellow, Powder Blue). Spinta ancora un po':
-// i top-stop sono ora chiaramente più saturi/luminosi e i bottom-stop meno
-// "quasi-neri", così sia le swatch sia il blend di sfondo della pagina
-// mostrano colore vero invece di un grigio appena tinto.
+// Pantone palette chosen by the founder. Each preset is ONE Pantone colour,
+// expanded into a 3-stop gradient: a slightly-lighter top stop (`a`), the exact
+// Pantone base in the middle (`mid`), and a slightly-darker bottom stop (`b`).
+// The 8 keys are unchanged (sepia/forest/ocean/dusk/rose/graphite/amber/slate,
+// same order) so existing saved selections still resolve — only the colours and
+// labels changed. `_sectionTitleColor` derives the section-title colour from the
+// top stop (`a`), and the page-background wash blends `a`/`b` at low alpha, so
+// the section titles stay readable on every preset (verified: WCAG contrast
+// ≥ 7.3:1 against the tinted page on the two lightest presets, Pastel Yellow and
+// Coconut Milk).
 const _kGradients = [
-  _GP('sepia',    'Sepia',    Color(0xFFAE7A5C), Color(0xFF52382A)), // Cocoa Brown
-  _GP('forest',   'Forest',   Color(0xFF6B7340), Color(0xFF313619)), // Chive olive
-  _GP('ocean',    'Ocean',    Color(0xFF2C6791), Color(0xFF13344C)), // 2965C navy
-  _GP('dusk',     'Dusk',     Color(0xFF814478), Color(0xFF33152E)), // plum
-  _GP('rose',     'Rose',     Color(0xFF932B3F), Color(0xFF3F1521)), // Vintage Wine
-  _GP('graphite', 'Graphite', Color(0xFF67705C), Color(0xFF2C3025)), // graphite-olive
-  _GP('amber',    'Amber',    Color(0xFFDCAE50), Color(0xFF7E5A1E)), // Pastel Yellow deep
-  _GP('slate',    'Slate',    Color(0xFF6691AB), Color(0xFF324A5A)), // Powder Blue
+  _GP('sepia',    'Vintage Wine',  Color(0xFF694852), Color(0xFF3F1521), Color(0xFF2C0F17)),
+  _GP('forest',   'Pastel Yellow', Color(0xFFF3E8B9), Color(0xFFF2E6B1), Color(0xFFCBC195)),
+  _GP('ocean',    'Reseda',        Color(0xFFB0BAA3), Color(0xFFA1AD92), Color(0xFF7E8772)),
+  _GP('dusk',     'Chive',         Color(0xFF686B53), Color(0xFF3E4123), Color(0xFF2B2E18)),
+  _GP('rose',     'Powder Blue',   Color(0xFFA5BECD), Color(0xFF94B2C4), Color(0xFF738B99)),
+  _GP('graphite', 'Navy 2965C',    Color(0xFF476173), Color(0xFF13344C), Color(0xFF0D2435)),
+  _GP('amber',    'Cocoa Brown',   Color(0xFF8C766C), Color(0xFF6C5042), Color(0xFF4C382E)),
+  _GP('slate',    'Coconut Milk',  Color(0xFFF2EFE8), Color(0xFFF0EDE5), Color(0xFFCAC7C0)),
 ];
 
 _GP _gpFor(String key) =>
@@ -477,6 +485,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     onTap: () => showModalBottomSheet<void>(
                       context: context,
                       isScrollControlled: true,
+                      // Present above the floating navbar so the composer +
+                      // its keyboard aren't clipped by the shell's bottom bar.
+                      useRootNavigator: true,
                       backgroundColor: Colors.transparent,
                       builder: (_) => CreatePostSheet(
                         onCreated: () => ref.invalidate(_myPostsProvider),
@@ -2342,6 +2353,9 @@ Future<void> _openFavBooksSheet(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    // Present above the floating navbar so the sheet (and its Save action at
+    // the bottom) isn't hidden behind the shell's floating bottom bar.
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (_) => _FavBooksSheet(
       allBooks: allBooks,
@@ -2394,8 +2408,11 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).padding.bottom;
-    final maxH   = MediaQuery.of(context).size.height * 0.82;
+    final mq = MediaQuery.of(context);
+    // Pad below the Save action by the safe-area inset PLUS any keyboard inset,
+    // so the button is never clipped by the home indicator or an open keyboard.
+    final bottom = mq.padding.bottom + mq.viewInsets.bottom;
+    final maxH   = mq.size.height * 0.82;
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxH),

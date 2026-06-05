@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:animations/animations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:marginalia/generated/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -470,29 +471,33 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                   bottom: navInset,
                 ),
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                layoutBuilder: (currentChild, previousChildren) => Stack(
+              child: PageTransitionSwitcher(
+                duration: const Duration(milliseconds: 320),
+                // Direction-aware tab transition. Navigating to a tab on the
+                // RIGHT (higher index) pushes "forward" — the new page slides in
+                // from the right while the old one leaves to the left.
+                // Navigating LEFT (lower index) runs the SAME shared-axis motion
+                // reversed: new page in from the left, old one out to the right.
+                //
+                // Why not AnimatedSwitcher: its outgoing child can only replay
+                // ITS OWN entry transition in reverse, so the exit direction
+                // depended on how that tab was first reached (navigation
+                // history) and looked incoherent — exactly the bug reported.
+                // PageTransitionSwitcher drives BOTH children from the current
+                // `reverse` flag, so left/right is always consistent.
+                reverse: _direction < 0,
+                layoutBuilder: (entries) => Stack(
                   fit: StackFit.expand,
-                  children: [
-                    ...previousChildren,
-                    if (currentChild != null) currentChild,
-                  ],
+                  children: entries,
                 ),
-                transitionBuilder: (child, animation) {
-                  // Incoming tab enters from the `_direction` side; the outgoing
-                  // tab (its animation runs in reverse) exits to the opposite
-                  // side → a directional push that matches the nav-bar order.
-                  final incoming = animation.status != AnimationStatus.reverse;
-                  final dx = (incoming ? _direction : -_direction) * 0.22;
-                  return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(dx, 0),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: FadeTransition(opacity: animation, child: child),
+                transitionBuilder:
+                    (child, primaryAnimation, secondaryAnimation) {
+                  return SharedAxisTransition(
+                    animation: primaryAnimation,
+                    secondaryAnimation: secondaryAnimation,
+                    transitionType: SharedAxisTransitionType.horizontal,
+                    fillColor: Colors.transparent,
+                    child: child,
                   );
                 },
                 child: KeyedSubtree(

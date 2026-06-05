@@ -64,10 +64,16 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final conv = conversations[index];
-                      return _ConversationCard(
+                      return _DismissibleConversation(
+                        key: ValueKey(conv['id']),
                         conversation: conv,
-                        index: index,
-                        onTap: () => context.push('/chat/${conv['id']}'),
+                        child: _ConversationCard(
+                          conversation: conv,
+                          index: index,
+                          onTap: () => context.push('/chat/${conv['id']}'),
+                          onLongPress: () =>
+                              _confirmAndDeleteConversation(context, ref, conv),
+                        ),
                       ).animate(delay: (index * 40).ms)
                           .fadeIn(duration: 300.ms, curve: Curves.easeOut)
                           .slideY(begin: 0.04, end: 0, duration: 300.ms);
@@ -225,11 +231,13 @@ class _ConversationCard extends ConsumerWidget {
     required this.conversation,
     required this.index,
     required this.onTap,
+    this.onLongPress,
   });
 
   final Map<String, dynamic> conversation;
   final int index;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -313,6 +321,7 @@ class _ConversationCard extends ConsumerWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
           color: MarginaliaColors.surface,
@@ -443,6 +452,120 @@ class _ConversationCard extends ConsumerWidget {
     if (diff.inHours < 24) return l10n.timeHoursAgo(diff.inHours);
     if (diff.inDays < 7) return l10n.timeDaysAgo(diff.inDays);
     return '${dt.day}/${dt.month}';
+  }
+}
+
+// ─── Swipe-to-delete wrapper ─────────────────────────────────────────────────
+//
+// Wraps a conversation row in a Dismissible so it can be swiped away to
+// leave the chat. Swiping reveals a red "delete" background; releasing the
+// swipe pops the same confirm dialog as the long-press menu (see
+// [_confirmAndDeleteConversation]) before anything is removed, so an
+// accidental swipe is recoverable. The actual deletion + list refresh is
+// handled by the shared helper; this widget only decides whether the row
+// should animate out (confirmDismiss → true once the leave succeeds).
+
+class _DismissibleConversation extends ConsumerWidget {
+  const _DismissibleConversation({
+    super.key,
+    required this.conversation,
+    required this.child,
+  });
+
+  final Map<String, dynamic> conversation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Dismissible(
+      key: ValueKey('dismiss_${conversation['id']}'),
+      direction: DismissDirection.endToStart,
+      // Confirm + perform the leave here. The helper returns true only when
+      // the user confirmed AND the leave succeeded → the row animates out.
+      // On cancel or error it returns false, so the row springs back and the
+      // chat stays in the list (nothing was removed server-side).
+      confirmDismiss: (_) =>
+          _confirmAndDeleteConversation(context, ref, conversation),
+      background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 0),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        alignment: Alignment.centerRight,
+        decoration: BoxDecoration(
+          color: const Color(0xFFDC2626),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Shows the "leave chat" confirm dialog and, on confirm, removes the current
+/// user from [conversation] via [SupabaseService.deleteConversation], then
+/// refreshes the inbox. Surfaces a SnackBar on success/error.
+///
+/// Returns `true` only when the user confirmed AND the leave succeeded — the
+/// Dismissible uses this to decide whether to animate the row away. Returns
+/// `false` when cancelled or on error (row stays put).
+Future<bool> _confirmAndDeleteConversation(
+  BuildContext context,
+  WidgetRef ref,
+  Map<String, dynamic> conversation,
+) async {
+  final l10n = context.l10n;
+  // Capture the messenger up front: after the await the row's BuildContext
+  // may be deactivated (it's being removed from the list).
+  final messenger = ScaffoldMessenger.of(context);
+  final isIt = Localizations.localeOf(context).languageCode == 'it';
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogCtx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(isIt ? 'Elimina chat?' : 'Delete chat?'),
+      content: Text(
+        isIt
+            ? 'Verrà rimossa dalla tua lista. Gli altri partecipanti la conserveranno.'
+            : 'It will be removed from your list. Other participants will keep it.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogCtx, false),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+          onPressed: () => Navigator.pop(dialogCtx, true),
+          child: Text(l10n.delete),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return false;
+
+  try {
+    await ref
+        .read(supabaseServiceProvider)
+        .deleteConversation(conversation['id'] as String);
+    // Provider-driven removal: refetch the inbox so the row disappears and the
+    // nav unread badge recomputes. (Same pattern as feed post deletion.)
+    ref.invalidate(conversationsProvider);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(isIt ? 'Chat eliminata' : 'Chat deleted'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    return true;
+  } catch (e) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.errorPrefix(e.toString()))),
+    );
+    return false;
   }
 }
 

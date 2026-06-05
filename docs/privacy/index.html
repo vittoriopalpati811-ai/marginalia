@@ -537,9 +537,22 @@
     footer a:hover { color: var(--matcha-dark); }
 
     /* ── Animations: single orchestrated page load ─────────────────── */
+    /* IMPORTANT: hero + thesis content is VISIBLE BY DEFAULT (opacity 1).
+       The entrance fade-in is a *progressive enhancement* layered on top,
+       and is only applied when the user has not asked to reduce motion.
+       Previously these elements animated with `fill-mode: both` starting
+       from opacity:0 with staggered delays up to .85s — so during the delay
+       window the backwards-fill held them invisible. In an in-app WebView
+       that paints the first frame early (or throttles/ pauses offscreen CSS
+       animations), the hero never faded in and the page looked blank.
+       Keeping the resting state visible guarantees the policy always renders. */
+    /* The entrance keyframe animates TRANSFORM ONLY (a gentle slide-up),
+       never opacity. Text therefore stays fully opaque at every frame and
+       at every animation-delay, so the policy can never render blank even
+       if a WebView paints the first frame before the animation runs. */
     @keyframes ink {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { transform: translateY(8px); }
+      to   { transform: translateY(0); }
     }
     @keyframes underscore {
       from { transform: scaleX(0); }
@@ -549,19 +562,14 @@
       from { opacity: 0; transform: rotate(-3.5deg) translateX(20px); }
       to   { opacity: 0.92; transform: rotate(-3.5deg) translateX(0); }
     }
-    .hero .eyebrow { animation: ink .8s ease-out both; animation-delay: .05s; }
-    .hero .eyebrow::before { transform-origin: left; animation: underscore .6s ease-out both; animation-delay: .15s; }
-    .hero h1               { animation: ink 1.1s ease-out both; animation-delay: .25s; }
-    .hero .lede            { animation: ink 1.0s ease-out both; animation-delay: .45s; }
-    .hero .meta            { animation: ink .9s ease-out both;  animation-delay: .65s; }
-    .thesis                { animation: ink 1.0s ease-out both; animation-delay: .85s; }
 
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.001s !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.001s !important;
-      }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero .eyebrow { animation: ink .8s ease-out both; animation-delay: .05s; }
+      .hero .eyebrow::before { transform-origin: left; animation: underscore .6s ease-out both; animation-delay: .15s; }
+      .hero h1               { animation: ink 1.1s ease-out both; animation-delay: .25s; }
+      .hero .lede            { animation: ink 1.0s ease-out both; animation-delay: .45s; }
+      .hero .meta            { animation: ink .9s ease-out both;  animation-delay: .65s; }
+      .thesis                { animation: ink 1.0s ease-out both; animation-delay: .85s; }
     }
   </style>
 </head>

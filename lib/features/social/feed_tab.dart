@@ -1213,7 +1213,12 @@ class _PostCardState extends ConsumerState<_PostCard> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CommentsSheet(postId: postId),
+      // Pass the post's owner id so the comments sheet can let the post owner
+      // moderate (delete) ANY comment on their post, not just their own.
+      builder: (_) => _CommentsSheet(
+        postId: postId,
+        postOwnerId: widget.post['user_id'] as String?,
+      ),
     );
   }
 
@@ -1640,8 +1645,11 @@ class _HighlightQuoteCard extends StatelessWidget {
 // ─── Comments sheet ───────────────────────────────────────────────────────────
 
 class _CommentsSheet extends ConsumerStatefulWidget {
-  const _CommentsSheet({required this.postId});
+  const _CommentsSheet({required this.postId, this.postOwnerId});
   final String postId;
+  // Owner of the post these comments belong to. The post owner is allowed to
+  // delete (moderate) ANY comment, so this is passed down to each bubble.
+  final String? postOwnerId;
 
   @override
   ConsumerState<_CommentsSheet> createState() => _CommentsSheetState();
@@ -1889,6 +1897,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                           for (final c in _topLevelComments) ...[
                             _CommentBubble(
                               comment: c,
+                              postOwnerId: widget.postOwnerId,
                               timeAgo: _timeAgo(context, c['created_at'] as String?),
                               onReply: () => _startReply(
                                 c['id'] as String,
@@ -1904,6 +1913,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                 padding: const EdgeInsets.only(left: 40),
                                 child: _CommentBubble(
                                   comment: reply,
+                                  postOwnerId: widget.postOwnerId,
                                   timeAgo:
                                       _timeAgo(context, reply['created_at'] as String?),
                                   onReply: () => _startReply(
@@ -2117,9 +2127,13 @@ class _CommentBubble extends ConsumerStatefulWidget {
     required this.timeAgo,
     required this.onReply,
     required this.onDeleted,
+    this.postOwnerId,
     this.isReply = false,
   });
   final Map<String, dynamic> comment;
+  // Owner of the post this comment belongs to. When the current user is the
+  // post owner they may delete (moderate) ANY comment, not only their own.
+  final String? postOwnerId;
   final String timeAgo;
   final VoidCallback onReply;
   // Called after the comment is deleted so the sheet can refresh its list.
@@ -2164,13 +2178,20 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
     }
   }
 
-  // Overflow ("...") menu for a single comment. Mirrors _PostCard's
-  // _showPostMenu: the author sees "Delete", everyone else sees "Report".
+  // Overflow ("...") menu for a single comment. Delete is offered when the
+  // current user is the comment's author OR the owner of the post (so the post
+  // owner can moderate any comment on their own post). Everyone else sees a
+  // "Report" placeholder, mirroring _PostCard's _showPostMenu.
   Future<void> _showCommentMenu(BuildContext context) async {
     final svc           = ref.read(supabaseServiceProvider);
     final commentId     = widget.comment['id'] as String?;
     final commentUserId = widget.comment['user_id'] as String?;
-    final isOwner = svc.userId != null && svc.userId == commentUserId;
+    final currentUserId = svc.userId;
+    final isAuthor    = currentUserId != null && currentUserId == commentUserId;
+    final isPostOwner = currentUserId != null &&
+        widget.postOwnerId != null &&
+        currentUserId == widget.postOwnerId;
+    final canDelete = isAuthor || isPostOwner;
 
     // Capture messenger + l10n once, while this bubble is guaranteed mounted —
     // the delete refreshes the list and unmounts this bubble, so reusing the
@@ -2178,8 +2199,8 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
 
-    if (!isOwner) {
-      // Non-owner: only a "Report" placeholder.
+    if (!canDelete) {
+      // Neither the author nor the post owner: only a "Report" placeholder.
       await showModalBottomSheet<void>(
         context: context,
         backgroundColor: Colors.transparent,
@@ -2202,7 +2223,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
       return;
     }
 
-    // Owner: delete.
+    // Author and/or post owner: delete.
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -2238,7 +2259,21 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
               );
               if (confirm != true) return;
               try {
-                await svc.deletePostComment(commentId);
+                // The author deletes via the plain RLS-guarded path. When the
+                // current user is the post owner moderating SOMEONE ELSE's
+                // comment, that RLS DELETE policy (user_id = auth.uid()) would
+                // silently no-op, so route through the SECURITY DEFINER RPC
+                // `delete_post_comment_as_owner` (migration 038) which permits
+                // the post owner OR the comment author. Called via svc.client
+                // so no change to SupabaseService is required.
+                if (isAuthor) {
+                  await svc.deletePostComment(commentId);
+                } else {
+                  await svc.client.rpc(
+                    'delete_post_comment_as_owner',
+                    params: {'p_comment_id': commentId},
+                  );
+                }
                 // Refresh the comments list via the sheet's reload callback.
                 widget.onDeleted();
               } catch (e) {

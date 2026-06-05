@@ -7,8 +7,10 @@
 //
 // Request body (POST, JSON):
 //   {
-//     books: [{ title, author, highlights: string[] }],  ← up to 20 books
-//     existingTitles: string[],                           ← for exclusion
+//     books: [{ title, author, highlights: string[] }],  ← any length; the
+//                 server randomly samples min(12, books.length) of them and
+//                 ≤2 highlights each to stay under the 6 K TPM limit
+//     existingTitles: string[],                           ← for exclusion (≤20)
 //     context?: { weather?, weatherCity?, weatherTemp?,
 //                 stepsToday?, lastWorkout?, cyclePhase? }
 //   }
@@ -86,34 +88,60 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON body" }, 400);
   }
 
-  // Caps tuned for llama-3.1-8b-instant's 6 K TPM ceiling.
+  // Caps tuned for llama-3.1-8b-instant's HARD 6 000 tokens-per-MINUTE ceiling.
   //
-  // The client now samples up to 3 highlights from EVERY book in the
-  // user's library (capped at 40 books) so the model sees the whole
-  // reading life, not just the last fortnight. With 3 highlights × 80
-  // chars × 40 books = 9.6 K chars / ~2.5 K tokens for the highlight
-  // payload, plus plot summaries only for books with sparse highlights
-  // (≤2). Total request stays ~3-3.5 K tokens, leaving 2.5-3 K TPM
-  // headroom for two more invocations inside the same minute.
+  // The old caps (40 books × 8 highlights + a 50-title exclusion list +
+  // 4096 reserved output tokens) put a single call for a large library
+  // (≈996 highlights, 50+ books) WELL over 6 K TPM → HTTP 429 → reason
+  // 'rate_limit'. Worse, retrying inside the same minute 429'd again, so
+  // "Riprova" looked dead. Founder direction: "se sono troppi libri
+  // prendine un numero accettabile randomico."
+  //
+  // New budget per call:
+  //   • RANDOM subset of min(12, books.length) books (not all 40).
+  //   • ≤ 2 highlights/book, each ≤ 80 chars  → ~12 × 2 × 80 = 1 920 chars
+  //     ≈ 500 tokens of highlight payload.
+  //   • exclusion list capped at 20 titles (was 50).
+  //   • max_tokens lowered 4096 → 2800 (see callGroq).
+  // Total input ~600-900 tokens + ≤2800 output ≈ <3 700 tokens/call, so a
+  // single retry within the same minute still fits comfortably under 6 K.
+  //
   // Defensive clamping: cap array sizes AND every text field to <=400 chars
   // before any of it reaches the prompt. The client already trims, but the
   // server must not trust client input — this bounds prompt size, token cost,
   // and prompt-injection payload length.
   const MAX_FIELD = 400;
+  const MAX_BOOKS = 12; // random subset — keeps a call+retry under 6 K TPM
+  const MAX_HIGHLIGHTS_PER_BOOK = 2;
+  const MAX_EXCLUSION_TITLES = 20;
   const clampField = (v: unknown): string => String(v ?? "").slice(0, MAX_FIELD);
 
-  const books: InputBook[] = (Array.isArray(body.books) ? body.books : [])
-    .slice(0, 40)
+  // Fisher-Yates shuffle so each call samples a DIFFERENT random subset of the
+  // library — over repeated days the user still sees their whole shelf inform
+  // the picks, but any single request stays tiny. Non-mutating on the original.
+  const sampleBooks = <T>(arr: T[], n: number): T[] => {
+    const copy = arr.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, n);
+  };
+
+  const allBooks: InputBook[] = (Array.isArray(body.books) ? body.books : [])
     .map((b) => ({
       title: clampField(b?.title),
       author: clampField(b?.author),
       highlights: (Array.isArray(b?.highlights) ? b.highlights : [])
-        .slice(0, 8)
-        .map(clampField),
-    }));
+        .slice(0, MAX_HIGHLIGHTS_PER_BOOK)
+        .map((h) => clampField(h).slice(0, 80)),
+    }))
+    .filter((b) => b.title.length > 0);
+  // Take a random subset rather than the first N — see sampleBooks above.
+  const books: InputBook[] = sampleBooks(allBooks, MAX_BOOKS);
   const existingTitles: string[] = (Array.isArray(body.existingTitles) ? body.existingTitles : [])
     .map((t) => clampField(t).toLowerCase().trim())
-    .slice(0, 50);
+    .slice(0, MAX_EXCLUSION_TITLES);
   const userContext: Record<string, unknown> = body.context ?? {};
   const userName: string = clampField(body.userName).trim();
   // Output language for the AI-written "reason" — defaults to Italian; English
@@ -238,14 +266,14 @@ function buildPrompt(
   const en = lang === "en";
   const bookList = books
     .map((b, i) => {
-      // Up to 8 highlights × 80 chars per book. The client already
-      // pre-selected the 100 most-recent highlights overall, so the
-      // server-side cap is a safety net rather than a primary trim.
+      // Up to 2 highlights × 80 chars per book — already trimmed upstream;
+      // re-clamp here as a safety net so the prompt size stays bounded under
+      // the 6 K TPM ceiling regardless of caller input.
       const lines: string[] = [`${i + 1}. "${b.title}" di ${b.author}`];
       if (b.plot) lines.push(`   Trama: ${b.plot}`);
       if (b.highlights.length > 0) {
         lines.push(
-          `   Highlight: ${b.highlights.slice(0, 8).map((h) => `"${h.slice(0, 80)}"`).join(" | ")}`
+          `   Highlight: ${b.highlights.slice(0, 2).map((h) => `"${h.slice(0, 80)}"`).join(" | ")}`
         );
       }
       return lines.join("\n");
@@ -255,8 +283,8 @@ function buildPrompt(
   const exclusionNote =
     existingTitles.length > 0
       ? (en
-          ? `\n\nDo not suggest titles already in their library: ${existingTitles.slice(0, 25).join(", ")}.`
-          : `\n\nNon suggerire titoli già nella sua libreria: ${existingTitles.slice(0, 25).join(", ")}.`)
+          ? `\n\nDo not suggest titles already in their library: ${existingTitles.slice(0, 20).join(", ")}.`
+          : `\n\nNon suggerire titoli già nella sua libreria: ${existingTitles.slice(0, 20).join(", ")}.`)
       : "";
 
   const contextParts: string[] = [];
@@ -385,15 +413,16 @@ async function callGroq(
     body: JSON.stringify({
       model: "llama-3.1-8b-instant",
       messages: [{ role: "user", content: prompt }],
-      // 2048 was too tight for THIS prompt: 5 recommendations each carrying
-      // title+author+year+reason (2-3 sentences) +plot (1-2 sentences)
-      // +categories +pages +why easily exceeds 2 K output tokens for a large
-      // library. The response was being TRUNCATED mid-string, JSON.parse threw,
-      // and the caller surfaced reason 'ai_error' (HTTP 200 in ~8 s, empty
-      // list) — exactly the failure big libraries (50+ books) hit every time.
-      // 4096 gives comfortable headroom; the salvage parse below is the second
-      // line of defence if a response is still cut off.
-      max_tokens: 4096,
+      // 2800 reserved output tokens: enough for 5 recommendations each
+      // carrying title+author+year+reason (2-3 sentences) +plot (1-2
+      // sentences) +categories +pages +why, while keeping total per-call
+      // usage (input ~600-900 + output ≤2800 ≈ <3 700) under the 8B model's
+      // 6 000 TPM ceiling so a retry within the same minute does not 429.
+      // Was 4096, which — combined with a large input payload — pushed a
+      // single call over 6 K TPM → HTTP 429 → reason 'rate_limit', and the
+      // retry 429'd again. The salvage parser below recovers any complete
+      // objects if a response is still cut off at this lower ceiling.
+      max_tokens: 2800,
       temperature: 0.7,
       // Force the model to emit a syntactically valid JSON object. Without
       // this the 8B model occasionally produces malformed JSON (smart-quote
@@ -408,7 +437,18 @@ async function callGroq(
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Groq API ${res.status}: ${errText}`);
+    // On a rate-limit, log the status line AND Groq's own limit headers so
+    // future debugging shows the real TPM ceiling we hit (e.g.
+    // "x-ratelimit-limit-tokens: 6000 / remaining-tokens: 0 / reset: 12s").
+    if (res.status === 429) {
+      const limit  = res.headers.get("x-ratelimit-limit-tokens") ?? "?";
+      const remain = res.headers.get("x-ratelimit-remaining-tokens") ?? "?";
+      const reset  = res.headers.get("x-ratelimit-reset-tokens") ?? "?";
+      console.error(
+        `Groq 429 (${res.statusText}): tokens limit=${limit} remaining=${remain} reset=${reset} — ${errText}`,
+      );
+    }
+    throw new Error(`Groq API ${res.status} ${res.statusText}: ${errText}`);
   }
 
   const data = await res.json();
@@ -458,9 +498,10 @@ async function callGroq(
 function parseRecommendations(text: string): unknown[] | null {
   const cleaned = extractJson(text);
 
-  // Fast path: the response is well-formed (the common case, and always the
-  // case now that max_tokens is 4096). Accept either the object wrapper or a
-  // bare array.
+  // Fast path: the response is well-formed (the common case). Accept either
+  // the object wrapper or a bare array. With max_tokens at 2800 a very long
+  // 5-rec response can still be truncated — the salvage path below recovers
+  // whatever complete objects made it through.
   try {
     const parsed = JSON.parse(cleaned);
     const list = Array.isArray(parsed)

@@ -1534,6 +1534,48 @@ class SupabaseService {
     }
   }
 
+  /// Leave (delete) a conversation for the CURRENT user only.
+  ///
+  /// This removes the caller's row from `conversation_members` for
+  /// [conversationId]. It is a *leave*, not a hard-delete: the other
+  /// members keep the chat. When the last member leaves, the now-orphaned
+  /// conversation row can be cleaned up server-side; its messages and any
+  /// remaining member rows cascade via the FKs in migration 014
+  /// (`ON DELETE CASCADE`).
+  ///
+  /// WHY RPC-FIRST: migration 014 only ever created SELECT + INSERT RLS
+  /// policies on `conversation_members` — there was no DELETE policy (the
+  /// same gap migration 030 called out for UPDATE). With RLS enabled and
+  /// fail-closed, a bare client `.delete()` silently affects zero rows.
+  /// So we prefer the SECURITY DEFINER RPC `leave_conversation`
+  /// (migration 037), mirroring `mark_conversation_read`. If that RPC
+  /// isn't deployed yet we fall back to a direct delete, which succeeds
+  /// once migration 037's `conv_members_delete` policy is applied. The
+  /// direct delete is always scoped to the caller (`user_id = auth.uid()`),
+  /// so it can never remove anyone else's membership even if the policy
+  /// were ever loosened.
+  Future<void> deleteConversation(String conversationId) async {
+    final uid = userId;
+    if (uid == null) throw Exception('not authenticated');
+
+    try {
+      await _client.rpc(
+        'leave_conversation',
+        params: {'p_conversation_id': conversationId},
+      );
+      return;
+    } catch (_) {
+      // RPC missing / not yet applied → fall back to the direct delete,
+      // which is allowed once the conv_members_delete policy exists.
+    }
+
+    await _client
+        .from('conversation_members')
+        .delete()
+        .eq('conversation_id', conversationId)
+        .eq('user_id', uid);
+  }
+
   /// Upload an image to the message-images bucket and return its public URL.
   Future<String> uploadMessageImage(
       String fileName, List<int> bytes) async {

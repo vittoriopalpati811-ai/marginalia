@@ -7,14 +7,33 @@
 //   • readingSessionsProvider→ WidgetService.updateStats() (stats widget)
 //   • readingGoalProvider    → WidgetService.updateStats() (stats widget)
 //
+// On top of those data-driven pushes, the widgets are ALSO re-pushed whenever
+// the app comes back to the foreground (AppLifecycleState.resumed) and whenever
+// the wall-clock day rolls over while the app is open. This matters because the
+// chosen phrase and the stats are computed against DateTime.now():
+//
+//   • the phrase is scored on time-of-day / weekday / live weather,
+//   • the streak is "consecutive days ending today",
+//   • "this month" minutes reset on the 1st.
+//
+// Without a resume / day-rollover re-push the widget would freeze on whatever
+// was written the first time the app was opened and never reflect a new day, a
+// new time slot, or stats logged on another device — which is exactly the
+// reported "frase scelta per te stays stale" bug.
+//
 // Each push is a no-op on platforms without home_widget (web/Windows) and is
 // internally guarded, so this can never crash the app. The widget therefore
-// shows REAL data (refreshed on every app open / data change), not a placeholder.
+// shows REAL data (refreshed on every app open / resume / data change / new
+// day), not a placeholder.
 //
 // The stat formulas below intentionally mirror the private helpers in
 // features/stats/stats_screen.dart so the widget's numbers match the in-app
 // Stats screen exactly. Keep them in sync if those ever change.
 
+import 'dart:async';
+
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/highlight.dart';
@@ -43,32 +62,44 @@ void _pushWatch() {
 
 final widgetSyncProvider = Provider<void>((ref) {
   // ── Daily phrase ──────────────────────────────────────────────────────────
+  //
+  // Pushes the currently-known highlights to the widget, re-running the
+  // time/weather-aware selection against the present moment. Reads from
+  // [allHighlightsProvider]'s cached value so it works both on a data change
+  // (via the listener below) and on a bare app-resume / day-rollover (where no
+  // provider re-emits but DateTime.now() — and therefore the best phrase — has
+  // moved on).
+  void pushPhrase() {
+    final highlights = ref.read(allHighlightsProvider).value;
+    if (highlights == null || highlights.isEmpty) return;
+    final maps = highlights
+        .map((h) => <String, dynamic>{
+              'body': h.content,
+              'book_title': h.bookTitle ?? '',
+              'author': h.bookAuthor ?? '',
+            })
+        .toList();
+    WidgetService.update(maps).then((wh) {
+      if (wh != null) {
+        _watchText = wh.text;
+        _watchBook = wh.bookTitle;
+        _watchAuthor = wh.author;
+        _pushWatch();
+      }
+    });
+  }
+
   ref.listen<AsyncValue<List<Highlight>>>(
     allHighlightsProvider,
-    (_, next) {
-      next.whenData((highlights) {
-        if (highlights.isEmpty) return;
-        final maps = highlights
-            .map((h) => <String, dynamic>{
-                  'body': h.content,
-                  'book_title': h.bookTitle ?? '',
-                  'author': h.bookAuthor ?? '',
-                })
-            .toList();
-        WidgetService.update(maps).then((wh) {
-          if (wh != null) {
-            _watchText = wh.text;
-            _watchBook = wh.bookTitle;
-            _watchAuthor = wh.author;
-            _pushWatch();
-          }
-        });
-      });
-    },
+    (_, next) => next.whenData((_) => pushPhrase()),
     fireImmediately: true,
   );
 
   // ── Reading stats ────────────────────────────────────────────────────────
+  //
+  // Recomputes streak / month-minutes against DateTime.now() each call, so a
+  // resume or day-rollover re-push reflects the new day even when the session
+  // data itself is unchanged.
   void pushStats() {
     final sessions = ref.read(readingSessionsProvider).value;
     if (sessions == null) return;
@@ -88,7 +119,55 @@ final widgetSyncProvider = Provider<void>((ref) {
 
   ref.listen(readingSessionsProvider, (_, __) => pushStats(), fireImmediately: true);
   ref.listen(readingGoalProvider, (_, __) => pushStats(), fireImmediately: true);
+
+  // ── App-resume + day-rollover re-push ─────────────────────────────────────
+  //
+  // Re-push BOTH widgets when the app returns to the foreground, and once when a
+  // new calendar day begins while the app is left open. The push helpers are
+  // no-ops off iOS, so this machinery is harmless on web/Windows. Everything is
+  // torn down when the provider is disposed (e.g. on sign-out) to avoid leaks.
+  void pushAll() {
+    pushPhrase();
+    pushStats();
+  }
+
+  final observer = _WidgetSyncObserver(onResumed: pushAll);
+  WidgetsBinding.instance.addObserver(observer);
+
+  // A new day changes the chosen phrase (time/weekday keywords), the streak and
+  // the "this month" total. A coarse hourly tick is enough to catch the rollover
+  // for an app left open across midnight; if the day hasn't changed it's a no-op.
+  var lastDay = _dayOf(DateTime.now());
+  final dayTimer = Timer.periodic(const Duration(hours: 1), (_) {
+    final today = _dayOf(DateTime.now());
+    if (today != lastDay) {
+      lastDay = today;
+      pushAll();
+    }
+  });
+
+  ref.onDispose(() {
+    WidgetsBinding.instance.removeObserver(observer);
+    dayTimer.cancel();
+  });
 });
+
+DateTime _dayOf(DateTime t) => DateTime(t.year, t.month, t.day);
+
+// ─── Lifecycle observer ──────────────────────────────────────────────────────
+//
+// Fires [onResumed] each time the app returns to the foreground so the widgets
+// are refreshed against the current time / weather / day on every app open.
+class _WidgetSyncObserver with WidgetsBindingObserver {
+  _WidgetSyncObserver({required this.onResumed});
+
+  final void Function() onResumed;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) onResumed();
+  }
+}
 
 // ─── Stat formulas (mirror of stats_screen.dart private helpers) ─────────────
 

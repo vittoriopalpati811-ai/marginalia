@@ -9,9 +9,11 @@
 //
 // How it works:
 //   1. Group all user highlights by book (title + author).
-//   2. Take the 20 most recently active distinct books.
+//   2. Take the 12 most recently active distinct books, ≤2 highlights each
+//      (kept small for the Groq 6 K-tokens-per-minute free-tier limit; the
+//      edge function then randomly samples on top of this).
 //   3. Call the `recommend-books` Supabase Edge Function:
-//        • book title, author, up to 4 highlights each as reading context
+//        • book title, author, up to 2 highlights each as reading context
 //        • full list of existing titles to exclude from suggestions
 //        • optional: weather, health context
 //   4. Display each recommendation with an AI-written reason.
@@ -173,39 +175,42 @@ final libraryRecommendationsProvider =
     return const RecsResult(list: [], reason: RecsEmptyReason.notAuth);
   }
 
-  // ── 1. Sample a few highlights from EVERY book in the library ──────────────
+  // ── 1. Sample a few highlights from the most recent books ──────────────────
   //
-  // User direction: "mettine un numero di highlights per libro in modo da
-  // considerare tutti i libri per un massimo di numero ragionevole e
-  // coerente di richieste."
+  // User direction: "se sono troppi libri prendine un numero accettabile
+  // randomico" + "mettine un numero di highlights per libro".
   //
-  // Why this beats "the 100 most-recent highlights": a 100-highlight cap
-  // skewed the model toward whatever 3-4 books the user was actively
-  // reading this week — anything older was invisible. The opposite is
-  // better: take a small (3-highlight) sample from EVERY book, so the AI
-  // gets a panoramic picture of the user's reading life, not a snapshot
-  // of the last fortnight.
+  // Token budget is the hard constraint: llama-3.1-8b-instant on the Groq
+  // free tier has a 6 000 tokens-per-MINUTE ceiling. The previous caps
+  // (40 books × 3 highlights) put a large library (≈996 highlights, 50+
+  // books) over that limit → HTTP 429 → "torna tra qualche ora", and the
+  // retry 429'd again so "Riprova" looked dead.
   //
-  // Caps:
-  //   • Per book: 3 highlights — enough signal for the model to grasp
-  //     a book's voice without bloating the prompt.
-  //   • Total books: 40 — bounded so the request stays under llama-3.1-
-  //     8b-instant's 6 K tokens-per-minute ceiling (~3.5 K tokens at the
-  //     upper end of this budget). For libraries larger than 40 books we
-  //     take the 40 with the most-recent highlight (i.e. the books the
-  //     user has touched most recently), which still gives broad
-  //     coverage of the active reading life.
+  // So we now send much less and let the server take a RANDOM subset on
+  // top of that (see recommend-books/index.ts):
+  //   • Per book: 2 highlights — enough signal for the model to grasp a
+  //     book's voice without bloating the prompt.
+  //   • Total books: 12 — the 12 most-recently-touched books. Combined
+  //     with the server's random sampling, repeated days still surface the
+  //     whole shelf, but any single request stays tiny (~600-900 input
+  //     tokens), leaving headroom for a same-minute retry under 6 K TPM.
   //
   // Both backends already return highlights sorted by added_at DESC, so
   // we just iterate that stream. The first time we see a book id we
   // record it; every subsequent highlight from that book appends until
   // the per-book cap. New books beyond the totalBookCap are skipped.
 
-  const perBookCap   = 3;
-  const totalBookCap = 40;
+  const perBookCap   = 2;
+  const totalBookCap = 12;
 
   final Map<String, Map<String, dynamic>> bookMap = {};
   final List<String> orderedBookIds = [];
+
+  // Trim each highlight to ~80 chars before it ever leaves the device: the
+  // model only needs the gist of a passage to read its mood, and shorter
+  // payloads mean fewer tokens (the 6 K TPM constraint) and a faster call.
+  // The server re-clamps to 80 as a safety net.
+  const maxHighlightChars = 80;
 
   void ingest(String bookId, String title, String author, String content) {
     if (bookId.isEmpty || content.isEmpty) return;
@@ -220,7 +225,11 @@ final libraryRecommendationsProvider =
       orderedBookIds.add(bookId);
     }
     final hs = bookMap[bookId]!['highlights'] as List<String>;
-    if (hs.length < perBookCap) hs.add(content);
+    if (hs.length < perBookCap) {
+      hs.add(content.length > maxHighlightChars
+          ? content.substring(0, maxHighlightChars)
+          : content);
+    }
   }
 
   if (kIsWeb) {
@@ -872,39 +881,14 @@ class _RecommendationDetailScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── The AI phrase — stays at the top ──
-                    // White card (was a green siennaFaint box): a subtle
-                    // border + soft shadow give it definition without the
-                    // green fill the founder flagged. Text stays dark ink for
-                    // full readability on white.
-                    if (rec.reason.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: MarginaliaColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: MarginaliaColors.ruleFaint, width: 0.8),
-                          boxShadow: const [
-                            BoxShadow(
-                                color: Color(0x0A000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 2)),
-                          ],
-                        ),
-                        child: Text(
-                          rec.reason,
-                          style: GoogleFonts.ebGaramond(
-                            fontSize: 17,
-                            height: 1.55,
-                            fontStyle: FontStyle.italic,
-                            color: MarginaliaColors.ink,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    // ── Cover + title + author ──
+                    // ── Cover + TITLE + AUTHOR + YEAR — FIRST, at the top ──
+                    // Founder fix: the AI-reason card used to sit above this,
+                    // pushing the title down so it read as "covered" by the
+                    // fixed bottom action buttons (the title "Il Piacere" was
+                    // cut off). The title/author/year now lead the scroll view,
+                    // always fully visible directly under the header and well
+                    // clear of the bottom buttons; the AI phrase follows below.
+                    const SizedBox(height: 6),
                     Center(
                       child: Column(children: [
                         Hero(
@@ -943,6 +927,39 @@ class _RecommendationDetailScreenState
                         ],
                       ]),
                     ),
+                    // ── The AI phrase — now BELOW the title/author block ──
+                    // White card (was a green siennaFaint box): a subtle
+                    // border + soft shadow give it definition without the
+                    // green fill the founder flagged. Text stays dark ink for
+                    // full readability on white.
+                    if (rec.reason.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: MarginaliaColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: MarginaliaColors.ruleFaint, width: 0.8),
+                          boxShadow: const [
+                            BoxShadow(
+                                color: Color(0x0A000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2)),
+                          ],
+                        ),
+                        child: Text(
+                          rec.reason,
+                          style: GoogleFonts.ebGaramond(
+                            fontSize: 17,
+                            height: 1.55,
+                            fontStyle: FontStyle.italic,
+                            color: MarginaliaColors.ink,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (rec.pages.isNotEmpty || rec.categories.isNotEmpty) ...[
                       const SizedBox(height: 18),
                       Row(

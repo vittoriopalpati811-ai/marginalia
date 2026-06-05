@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marginalia · Generatore Highlight Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --paper:#FAFAF8;
+    --ink:#2B2723;
+    --sepia:#8B7355;
+    --sepia-soft:#A8906F;
+    --line:#E7E2D8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Lora',Georgia,serif;
+    background:#EFEBE3;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:32px 16px 64px;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{text-align:center;margin-bottom:28px;max-width:640px}
+  header h1{font-weight:600;font-size:26px;letter-spacing:.5px}
+  header p{margin-top:8px;font-size:15px;color:var(--sepia);font-style:italic}
+  .layout{display:flex;gap:36px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%;max-width:1100px}
+
+  /* ---- Controls ---- */
+  .controls{
+    background:#fff;border:1px solid var(--line);border-radius:16px;
+    padding:24px;width:360px;flex-shrink:0;
+    box-shadow:0 4px 24px rgba(80,60,40,.06);
+  }
+  .controls label{display:block;font-size:13px;font-weight:600;color:var(--sepia);margin:16px 0 6px;letter-spacing:.3px;text-transform:uppercase;font-family:system-ui,sans-serif}
+  .controls label:first-child{margin-top:0}
+  textarea,input[type=text]{
+    width:100%;font-family:'Lora',serif;font-size:15px;color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;padding:11px 13px;resize:vertical;background:var(--paper);
+  }
+  textarea{min-height:96px;line-height:1.5}
+  textarea:focus,input:focus{outline:none;border-color:var(--sepia-soft)}
+  .row{display:flex;gap:10px}
+  .row>div{flex:1}
+  .themes{display:flex;gap:8px;margin-top:4px}
+  .swatch{flex:1;height:38px;border-radius:9px;cursor:pointer;border:2px solid transparent;position:relative;font-family:system-ui,sans-serif;font-size:10px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;color:rgba(0,0,0,.45);font-weight:600}
+  .swatch.active{border-color:var(--ink)}
+  .btn{
+    width:100%;margin-top:24px;padding:14px;border:none;border-radius:11px;
+    background:var(--ink);color:var(--paper);font-family:system-ui,sans-serif;
+    font-size:15px;font-weight:600;cursor:pointer;letter-spacing:.3px;
+  }
+  .btn:hover{background:#3d362f}
+  .btn.secondary{background:transparent;color:var(--sepia);border:1px solid var(--line);margin-top:10px}
+  .hint{font-size:12px;color:var(--sepia-soft);margin-top:14px;line-height:1.5;font-style:italic}
+
+  /* ---- Card preview ---- */
+  .stage{flex-shrink:0}
+  .card{
+    width:480px;height:480px;background:var(--paper);
+    display:flex;flex-direction:column;justify-content:center;
+    padding:62px;position:relative;overflow:hidden;
+    box-shadow:0 10px 40px rgba(80,60,40,.14);
+  }
+  .card .quote-mark{
+    font-size:120px;line-height:.7;color:var(--sepia);opacity:.22;
+    font-weight:600;margin-bottom:4px;height:54px;
+  }
+  .card .quote{
+    font-size:30px;line-height:1.42;font-weight:500;font-style:italic;
+    color:var(--ink);letter-spacing:.2px;
+  }
+  .card .meta{margin-top:30px;font-size:15px;color:var(--sepia);font-style:normal;font-weight:500}
+  .card .meta .author{display:block}
+  .card .meta .title{display:block;opacity:.78;font-style:italic;margin-top:2px}
+  .card .brand{
+    position:absolute;bottom:34px;left:62px;right:62px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-family:system-ui,sans-serif;font-size:12px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--sepia-soft);
+  }
+  .card .brand .logo{display:flex;align-items:center;gap:7px;font-weight:600}
+  .card .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--sepia)}
+  .card .rule{position:absolute;top:62px;left:62px;width:46px;height:3px;background:var(--sepia);opacity:.5}
+  .stage .size-note{text-align:center;font-family:system-ui,sans-serif;font-size:12px;color:var(--sepia);margin-top:14px;font-style:italic}
+
+  @media(max-width:560px){
+    .card{width:340px;height:340px;padding:40px}
+    .card .quote{font-size:22px}
+    .card .quote-mark{font-size:84px;height:40px}
+    .controls{width:100%}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Marginalia · Generatore Highlight Card</h1>
+    <p>Scrivi una frase, scegli il tono, esporta in 1080×1080 per Instagram &amp; Pinterest.</p>
+  </header>
+
+  <div class="layout">
+    <!-- Controls -->
+    <div class="controls">
+      <label for="quote">Frase</label>
+      <textarea id="quote">I libri che hai letto ti hanno fatto. Quelli che ricordi ti tengono.</textarea>
+
+      <div class="row">
+        <div>
+          <label for="author">Autore</label>
+          <input type="text" id="author" placeholder="(opzionale)" value="">
+        </div>
+        <div>
+          <label for="title">Libro</label>
+          <input type="text" id="title" placeholder="(opzionale)" value="">
+        </div>
+      </div>
+
+      <label>Tema</label>
+      <div class="themes" id="themes">
+        <div class="swatch active" data-paper="#FAFAF8" data-ink="#2B2723" data-sepia="#8B7355" style="background:#FAFAF8">Avorio</div>
+        <div class="swatch" data-paper="#2B2723" data-ink="#F3EEE4" data-sepia="#C2A87E" style="background:#2B2723;color:rgba(255,255,255,.55)">Notte</div>
+        <div class="swatch" data-paper="#EFE6D6" data-ink="#4A3B2A" data-sepia="#8B6B43" style="background:#EFE6D6">Seppia</div>
+        <div class="swatch" data-paper="#E8EDE9" data-ink="#26322B" data-sepia="#5E7A66" style="background:#E8EDE9">Salvia</div>
+      </div>
+
+      <label for="fontsize">Dimensione testo</label>
+      <input type="range" id="fontsize" min="20" max="40" value="30" style="width:100%">
+
+      <button class="btn" id="download">↓ Scarica PNG (1080×1080)</button>
+      <button class="btn secondary" id="copyhint">Suggerimento: prima 9 frasi → carosello</button>
+
+      <p class="hint">Consiglio: tieni la frase sotto le ~200 battute. Le frasi che "respirano" (poetiche, secche) rendono meglio delle citazioni lunghe. Usa frasi che hai davvero sottolineato tu.</p>
+    </div>
+
+    <!-- Card -->
+    <div class="stage">
+      <div class="card" id="card">
+        <div class="rule"></div>
+        <div class="quote-mark">&ldquo;</div>
+        <div class="quote" id="p-quote"></div>
+        <div class="meta" id="p-meta"></div>
+        <div class="brand">
+          <span class="logo"><span class="dot"></span>MARGINALIA</span>
+          <span>annota · ricorda</span>
+        </div>
+      </div>
+      <div class="size-note">Anteprima a 480px · l'export è a 1080×1080</div>
+    </div>
+  </div>
+
+<script>
+  const q = document.getElementById('quote');
+  const author = document.getElementById('author');
+  const title = document.getElementById('title');
+  const pQuote = document.getElementById('p-quote');
+  const pMeta = document.getElementById('p-meta');
+  const card = document.getElementById('card');
+  const fontsize = document.getElementById('fontsize');
+  const root = document.documentElement;
+
+  function render(){
+    pQuote.textContent = q.value || 'La tua frase qui.';
+    let meta = '';
+    if(author.value.trim()) meta += '<span class="author">— '+escapeHtml(author.value.trim())+'</span>';
+    if(title.value.trim()) meta += '<span class="title">'+escapeHtml(title.value.trim())+'</span>';
+    pMeta.innerHTML = meta;
+    pQuote.style.fontSize = fontsize.value + 'px';
+  }
+  function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+  [q,author,title,fontsize].forEach(el=>el.addEventListener('input',render));
+
+  // Themes
+  document.querySelectorAll('.swatch').forEach(sw=>{
+    sw.addEventListener('click',()=>{
+      document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));
+      sw.classList.add('active');
+      root.style.setProperty('--paper',sw.dataset.paper);
+      root.style.setProperty('--ink',sw.dataset.ink);
+      root.style.setProperty('--sepia',sw.dataset.sepia);
+      // soft sepia derived
+      root.style.setProperty('--sepia-soft',sw.dataset.sepia);
+    });
+  });
+
+  // Export at 1080x1080 (scale 2.25 from 480)
+  document.getElementById('download').addEventListener('click',()=>{
+    const scale = 1080/480;
+    html2canvas(card,{scale:scale,backgroundColor:null,useCORS:true}).then(canvas=>{
+      const link = document.createElement('a');
+      const name = (q.value.slice(0,24).replace(/[^a-z0-9]+/gi,'-').toLowerCase()||'card');
+      link.download = 'marginalia-'+name+'.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  });
+
+  document.getElementById('copyhint').addEventListener('click',()=>{
+    alert('Per un carosello: genera 9 card (una frase per slide) e caricale in ordine su Instagram. Stessa frase, stesso tema = feed coerente e riconoscibile.');
+  });
+
+  render();
+</script>
+</body>
+</html>
