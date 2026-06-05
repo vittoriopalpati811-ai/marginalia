@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/bootstrap_error_app.dart';
 import 'core/services/widget_service.dart';
@@ -14,7 +15,12 @@ const _supabaseUrl = 'https://ibucvloawkfwobaelwbr.supabase.co';
 const _supabaseAnonKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc';
 
-void main() {
+// Sentry crash/error reporting DSN — injected at build time via
+// --dart-define=SENTRY_DSN=... so it stays OUT of this public repo. Empty =
+// disabled: Sentry is never initialised and behaviour is identical to before.
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+
+Future<void> main() async {
   // FIRST Dart statement to execute — a CI smoke-test probe (see codemagic.yaml).
   // Uses raw print (NOT debugPrint) so the line is never throttled or buffered
   // away before the simulator boot test can grep the console for it. If this
@@ -25,29 +31,40 @@ void main() {
   // ignore: avoid_print
   print('### MARGINALIA-BOOT-OK ###');
 
-  // Guard the WHOLE bootstrap. A black screen on launch means runApp() never
-  // ran — an initializer threw OR HUNG before any UI was built.
-  //
-  // The previous main() awaited Supabase / the home-widget bridge / Isar BEFORE
-  // the first runApp(), with only try/catch guards. try/catch does NOTHING
-  // against a HANG (an await that never completes — a platform channel that
-  // never returns, a never-resolving network/session call), so a single stuck
-  // initializer on a real device left the user on a silent black screen with
-  // zero diagnostics. That is exactly the reported symptom: black, and not even
-  // the BootstrapErrorApp screen (which only catches *thrown* errors).
-  //
-  // Now runApp() is the FIRST thing that happens: we paint a visible cream
-  // splash immediately, then every fallible/slow initializer runs INSIDE that
-  // widget, after the first frame, each bounded by a timeout. If the Flutter
-  // engine can draw at all, the user sees cream — never black.
+  // Sentry owns the error-capturing zone when a DSN is configured; otherwise we
+  // skip it entirely — zero overhead, behaviour identical to before.
+  if (_sentryDsn.isEmpty) {
+    _bootstrap();
+    return;
+  }
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = _sentryDsn;
+      options.tracesSampleRate = 0.2;
+      options.environment = kReleaseMode ? 'production' : 'debug';
+    },
+    appRunner: _bootstrap,
+  );
+}
+
+// Guard the WHOLE bootstrap. A black screen on launch means runApp() never ran —
+// an initializer threw OR HUNG before any UI was built. runApp() is the FIRST
+// thing that happens: a visible cream splash paints immediately, then every
+// fallible/slow initializer runs INSIDE that widget, after the first frame, each
+// bounded by a timeout. If the Flutter engine can draw at all, the user sees
+// cream — never black. Fatal errors are also forwarded to Sentry when enabled.
+void _bootstrap() {
   runZonedGuarded(() {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Surface framework errors (keep the default red-box) so anything during
-    // the first frames is logged rather than swallowed.
+    // Surface framework errors (keep the default red-box) so anything during the
+    // first frames is logged rather than swallowed — and report it to Sentry.
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       debugPrint('[FlutterError] ${details.exceptionAsString()}');
+      if (_sentryDsn.isNotEmpty) {
+        Sentry.captureException(details.exception, stackTrace: details.stack);
+      }
     };
 
     _applySystemChrome();
@@ -55,6 +72,9 @@ void main() {
     runApp(const _StartupGate());
   }, (error, stack) {
     debugPrint('[bootstrap] FATAL (zone): $error\n$stack');
+    if (_sentryDsn.isNotEmpty) {
+      Sentry.captureException(error, stackTrace: stack);
+    }
     runApp(BootstrapErrorApp(
       error: error,
       stackTrace: stack,

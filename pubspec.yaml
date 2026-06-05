@@ -1,6 +1,6 @@
 name: marginalia
 description: Riscopri i tuoi highlight Kindle attraverso widget intelligenti e cerchie di lettura.
-version: 1.0.23+1
+version: 1.0.24+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -91,6 +91,7 @@ dependencies:
   # (matches the visual reference: house, paper-plane-tilt, magnifying
   # glass, etc.). Tree-shaken at build time so only used glyphs ship.
   phosphor_flutter: ^2.1.0
+  sentry_flutter: ^8.14.2
 
 dev_dependencies:
   flutter_test:
