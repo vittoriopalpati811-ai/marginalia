@@ -21,8 +21,11 @@ class WidgetService {
   static Future<void> init() async {}
 
   static Future<WidgetHighlight?> update(
-    List<Map<String, dynamic>> highlights,
-  ) async =>
+    List<Map<String, dynamic>> highlights, {
+    String? chosenText,
+    String? chosenBook,
+    String? chosenAuthor,
+  }) async =>
       null;
 
   static Future<void> updateStats({

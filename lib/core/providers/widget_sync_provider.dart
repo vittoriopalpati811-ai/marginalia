@@ -40,6 +40,7 @@ import '../models/highlight.dart';
 import '../services/widget_service.dart';
 import '../services/watch_service.dart';
 import 'highlights_provider.dart';
+import 'daily_highlight_provider.dart';
 import '../../features/stats/stats_screen.dart'
     show readingGoalProvider, readingSessionsProvider;
 
@@ -63,29 +64,59 @@ void _pushWatch() {
 final widgetSyncProvider = Provider<void>((ref) {
   // ── Daily phrase ──────────────────────────────────────────────────────────
   //
-  // Pushes the currently-known highlights to the widget, re-running the
-  // time/weather-aware selection against the present moment. Reads from
-  // [allHighlightsProvider]'s cached value so it works both on a data change
-  // (via the listener below) and on a bare app-resume / day-rollover (where no
-  // provider re-emits but DateTime.now() — and therefore the best phrase — has
-  // moved on).
+  // Pushes the SAME highlight the Library tab shows to the widget, so the two
+  // never disagree. [dailyHighlightProvider] is the single source of truth for
+  // "the phrase chosen for the user" (Groq pick + 3h-stable cache, with a
+  // deterministic fallback); we forward its exact content/book/author to the
+  // widget verbatim instead of letting the widget re-select locally.
+  //
+  // The raw [allHighlightsProvider] list is still passed as a last-resort
+  // fallback: if the chosen highlight isn't ready (provider still loading or
+  // the library is empty) WidgetService falls back to its local keyword pick so
+  // the widget is never left blank. This runs on every data change (via the
+  // listener below) and on a bare app-resume / day-rollover, where the chosen
+  // phrase may have rolled to a new 3h bucket even though no provider re-emits.
   void pushPhrase() {
     final highlights = ref.read(allHighlightsProvider).value;
-    if (highlights == null || highlights.isEmpty) return;
-    final maps = highlights
+    final maps = (highlights ?? const <Highlight>[])
         .map((h) => <String, dynamic>{
               'body': h.content,
               'book_title': h.bookTitle ?? '',
               'author': h.bookAuthor ?? '',
             })
         .toList();
-    WidgetService.update(maps).then((wh) {
-      if (wh != null) {
-        _watchText = wh.text;
-        _watchBook = wh.bookTitle;
-        _watchAuthor = wh.author;
-        _pushWatch();
-      }
+
+    // Resolve the app's chosen highlight, then push its exact fields. Reading
+    // the future (rather than the cached value) ensures the very first push —
+    // before the Library tab is ever opened — still reflects the real pick.
+    ref.read(dailyHighlightProvider.future).then((chosen) {
+      // Nothing chosen AND no fallback list → nothing to push.
+      if (chosen == null && maps.isEmpty) return;
+      WidgetService.update(
+        maps,
+        chosenText: chosen?.content,
+        chosenBook: chosen?.bookTitle,
+        chosenAuthor: chosen?.bookAuthor,
+      ).then((wh) {
+        if (wh != null) {
+          _watchText = wh.text;
+          _watchBook = wh.bookTitle;
+          _watchAuthor = wh.author;
+          _pushWatch();
+        }
+      });
+    }).catchError((_) {
+      // If the chosen-highlight future fails, still push the fallback list so
+      // the widget shows something rather than staying stale.
+      if (maps.isEmpty) return;
+      WidgetService.update(maps).then((wh) {
+        if (wh != null) {
+          _watchText = wh.text;
+          _watchBook = wh.bookTitle;
+          _watchAuthor = wh.author;
+          _pushWatch();
+        }
+      });
     });
   }
 

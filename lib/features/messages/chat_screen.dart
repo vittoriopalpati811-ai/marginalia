@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -86,6 +88,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   bool _sending = false;
   bool _uploadingMedia = false;
   RealtimeChannel? _realtimeChannel;
+  // Reconnect plumbing: if the realtime socket drops while the chat is open,
+  // recreate the channel after a short backoff so an open conversation keeps
+  // receiving incoming messages without leaving and re-entering.
+  Timer? _reconnectTimer;
+  bool _disposedChat = false;
   // Per-sender profile cache: the realtime callback fires once per incoming
   // message, so without this every message from the same person re-queried
   // `profiles`. Fetched once per sender per session, then reused.
@@ -121,6 +128,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   void _subscribeRealtime() {
     final svc = ref.read(supabaseServiceProvider);
     final myId = svc.userId ?? '';
+
+    // Drop any existing channel before opening a new one so a reconnect
+    // never leaks a half-open channel.
+    final previous = _realtimeChannel;
+    if (previous != null) {
+      svc.client.removeChannel(previous);
+    }
 
     _realtimeChannel = svc.client
         .channel('messages:${widget.conversationId}')
@@ -185,7 +199,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             }
           },
         )
-        .subscribe();
+        .subscribe((status, [error]) {
+          debugPrint('[chat-realtime ${widget.conversationId}] '
+              'status=$status error=$error');
+
+          // Resilience: if the socket drops (channelError / closed / timedOut)
+          // recreate the channel after a short backoff so an open chat keeps
+          // receiving. Guard against double-scheduling and against firing
+          // after the screen was disposed.
+          if (status == RealtimeSubscribeStatus.channelError ||
+              status == RealtimeSubscribeStatus.closed ||
+              status == RealtimeSubscribeStatus.timedOut) {
+            if (_disposedChat || _reconnectTimer != null) return;
+            _reconnectTimer = Timer(const Duration(seconds: 2), () {
+              _reconnectTimer = null;
+              if (_disposedChat || !mounted) return;
+              _subscribeRealtime();
+            });
+          }
+        });
   }
 
   // When the keyboard opens, the viewport shrinks; snap to the latest message
@@ -200,6 +232,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   @override
   void dispose() {
+    _disposedChat = true;
+    _reconnectTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _realtimeChannel?.unsubscribe();
     _textController.dispose();

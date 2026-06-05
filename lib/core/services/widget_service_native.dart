@@ -49,21 +49,41 @@ class WidgetService {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  /// Select the best highlight and push it to the iOS home-screen widget.
-  /// Returns the selected [WidgetHighlight] so the caller can preview it.
+  /// Push a highlight to the iOS home-screen widget.
+  /// Returns the pushed [WidgetHighlight] so the caller can preview it.
+  ///
+  /// When [chosenText] is provided (non-empty) the widget shows THAT exact
+  /// phrase — i.e. the highlight already selected by `dailyHighlightProvider`
+  /// for the Library tab — so the widget and the app always agree. The
+  /// [highlights] list is then only used as a last-resort fallback (empty
+  /// chosen text), where the legacy local keyword scoring picks a phrase.
   static Future<WidgetHighlight?> update(
-    List<Map<String, dynamic>> highlights,
-  ) async {
-    if (highlights.isEmpty) return null;
+    List<Map<String, dynamic>> highlights, {
+    String? chosenText,
+    String? chosenBook,
+    String? chosenAuthor,
+  }) async {
+    final hasChosen = chosenText != null && chosenText.isNotEmpty;
+    if (!hasChosen && highlights.isEmpty) return null;
 
     final now = DateTime.now();
     final weather = await _fetchWeather();
-    final best = _selectBest(highlights, now, weather);
-    if (best == null) return null;
 
-    final text = best['body'] as String? ?? '';
-    final bookTitle = best['book_title'] as String? ?? '';
-    final author = best['author'] as String? ?? '';
+    final String text;
+    final String bookTitle;
+    final String author;
+    if (hasChosen) {
+      // Mirror the app's chosen highlight verbatim — do NOT re-select.
+      text = chosenText;
+      bookTitle = chosenBook ?? '';
+      author = chosenAuthor ?? '';
+    } else {
+      final best = _selectBest(highlights, now, weather);
+      if (best == null) return null;
+      text = best['body'] as String? ?? '';
+      bookTitle = best['book_title'] as String? ?? '';
+      author = best['author'] as String? ?? '';
+    }
     final greeting = _greeting(now.hour);
 
     final snapshot = WidgetHighlight(

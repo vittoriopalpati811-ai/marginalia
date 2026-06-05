@@ -23,7 +23,33 @@ class MessagesScreen extends ConsumerStatefulWidget {
   ConsumerState<MessagesScreen> createState() => _MessagesScreenState();
 }
 
-class _MessagesScreenState extends ConsumerState<MessagesScreen> {
+class _MessagesScreenState extends ConsumerState<MessagesScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Belt-and-suspenders for the "stays bold (unread)" bug: when the app comes
+  // back to the foreground, refetch the inbox so the server-side read state
+  // (my_last_read_at) is refreshed. Realtime should already keep this current,
+  // but a resume after the socket was paused (backgrounded) can otherwise show
+  // stale unread styling until a manual pull-to-refresh. Only fires on
+  // resume, so it doesn't double-invalidate during normal use.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(conversationsProvider);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final conversationsAsync = ref.watch(conversationsProvider);

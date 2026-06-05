@@ -3,6 +3,8 @@
 //   2. The bottom-nav Messages tab can show a red unread badge from any
 //      screen, not just when the user is on the Messages tab.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -38,49 +40,88 @@ final FutureProvider<List<Map<String, dynamic>>> conversationsProvider =
 /// `messages` row INSERT, invalidates [conversationsProvider] so the
 /// inbox refetches with the latest message preview + unread state.
 ///
-/// Critically: this provider watches [currentUserProvider] (a Stream-
-/// backed provider that fires on every auth state change), NOT just
-/// `supabaseServiceProvider.isAuthenticated`. The previous version was
-/// constructed ONCE at app start, often before the user finished
-/// signing in. It saw `isAuthenticated == false`, returned early, and
-/// never re-ran when auth flipped — so the channel was never
-/// subscribed and the inbox stayed stale until manual refresh.
+/// Critically: this provider watches ONLY the current user's *id*
+/// (`currentUserProvider.select((u) => u?.id)`), NOT the whole User object.
+/// [currentUserProvider] is backed by the auth-state stream and re-emits a
+/// brand-new `User` instance on EVERY auth event — token refresh, app
+/// resume, etc. Watching the whole object rebuilt this provider on each of
+/// those events; every rebuild ran `onDispose` (unsubscribing the channel)
+/// and opened a fresh one, so the channel never stayed up long enough to
+/// deliver realtime inserts. The Supabase realtime logs showed the tenant
+/// churning connect → "no connected users" → terminate → reconnect. Selecting
+/// just the id means the provider only rebuilds on a real login/logout, so the
+/// channel stays subscribed and inserts actually arrive. (Same defect/fix as
+/// the recommendations provider.)
 ///
 /// We don't filter the channel by conversation IDs because that list
 /// changes over time (new chats, new group invites); cheaper to just
 /// invalidate on every insert and let the RLS-aware fetch do the rest.
 final inboxRealtimeProvider = Provider<void>((ref) {
-  // ref.watch on currentUserProvider triggers rebuild whenever the
-  // signed-in User? changes (login, logout, token refresh).
-  final user = ref.watch(currentUserProvider);
-  if (user == null) return;
+  // Watch ONLY the id, not the whole User — see the doc comment above.
+  final uid = ref.watch(currentUserProvider.select((u) => u?.id));
+  if (uid == null) return;
 
   final svc = ref.read(supabaseServiceProvider);
-  final uid = user.id;
 
-  final channel = svc.client
-      .channel('inbox:$uid')
-      .onPostgresChanges(
-        event: PostgresChangeEvent.insert,
-        schema: 'public',
-        table: 'messages',
-        callback: (payload) {
-          // Don't react to messages we sent ourselves — the chat screen's
-          // own optimistic update has already handled them, and refetching
-          // the inbox right after a local send creates a brief preview
-          // flicker.
-          final senderId = payload.newRecord['sender_id'] as String?;
-          if (senderId == uid) return;
-          ref.invalidate(conversationsProvider);
-        },
-      )
-      .subscribe((status, [error]) {
-        // Surface all status transitions so this is debuggable if it
-        // breaks again. Visible in the browser console / Xcode logs.
-        debugPrint('[inbox-realtime] status=$status error=$error');
-      });
+  RealtimeChannel? channel;
+  Timer? reconnectTimer;
+  var disposed = false;
 
-  ref.onDispose(() => channel.unsubscribe());
+  void subscribe() {
+    // Tear down any previous channel before opening a fresh one so a
+    // reconnect never leaks a half-open channel.
+    final previous = channel;
+    if (previous != null) {
+      svc.client.removeChannel(previous);
+    }
+
+    channel = svc.client
+        .channel('inbox:$uid')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'messages',
+          callback: (payload) {
+            // Don't react to messages we sent ourselves — the chat screen's
+            // own optimistic update has already handled them, and refetching
+            // the inbox right after a local send creates a brief preview
+            // flicker.
+            final senderId = payload.newRecord['sender_id'] as String?;
+            if (senderId == uid) return;
+            ref.invalidate(conversationsProvider);
+          },
+        )
+        .subscribe((status, [error]) {
+          // Surface all status transitions so this is debuggable if it
+          // breaks again. Visible in the browser console / Xcode logs.
+          debugPrint('[inbox-realtime] status=$status error=$error');
+
+          // Resilience: if the socket drops (channelError / closed / timedOut)
+          // recreate the channel after a short backoff so realtime recovers
+          // without an app restart. Guard against scheduling multiple timers
+          // and against firing after the provider was disposed.
+          if (status == RealtimeSubscribeStatus.channelError ||
+              status == RealtimeSubscribeStatus.closed ||
+              status == RealtimeSubscribeStatus.timedOut) {
+            if (disposed || reconnectTimer != null) return;
+            reconnectTimer = Timer(const Duration(seconds: 2), () {
+              reconnectTimer = null;
+              if (disposed) return;
+              debugPrint('[inbox-realtime] re-subscribing after $status');
+              subscribe();
+            });
+          }
+        });
+  }
+
+  subscribe();
+
+  ref.onDispose(() {
+    disposed = true;
+    reconnectTimer?.cancel();
+    final c = channel;
+    if (c != null) svc.client.removeChannel(c);
+  });
 });
 
 /// Optimistic, session-local "read" timestamps keyed by conversation id.

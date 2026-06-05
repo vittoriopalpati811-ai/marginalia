@@ -1,7 +1,10 @@
+import 'dart:async' show Future;
+
 import 'package:flutter/foundation.dart'
     show debugPrint, defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart' show WidgetsBinding;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 
 import '../../app.dart' show router;
 import 'supabase_service.dart';
@@ -23,9 +26,17 @@ import 'supabase_service.dart';
 /// tap that launched the app from a terminated state (buffered natively) is
 /// replayed and routed.
 ///
+/// Token re-registration is robust: besides registering once on [start]
+/// (called on auth-state change at launch / sign-in), [PushService] registers
+/// itself as a [WidgetsBindingObserver] and re-invokes the native `register`
+/// every time the app returns to the foreground ([AppLifecycleState.resumed]).
+/// This guarantees the CURRENT install's APNs token is re-sent — and thus
+/// upserted into `device_tokens` — even after a TestFlight update changed it,
+/// which a launch-only registration would miss.
+///
 /// No-op on anything other than iOS. Idempotent — safe to call on every
 /// auth-state change.
-class PushService {
+class PushService with WidgetsBindingObserver {
   PushService(this._supabase);
 
   final SupabaseService _supabase;
@@ -40,16 +51,15 @@ class PushService {
     if (_started || !_supported) return;
     _started = true;
 
+    // Re-register on every foreground so the CURRENT token is always saved.
+    WidgetsBinding.instance.addObserver(this);
+
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'onToken':
           final token = call.arguments as String?;
           if (token != null && token.isNotEmpty) {
-            try {
-              await _supabase.registerDeviceToken(token);
-            } catch (e) {
-              debugPrint('[Push] registerDeviceToken failed: $e');
-            }
+            await _saveToken(token);
           }
         case 'onNotificationTap':
           _handleNotificationTap(call.arguments);
@@ -64,11 +74,54 @@ class PushService {
       debugPrint('[Push] tapHandlerReady failed: $e');
     }
 
+    await _register();
+  }
+
+  /// Re-runs registration when the app returns to the foreground. The native
+  /// `register` re-requests permission if needed and re-fires `onToken`, so the
+  /// latest token is re-upserted every time — covering a token that rotated
+  /// while the app (or a fresh TestFlight build) was backgrounded.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _register();
+    }
+  }
+
+  /// Invokes the native `register` (request permission if needed +
+  /// registerForRemoteNotifications). iOS-guarded and idempotent. Returns
+  /// `true` when authorization was granted; logs and returns `false` when the
+  /// user denied permission.
+  Future<bool> _register() async {
+    if (!_supported) return false;
     try {
-      await _channel.invokeMethod<bool>('register');
+      final granted = await _channel.invokeMethod<bool>('register') ?? false;
+      if (!granted) {
+        debugPrint('[Push] permission DENIED');
+      }
+      return granted;
     } catch (e) {
-      // MissingPluginException off-iOS, or the user denied permission.
+      // MissingPluginException off-iOS, or a native registration error.
       debugPrint('[Push] register failed: $e');
+      return false;
+    }
+  }
+
+  /// Persists a received APNs token, retrying once after ~2s on failure so a
+  /// transient network/Supabase error doesn't permanently drop the token.
+  Future<void> _saveToken(String token) async {
+    try {
+      await _supabase.registerDeviceToken(token);
+      debugPrint('[Push] token registered (len=${token.length})');
+    } catch (e) {
+      debugPrint('[Push] registerDeviceToken failed, retrying in 2s: $e');
+      await Future<void>.delayed(const Duration(seconds: 2));
+      try {
+        await _supabase.registerDeviceToken(token);
+        debugPrint('[Push] token registered (len=${token.length})');
+      } catch (e2) {
+        debugPrint('[Push] registerDeviceToken retry failed: $e2');
+      }
     }
   }
 

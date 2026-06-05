@@ -2031,14 +2031,25 @@ class SupabaseService {
   }
 
   /// Registers the APNs device token for push notifications.
+  ///
+  /// Upserts on the table's `unique(user_id, token)` constraint (see migration
+  /// 023_notifications.sql), so re-registering the SAME token for a user is a
+  /// no-op-but-fresh (no duplicate-key error, no duplicate row), while a NEW
+  /// token after a TestFlight update inserts a new row. Without `onConflict`,
+  /// supabase-flutter defaults the conflict target to the primary key (`id`),
+  /// which we never supply — so each call would generate a fresh `id` and
+  /// collide with the `(user_id, token)` unique index on re-registration.
   Future<void> registerDeviceToken(String token) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
-    await _client.from('device_tokens').upsert({
-      'user_id': userId,
-      'token': token,
-      'platform': 'ios',
-    });
+    await _client.from('device_tokens').upsert(
+      {
+        'user_id': userId,
+        'token': token,
+        'platform': 'ios',
+      },
+      onConflict: 'user_id,token',
+    );
   }
 
   RealtimeChannel subscribeToNotifications(
