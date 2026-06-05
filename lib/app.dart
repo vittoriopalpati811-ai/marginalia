@@ -473,19 +473,16 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
               ),
               child: PageTransitionSwitcher(
                 duration: const Duration(milliseconds: 320),
-                // Direction-aware tab transition. Navigating to a tab on the
-                // RIGHT (higher index) pushes "forward" — the new page slides in
-                // from the right while the old one leaves to the left.
-                // Navigating LEFT (lower index) runs the SAME shared-axis motion
-                // reversed: new page in from the left, old one out to the right.
-                //
-                // Why not AnimatedSwitcher: its outgoing child can only replay
-                // ITS OWN entry transition in reverse, so the exit direction
-                // depended on how that tab was first reached (navigation
-                // history) and looked incoherent — exactly the bug reported.
-                // PageTransitionSwitcher drives BOTH children from the current
-                // `reverse` flag, so left/right is always consistent.
-                reverse: _direction < 0,
+                // Direction-aware tab transition, per the founder's explicit
+                // spec: clicking a tab to the LEFT of the current one must slide
+                // RIGHT→LEFT; clicking a tab to the RIGHT must slide LEFT→RIGHT.
+                // _direction = +1 when the target tab is to the RIGHT (higher
+                // index), -1 when it's to the LEFT. The earlier `_direction < 0`
+                // produced the opposite motion (founder flagged it), so the flag
+                // is inverted here. PageTransitionSwitcher drives BOTH the
+                // incoming and outgoing pages from this one flag, so they never
+                // fight each other (that was the AnimatedSwitcher bug).
+                reverse: _direction > 0,
                 layoutBuilder: (entries) => Stack(
                   fit: StackFit.expand,
                   children: entries,
