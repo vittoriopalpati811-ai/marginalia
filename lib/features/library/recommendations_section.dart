@@ -201,10 +201,13 @@ final libraryRecommendationsProvider =
   // top of that (see recommend-books/index.ts):
   //   • Per book: 2 highlights — enough signal for the model to grasp a
   //     book's voice without bloating the prompt.
-  //   • Total books: 12 — the 12 most-recently-touched books. Combined
-  //     with the server's random sampling, repeated days still surface the
-  //     whole shelf, but any single request stays tiny (~600-900 input
-  //     tokens), leaving headroom for a same-minute retry under 6 K TPM.
+  //   • Total books: send up to 30 recent CANDIDATES; the edge function then
+  //     randomly samples 12 of them for the actual prompt (Fisher-Yates), so
+  //     the picks genuinely VARY day to day (this is what "prendine un numero
+  //     accettabile randomico" asked for) while only ~12 books' worth of
+  //     tokens ever reach Groq — a single request stays well under 6 K TPM.
+  //     (Sending only 12 before meant the server's shuffle was a no-op and the
+  //     recommendations were always built from the same fixed 12 books.)
   //
   // Both backends already return highlights sorted by added_at DESC, so
   // we just iterate that stream. The first time we see a book id we
@@ -212,7 +215,9 @@ final libraryRecommendationsProvider =
   // the per-book cap. New books beyond the totalBookCap are skipped.
 
   const perBookCap   = 2;
-  const totalBookCap = 12;
+  // 30 recent candidates; the edge function random-picks 12 of them (see above)
+  // so the daily picks actually vary. Only the 12 it picks reach Groq.
+  const totalBookCap = 30;
 
   final Map<String, Map<String, dynamic>> bookMap = {};
   final List<String> orderedBookIds = [];
