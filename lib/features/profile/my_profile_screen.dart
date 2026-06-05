@@ -252,10 +252,17 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
   void _shareProfile(Map<String, dynamic>? profile) {
     final name = profile?['display_name'] as String? ?? 'Marginalia';
-    final uid  = ref.read(supabaseServiceProvider).userId ?? '';
+    // Share a WEB invite link (not an in-app deep link): it opens a public
+    // landing page that greets the recipient with "Unisciti a <name> su
+    // Marginalia!" and a download CTA. The page (web/u/index.html) reads the
+    // name from the ?u= query param. NOTE: the marginalia.app domain must be
+    // pointed at GitHub Pages for this to resolve (see launch notes); until
+    // then the same page is reachable at the github.io URL.
+    final link =
+        'https://marginalia.app/u/?u=${Uri.encodeComponent(name)}';
     Share.share(
-      'Segui $name su Marginalia.\n\nhttps://marginalia.app/user/$uid',
-      subject: 'Marginalia Profile – $name',
+      'Unisciti a $name su Marginalia!\n\n$link',
+      subject: 'Marginalia – $name',
       sharePositionOrigin: shareOrigin(context),
     );
   }

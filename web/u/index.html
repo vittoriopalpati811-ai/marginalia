@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Marginalia</title>
+  <meta name="description" content="Unisciti a Marginalia — riscopri i tuoi highlight Kindle attraverso widget intelligenti e cerchie di lettura." />
+  <!-- Open Graph so the shared link gets a rich preview in chat apps. -->
+  <meta property="og:title" content="Unisciti a me su Marginalia" />
+  <meta property="og:description" content="Riscopri i tuoi highlight Kindle. Cerchie di lettura, frasi del giorno, widget." />
+  <meta property="og:type" content="website" />
+  <style>
+    :root {
+      --cream: #FAF9F6;
+      --ink: #2B2B28;
+      --ink-muted: #6B6560;
+      --green: #4A7A35;
+      --green-dark: #254D16;
+      --rule: #E6E2D8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 32px 24px calc(32px + env(safe-area-inset-bottom));
+      text-align: center;
+    }
+    .mark {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: var(--cream);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px; font-weight: 600;
+      box-shadow: 0 8px 28px rgba(74, 122, 53, 0.28);
+      margin-bottom: 28px;
+    }
+    .wordmark {
+      font-size: 12px; letter-spacing: 4px; font-weight: 700;
+      color: var(--green); margin-bottom: 22px;
+    }
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px; line-height: 1.25; font-weight: 600;
+      max-width: 16ch; margin-bottom: 14px;
+    }
+    h1 .name { color: var(--green); }
+    p.sub {
+      font-size: 16px; line-height: 1.55; color: var(--ink-muted);
+      max-width: 30ch; margin-bottom: 36px;
+    }
+    .stores { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+    .store-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      height: 54px; border-radius: 14px;
+      background: var(--ink); color: var(--cream);
+      text-decoration: none; font-size: 15px; font-weight: 600;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    .store-btn:active { transform: scale(0.98); opacity: 0.9; }
+    .store-btn .icon { font-size: 20px; }
+    .store-btn small { display: block; font-size: 10px; font-weight: 500; opacity: 0.75; letter-spacing: 0.3px; }
+    .store-btn .lbl { text-align: left; line-height: 1.1; }
+    .soon {
+      margin-top: 22px; font-size: 12.5px; color: var(--ink-muted);
+      border: 1px solid var(--rule); border-radius: 999px; padding: 7px 14px;
+    }
+    footer { margin-top: 40px; font-size: 11px; color: var(--ink-muted); letter-spacing: 0.3px; }
+  </style>
+</head>
+<body>
+  <div class="mark">M</div>
+  <div class="wordmark">MARGINALIA</div>
+  <h1>Unisciti a <span class="name" id="uname">un lettore</span> su Marginalia!</h1>
+  <p class="sub">Riscopri i tuoi highlight Kindle attraverso widget intelligenti, frasi del giorno e cerchie di lettura.</p>
+
+  <div class="stores">
+    <!-- PLACEHOLDER store links — replace href with the real App Store / Google Play URLs once published. -->
+    <a class="store-btn" id="appstore" href="#" rel="noopener">
+      <span class="icon"></span>
+      <span class="lbl"><small>Scarica su</small>App Store</span>
+    </a>
+    <a class="store-btn" id="playstore" href="#" rel="noopener">
+      <span class="icon">▶</span>
+      <span class="lbl"><small>Disponibile su</small>Google Play</span>
+    </a>
+  </div>
+
+  <div class="soon">In arrivo sugli store — presto disponibile</div>
+
+  <footer>© 2026 Marginalia</footer>
+
+  <script>
+    // Pull the shared display name from ?u= and inject it safely (textContent
+    // auto-escapes, so no HTML/script injection is possible).
+    var params = new URLSearchParams(window.location.search);
+    var name = (params.get('u') || '').trim();
+    if (name) {
+      document.getElementById('uname').textContent = name;
+      document.title = 'Unisciti a ' + name + ' su Marginalia';
+    }
+  </script>
+</body>
+</html>
