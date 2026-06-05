@@ -1655,5 +1655,32 @@
   "@signupAcceptPrivacy": {},
 
   "authMustAcceptTerms": "Accetta i Termini di servizio per continuare.",
-  "@authMustAcceptTerms": {}
+  "@authMustAcceptTerms": {},
+
+  "contentBlockedTitle": "Contenuto non pubblicabile",
+  "@contentBlockedTitle": {},
+
+  "contentBlockedMessage": "Il tuo contenuto sembra violare le regole della community ({category}). Modificalo prima di pubblicare.",
+  "@contentBlockedMessage": {
+    "description": "Shown when a post/comment is blocked at creation by the keyword filter. {category} is a localized category label.",
+    "placeholders": { "category": { "type": "String" } }
+  },
+
+  "contentHiddenTitle": "Contenuto potenzialmente inappropriato",
+  "@contentHiddenTitle": {},
+
+  "contentRevealAction": "Tocca per mostrare",
+  "@contentRevealAction": {},
+
+  "contentCategoryViolence": "violenza",
+  "@contentCategoryViolence": {},
+
+  "contentCategorySpam": "spam",
+  "@contentCategorySpam": {},
+
+  "contentCategoryScam": "truffa",
+  "@contentCategoryScam": {},
+
+  "contentCategorySexual": "contenuti sessuali",
+  "@contentCategorySexual": {}
 }

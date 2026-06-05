@@ -13,10 +13,25 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/content_filter_service.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../messages/giphy_picker.dart';
 import 'report_sheet.dart';
 import 'share_post_sheet.dart';
+
+// ─── Content-filter helpers ──────────────────────────────────────────────────
+
+/// Maps a flagged [ContentCategory] to its short localized label, used both in
+/// the "blocked at creation" snackbar and (generically) for logging.
+String _contentCategoryLabel(BuildContext context, ContentCategory category) {
+  final l10n = context.l10n;
+  return switch (category) {
+    ContentCategory.violence => l10n.contentCategoryViolence,
+    ContentCategory.spam => l10n.contentCategorySpam,
+    ContentCategory.scam => l10n.contentCategoryScam,
+    ContentCategory.sexual => l10n.contentCategorySexual,
+  };
+}
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -378,6 +393,27 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   Future<void> _submit() async {
     final text = _controller.text.trim();
     if (text.isEmpty && _imageBytes == null) return;
+
+    // First-line keyword filter: refuse obviously objectionable text BEFORE we
+    // show the optimistic success overlay or hit the network, and let the user
+    // edit. (Image moderation is server-side / out of scope; this only checks
+    // the typed text.)
+    final inspection = contentFilter.inspect(text);
+    if (inspection.flagged) {
+      final category = inspection.category!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n.contentBlockedMessage(
+              _contentCategoryLabel(context, category),
+            ),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     // Drop the keyboard immediately so it doesn't hover over the success
     // animation or linger on the feed after the sheet closes.
     FocusManager.instance.primaryFocus?.unfocus();
@@ -1412,18 +1448,26 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   ),
                 ),
               ),
-              // 3-dot menu
-              GestureDetector(
-                onTap: () => _showPostMenu(context),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
-                  child: Icon(
-                    PhosphorIconsRegular.dotsThree,
-                    size: 22,
-                    color: isOwner
-                        ? MarginaliaColors.inkMuted
-                        : MarginaliaColors.inkFaint,
+              // 3-dot menu — visible on EVERY post so reporting (non-owner) and
+              // edit/delete (owner) are always one tap away. 40×40 tap target,
+              // subtle inkMuted glyph (20px), no layout shift. `_showPostMenu`
+              // already branches owner → edit/delete vs non-owner → report+block.
+              Semantics(
+                button: true,
+                label: context.l10n.feedReport,
+                child: GestureDetector(
+                  onTap: () => _showPostMenu(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Center(
+                      child: Icon(
+                        PhosphorIconsRegular.dotsThreeOutline,
+                        size: 20,
+                        color: MarginaliaColors.inkMuted,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1436,12 +1480,16 @@ class _PostCardState extends ConsumerState<_PostCard> {
           Padding(
             // Indented to line up with the username (avatar stays in the gutter).
             padding: const EdgeInsets.fromLTRB(64, 8, 16, 0),
-            child: Text(
-              body,
-              style: GoogleFonts.manrope(
-                fontSize: 15,
-                color: MarginaliaColors.ink,
-                height: 1.65,
+            child: _GatedText(
+              text: body,
+              alreadyOwn: isOwner,
+              child: Text(
+                body,
+                style: GoogleFonts.manrope(
+                  fontSize: 15,
+                  color: MarginaliaColors.ink,
+                  height: 1.65,
+                ),
               ),
             ),
           ),
@@ -1721,6 +1769,102 @@ class _HighlightQuoteCard extends StatelessWidget {
   }
 }
 
+// ─── Gated (tap-to-reveal) text ──────────────────────────────────────────────
+//
+// Wraps post/comment body text. The keyword inspection is run ONCE in
+// initState (memoized) — never inside build — so scrolling a long feed stays
+// cheap. When flagged, the text is hidden behind a tappable warning box
+// ("Potentially inappropriate content — tap to show"); revealing is local
+// state. When clean (or once revealed) the supplied [child] renders normally.
+//
+// `alreadyOwn` lets a caller skip gating for the author's own content (their
+// own view never needs the warning); gating everyone is also fine.
+
+class _GatedText extends StatefulWidget {
+  const _GatedText({
+    required this.text,
+    required this.child,
+    this.alreadyOwn = false,
+  });
+
+  /// The raw body text to inspect. The visible rendering is [child].
+  final String text;
+  final Widget child;
+
+  /// When true the author is viewing their own content → never gate it.
+  final bool alreadyOwn;
+
+  @override
+  State<_GatedText> createState() => _GatedTextState();
+}
+
+class _GatedTextState extends State<_GatedText> {
+  late final bool _flagged;
+  bool _revealed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Memoize the inspection: compute the (cheap) keyword scan exactly once
+    // per mounted item instead of on every rebuild.
+    _flagged = !widget.alreadyOwn && contentFilter.inspect(widget.text).flagged;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_flagged || _revealed) return widget.child;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => setState(() => _revealed = true),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: MarginaliaColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: MarginaliaColors.rule, width: 1),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.visibility_off_outlined,
+              size: 18,
+              color: MarginaliaColors.inkMuted,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.contentHiddenTitle,
+                    style: GoogleFonts.manrope(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: MarginaliaColors.inkMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    context.l10n.contentRevealAction,
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: MarginaliaColors.primaryDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Single post detail screen ───────────────────────────────────────────────
 //
 // Opens ONE post full-screen and reuses the very same `_PostCard` the feed
@@ -1968,6 +2112,26 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
   Future<void> _submit() async {
     final text = _ctrl.text.trim();
     if (text.isEmpty && _imageBytes == null && _gifUrl == null) return;
+
+    // Same first-line keyword filter as post creation: block clearly
+    // objectionable comment text before sending, and let the user edit.
+    if (text.isNotEmpty) {
+      final inspection = contentFilter.inspect(text);
+      if (inspection.flagged) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              context.l10n.contentBlockedMessage(
+                _contentCategoryLabel(context, inspection.category!),
+              ),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _submitting = true);
     try {
       final svc = ref.read(supabaseServiceProvider);
@@ -2537,6 +2701,11 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
     final tint      = MarginaliaDecorations.bookCoverColor(name);
     final avatarSize = widget.isReply ? 26.0 : 32.0;
 
+    // The comment author's own view is never gated.
+    final currentUserId = ref.read(supabaseServiceProvider).userId;
+    final isAuthor = currentUserId != null &&
+        currentUserId == (widget.comment['user_id'] as String?);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -2614,12 +2783,16 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (content != null && content.isNotEmpty)
-                        Text(
-                          content,
-                          style: GoogleFonts.manrope(
-                            fontSize: 13.5,
-                            color: MarginaliaColors.ink,
-                            height: 1.55,
+                        _GatedText(
+                          text: content,
+                          alreadyOwn: isAuthor,
+                          child: Text(
+                            content,
+                            style: GoogleFonts.manrope(
+                              fontSize: 13.5,
+                              color: MarginaliaColors.ink,
+                              height: 1.55,
+                            ),
                           ),
                         ),
                       if ((imageUrl != null || gifUrl != null) &&

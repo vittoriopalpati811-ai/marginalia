@@ -498,21 +498,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () => _showYourDataSheet(context),
               ),
               _SettingsTile(
-                icon: Icons.description_outlined,
-                label: context.l10n.settingsTermsOfService,
-                // Open the Terms of Service / EULA as an IN-APP screen (bundled
-                // HTML, no external GitHub link) — reached only from this button.
-                onTap: () {
-                  final isIt =
-                      Localizations.localeOf(context).languageCode == 'it';
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => TermsOfServiceScreen(isItalian: isIt),
-                  ));
-                },
-                trailing: const Icon(Icons.chevron_right,
-                    size: 18, color: MarginaliaColors.inkFaint),
-              ),
-              _SettingsTile(
                 icon: Icons.privacy_tip_outlined,
                 label: context.l10n.settingsPrivacyPolicy,
                 // Open the privacy policy as an IN-APP screen (bundled HTML, no
@@ -522,6 +507,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Localizations.localeOf(context).languageCode == 'it';
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => PrivacyPolicyScreen(isItalian: isIt),
+                  ));
+                },
+                trailing: const Icon(Icons.chevron_right,
+                    size: 18, color: MarginaliaColors.inkFaint),
+              ),
+              _SettingsTile(
+                icon: Icons.description_outlined,
+                label: context.l10n.settingsTermsOfService,
+                // Terms of Service / EULA as an IN-APP screen (bundled HTML),
+                // shown as a clickable line directly UNDER the Privacy Policy.
+                onTap: () {
+                  final isIt =
+                      Localizations.localeOf(context).languageCode == 'it';
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => TermsOfServiceScreen(isItalian: isIt),
                   ));
                 },
                 trailing: const Icon(Icons.chevron_right,

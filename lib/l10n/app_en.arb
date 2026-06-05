@@ -909,5 +909,32 @@
   "@signupAcceptPrivacy": {},
 
   "authMustAcceptTerms": "Please accept the Terms of Service to continue.",
-  "@authMustAcceptTerms": {}
+  "@authMustAcceptTerms": {},
+
+  "contentBlockedTitle": "Can't post this",
+  "@contentBlockedTitle": {},
+
+  "contentBlockedMessage": "Your content looks like it breaks the community rules ({category}). Please edit it before posting.",
+  "@contentBlockedMessage": {
+    "description": "Shown when a post/comment is blocked at creation by the keyword filter. {category} is a localized category label.",
+    "placeholders": { "category": { "type": "String" } }
+  },
+
+  "contentHiddenTitle": "Potentially inappropriate content",
+  "@contentHiddenTitle": {},
+
+  "contentRevealAction": "Tap to show",
+  "@contentRevealAction": {},
+
+  "contentCategoryViolence": "violence",
+  "@contentCategoryViolence": {},
+
+  "contentCategorySpam": "spam",
+  "@contentCategorySpam": {},
+
+  "contentCategoryScam": "scam",
+  "@contentCategoryScam": {},
+
+  "contentCategorySexual": "sexual content",
+  "@contentCategorySexual": {}
 }

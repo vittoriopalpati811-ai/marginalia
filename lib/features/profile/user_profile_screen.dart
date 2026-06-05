@@ -440,6 +440,15 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 ),
                 error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
               ),
+              // ── Block box (not shown for self) ───────────────────────────
+              if (!isMe)
+                SliverToBoxAdapter(
+                  child: _BlockBox(
+                    isBlockedAsync:
+                        ref.watch(_isUserBlockedProvider(widget.userId)),
+                    onToggleBlock: _toggleBlock,
+                  ),
+                ),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           );
@@ -591,6 +600,70 @@ class _ProfileOverflowMenu extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Block box (bottom of profile, not shown for self) ───────────────────────
+//
+// A prominent, clearly-labelled block/unblock action at the very bottom of every
+// OTHER user's profile (the overflow menu in the header stays too, for report +
+// quick block). Tinted danger-red when the user is not yet blocked; neutral once
+// blocked, with an "unblock" affordance. Backs onto _toggleBlock (which confirms
+// before blocking and refreshes follow/stats/posts state).
+class _BlockBox extends StatelessWidget {
+  const _BlockBox({required this.isBlockedAsync, required this.onToggleBlock});
+
+  final AsyncValue<bool> isBlockedAsync;
+  final Future<void> Function(bool isBlocked) onToggleBlock;
+
+  @override
+  Widget build(BuildContext context) {
+    // Default to "not blocked" while the state resolves so the box is usable.
+    final isBlocked = isBlockedAsync.asData?.value ?? false;
+    const danger = Color(0xFFB54848);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => onToggleBlock(isBlocked),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: isBlocked
+                  ? MarginaliaColors.surface
+                  : const Color(0x14B54848),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isBlocked ? MarginaliaColors.rule : danger.withAlpha(90),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(isBlocked ? Icons.lock_open_outlined : Icons.block,
+                    size: 20,
+                    color: isBlocked ? MarginaliaColors.inkMuted : danger),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isBlocked
+                        ? context.l10n.unblockUser
+                        : context.l10n.blockUser,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isBlocked ? MarginaliaColors.inkMuted : danger,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
