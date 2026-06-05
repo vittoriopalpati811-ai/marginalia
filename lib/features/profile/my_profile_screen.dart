@@ -1675,9 +1675,10 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
 
           const SizedBox(height: 8),
 
-          // Gradient labels
+          // Gradient labels — give them room for two lines so longer names
+          // (e.g. "Crepuscolo") never get their second row clipped.
           SizedBox(
-            height: 22,
+            height: 32,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1687,12 +1688,15 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                 final g   = _kGradients[i];
                 final sel = g.key == _grad;
                 return SizedBox(
-                  width: 52,
+                  width: 56,
                   child: Text(
                     _gradientLabel(context, g.key),
                     textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.visible,
                     style: TextStyle(
                       fontSize: 9,
+                      height: 1.15,
                       fontWeight:
                           sel ? FontWeight.w700 : FontWeight.w500,
                       color: sel
