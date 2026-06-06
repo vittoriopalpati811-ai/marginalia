@@ -960,5 +960,8 @@
   "otpErrorInvalid": "Invalid or expired code. Please try again.",
   "@otpErrorInvalid": {},
   "otpResent": "We sent you a new code.",
-  "@otpResent": {}
+  "@otpResent": {},
+
+  "storyShareTagline": "Share it and spread the word ✨",
+  "@storyShareTagline": {}
 }

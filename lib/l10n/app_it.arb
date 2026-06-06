@@ -1706,5 +1706,8 @@
   "otpErrorInvalid": "Codice non valido o scaduto. Riprova.",
   "@otpErrorInvalid": {},
   "otpResent": "Ti abbiamo inviato un nuovo codice.",
-  "@otpResent": {}
+  "@otpResent": {},
+
+  "storyShareTagline": "Condividi e fai scoprire Marginalia ✨",
+  "@storyShareTagline": {}
 }

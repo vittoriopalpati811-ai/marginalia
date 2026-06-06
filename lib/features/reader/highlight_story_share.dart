@@ -118,18 +118,34 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
   /// layer, so unlike the old off-screen path this can't silently produce null.
   Future<Uint8List?> _capturePng() async {
     try {
-      // One frame of breathing room so Google Fonts / blur have settled.
-      await Future<void>.delayed(const Duration(milliseconds: 80));
-      final boundary = _boundaryKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return null;
-      if (boundary.debugNeedsPaint) {
-        await Future<void>.delayed(const Duration(milliseconds: 80));
+      RenderRepaintBoundary? boundary;
+      // Wait until the boundary EXISTS and has finished painting. Google Fonts
+      // and the blur filter settle a frame or two after the sheet opens, so a
+      // single fixed delay was racing the first paint and returning null
+      // ("impossibile creare storia"). Looping on endOfFrame + debugNeedsPaint
+      // is far more reliable.
+      for (var i = 0; i < 12; i++) {
+        await WidgetsBinding.instance.endOfFrame;
+        boundary = _boundaryKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+        if (boundary != null && !boundary.debugNeedsPaint) break;
+        await Future<void>.delayed(const Duration(milliseconds: 90));
       }
-      final image = await boundary.toImage(pixelRatio: _kStoryPixelRatio);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-      return byteData?.buffer.asUint8List();
+      if (boundary == null) return null;
+      // Capture, retrying once if the first toImage races a repaint.
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          final image = await boundary.toImage(pixelRatio: _kStoryPixelRatio);
+          final byteData =
+              await image.toByteData(format: ui.ImageByteFormat.png);
+          image.dispose();
+          final bytes = byteData?.buffer.asUint8List();
+          if (bytes != null && bytes.isNotEmpty) return bytes;
+        } catch (_) {
+          await Future<void>.delayed(const Duration(milliseconds: 150));
+        }
+      }
+      return null;
     } catch (_) {
       return null;
     }
@@ -221,9 +237,20 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
             Text(
               l10n.storyPreviewTitle,
               style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
                 color: MarginaliaColors.ink,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.storyShareTagline,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: MarginaliaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 14),
@@ -260,21 +287,28 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
             if (_instagramAvailable) ...[
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 58,
                 child: FilledButton.icon(
                   onPressed: _busy ? null : _shareToInstagram,
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFE1306C), // Instagram pink
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  icon: const Icon(Icons.camera_alt_outlined, size: 20),
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.camera_alt_outlined, size: 22),
                   label: Text(
                     l10n.storyShareInstagram,
                     style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                        fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
