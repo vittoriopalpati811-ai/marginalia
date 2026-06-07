@@ -967,18 +967,7 @@ class _MessageBubble extends StatelessWidget {
                       opacity: isOptimistic ? 0.7 : 1.0,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(14),
-                        child: Image.network(
-                          imageUrl,
-                          width: 220,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 220,
-                            height: 140,
-                            color: MarginaliaColors.surfaceElevated,
-                            child: const Icon(Icons.image_not_supported_outlined,
-                                color: MarginaliaColors.inkFaint),
-                          ),
-                        ),
+                        child: _SignedMessageImage(stored: imageUrl, width: 220),
                       ),
                     ),
                   ),
@@ -1261,6 +1250,85 @@ class _SmallAvatar extends StatelessWidget {
                 ),
               ),
       ),
+    );
+  }
+}
+
+// ─── Signed message image ─────────────────────────────────────────────────────
+
+/// Renders a chat image. The message-images bucket is PRIVATE, so a stored
+/// reference (a bucket path, or an old full bucket URL) is resolved to a
+/// short-lived signed URL via [SupabaseService.signedMessageImageUrl]; external
+/// URLs (e.g. GIPHY GIFs) are used directly. Resolved URLs are cached in-memory
+/// (TTL below the signed-URL expiry) so scrolling doesn't re-sign every frame.
+class _SignedMessageImage extends ConsumerStatefulWidget {
+  const _SignedMessageImage({required this.stored, required this.width});
+
+  final String stored;
+  final double width;
+
+  @override
+  ConsumerState<_SignedMessageImage> createState() =>
+      _SignedMessageImageState();
+}
+
+class _SignedMessageImageState extends ConsumerState<_SignedMessageImage> {
+  static final Map<String, ({String url, DateTime exp})> _cache = {};
+  late Future<String?> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _resolve();
+  }
+
+  Future<String?> _resolve() async {
+    final hit = _cache[widget.stored];
+    if (hit != null && hit.exp.isAfter(DateTime.now())) return hit.url;
+    final resolved = await ref
+        .read(supabaseServiceProvider)
+        .signedMessageImageUrl(widget.stored);
+    if (resolved != null) {
+      _cache[widget.stored] =
+          (url: resolved, exp: DateTime.now().add(const Duration(minutes: 50)));
+    }
+    return resolved;
+  }
+
+  Widget _box(Widget child) => Container(
+        width: widget.width,
+        height: 140,
+        color: MarginaliaColors.surfaceElevated,
+        child: Center(child: child),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return _box(const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+                strokeWidth: 1.5, color: MarginaliaColors.inkFaint),
+          ));
+        }
+        final url = snap.data;
+        if (url == null || url.isEmpty) {
+          return _box(const Icon(Icons.image_not_supported_outlined,
+              color: MarginaliaColors.inkFaint));
+        }
+        return Image.network(
+          url,
+          width: widget.width,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _box(const Icon(
+              Icons.image_not_supported_outlined,
+              color: MarginaliaColors.inkFaint)),
+        );
+      },
     );
   }
 }

@@ -1869,7 +1869,11 @@ class SupabaseService {
         .eq('user_id', uid);
   }
 
-  /// Upload an image to the message-images bucket and return its public URL.
+  /// Upload an image to the (private) message-images bucket and return its
+  /// storage PATH. The path — not a public URL — is stored on the message;
+  /// readers resolve it to a short-lived signed URL via
+  /// [signedMessageImageUrl] (the bucket is private, so only conversation
+  /// members can read each object). See migration 046.
   Future<String> uploadMessageImage(
       String fileName, List<int> bytes) async {
     // Reduce the supplied name to a safe base name (no path separators or
@@ -1882,7 +1886,36 @@ class SupabaseService {
     await _client.storage
         .from('message-images')
         .uploadBinary(path, bytes as dynamic);
-    return _client.storage.from('message-images').getPublicUrl(path);
+    return path;
+  }
+
+  /// Resolve a stored message-image reference to a displayable URL.
+  ///
+  /// `messages.image_url` can carry three kinds of reference:
+  ///   • a bare storage path (new uploads)               -> sign it
+  ///   • a full message-images public URL (old uploads)  -> extract path, sign
+  ///   • an external URL, e.g. a GIPHY GIF               -> return unchanged
+  /// The message-images bucket is private, so its objects are served via a
+  /// short-lived signed URL. RLS (migration 046) lets only conversation members
+  /// sign a given object. Returns null if signing fails.
+  Future<String?> signedMessageImageUrl(String stored) async {
+    if (stored.isEmpty) return null;
+    const marker = '/message-images/';
+    String path;
+    if (stored.startsWith('http')) {
+      final i = stored.indexOf(marker);
+      if (i < 0) return stored; // external (e.g. GIPHY) — use directly
+      path = stored.substring(i + marker.length).split('?').first;
+    } else {
+      path = stored; // already a bare storage path
+    }
+    try {
+      return await _client.storage
+          .from('message-images')
+          .createSignedUrl(path, 60 * 60);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Messages for a single conversation in chronological order, with sender
