@@ -153,6 +153,14 @@ import WatchConnectivity
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  // Clear the red app-icon badge whenever the app comes to the foreground, so a
+  // push that bumped the badge doesn't leave a stale dot after the user has
+  // already opened the app.
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    super.applicationDidBecomeActive(application)
+    UIApplication.shared.applicationIconBadgeNumber = 0
+  }
+
   // ── Watch bridge ─────────────────────────────────────────────────────────────
 
   // Pushes the latest snapshot to the watch. updateApplicationContext keeps only

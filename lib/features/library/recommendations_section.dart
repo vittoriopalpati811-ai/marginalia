@@ -1062,14 +1062,15 @@ class _RecommendationDetailScreenState
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                  20, 8, 20, 12 + MediaQuery.of(context).padding.bottom),
-              child: Column(
+                  const SizedBox(height: 8),
+                  // Action buttons live INSIDE the scroll now, so a long "why
+                  // you'll like it" paragraph is fully readable and the buttons
+                  // sit BELOW it (responsive to its length) instead of a fixed
+                  // bar that clipped/overlapped the text.
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        0, 8, 0, 12 + MediaQuery.of(context).padding.bottom),
+                    child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
@@ -1147,6 +1148,10 @@ class _RecommendationDetailScreenState
                     ),
                   ),
                 ],
+              ),
+            ),
+                  ],
+                ),
               ),
             ),
           ],

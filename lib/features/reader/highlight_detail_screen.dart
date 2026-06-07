@@ -50,23 +50,8 @@ class HighlightDetailScreen extends ConsumerWidget {
                             .read(highlightFavoriteNotifierProvider.notifier)
                             .toggleFavorite(highlightId),
                       ),
-                      // Direct, always-visible "share as story" affordance —
-                      // the founder wants every highlight one tap from an
-                      // Instagram story. Reuses shareHighlightAsStory().
-                      IconButton(
-                        tooltip: context.l10n.shareAsStory,
-                        icon: const Icon(
-                          PhosphorIconsRegular.instagramLogo,
-                          color: MarginaliaColors.primaryDark,
-                          size: 21,
-                        ),
-                        onPressed: () => shareHighlightAsStory(
-                          context,
-                          text: h.content,
-                          title: h.bookTitle,
-                          author: h.bookAuthor,
-                        ),
-                      ),
+                      // (The dedicated Instagram-story icon was moved OUT of the
+                      // app bar into a prominent green CTA in the body below.)
                       // Share — menu with card vs. Instagram-story image
                       PopupMenuButton<_ShareAction>(
                         icon: const Icon(
@@ -254,6 +239,35 @@ class _HighlightBody extends ConsumerWidget {
                           height: 0.8, color: MarginaliaColors.ruleFaint),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // ── Condividi come storia — CTA forte e verde (viralità) ────
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: FilledButton.icon(
+                    onPressed: () => shareHighlightAsStory(
+                      context,
+                      text: highlight.content as String,
+                      title: embTitle,
+                      author: embAuthor,
+                    ),
+                    icon: const Icon(PhosphorIconsRegular.instagramLogo,
+                        size: 20),
+                    label: Text(
+                      context.l10n.shareAsStory,
+                      style: const TextStyle(
+                          fontSize: 15.5, fontWeight: FontWeight.w800),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MarginaliaColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 24),

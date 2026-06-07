@@ -74,7 +74,12 @@ Future<void> shareHighlightAsStory(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    // Solid surface + rounded top so the sheet has a proper card background
+    // (previously transparent → the preview floated with "no sfondo, no box").
+    backgroundColor: MarginaliaColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
     builder: (_) => _StoryPreviewSheet(text: text, title: title, author: author),
   );
 }
@@ -398,28 +403,15 @@ class HighlightStoryCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // ── 1. Blurred book-cover background ──────────────────────────
-            // ImageFiltered blurs the cover widget itself (not a backdrop),
-            // which rasterises reliably. OverflowBox lets the cover paint
-            // larger than the frame so the heavy blur never reveals
-            // transparent edges.
+            // ── 1. Book-cover background (SHARP, no blur) ──────────────────
+            // The cover fills the frame and a strong dark scrim below keeps the
+            // quote legible. We deliberately DON'T use ImageFilter.blur here:
+            // rasterising a blurred layer with RenderRepaintBoundary.toImage was
+            // intermittently failing on device ("impossibile creare la storia").
             Positioned.fill(
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(
-                  sigmaX: 55,
-                  sigmaY: 55,
-                  tileMode: TileMode.decal,
-                ),
-                child: OverflowBox(
-                  minWidth: _kStoryWidth * 1.5,
-                  minHeight: _kStoryHeight * 1.5,
-                  maxWidth: _kStoryWidth * 1.5,
-                  maxHeight: _kStoryHeight * 1.5,
-                  child: BookEditorialCover(
-                    title: coverTitle,
-                    author: safeAuthor,
-                  ),
-                ),
+              child: BookEditorialCover(
+                title: coverTitle,
+                author: safeAuthor,
               ),
             ),
 
@@ -431,9 +423,9 @@ class HighlightStoryCard extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withAlpha(184), // ~72%
-                      Colors.black.withAlpha(133), // ~52%
-                      Colors.black.withAlpha(189), // ~74%
+                      Colors.black.withAlpha(205), // ~80% — darker since the
+                      Colors.black.withAlpha(168), // ~66%   cover is now sharp
+                      Colors.black.withAlpha(212), // ~83%   (no blur to soften)
                     ],
                     stops: const [0.0, 0.5, 1.0],
                   ),
