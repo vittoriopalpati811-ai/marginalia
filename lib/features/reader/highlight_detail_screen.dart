@@ -10,6 +10,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/services/share_card_service.dart';
 import '../../core/l10n/l10n_extension.dart';
+import 'book_info_screen.dart';
 import 'highlight_story_share.dart';
 
 class HighlightDetailScreen extends ConsumerWidget {
@@ -405,19 +406,51 @@ class _BookHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: MarginaliaTextStyles.bookTitle.copyWith(fontSize: 16),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (author.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              author.toUpperCase(),
-              style: MarginaliaTextStyles.bookAuthor,
+          // Tappable → opens the book's detail (cover, overview, categories),
+          // so a reader can jump from a phrase straight to "what's this book?".
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    BookInfoScreen(title: title, author: author),
+              ),
             ),
-          ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: MarginaliaTextStyles.bookTitle
+                              .copyWith(fontSize: 16),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (author.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            author.toUpperCase(),
+                            style: MarginaliaTextStyles.bookAuthor,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8, top: 2),
+                    child: Icon(Icons.chevron_right,
+                        size: 20, color: MarginaliaColors.inkFaint),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
