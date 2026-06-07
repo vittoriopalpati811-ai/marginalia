@@ -33,6 +33,10 @@ class HomeTab extends ConsumerWidget {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      // Host ABOVE the shell bottom-nav (root navigator) — otherwise the sheet
+      // is placed under the shell and its TextField can't hold focus on iOS
+      // (the "can't type in the new-post box" bug). Mirrors the profile call site.
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => CreatePostSheet(
         onCreated: () async {

@@ -338,7 +338,9 @@ INSTRUCTIONS:
 - Choose books that resonate with the themes, ideas and style of the highlights.
 - Mix classics and contemporary, and authors from different countries.
 - ${reasonInstruction}
-- Also fill, for each book: "plot" (1-2 sentence synopsis in ENGLISH), "categories" (2-4 genres such as "Fiction", "Mystery", "Coming-of-age"), "pages" (approximate page count as a plain number string), and "why" (ONE sentence starting with "Because you read" that cites ONE specific book from their list above).
+- For EACH recommendation first choose a "sourceBook": the SINGLE book from the BOOKS READ list above that MOST justifies the pick (strongest affinity of theme, style, author or era). Copy its "title" and "author" EXACTLY as they appear in the list; never cite a book that is not in the list.
+- The "reason" must explain the link to THAT sourceBook, and "why" must be EXACTLY "Because you read " + sourceBook title + " by " + sourceBook author + ".". The book cited in "why" MUST be the same as sourceBook and the same one the reason refers to — NEVER a different book.
+- Also fill, for each book: "plot" (1-2 sentence synopsis in ENGLISH), "categories" (2-4 genres such as "Fiction", "Mystery", "Coming-of-age"), "pages" (approximate page count as a plain number string).
 - Reply ONLY with valid JSON in the format below, no markdown and no extra text. Use straight quotes (") only, never typographic quotes.
 
 {
@@ -347,11 +349,12 @@ INSTRUCTIONS:
       "title": "Title",
       "author": "Author",
       "year": "year",
-      "reason": "Personalised explanation.",
+      "sourceBook": { "title": "EXACT title from the BOOKS READ list", "author": "That book's author" },
+      "reason": "Personalised explanation, tied to sourceBook.",
       "plot": "One or two sentence synopsis.",
       "categories": ["Fiction", "Mystery"],
       "pages": "320",
-      "why": "Because you read X by Y."
+      "why": "Because you read [sourceBook title] by [sourceBook author]."
     }
   ]
 }`;
@@ -367,7 +370,9 @@ ISTRUZIONI:
 - Scegli libri che risuonano con i temi, le idee e lo stile degli highlight.
 - Varia tra classici e contemporanei, italiani e stranieri.
 - ${reasonInstruction}
-- Compila inoltre, per ogni libro: "plot" (trama in 1-2 frasi, in italiano), "categories" (2-4 generi, es. "Narrativa", "Giallo", "Formazione"), "pages" (numero di pagine approssimativo come stringa numerica), e "why" (UNA frase che inizia con "Perché hai letto" e cita UN libro specifico dalla sua lista qui sopra).
+- Per OGNI libro consigliato scegli PRIMA un "sourceBook": il SINGOLO libro della lista LIBRI LETTI qui sopra che PIÙ giustifica il consiglio (massima affinità di tema, stile, autore o epoca). Copia "title" e "author" ESATTAMENTE come appaiono nella lista; non citare libri che non sono in lista.
+- La "reason" deve spiegare il legame proprio con QUEL sourceBook, e "why" deve essere ESATTAMENTE "Perché hai letto " + titolo del sourceBook + " di " + autore del sourceBook + ".". Il libro citato in "why" DEVE essere lo stesso di sourceBook e lo stesso a cui si riferisce la reason — MAI un libro diverso.
+- Compila inoltre, per ogni libro: "plot" (trama in 1-2 frasi, in italiano), "categories" (2-4 generi, es. "Narrativa", "Giallo", "Formazione"), "pages" (numero di pagine approssimativo come stringa numerica).
 - Rispondi SOLO con JSON valido nel formato sotto, senza markdown e senza testo extra. Usa esclusivamente virgolette dritte ("), mai virgolette tipografiche.
 
 {
@@ -376,11 +381,12 @@ ISTRUZIONI:
       "title": "Titolo",
       "author": "Autore",
       "year": "anno",
-      "reason": "Spiegazione personalizzata.",
+      "sourceBook": { "title": "Titolo ESATTO dalla lista LIBRI LETTI", "author": "Autore di quel libro" },
+      "reason": "Spiegazione personalizzata, legata al sourceBook.",
       "plot": "Trama in una o due frasi.",
       "categories": ["Narrativa", "Giallo"],
       "pages": "320",
-      "why": "Perché hai letto X di Y."
+      "why": "Perché hai letto [titolo del sourceBook] di [autore del sourceBook]."
     }
   ]
 }`;
@@ -423,7 +429,10 @@ async function callGroq(
       // retry 429'd again. The salvage parser below recovers any complete
       // objects if a response is still cut off at this lower ceiling.
       max_tokens: 2800,
-      temperature: 0.7,
+      // Lower than 0.7 to reduce "anchor drift" — the model picking one book for
+      // the blurb and an unrelated one for "why". Recs still vary day-to-day via
+      // the per-call random library subset.
+      temperature: 0.4,
       // Force the model to emit a syntactically valid JSON object. Without
       // this the 8B model occasionally produces malformed JSON (smart-quote
       // closure, trailing comma in a long string). Logs showed:
@@ -466,6 +475,30 @@ async function callGroq(
 
   return (list as Recommendation[]).slice(0, 5).map((r) => {
     const rr = r as Record<string, unknown>;
+    // Derive `why` from the model's chosen sourceBook so the cited book is
+    // ALWAYS the one the recommendation is actually based on. The 8B model
+    // otherwise drifts and cites an unrelated library book (e.g. recommending a
+    // Russian classic "because you read Moby Dick"). Language is taken from the
+    // model's own `why` prefix; defaults to Italian (the app is Italian-first).
+    let why = String(rr.why ?? "");
+    const sb = rr.sourceBook;
+    if (sb && typeof sb === "object") {
+      const sbRec = sb as Record<string, unknown>;
+      const sbTitle = String(sbRec.title ?? "").trim();
+      const sbAuthor = String(sbRec.author ?? "").trim();
+      if (sbTitle) {
+        const isEn = why.toLowerCase().startsWith("because");
+        if (isEn) {
+          why = sbAuthor
+            ? `Because you read ${sbTitle} by ${sbAuthor}.`
+            : `Because you read ${sbTitle}.`;
+        } else {
+          why = sbAuthor
+            ? `Perché hai letto ${sbTitle} di ${sbAuthor}.`
+            : `Perché hai letto ${sbTitle}.`;
+        }
+      }
+    }
     return {
       title:  String(r.title  ?? ""),
       author: String(r.author ?? ""),
@@ -476,7 +509,7 @@ async function callGroq(
         ? (rr.categories as unknown[]).map((c) => String(c)).slice(0, 5)
         : [],
       pages:  String(rr.pages ?? ""),
-      why:    String(rr.why ?? ""),
+      why,
     };
   });
 }

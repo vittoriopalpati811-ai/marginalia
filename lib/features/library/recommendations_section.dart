@@ -452,6 +452,13 @@ final libraryRecommendationsProvider =
                 'author': r.author,
                 'year': r.year,
                 'reason': r.reason,
+                // Persist the enrichment fields too, otherwise a same-day cache
+                // hit re-renders with an empty plot / "Perché hai letto" line
+                // (the cache READ above expects plot/categories/pages/why).
+                'plot': r.plot,
+                'categories': r.categories,
+                'pages': r.pages,
+                'why': r.whyRead,
               })
           .toList(),
     );

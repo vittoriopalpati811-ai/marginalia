@@ -100,7 +100,11 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
           final uri = Uri.https(
             'www.googleapis.com',
             '/books/v1/volumes',
-            {'q': q, 'maxResults': '5', 'country': 'US'},
+            // Italian only: langRestrict + the IT catalog. The plot must never
+            // appear in a foreign language, so we ALSO hard-check
+            // volumeInfo.language == 'it' per item below (langRestrict is only a
+            // soft hint that Google sometimes ignores).
+            {'q': q, 'maxResults': '10', 'langRestrict': 'it', 'country': 'IT'},
           );
           final resp = await http.get(uri).timeout(const Duration(seconds: 8));
           if (resp.statusCode != 200) continue;
@@ -110,14 +114,13 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
           for (final item in items) {
             final vi = (item as Map)['volumeInfo'];
             if (vi is! Map) continue;
+            // Reject any non-Italian edition — no foreign-language plots.
+            final lang = (vi['language'] ?? '').toString().toLowerCase();
+            if (lang != 'it') continue;
             final desc = _coerceText(vi['description']);
             if (desc == null) continue;
-            // First item that has a real description wins.
+            // First ITALIAN item with a real description (synopsis) wins.
             _plot = desc;
-            final cats = vi['categories'];
-            if (cats is List) {
-              _categories = cats.map((e) => e.toString()).take(4).toList();
-            }
             final pub = vi['publishedDate'];
             if (pub is String && pub.length >= 4) _year = pub.substring(0, 4);
             final pc = vi['pageCount'];
@@ -129,15 +132,17 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
         }
       }
 
-      // ── Open Library fallback when Google Books gave us no plot ────────────
-      if (_plot == null && coreTitle.isNotEmpty) {
+      // ── Open Library: ONLY language-agnostic numeric metadata (pages/year).
+      // We deliberately do NOT use it for the plot — first_sentence is a book
+      // EXCERPT (often in the original language), not an Italian synopsis. That
+      // was the "Spanish excerpt in the plot" bug.
+      if (coreTitle.isNotEmpty && (_pages == null || _year == null)) {
         try {
           final uri = Uri.https('openlibrary.org', '/search.json', {
             'title': coreTitle,
             'author': normAuthor,
             'limit': '1',
-            'fields':
-                'key,first_sentence,subject,number_of_pages_median,first_publish_year',
+            'fields': 'number_of_pages_median,first_publish_year',
           });
           final resp = await http.get(uri).timeout(const Duration(seconds: 8));
           if (resp.statusCode == 200) {
@@ -145,15 +150,6 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
             final docs = data['docs'] as List?;
             if (docs != null && docs.isNotEmpty) {
               final doc = docs.first as Map<String, dynamic>;
-              final sentence = _coerceText(doc['first_sentence']);
-              if (sentence != null) _plot = sentence;
-              if (_categories.isEmpty) {
-                final subjects = doc['subject'];
-                if (subjects is List) {
-                  _categories =
-                      subjects.map((e) => e.toString()).take(4).toList();
-                }
-              }
               if (_pages == null) {
                 final pc = doc['number_of_pages_median'];
                 if (pc is int && pc > 0) _pages = pc;
@@ -165,7 +161,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
             }
           }
         } catch (_) {
-          // Open Library fallback failure — never fatal.
+          // Open Library best-effort — never fatal.
         }
       }
     } catch (_) {
@@ -288,21 +284,20 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                 ),
               ],
 
-              // ── Overview ────────────────────────────────────────────────────
-              sectionHeader(it ? 'Trama' : 'Overview'),
-              Text(
-                _plot ??
-                    (it
-                        ? 'Trama non disponibile per questo titolo.'
-                        : 'No overview available for this title.'),
-                style: GoogleFonts.ebGaramond(
-                  fontSize: 15.5,
-                  height: 1.6,
-                  color: _plot != null
-                      ? MarginaliaColors.ink
-                      : MarginaliaColors.inkFaint,
+              // ── Overview (Italian synopsis only; whole section hidden when
+              //    no Italian plot is available — no placeholder, dynamic for
+              //    any user-added book) ─────────────────────────────────────────
+              if (_plot != null) ...[
+                sectionHeader(it ? 'Trama' : 'Overview'),
+                Text(
+                  _plot!,
+                  style: GoogleFonts.ebGaramond(
+                    fontSize: 15.5,
+                    height: 1.6,
+                    color: MarginaliaColors.ink,
+                  ),
                 ),
-              ),
+              ],
 
               // ── Categories ──────────────────────────────────────────────────
               if (_categories.isNotEmpty) ...[

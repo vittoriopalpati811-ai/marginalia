@@ -616,6 +616,22 @@ class _ProfileHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // Opaque gradient base filling the FULL rect (square top, rounded
+          // bottom) so the status-bar top corners never reveal the page colour
+          // through the anti-aliased ClipRRect edge ("due buchetti ai lati").
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: gp.colors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(28),
+                bottomRight: Radius.circular(28),
+              ),
+            ),
+          ),
           // ── Background: cover photo OR gradient ───────────────────────────
           // Bottom corners rounded so the cover banner isn't a hard rectangle.
           ClipRRect(
@@ -742,9 +758,10 @@ class _ProfileHeader extends StatelessWidget {
                         Text(
                           bio,
                           style: TextStyle(
-                            color: Colors.white.withAlpha(160),
+                            color: Colors.white.withAlpha(200),
                             fontSize: 12.5,
                             height: 1.4,
+                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
