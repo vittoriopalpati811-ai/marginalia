@@ -282,14 +282,26 @@ jobs:
             echo "No SENTRY_DSN secret — Sentry stays disabled (no-op)."
             exit 0
           fi
-          DEF=$(printf 'SENTRY_DSN=%s' "$SENTRY_DSN" | base64 | tr -d '\n')
+          # Strip ALL whitespace from the secret FIRST. A stray trailing newline
+          # in the pasted secret otherwise ends up inside the compiler's
+          # -DSENTRY_DSN=… flag and makes the Xcode "Run Script" (flutter
+          # assemble) throw "Unhandled exception" — exactly what broke the first
+          # 1.0.33 build once the secret was added.
+          CLEAN=$(printf '%s' "$SENTRY_DSN" | tr -d '[:space:]')
+          # Defensive: only inject a well-formed DSN so a bad value can NEVER
+          # break the build — Sentry just stays off instead.
+          case "$CLEAN" in
+            https://*@*sentry.io/*) : ;;
+            *) echo "SENTRY_DSN not a well-formed DSN — skipping (Sentry off, build stays green)."; exit 0 ;;
+          esac
+          DEF=$(printf 'SENTRY_DSN=%s' "$CLEAN" | base64 | tr -d '\n')
           XC=ios/Flutter/Generated.xcconfig
           EXISTING=$(grep '^DART_DEFINES=' "$XC" 2>/dev/null | head -1 | cut -d= -f2-)
           if [ -n "$EXISTING" ]; then NEW="$EXISTING,$DEF"; else NEW="$DEF"; fi
           grep -v '^DART_DEFINES=' "$XC" > "$XC.tmp" 2>/dev/null || true
           echo "DART_DEFINES=$NEW" >> "$XC.tmp"
           mv "$XC.tmp" "$XC"
-          echo "Sentry DSN injected into DART_DEFINES (Sentry enabled for this build)."
+          echo "Sentry DSN injected into DART_DEFINES (whitespace-stripped, validated)."
 
       - name: Build IPA
         run: |
