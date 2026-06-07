@@ -1677,7 +1677,19 @@ class SupabaseService {
   // ─── File upload (My Clippings.txt) ───────────────────────────────────────
 
   Future<String> uploadClippingsFile(Uint8List bytes, String filename) async {
-    final path = '$userId/$filename';
+    // Defence-in-depth: reduce the supplied name to a safe base name so a
+    // crafted filename (e.g. "../other/x") can't escape the user's own folder.
+    // The clippings bucket is already private + owner-scoped, but a
+    // client-supplied path segment must never be trusted verbatim.
+    final base = filename.split(RegExp(r'[\\/]+')).last;
+    final cleaned = base
+        .replaceAll('..', '')
+        .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_')
+        .replaceAll(RegExp(r'^\.+'), '');
+    final safeName = cleaned.isEmpty
+        ? 'clippings_${DateTime.now().millisecondsSinceEpoch}.txt'
+        : cleaned;
+    final path = '$userId/$safeName';
     await _client.storage.from('clippings').uploadBinary(
           path,
           bytes,
@@ -1860,7 +1872,12 @@ class SupabaseService {
   /// Upload an image to the message-images bucket and return its public URL.
   Future<String> uploadMessageImage(
       String fileName, List<int> bytes) async {
-    final path = '${userId!}/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+    // Reduce the supplied name to a safe base name (no path separators or
+    // parent-dir segments) so a crafted name can't escape the user's folder.
+    final base = fileName.split(RegExp(r'[\\/]+')).last.replaceAll('..', '');
+    final safeName = base.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final path =
+        '${userId!}/${DateTime.now().millisecondsSinceEpoch}_$safeName';
     await _assertImageClean(bytes);
     await _client.storage
         .from('message-images')
@@ -2212,7 +2229,7 @@ class SupabaseService {
         .eq('user_id', userId)
         .eq('is_read', false)
         .count(CountOption.exact);
-    return res.count ?? 0;
+    return res.count;
   }
 
   Future<void> markNotificationRead(String notificationId) async {
