@@ -13,7 +13,8 @@ build/
 .flutter-plugins-dependencies
 *.g.dart
 *.freezed.dart
-pubspec.lock
+# pubspec.lock IS committed (this is an app, not a library): pins exact
+# transitive versions for reproducible builds + supply-chain integrity.
 lib/generated/
 
 # ─── Flutter per-platform — ios/ is TRACKED (Codemagic builds from it).
@@ -71,10 +72,16 @@ cm_*.py
 # ─── Secrets ─────────────────────────────────
 .env
 .env.local
+.env.*
+!.env.example
 *.p12
 *.pem
 *.key
+*.cer
 *.mobileprovision
+# Firebase config plists embed an API key — never commit if Firebase is added.
+GoogleService-Info.plist
+android/app/google-services.json
 # App Store Connect API private key (AuthKey_XXXXXXXXXX.p8) — uploaded to
 # Codemagic for signing, must never land in git.
 *.p8

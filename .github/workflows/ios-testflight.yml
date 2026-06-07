@@ -48,6 +48,14 @@ concurrency:
   group: ios-testflight-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: this build only READS the repo and uploads to TestFlight /
+# artifacts (via the App Store Connect API key + the Actions runtime token) —
+# it never pushes back to the repo. Scope the GITHUB_TOKEN to read-only so a
+# compromised step or transitive build dependency can't tamper with the repo
+# or releases. (Public repo carries high-value signing secrets, so this matters.)
+permissions:
+  contents: read
+
 jobs:
   build-ios:
     runs-on: macos-latest

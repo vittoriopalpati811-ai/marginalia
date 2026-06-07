@@ -1,0 +1,13 @@
+# Dependabot — keeps third-party GitHub Actions current and surfaces advisories.
+# (Dart/pub is not natively supported by Dependabot; run `flutter pub outdated`
+# periodically and prefer `flutter pub get --enforce-lockfile` in CI to cover
+# the pub ecosystem, now that pubspec.lock is committed.)
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(deps)"
