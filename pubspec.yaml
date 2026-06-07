@@ -1,6 +1,6 @@
 name: marginalia
 description: Riscopri i tuoi highlight Kindle attraverso widget intelligenti e cerchie di lettura.
-version: 1.0.32+1
+version: 1.0.33+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

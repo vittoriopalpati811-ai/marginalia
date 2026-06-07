@@ -196,7 +196,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       ],
                 flexibleSpace: FlexibleSpaceBar(
                   collapseMode: CollapseMode.parallax,
-                  background: Stack(
+                  background: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
+                    child: Stack(
                     fit: StackFit.expand,
                     children: [
                       // Cover photo or gradient
@@ -288,6 +293,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         ],
                       ),
                     ],
+                  ),
                   ),
                 ),
               ),

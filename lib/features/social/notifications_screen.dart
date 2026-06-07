@@ -14,16 +14,17 @@ import '../../core/l10n/l10n_extension.dart';
 /// Resolves the route a notification should open when tapped, or null if there
 /// is no sensible destination.
 ///
-/// `like` / `comment` notifications (created by notify_post_interaction) carry
-/// `post_id` (+ `actor_id`) in their `data` jsonb (see migration 036), so they
-/// open the POST itself (`/post/:id`). If `post_id` is somehow missing we fall
-/// back to the ACTOR's profile (the person who liked/commented). Jam-related
+/// `like` / `comment` notifications (created by notify_post_interaction) and
+/// `mention` notifications (created by notify_post_mentions, migration 048)
+/// carry `post_id` (+ `actor_id`) in their `data` jsonb, so they open the POST
+/// itself (`/post/:id`). If `post_id` is somehow missing we fall back to the
+/// ACTOR's profile (the person who liked/commented/mentioned). Jam-related
 /// notifications carry `jam_id` and open the Jam.
 String? _notificationDestination(Map<String, dynamic> n) {
   final data = n['data'];
   if (data is! Map) return null;
   final type = n['type'] as String? ?? '';
-  if (type == 'like' || type == 'comment') {
+  if (type == 'like' || type == 'comment' || type == 'mention') {
     final postId = data['post_id'] as String?;
     if (postId != null && postId.isNotEmpty) return '/post/$postId';
     // Fall back to the actor's profile if the post id is missing.
@@ -136,6 +137,8 @@ class _NotificationCard extends StatelessWidget {
         return (Icons.favorite, const Color(0xFFBF4A72));
       case 'comment':
         return (Icons.mode_comment_outlined, MarginaliaColors.primary);
+      case 'mention':
+        return (Icons.alternate_email, MarginaliaColors.primary);
       default:
         return (Icons.notifications_none_outlined, MarginaliaColors.sienna);
     }

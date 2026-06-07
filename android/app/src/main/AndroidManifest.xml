@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Supabase, webview (Amazon sync), google_fonts all need network access. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Saving the story image to the gallery on Android <=28 (API 29+ uses
+         scoped storage via MediaStore and needs no permission). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
     <application
         android:label="Marginalia"
         android:name="${applicationName}"

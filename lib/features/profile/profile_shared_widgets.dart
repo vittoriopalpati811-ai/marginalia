@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme.dart';
 import '../library/book_cover.dart';
+import '../reader/book_info_screen.dart';
 
 // ─── Favourite books Pinterest masonry grid ────────────────────────────────────
 
@@ -129,7 +130,13 @@ class FavBookTile extends StatelessWidget {
       FavTileSize.small  => 60.0,
     };
 
-    return ClipRRect(
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BookInfoScreen(title: title, author: author),
+        ),
+      ),
+      child: ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Stack(
         fit: StackFit.expand,
@@ -183,6 +190,7 @@ class FavBookTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

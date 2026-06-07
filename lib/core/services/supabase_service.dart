@@ -1255,14 +1255,23 @@ class SupabaseService {
     String? highlightSupabaseId,
     String? jamId,
     String? imageUrl,
+    List<String> mentions = const [],
   }) async {
-    await _client.from('posts').insert({
+    final inserted = await _client.from('posts').insert({
       'user_id': userId,
       if (body != null && body.trim().isNotEmpty) 'body': body.trim(),
       if (highlightSupabaseId != null) 'highlight_id': highlightSupabaseId,
       if (jamId != null) 'jam_id': jamId,
       if (imageUrl != null) 'image_url': imageUrl,
-    });
+      if (mentions.isNotEmpty) 'mentions': mentions,
+    }).select('id').single();
+    final newId = inserted['id'] as String?;
+
+    // Notify mentioned users — best-effort, never blocks post creation.
+    if (newId != null && mentions.isNotEmpty) {
+      // ignore: discarded_futures
+      _notifyPostMentions(newId);
+    }
   }
 
   /// Uploads an image for a post and returns the public URL.
@@ -1307,13 +1316,18 @@ class SupabaseService {
         (r) => blockedIds.contains(r['user_id'] as String? ?? ''));
     if (rows.isEmpty) return [];
 
-    // Fetch profiles in parallel (include currently_reading for "reading X" display)
-    final userIds = rows.map((r) => r['user_id'] as String).toSet().toList();
+    // Fetch profiles in parallel (include currently_reading for "reading X"
+    // display). Also include every mentioned user id so we can resolve the
+    // tappable @username spans without a second round-trip.
+    final authorIds = rows.map((r) => r['user_id'] as String).toSet();
+    final mentionedIds = _collectMentionedIds(rows);
+    final allProfileIds = {...authorIds, ...mentionedIds}.toList();
     final profiles = List<Map<String, dynamic>>.from(
       await _client
               .from('profiles')
-              .select('id, display_name, avatar_url, currently_reading_title')
-              .inFilter('id', userIds) as List,
+              .select(
+                  'id, display_name, avatar_url, currently_reading_title, username')
+              .inFilter('id', allProfileIds) as List,
     );
     final profileById = {for (var p in profiles) p['id'] as String: p};
 
@@ -1333,8 +1347,45 @@ class SupabaseService {
         ...r,
         'profile': profileById[r['user_id'] as String],
         'is_liked': likedIds.contains(r['id'] as String),
+        'mentioned_profiles': _buildMentionedProfiles(r, profileById),
       };
     }).toList();
+  }
+
+  /// Collects the union of all uuids found in each post's `mentions` array.
+  Set<String> _collectMentionedIds(List<Map<String, dynamic>> rows) {
+    final ids = <String>{};
+    for (final r in rows) {
+      final mentions = r['mentions'];
+      if (mentions is List) {
+        for (final m in mentions) {
+          if (m is String && m.isNotEmpty) ids.add(m);
+        }
+      }
+    }
+    return ids;
+  }
+
+  /// Builds the `mentioned_profiles` map for a single post row: a map from each
+  /// mentioned user id to {username, display_name}. Returns an empty map when
+  /// the post has no mentions (or none of them resolve to a known profile).
+  Map<String, Map<String, String>> _buildMentionedProfiles(
+    Map<String, dynamic> row,
+    Map<String, Map<String, dynamic>> profileById,
+  ) {
+    final result = <String, Map<String, String>>{};
+    final mentions = row['mentions'];
+    if (mentions is! List) return result;
+    for (final m in mentions) {
+      if (m is! String || m.isEmpty) continue;
+      final profile = profileById[m];
+      if (profile == null) continue;
+      result[m] = {
+        'username': profile['username'] as String? ?? '',
+        'display_name': profile['display_name'] as String? ?? '',
+      };
+    }
+    return result;
   }
 
   /// Fetch a SINGLE post by id, shaped exactly like the rows from
@@ -1359,10 +1410,29 @@ class SupabaseService {
     if (ownerId != null) {
       final profile = await _client
           .from('profiles')
-          .select('id, display_name, avatar_url, currently_reading_title')
+          .select(
+              'id, display_name, avatar_url, currently_reading_title, username')
           .eq('id', ownerId)
           .maybeSingle();
       post['profile'] = profile;
+    }
+
+    // Resolve mentioned users (id -> {username, display_name}) for tappable
+    // @username spans. Empty when the post mentions no one.
+    final mentionedIds = _collectMentionedIds([post]);
+    if (mentionedIds.isEmpty) {
+      post['mentioned_profiles'] = <String, Map<String, String>>{};
+    } else {
+      final mentionProfiles = List<Map<String, dynamic>>.from(
+        await _client
+                .from('profiles')
+                .select('id, display_name, username')
+                .inFilter('id', mentionedIds.toList()) as List,
+      );
+      final profileById = {
+        for (var p in mentionProfiles) p['id'] as String: p
+      };
+      post['mentioned_profiles'] = _buildMentionedProfiles(post, profileById);
     }
 
     // Whether the current user liked it.
@@ -1439,9 +1509,24 @@ class SupabaseService {
     }
     final likedIds = myLikes.map((l) => l['post_id'] as String).toSet();
 
+    // Resolve mentioned users (id -> {username, display_name}) so the post
+    // cards can render tappable @username spans. One query for the whole set.
+    final mentionedIds = _collectMentionedIds(rows);
+    var profileById = <String, Map<String, dynamic>>{};
+    if (mentionedIds.isNotEmpty) {
+      final mentionProfiles = List<Map<String, dynamic>>.from(
+        await _client
+                .from('profiles')
+                .select('id, display_name, username')
+                .inFilter('id', mentionedIds.toList()) as List,
+      );
+      profileById = {for (var p in mentionProfiles) p['id'] as String: p};
+    }
+
     return rows.map((r) => {
       ...r,
       'is_liked': likedIds.contains(r['id'] as String),
+      'mentioned_profiles': _buildMentionedProfiles(r, profileById),
     }).toList();
   }
 
@@ -1600,6 +1685,17 @@ class SupabaseService {
       );
     } catch (_) {
       // Push is best-effort; a failure must never affect the like/comment.
+    }
+  }
+
+  /// Fire-and-forget: ask the server to create one in-app notification per user
+  /// mentioned in [postId] (SECURITY DEFINER RPC from migration 048). Never
+  /// throws — a missing RPC or network blip must not break post creation.
+  Future<void> _notifyPostMentions(String postId) async {
+    try {
+      await _client.rpc('notify_post_mentions', params: {'p_post_id': postId});
+    } catch (_) {
+      // Best-effort — ignore (RPC missing, network blip, etc.).
     }
   }
 
@@ -2012,16 +2108,21 @@ class SupabaseService {
   }) async {
     try {
       final me = userId;
-      final rows = await _client
-          .from('conversation_members')
-          .select('user_id')
-          .eq('conversation_id', conversationId) as List;
+      // RLS on conversation_members only returns the CALLER's own row, so a
+      // direct select would yield an empty recipient list and the push would
+      // never be sent. Use the SECURITY DEFINER RPC (the same one
+      // fetchConversations uses) to read ALL members; it returns profile rows
+      // keyed by `id`.
+      final rows = await _client.rpc(
+        'get_conversation_member_profiles',
+        params: {'p_conversation_id': conversationId},
+      ) as List;
       final text = content?.trim() ?? '';
       final preview = text.isNotEmpty
           ? (text.length > 140 ? '${text.substring(0, 140)}…' : text)
           : 'Ti ha inviato una foto';
       for (final row in rows) {
-        final uid = (row as Map)['user_id'] as String?;
+        final uid = (row as Map)['id'] as String?;
         if (uid == null || uid == me) continue;
         await _client.functions.invoke(
           'send-push-notification',

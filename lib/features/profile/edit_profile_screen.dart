@@ -562,7 +562,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   // ListViews each owned their own scroll offset, so dragging
                   // the swatch row left the labels behind.
                   SizedBox(
-                    height: 76,
+                    height: 92,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
@@ -612,11 +612,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                               const SizedBox(height: 6),
                               SizedBox(
-                                width: 52,
+                                width: 56,
                                 child: Text(_gradientLabel(context, g.key),
                                     textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 9,
+                                      height: 1.1,
                                       fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                                       color: sel
                                           ? MarginaliaColors.ink

@@ -144,13 +144,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'conversation_id',
-            value: widget.conversationId,
-          ),
+          // NB: no server-side `filter:` on conversation_id. Supabase only
+          // evaluates a postgres_changes filter on a non-PK column when the
+          // table has REPLICA IDENTITY FULL; without it the filtered INSERT
+          // events never reach the client — which is why the OPEN chat didn't
+          // live-update (it only refreshed on re-entry). We subscribe to all
+          // message inserts (cheap) and filter in Dart, mirroring the inbox
+          // channel that already works. Migration 047 also sets REPLICA
+          // IDENTITY FULL so server-side filters work going forward.
           callback: (payload) async {
             final row = payload.newRecord;
+            // Only handle messages for THIS conversation.
+            if ((row['conversation_id'] as String?) != widget.conversationId) {
+              return;
+            }
             // Skip messages we sent ourselves (already in _localMessages as
             // optimistic, then replaced by the server refresh in _send)
             if ((row['sender_id'] as String?) == myId) return;
@@ -401,14 +408,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               data: (serverMessages) {
                 // Server IDs (real UUIDs)
                 final serverIds = serverMessages.map((m) => m['id']).toSet();
-                // Keep only truly pending local messages not yet confirmed by server:
-                // - optimistic messages (id starts with 'optimistic_') still in flight
-                // - realtime-received messages NOT yet in server snapshot are already
-                //   filtered out because they'll appear in the next server fetch
+                // Keep any local message NOT yet confirmed by the server
+                // snapshot: optimistic sends (id 'optimistic_…') AND realtime-
+                // received messages (real UUID). The previous version kept only
+                // 'optimistic_' ids, so a realtime-appended incoming message
+                // (real UUID, absent from the stale server snapshot) was
+                // dropped here and never rendered until a manual re-fetch — the
+                // second half of the "realtime only after leaving the chat" bug.
                 final pendingLocal = _localMessages
-                    .where((m) =>
-                        (m['id'] as String).startsWith('optimistic_') &&
-                        !serverIds.contains(m['id']))
+                    .where((m) => !serverIds.contains(m['id']))
                     .toList();
                 final merged = [...serverMessages, ...pendingLocal];
 

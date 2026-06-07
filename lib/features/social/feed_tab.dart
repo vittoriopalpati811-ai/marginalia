@@ -1,9 +1,11 @@
-﻿import 'dart:math' as math;
+﻿import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -362,10 +364,121 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   Uint8List? _imageBytes;
   String? _imageExt;
 
+  // ── @mention autocomplete state ──────────────────────────────────────────
+  // Matches the active "@token" immediately before the caret. Allows letters,
+  // digits and underscore (usernames), up to 30 chars.
+  static final RegExp _mentionTrigger = RegExp(r'(?:^|\s)@(\w{1,30})$');
+  List<Map<String, dynamic>> _mentionSuggestions = [];
+  bool _showMentions = false;
+  // username (lowercase) -> user id, for the users the author actually tagged.
+  final Map<String, String> _taggedUsernameToId = {};
+  Timer? _mentionDebounce;
+
   @override
   void dispose() {
+    _mentionDebounce?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Called on every keystroke. Detects an active "@token" before the caret and
+  /// (debounced) queries [searchUsers] to populate the suggestion list. Hides
+  /// the list when there is no active token.
+  void _onComposerChanged(String text) {
+    setState(() {}); // keep the publish button / counter in sync as before.
+
+    final selection = _controller.selection;
+    final caret = selection.baseOffset;
+    if (caret < 0 || caret > text.length) {
+      _hideMentions();
+      return;
+    }
+    final beforeCaret = text.substring(0, caret);
+    final match = _mentionTrigger.firstMatch(beforeCaret);
+    if (match == null) {
+      _hideMentions();
+      return;
+    }
+    final token = match.group(1) ?? '';
+    if (token.isEmpty) {
+      _hideMentions();
+      return;
+    }
+
+    // Debounce the network search so we do not hammer the backend per keystroke.
+    _mentionDebounce?.cancel();
+    _mentionDebounce = Timer(const Duration(milliseconds: 250), () async {
+      try {
+        final results =
+            await ref.read(supabaseServiceProvider).searchUsers(token);
+        if (!mounted) return;
+        setState(() {
+          _mentionSuggestions = results;
+          _showMentions = results.isNotEmpty;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        _hideMentions();
+      }
+    });
+  }
+
+  void _hideMentions() {
+    if (!_showMentions && _mentionSuggestions.isEmpty) return;
+    setState(() {
+      _showMentions = false;
+      _mentionSuggestions = [];
+    });
+  }
+
+  /// Replaces the active "@token" before the caret with "@<username> ",
+  /// records the username -> id mapping, and hides the suggestion list.
+  void _applyMention(Map<String, dynamic> user) {
+    final id = user['id'] as String?;
+    final username = user['username'] as String?;
+    if (id == null || username == null || username.isEmpty) {
+      _hideMentions();
+      return;
+    }
+
+    final text = _controller.text;
+    final caret = _controller.selection.baseOffset;
+    final safeCaret = (caret < 0 || caret > text.length) ? text.length : caret;
+    final beforeCaret = text.substring(0, safeCaret);
+    final afterCaret = text.substring(safeCaret);
+    final match = _mentionTrigger.firstMatch(beforeCaret);
+    if (match == null) {
+      _hideMentions();
+      return;
+    }
+
+    // match.start may include the leading whitespace captured by `(?:^|\s)`;
+    // keep that separator and replace only the "@token" portion.
+    final atIndex = beforeCaret.lastIndexOf('@', safeCaret);
+    final replaced = '${text.substring(0, atIndex)}@$username $afterCaret';
+    final newCaret = atIndex + username.length + 2; // '@' + username + ' '
+
+    _taggedUsernameToId[username.toLowerCase()] = id;
+    _controller.value = TextEditingValue(
+      text: replaced,
+      selection: TextSelection.collapsed(offset: newCaret),
+    );
+    setState(() {
+      _showMentions = false;
+      _mentionSuggestions = [];
+    });
+  }
+
+  /// Scans the final composed text for "@username" tokens and maps each to a
+  /// user id via [_taggedUsernameToId]. Unknown tokens are ignored. De-duped.
+  List<String> _resolveTaggedIds(String text) {
+    final ids = <String>{};
+    for (final m in RegExp(r'@(\w+)').allMatches(text)) {
+      final username = (m.group(1) ?? '').toLowerCase();
+      final id = _taggedUsernameToId[username];
+      if (id != null) ids.add(id);
+    }
+    return ids.toList();
   }
 
   Future<void> _pickImage() async {
@@ -436,7 +549,12 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
       if (_imageBytes != null && _imageExt != null) {
         imageUrl = await svc.uploadPostImage(_imageBytes!, _imageExt!);
       }
-      await svc.createPost(body: text.isEmpty ? null : text, imageUrl: imageUrl);
+      final taggedIds = _resolveTaggedIds(text);
+      await svc.createPost(
+        body: text.isEmpty ? null : text,
+        imageUrl: imageUrl,
+        mentions: taggedIds,
+      );
       widget.onCreated();
     } catch (e) {
       if (mounted) {
@@ -557,9 +675,33 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                   color: MarginaliaColors.inkFaint,
                 ),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: _onComposerChanged,
             ),
           ),
+
+          // ── @mention suggestions ──────────────────────────────────────────
+          // Up to 6 matching users, shown directly under the text box while an
+          // active "@token" sits before the caret. Tapping inserts the handle.
+          if (_showMentions && _mentionSuggestions.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              decoration: BoxDecoration(
+                color: MarginaliaColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: MarginaliaColors.rule, width: 1),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final user in _mentionSuggestions.take(6))
+                    _MentionSuggestionRow(
+                      user: user,
+                      onTap: () => _applyMention(user),
+                    ),
+                ],
+              ),
+            ),
+          ],
 
           // Image preview
           if (_imageBytes != null) ...[
@@ -623,6 +765,74 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
               ),
             ],
           ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── @mention suggestion row ──────────────────────────────────────────────────
+
+/// A single tappable row in the composer's @mention autocomplete list:
+/// avatar (or initial) + display name + "@username".
+class _MentionSuggestionRow extends StatelessWidget {
+  const _MentionSuggestionRow({required this.user, required this.onTap});
+
+  final Map<String, dynamic> user;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayName = user['display_name'] as String? ?? '';
+    final username = user['username'] as String? ?? '';
+    final avatarUrl = user['avatar_url'] as String?;
+    final initial =
+        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
+    final tint = MarginaliaDecorations.bookCoverColor(displayName);
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          children: [
+            _AvatarCircle(
+              avatarUrl: avatarUrl,
+              initial: initial,
+              tint: tint,
+              size: 32,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (displayName.isNotEmpty)
+                    Text(
+                      displayName,
+                      style: GoogleFonts.manrope(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: MarginaliaColors.ink,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  if (username.isNotEmpty)
+                    Text(
+                      '@$username',
+                      style: GoogleFonts.manrope(
+                        fontSize: 11.5,
+                        color: MarginaliaColors.inkFaint,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -1347,6 +1557,11 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final readingTitle  = profile?['currently_reading_title'] as String?;
     final userId        = post['user_id']    as String?;
     final body          = post['body']       as String?;
+    // id -> {username, display_name} for every user tagged in this post; used
+    // to render tappable @username spans. May be absent on older cached rows.
+    final mentionedProfiles =
+        (post['mentioned_profiles'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
     final createdAt     = post['created_at'] as String?;
     final imageUrl      = post['image_url']  as String?;
     final highlight     = post['highlights'] as Map?;
@@ -1483,13 +1698,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
             child: _GatedText(
               text: body,
               alreadyOwn: isOwner,
-              child: Text(
-                body,
-                style: GoogleFonts.manrope(
-                  fontSize: 15,
-                  color: MarginaliaColors.ink,
-                  height: 1.65,
-                ),
+              child: _MentionText(
+                body: body,
+                mentionedProfiles: mentionedProfiles,
               ),
             ),
           ),
@@ -1861,6 +2072,110 @@ class _GatedTextState extends State<_GatedText> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Post body with tappable @mentions ───────────────────────────────────────
+
+/// Renders a post body as rich text where each "@username" that resolves to a
+/// tagged user becomes a tappable span opening that user's profile. Unknown
+/// "@username" tokens (not in [mentionedProfiles]) render as plain text.
+///
+/// [mentionedProfiles] is the per-post map id -> {username, display_name} built
+/// by SupabaseService. We reverse it to username -> id so we can resolve the
+/// tokens scanned out of the body.
+///
+/// Stateful so the [TapGestureRecognizer]s it creates are disposed correctly.
+class _MentionText extends StatefulWidget {
+  const _MentionText({required this.body, required this.mentionedProfiles});
+
+  final String body;
+  final Map<String, dynamic> mentionedProfiles;
+
+  @override
+  State<_MentionText> createState() => _MentionTextState();
+}
+
+class _MentionTextState extends State<_MentionText> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  @override
+  void dispose() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Dispose any recognizers from a previous build before rebuilding spans.
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+
+    const baseStyle = TextStyle(
+      fontSize: 15,
+      color: MarginaliaColors.ink,
+      height: 1.65,
+    );
+    final textStyle = GoogleFonts.manrope(
+      fontSize: baseStyle.fontSize,
+      color: baseStyle.color,
+      height: baseStyle.height,
+    );
+    final mentionStyle = GoogleFonts.manrope(
+      fontSize: 15,
+      height: 1.65,
+      color: MarginaliaColors.primaryDark,
+      fontWeight: FontWeight.w600,
+    );
+
+    // Reverse the id -> {username,...} map into username (lowercase) -> id.
+    final idByUsername = <String, String>{};
+    widget.mentionedProfiles.forEach((id, value) {
+      if (value is Map) {
+        final username = (value['username'] as String? ?? '').toLowerCase();
+        if (username.isNotEmpty) idByUsername[username] = id;
+      }
+    });
+
+    final spans = <InlineSpan>[];
+    final body = widget.body;
+    final pattern = RegExp(r'@(\w+)');
+    var index = 0;
+    for (final match in pattern.allMatches(body)) {
+      // Plain run before this @token.
+      if (match.start > index) {
+        spans.add(TextSpan(text: body.substring(index, match.start)));
+      }
+      final token = match.group(0)!; // includes the leading '@'
+      final username = (match.group(1) ?? '').toLowerCase();
+      final userId = idByUsername[username];
+      if (userId != null) {
+        final recognizer = TapGestureRecognizer()
+          ..onTap = () => context.push('/user/$userId');
+        _recognizers.add(recognizer);
+        spans.add(TextSpan(
+          text: token,
+          style: mentionStyle,
+          recognizer: recognizer,
+        ));
+      } else {
+        // Not a tagged user → render the token as plain text.
+        spans.add(TextSpan(text: token));
+      }
+      index = match.end;
+    }
+    // Trailing plain run.
+    if (index < body.length) {
+      spans.add(TextSpan(text: body.substring(index)));
+    }
+
+    return Text.rich(
+      TextSpan(style: textStyle, children: spans),
     );
   }
 }

@@ -33,6 +33,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/services/gallery_saver.dart';
 import '../../core/services/instagram_share.dart';
 import '../../core/services/share_file_helper.dart';
 import '../../core/theme.dart';
@@ -117,6 +118,13 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
     instagramStoriesAvailable().then((available) {
       if (mounted) setState(() => _instagramAvailable = available);
     });
+    // Pre-load the Google Fonts the story card uses (EB Garamond + Manrope) so
+    // the FIRST capture doesn't race glyph loading — a major cause of the blank
+    // / failed capture ("impossibile creare la storia") in release builds.
+    GoogleFonts.pendingFonts([
+      GoogleFonts.ebGaramond(),
+      GoogleFonts.manrope(),
+    ]);
   }
 
   /// Rasterises the VISIBLE card. A visible RepaintBoundary always has a painted
@@ -124,21 +132,27 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
   Future<Uint8List?> _capturePng() async {
     try {
       RenderRepaintBoundary? boundary;
-      // Wait until the boundary EXISTS and has finished painting. Google Fonts
-      // and the blur filter settle a frame or two after the sheet opens, so a
-      // single fixed delay was racing the first paint and returning null
-      // ("impossibile creare storia"). Looping on endOfFrame + debugNeedsPaint
-      // is far more reliable.
-      for (var i = 0; i < 12; i++) {
+      // Wait until the boundary EXISTS and has laid out. NB: `debugNeedsPaint`
+      // is a no-op in RELEASE/TestFlight builds, so the old gate broke out on
+      // the very first frame and toImage then raced glyph loading → null
+      // ("impossibile creare la storia"). Instead we pre-warm the fonts (see
+      // initState) and wait a few COMMITTED frames here, checking the boundary
+      // has a real size.
+      for (var i = 0; i < 16; i++) {
         await WidgetsBinding.instance.endOfFrame;
         boundary = _boundaryKey.currentContext?.findRenderObject()
             as RenderRepaintBoundary?;
-        if (boundary != null && !boundary.debugNeedsPaint) break;
-        await Future<void>.delayed(const Duration(milliseconds: 90));
+        if (boundary != null && boundary.hasSize && !boundary.size.isEmpty) {
+          // A couple of extra frames so paint + fonts are committed.
+          await WidgetsBinding.instance.endOfFrame;
+          await WidgetsBinding.instance.endOfFrame;
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 60));
       }
-      if (boundary == null) return null;
-      // Capture, retrying once if the first toImage races a repaint.
-      for (var attempt = 0; attempt < 2; attempt++) {
+      if (boundary == null || !boundary.hasSize) return null;
+      // Capture, retrying a couple of times if toImage races a repaint.
+      for (var attempt = 0; attempt < 3; attempt++) {
         try {
           final image = await boundary.toImage(pixelRatio: _kStoryPixelRatio);
           final byteData =
@@ -147,7 +161,7 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
           final bytes = byteData?.buffer.asUint8List();
           if (bytes != null && bytes.isNotEmpty) return bytes;
         } catch (_) {
-          await Future<void>.delayed(const Duration(milliseconds: 150));
+          await Future<void>.delayed(const Duration(milliseconds: 180));
         }
       }
       return null;
@@ -211,6 +225,28 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
       [XFile(path, mimeType: 'image/png')],
       sharePositionOrigin: origin,
     );
+  }
+
+  /// Saves the rendered 1080×1920 PNG to the device photo library / gallery.
+  Future<void> _saveToPhotos() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final png = await _capturePng();
+    if (png == null) {
+      messenger?.showSnackBar(
+          SnackBar(content: Text(context.l10n.shareStoryError)));
+      if (mounted) setState(() => _busy = false);
+      return;
+    }
+    final ok = await saveImageToGallery(png);
+    if (mounted) setState(() => _busy = false);
+    messenger?.showSnackBar(SnackBar(
+      content: Text(ok
+          ? (it ? 'Salvata nelle foto' : 'Saved to your photos')
+          : (it ? 'Impossibile salvare la foto' : "Couldn't save the photo")),
+    ));
   }
 
   @override
@@ -319,6 +355,30 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
               ),
               const SizedBox(height: 10),
             ],
+            // ── Save to camera roll ──────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: _busy ? null : _saveToPhotos,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: MarginaliaColors.primaryDark,
+                  side: const BorderSide(color: MarginaliaColors.rule),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.download_rounded, size: 20),
+                label: Text(
+                  Localizations.localeOf(context).languageCode == 'it'
+                      ? 'Salva foto'
+                      : 'Save photo',
+                  style:
+                      const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               height: 50,

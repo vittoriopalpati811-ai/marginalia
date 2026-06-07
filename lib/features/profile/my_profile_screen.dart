@@ -9,9 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
-import '../../core/models/book.dart';
 import '../../core/providers/auth_provider.dart';
-import '../../core/providers/books_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -20,6 +18,7 @@ import 'posts_timeline.dart';
 import 'reviews_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
+import '../reader/book_info_screen.dart';
 import '../stats/reading_stats_card.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
@@ -80,73 +79,6 @@ Color _sectionTitleColor(_GP gp) =>
 TextStyle _profileSectionTitle(_GP gp) =>
     MarginaliaTextStyles.sectionTitle.copyWith(color: _sectionTitleColor(gp));
 
-// ─── Open a profile book in the SAME detail screen the Library uses ───────────
-//
-// The /book/:id route resolves its argument as a LOCAL Isar int id
-// (int.tryParse(...) → BookDetailScreen(bookId: int)). Profile book tiles,
-// however, carry remote identity instead: the library grid has the Supabase
-// UUID from fetchMyBooks, and the "Libri del cuore" favourites store only
-// title + author (migration 024). Pushing either of those straight onto the
-// route produced int.tryParse(uuid) == 0 → "Libro non trovato".
-//
-// This helper bridges that gap: it looks up the matching LOCAL book (the same
-// list the Library renders, via booksProvider) and navigates with its int id,
-// so the detail screen opens exactly as it does from the Library. Matching is
-// tried by Supabase id first (exact), then by case-insensitive title+author,
-// then by title alone. If nothing matches locally, it surfaces a quiet
-// "book not found" message instead of opening an empty screen.
-void _openProfileBook(
-  BuildContext context,
-  WidgetRef ref, {
-  String? supabaseId,
-  String? title,
-  String? author,
-}) {
-  final books = ref.read(booksProvider).valueOrNull ?? const <Book>[];
-
-  String norm(String? s) => (s ?? '').trim().toLowerCase();
-  final wantId     = (supabaseId ?? '').trim();
-  final wantTitle  = norm(title);
-  final wantAuthor = norm(author);
-
-  Book? match;
-
-  // 1) Exact Supabase id (library grid tiles carry this).
-  if (wantId.isNotEmpty) {
-    for (final b in books) {
-      if (b.supabaseId == wantId) { match = b; break; }
-    }
-  }
-  // 2) Title + author (favourites store these).
-  if (match == null && wantTitle.isNotEmpty) {
-    for (final b in books) {
-      if (norm(b.title) == wantTitle &&
-          (wantAuthor.isEmpty || norm(b.author) == wantAuthor)) {
-        match = b;
-        break;
-      }
-    }
-  }
-  // 3) Title only — last resort if the author byline differs.
-  if (match == null && wantTitle.isNotEmpty) {
-    for (final b in books) {
-      if (norm(b.title) == wantTitle) { match = b; break; }
-    }
-  }
-
-  if (match != null) {
-    context.push('/book/${match.id}');
-    return;
-  }
-
-  // Graceful fallback: nothing in the local library matches.
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(context.l10n.bookNotFound),
-      behavior: SnackBarBehavior.floating,
-    ),
-  );
-}
 
 // Render-time localized label for a gradient, keyed by the stable gradient id.
 // The const _kGradients list above cannot use context.l10n, so the display
@@ -685,7 +617,13 @@ class _ProfileHeader extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // ── Background: cover photo OR gradient ───────────────────────────
-          Stack(
+          // Bottom corners rounded so the cover banner isn't a hard rectangle.
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(28),
+              bottomRight: Radius.circular(28),
+            ),
+            child: Stack(
             fit: StackFit.expand,
             children: [
               if (coverUrl != null && coverUrl.isNotEmpty)
@@ -713,6 +651,7 @@ class _ProfileHeader extends StatelessWidget {
               // Cover pattern overlay removed — personalization with
               // dots/lines/circles was dropped at the founder's request.
             ],
+            ),
           ),
 
           // Bottom fade
@@ -1291,21 +1230,15 @@ class _BookCell extends ConsumerWidget {
     final title  = book['title']  as String? ?? '';
     final author = book['author'] as String? ?? '';
 
-    // Books in the profile library grid push to the same /book/:id route the
-    // main Library tab uses, so the highlights-detail experience stays
-    // consistent across surfaces. `book['id']` here is the Supabase UUID from
-    // `fetchMyBooks` — NOT the local Isar int id the route expects, so we
-    // resolve it to the matching local book before navigating (see
-    // _openProfileBook). Title/author are passed as a fallback match.
-    final bookId = book['id'] as String? ?? '';
-
+    // Profile book tiles open the keyless BookInfoScreen (cover + plot from
+    // title/author). This works identically on own and others' profiles and
+    // needs no local Isar id lookup — the old /book/:id bridge failed with
+    // "Libro non trovato" because the Supabase UUID isn't the local int id.
     final card = GestureDetector(
-      onTap: () => _openProfileBook(
-        context,
-        ref,
-        supabaseId: bookId,
-        title: title,
-        author: author,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BookInfoScreen(title: title, author: author),
+        ),
       ),
       child: Container(
         decoration: MarginaliaDecorations.quietCard(radius: 10),
@@ -2238,16 +2171,14 @@ class _FavBookTile extends ConsumerWidget {
       _TileSize.small  => 64.0,
     };
 
-    // Favourites store only {title, author} (migration 024), so tapping one
-    // resolves to the matching LOCAL book by title+author and opens the same
-    // detail screen the Library uses — see _openProfileBook. Previously these
-    // tiles had no onTap at all.
+    // Favourites store only {title, author} (migration 024). Tapping opens the
+    // keyless BookInfoScreen (cover + plot) — consistent with the library grid
+    // and others' profiles, with no fragile local Isar lookup.
     return GestureDetector(
-      onTap: () => _openProfileBook(
-        context,
-        ref,
-        title: title,
-        author: author,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BookInfoScreen(title: title, author: author),
+        ),
       ),
       child: ClipRRect(
       borderRadius: BorderRadius.circular(12),

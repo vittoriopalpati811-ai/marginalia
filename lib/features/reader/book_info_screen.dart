@@ -38,32 +38,134 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
     _fetch();
   }
 
+  /// Kindle stores authors as "Surname, Firstname". Flip them to the natural
+  /// "Firstname Surname" order that book APIs expect. Anything without a comma
+  /// is returned trimmed as-is.
+  String _normAuthor(String a) {
+    final i = a.indexOf(',');
+    if (i < 0) return a.trim();
+    final surname = a.substring(0, i).trim();
+    final firstname = a.substring(i + 1).trim();
+    return [firstname, surname].where((s) => s.isNotEmpty).join(' ');
+  }
+
+  /// Reduce a title to its core for matching only: drop a trailing parenthetical
+  /// " (...)" and any ":" subtitle. Used to build looser, more forgiving queries.
+  String _coreTitle(String t) {
+    var core = t;
+    final paren = core.indexOf(' (');
+    if (paren >= 0) core = core.substring(0, paren);
+    final colon = core.indexOf(':');
+    if (colon >= 0) core = core.substring(0, colon);
+    return core.trim();
+  }
+
+  /// Coerce a description/first_sentence value that may be a plain String, a
+  /// List of strings, or a {'value': ...} map into a single trimmed String.
+  String? _coerceText(dynamic v) {
+    if (v is String) {
+      final t = v.trim();
+      return t.isEmpty ? null : t;
+    }
+    if (v is List) {
+      final t = v.map((e) => e.toString()).join(' ').trim();
+      return t.isEmpty ? null : t;
+    }
+    if (v is Map && v['value'] != null) {
+      final t = v['value'].toString().trim();
+      return t.isEmpty ? null : t;
+    }
+    return null;
+  }
+
   Future<void> _fetch() async {
+    final coreTitle = _coreTitle(widget.title);
+    final normAuthor = _normAuthor(widget.author);
+
     try {
-      final terms = <String>[
-        if (widget.title.trim().isNotEmpty) 'intitle:${widget.title.trim()}',
-        if (widget.author.trim().isNotEmpty) 'inauthor:${widget.author.trim()}',
-      ].join(' ');
-      final url = Uri.parse(
-        'https://www.googleapis.com/books/v1/volumes'
-        '?q=${Uri.encodeQueryComponent(terms)}&maxResults=1',
-      );
-      final resp = await http.get(url).timeout(const Duration(seconds: 8));
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body) as Map<String, dynamic>;
-        final items = data['items'] as List?;
-        if (items != null && items.isNotEmpty) {
-          final vi = (items.first as Map)['volumeInfo'] as Map<String, dynamic>;
-          final desc = vi['description'];
-          if (desc is String && desc.trim().isNotEmpty) _plot = desc.trim();
-          final cats = vi['categories'];
-          if (cats is List) {
-            _categories = cats.map((e) => e.toString()).take(4).toList();
+      // ── Google Books: free-text first, intitle: as a fallback ─────────────
+      // Stop at the first item that actually carries a description.
+      final queries = <String>[
+        if (coreTitle.isNotEmpty && normAuthor.isNotEmpty)
+          '"$coreTitle" $normAuthor'
+        else if (coreTitle.isNotEmpty)
+          '"$coreTitle"',
+        if (coreTitle.isNotEmpty) 'intitle:$coreTitle',
+      ];
+
+      for (final q in queries) {
+        if (q.trim().isEmpty) continue;
+        if (_plot != null) break;
+        try {
+          final uri = Uri.https(
+            'www.googleapis.com',
+            '/books/v1/volumes',
+            {'q': q, 'maxResults': '5', 'country': 'US'},
+          );
+          final resp = await http.get(uri).timeout(const Duration(seconds: 8));
+          if (resp.statusCode != 200) continue;
+          final data = jsonDecode(resp.body) as Map<String, dynamic>;
+          final items = data['items'] as List?;
+          if (items == null || items.isEmpty) continue;
+          for (final item in items) {
+            final vi = (item as Map)['volumeInfo'];
+            if (vi is! Map) continue;
+            final desc = _coerceText(vi['description']);
+            if (desc == null) continue;
+            // First item that has a real description wins.
+            _plot = desc;
+            final cats = vi['categories'];
+            if (cats is List) {
+              _categories = cats.map((e) => e.toString()).take(4).toList();
+            }
+            final pub = vi['publishedDate'];
+            if (pub is String && pub.length >= 4) _year = pub.substring(0, 4);
+            final pc = vi['pageCount'];
+            if (pc is int && pc > 0) _pages = pc;
+            break;
           }
-          final pub = vi['publishedDate'];
-          if (pub is String && pub.length >= 4) _year = pub.substring(0, 4);
-          final pc = vi['pageCount'];
-          if (pc is int && pc > 0) _pages = pc;
+        } catch (_) {
+          // Per-attempt failure — try the next query / fallback. Never fatal.
+        }
+      }
+
+      // ── Open Library fallback when Google Books gave us no plot ────────────
+      if (_plot == null && coreTitle.isNotEmpty) {
+        try {
+          final uri = Uri.https('openlibrary.org', '/search.json', {
+            'title': coreTitle,
+            'author': normAuthor,
+            'limit': '1',
+            'fields':
+                'key,first_sentence,subject,number_of_pages_median,first_publish_year',
+          });
+          final resp = await http.get(uri).timeout(const Duration(seconds: 8));
+          if (resp.statusCode == 200) {
+            final data = jsonDecode(resp.body) as Map<String, dynamic>;
+            final docs = data['docs'] as List?;
+            if (docs != null && docs.isNotEmpty) {
+              final doc = docs.first as Map<String, dynamic>;
+              final sentence = _coerceText(doc['first_sentence']);
+              if (sentence != null) _plot = sentence;
+              if (_categories.isEmpty) {
+                final subjects = doc['subject'];
+                if (subjects is List) {
+                  _categories =
+                      subjects.map((e) => e.toString()).take(4).toList();
+                }
+              }
+              if (_pages == null) {
+                final pc = doc['number_of_pages_median'];
+                if (pc is int && pc > 0) _pages = pc;
+              }
+              if (_year == null) {
+                final y = doc['first_publish_year'];
+                if (y is int && y > 0) _year = y.toString();
+              }
+            }
+          }
+        } catch (_) {
+          // Open Library fallback failure — never fatal.
         }
       }
     } catch (_) {

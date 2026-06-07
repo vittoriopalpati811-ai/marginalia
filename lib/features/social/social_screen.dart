@@ -242,12 +242,13 @@ class _SocialHeader extends StatelessWidget {
                   ),
                 ),
 
-                // ── Right: open-book + plus "join jam" icon ─────────────
+                // ── Right: hashtag "join jam" icon ──────────────────────
                 _GlassIconButton(
                   onTap: onJoin,
-                  child: CustomPaint(
-                    size: const Size(26, 26),
-                    painter: _BookAddPainter(color: MarginaliaColors.ink),
+                  child: const Icon(
+                    PhosphorIconsRegular.hash,
+                    size: 26,
+                    color: MarginaliaColors.ink,
                   ),
                 ),
               ],
@@ -364,81 +365,6 @@ class _SearchPersonPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SearchPersonPainter old) => old.color != color;
-}
-
-// ─── Custom icon: open book with + badge ─────────────────────────────────────
-
-class _BookAddPainter extends CustomPainter {
-  const _BookAddPainter({required this.color});
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color
-      ..strokeWidth = 2.5 // bolder strokes to match the photo-5 reference
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final w = size.width;
-    final h = size.height;
-
-    // Open book in the UPPER ~75% of the canvas so the floating "+" can sit
-    // clearly outside at the BOTTOM-RIGHT — matching the founder's reference.
-    // ── Left page ─────────────────────────────────────────────────────
-    final bookLeft   = w * 0.10;
-    final bookRight  = w * 0.80;
-    final bookTop    = h * 0.14;
-    final bookBottom = h * 0.72;
-    final spineX     = (bookLeft + bookRight) / 2;
-
-    final leftPage = Path()
-      ..moveTo(spineX, bookTop)
-      ..cubicTo(
-        spineX - (spineX - bookLeft) * 0.40, bookTop - h * 0.02,
-        bookLeft + (spineX - bookLeft) * 0.30, bookTop + h * 0.02,
-        bookLeft, bookTop + h * 0.04,
-      )
-      ..lineTo(bookLeft, bookBottom - h * 0.04)
-      ..cubicTo(
-        bookLeft + (spineX - bookLeft) * 0.30, bookBottom - h * 0.06,
-        spineX - (spineX - bookLeft) * 0.40, bookBottom - h * 0.02,
-        spineX, bookBottom,
-      )
-      ..close();
-    canvas.drawPath(leftPage, p);
-
-    // ── Right page ────────────────────────────────────────────────────
-    final rightPage = Path()
-      ..moveTo(spineX, bookTop)
-      ..cubicTo(
-        spineX + (bookRight - spineX) * 0.40, bookTop - h * 0.02,
-        bookRight - (bookRight - spineX) * 0.30, bookTop + h * 0.02,
-        bookRight, bookTop + h * 0.04,
-      )
-      ..lineTo(bookRight, bookBottom - h * 0.04)
-      ..cubicTo(
-        bookRight - (bookRight - spineX) * 0.30, bookBottom - h * 0.06,
-        spineX + (bookRight - spineX) * 0.40, bookBottom - h * 0.02,
-        spineX, bookBottom,
-      )
-      ..close();
-    canvas.drawPath(rightPage, p);
-
-    // ── Floating "+" badge at the BOTTOM-RIGHT, *outside* the book ──────
-    // Matches the founder's reference photo: a small plus just below the
-    // book's lower-right corner rather than embedded inside a page.
-    final px  = w * 0.86;
-    final py  = h * 0.86;
-    final arm = w * 0.10;
-    p..strokeWidth = 2.0;
-    canvas.drawLine(Offset(px - arm, py), Offset(px + arm, py), p);
-    canvas.drawLine(Offset(px, py - arm), Offset(px, py + arm), p);
-  }
-
-  @override
-  bool shouldRepaint(_BookAddPainter old) => old.color != color;
 }
 
 // ─── Jam tab content ──────────────────────────────────────────────────────────
@@ -883,9 +809,10 @@ class _JoinJamSheet extends StatelessWidget {
                   color: MarginaliaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const CustomPaint(
-                  size: Size(20, 20),
-                  painter: _BookAddPainter(color: MarginaliaColors.primaryDark),
+                child: const Icon(
+                  PhosphorIconsRegular.hash,
+                  size: 20,
+                  color: MarginaliaColors.primaryDark,
                 ),
               ),
               const SizedBox(width: 12),
@@ -977,13 +904,10 @@ class _EmptyJams extends StatelessWidget {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: onJoinJam,
-              icon: const SizedBox(
-                width: 18,
-                height: 18,
-                child: CustomPaint(
-                  size: Size(18, 18),
-                  painter: _BookAddPainter(color: MarginaliaColors.primaryDark),
-                ),
+              icon: const Icon(
+                PhosphorIconsRegular.hash,
+                size: 18,
+                color: MarginaliaColors.primaryDark,
               ),
               label: Text(context.l10n.jamJoinWithCode),
               style: OutlinedButton.styleFrom(

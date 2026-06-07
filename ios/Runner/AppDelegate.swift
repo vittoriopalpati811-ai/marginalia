@@ -1,4 +1,5 @@
 import Flutter
+import Photos
 import UIKit
 import UserNotifications
 import WatchConnectivity
@@ -22,6 +23,7 @@ import WatchConnectivity
   private var watchChannel: FlutterMethodChannel?
   private var localNotifChannel: FlutterMethodChannel?
   private var instagramChannel: FlutterMethodChannel?
+  private var photosChannel: FlutterMethodChannel?
 
   // Cold-launch buffer. When the app is launched (or resumed from terminated)
   // by tapping a push, `didReceive` can fire before the Flutter engine has
@@ -133,7 +135,7 @@ import WatchConnectivity
             let typed = args["image"] as? FlutterStandardTypedData
           else { result(false); return }
           let url = URL(
-            string: "instagram-stories://share?source_application=io.marginalia.app")!
+            string: "instagram-stories://share?source_application=marginalia")!
           guard UIApplication.shared.canOpenURL(url) else { result(false); return }
           let item: [String: Any] = [
             "com.instagram.sharedSticker.backgroundImage": typed.data
@@ -148,6 +150,51 @@ import WatchConnectivity
         }
       }
       instagramChannel = instagram
+
+      // Save an image (the rendered story PNG) to the user's photo library.
+      // Add-only authorization (.addOnly on iOS 14+) so we never ask for full
+      // library READ access. Requires NSPhotoLibraryAddUsageDescription.
+      let photos = FlutterMethodChannel(
+        name: "marginalia/photos",
+        binaryMessenger: controller.binaryMessenger)
+      photos.setMethodCallHandler { call, result in
+        switch call.method {
+        case "saveImage":
+          guard
+            let args = call.arguments as? [String: Any],
+            let typed = args["bytes"] as? FlutterStandardTypedData
+          else { result(false); return }
+          let data = typed.data
+          func performSave() {
+            PHPhotoLibrary.shared().performChanges({
+              let req = PHAssetCreationRequest.forAsset()
+              req.addResource(with: .photo, data: data, options: nil)
+            }) { ok, _ in
+              DispatchQueue.main.async { result(ok) }
+            }
+          }
+          if #available(iOS 14, *) {
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+              if status == .authorized || status == .limited {
+                performSave()
+              } else {
+                DispatchQueue.main.async { result(false) }
+              }
+            }
+          } else {
+            PHPhotoLibrary.requestAuthorization { status in
+              if status == .authorized {
+                performSave()
+              } else {
+                DispatchQueue.main.async { result(false) }
+              }
+            }
+          }
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+      photosChannel = photos
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
