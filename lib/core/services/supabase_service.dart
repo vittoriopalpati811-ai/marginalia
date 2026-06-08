@@ -313,6 +313,41 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(response as List);
   }
 
+  // ─── Semantic search (gte-small embeddings via the semantic-search fn) ───────
+
+  /// Meaning-based search over the user's highlights. Returns rows shaped
+  /// { id, content, location, similarity, book_title, book_author } ordered by
+  /// cosine similarity. Returns [] on any failure (caller falls back to keyword).
+  Future<List<Map<String, dynamic>>> semanticSearchHighlights(
+    String query, {
+    int matchCount = 25,
+  }) async {
+    final res = await _client.functions.invoke('semantic-search', body: {
+      'mode': 'search',
+      'query': query,
+      'match_count': matchCount,
+    });
+    final data = res.data;
+    if (data is Map && data['results'] is List) {
+      return List<Map<String, dynamic>>.from(
+        (data['results'] as List).map((e) => Map<String, dynamic>.from(e as Map)),
+      );
+    }
+    return [];
+  }
+
+  /// Embeds up to [limit] of the user's not-yet-embedded highlights so semantic
+  /// search has a corpus. Returns { embedded, remaining }. Best-effort.
+  Future<Map<String, dynamic>> indexHighlightsForSearch({int limit = 200}) async {
+    final res = await _client.functions.invoke('semantic-search', body: {
+      'mode': 'index',
+      'limit': limit,
+    });
+    final data = res.data;
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return {'embedded': 0, 'remaining': 0};
+  }
+
   // ─── Jams ─────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> createJam(String title) async {

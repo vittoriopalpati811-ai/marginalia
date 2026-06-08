@@ -469,6 +469,7 @@
   "importPasteFromClipboard": "Paste",
   "importPasteAction": "Import highlights",
   "importPasteEmpty": "Nothing to import — paste some text first.",
+  "searchByMeaningHint": "Search your highlights by meaning…",
   "importSuccess": "Imported {highlights} highlights from {books} books",
   "@importSuccess": { "placeholders": { "highlights": { "type": "int" }, "books": { "type": "int" } } },
   "kindleWatchdog": "We're not getting a response. Make sure you're on the “Your Notes & Highlights” page of your Amazon account and try again.",

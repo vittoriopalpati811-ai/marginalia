@@ -19,6 +19,7 @@ import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
+import '../search/highlight_search_screen.dart';
 import '../review/review_entry_card.dart';
 import '../../core/providers/daily_highlight_provider.dart';
 import '../../core/providers/daily_subtitle_provider.dart';
@@ -91,6 +92,40 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 onImport:       _pickAndImportFile,
                 onForceReimport: () => _pickAndImportFile(forceClean: true),
                 userName: ref.watch(myDisplayNameProvider).asData?.value,
+              ),
+            ),
+
+            // ── Smart search trigger (semantic search by meaning) ──────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const HighlightSearchScreen())),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome_outlined,
+                            size: 19, color: MarginaliaColors.primaryDark),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            context.l10n.searchByMeaningHint,
+                            style: GoogleFonts.manrope(
+                                fontSize: 14.5,
+                                color: MarginaliaColors.inkMuted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
 
