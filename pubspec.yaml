@@ -36,6 +36,8 @@ dependencies:
 
   # File / condivisione
   file_picker: ^8.1.2
+  # Camera + gallery for custom book covers (camera path needs image_picker).
+  image_picker: ^1.1.2
 
   # Kobo import — reads the user's KoboReader.sqlite (Bookmark + content tables)
   # to import highlights. sqlite3_flutter_libs bundles the native sqlite3 for iOS.

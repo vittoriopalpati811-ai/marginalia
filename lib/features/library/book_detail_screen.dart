@@ -1,4 +1,5 @@
 ﻿import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/share_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,7 +100,7 @@ class BookDetailScreen extends ConsumerWidget {
                 top: MediaQuery.of(context).padding.top + 6,
                 right: 12,
                 child: _CoverEditButton(
-                  onTap: () => _editCover(context, ref, book),
+                  onTap: () => editBookCover(context, ref, book),
                 ),
               ),
 
@@ -504,7 +505,7 @@ class _HighlightCard extends StatelessWidget {
 
 /// Opens the cover-edit sheet for [book]: pick a photo from the gallery, search
 /// Google for one, or remove a custom cover.
-void _editCover(BuildContext context, WidgetRef ref, Book book) {
+void editBookCover(BuildContext context, WidgetRef ref, Book book) {
   final it = Localizations.localeOf(context).languageCode == 'it';
   final hasCustom = (book.coverUrl ?? '').isNotEmpty;
   showModalBottomSheet<void>(
@@ -548,6 +549,15 @@ void _editCover(BuildContext context, WidgetRef ref, Book book) {
             onTap: () {
               Navigator.of(sheetCtx).pop();
               _pickAndUploadCover(context, ref, book);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined,
+                color: ScriptaColors.primaryDark),
+            title: Text(it ? 'Scatta una foto' : 'Take a photo'),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _pickFromCameraAndUpload(context, ref, book);
             },
           ),
           ListTile(
@@ -596,6 +606,42 @@ Future<void> _pickAndUploadCover(
     if (bytes == null) return;
     var ext = (file.extension ?? 'jpg').toLowerCase();
     if (ext == 'jpeg') ext = 'jpg';
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
+    final url = await ref
+        .read(supabaseServiceProvider)
+        .uploadBookCover(bytes, ext, book.supabaseId);
+    await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
+  } catch (_) {
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it
+            ? 'Impossibile aggiornare la copertina'
+            : "Couldn't update the cover")));
+  }
+}
+
+/// Take a NEW photo with the camera and use it as the book cover.
+Future<void> _pickFromCameraAndUpload(
+    BuildContext context, WidgetRef ref, Book book) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    final shot = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1400,
+      imageQuality: 88,
+    );
+    if (shot == null) return;
+    final bytes = await shot.readAsBytes();
+    var ext = shot.name.contains('.')
+        ? shot.name.split('.').last.toLowerCase()
+        : 'jpg';
+    if (ext == 'jpeg') ext = 'jpg';
+    if (ext.isEmpty || ext.length > 4) ext = 'jpg';
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
     final url = await ref

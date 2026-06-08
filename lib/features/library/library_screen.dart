@@ -18,6 +18,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
+import 'book_detail_screen.dart' show editBookCover;
 import 'recommendations_section.dart';
 import '../../core/services/recs_cache.dart';
 import '../search/highlight_search_screen.dart';
@@ -1174,7 +1175,51 @@ class _BookGridCard extends StatelessWidget {
         ),
       ),
     );
-    return StaggeredListItem(index: index, child: card);
+    return StaggeredListItem(
+      index: index,
+      child: Stack(
+        children: [
+          card,
+          // Pencil to set a custom cover (gallery / camera). On the cover's
+          // top-right; its own opaque tap never triggers the open-detail tap
+          // of the card underneath.
+          Positioned(
+            top: 7,
+            right: 7,
+            child: Consumer(
+              builder: (context, ref, _) => _GridCoverPencil(
+                onTap: () => editBookCover(context, ref, book),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small frosted pencil overlaid on a library cover — opens the cover editor.
+class _GridCoverPencil extends StatelessWidget {
+  const _GridCoverPencil({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(112),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withAlpha(60), width: 0.8),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
+      ),
+    );
   }
 }
 

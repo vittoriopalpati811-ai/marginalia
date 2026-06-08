@@ -185,6 +185,11 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Scripta" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Scripta" ios/Runner/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleName Scripta" ios/Runner/Info.plist 2>/dev/null || true
           echo "Home-screen name -> $(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' ios/Runner/Info.plist)"
+          # Camera + photo-library usage strings (image_picker, for snapping or
+          # picking a custom book cover). Without these iOS hard-crashes the
+          # first time the camera/photo library is opened.
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription Take a photo to use as a custom book cover." ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Take a photo to use as a custom book cover.'" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription Choose a photo to use as a custom book cover." ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Choose a photo to use as a custom book cover.'" ios/Runner/Info.plist
 
       - name: Inject widget + watch extension targets
         run: |
