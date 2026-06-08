@@ -22,3 +22,24 @@ Future<void> writeAndShareMarkdown({
     sharePositionOrigin: sharePositionOrigin,
   );
 }
+
+/// Writes [csv] to a temp .csv file and opens the system share sheet. The CSV is
+/// shaped for a Notion database import (Reading Tracker) but works in Sheets,
+/// Excel, Numbers, etc.
+Future<void> writeAndShareCsv({
+  required String csv,
+  required String filename,
+  String? subject,
+  Rect? sharePositionOrigin,
+}) async {
+  final tmpDir = await getTemporaryDirectory();
+  final file = File('${tmpDir.path}/$filename');
+  await file.writeAsString(csv, flush: true);
+
+  await Share.shareXFiles(
+    [XFile(file.path, mimeType: 'text/csv')],
+    subject: subject ?? 'Marginalia Export',
+    text: '📚 Marginalia — Reading Tracker',
+    sharePositionOrigin: sharePositionOrigin,
+  );
+}

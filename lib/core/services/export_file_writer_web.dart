@@ -15,3 +15,17 @@ Future<void> writeAndShareMarkdown({
     sharePositionOrigin: sharePositionOrigin,
   );
 }
+
+/// Web stub: shares the CSV text (no file system).
+Future<void> writeAndShareCsv({
+  required String csv,
+  required String filename,
+  String? subject,
+  Rect? sharePositionOrigin,
+}) async {
+  await Share.share(
+    csv,
+    subject: subject ?? 'Marginalia Export',
+    sharePositionOrigin: sharePositionOrigin,
+  );
+}

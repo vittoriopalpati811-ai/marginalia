@@ -167,6 +167,68 @@ class ExportService {
     return buf.toString();
   }
 
+  // ─── CSV (Notion Reading Tracker) ───────────────────────────────────────────
+
+  /// Builds a CSV with one row per highlight, columns:
+  /// `Book, Author, Highlight, Note, Location, Date`.
+  ///
+  /// Notion imports a CSV as a database, so this doubles as an instant "Reading
+  /// Tracker" template: import the file and Notion creates a table with those
+  /// columns, one row per highlight, grouped/filtered however the user likes.
+  /// Also opens cleanly in Sheets / Excel / Numbers.
+  static String buildHighlightsCsv(List<Highlight> allHighlights) {
+    final dateFormatter = DateFormat('yyyy-MM-dd');
+
+    // RFC 4180 escaping: collapse newlines to spaces (single-line cells), wrap
+    // in quotes when the value contains a comma/quote, and double inner quotes.
+    String esc(String? value) {
+      final s = (value ?? '')
+          .replaceAll('\r\n', ' ')
+          .replaceAll('\n', ' ')
+          .replaceAll('\r', ' ')
+          .trim();
+      if (s.contains(',') || s.contains('"')) {
+        return '"${s.replaceAll('"', '""')}"';
+      }
+      return s;
+    }
+
+    final sorted = [...allHighlights]..sort((a, b) {
+        final byBook = (a.bookTitle ?? '').compareTo(b.bookTitle ?? '');
+        if (byBook != 0) return byBook;
+        return (a.addedAt ?? DateTime(0)).compareTo(b.addedAt ?? DateTime(0));
+      });
+
+    final buf = StringBuffer();
+    buf.writeln('Book,Author,Highlight,Note,Location,Date');
+    for (final h in sorted) {
+      buf.writeln([
+        esc(h.bookTitle),
+        esc(h.bookAuthor),
+        esc(h.content),
+        esc(h.note),
+        esc(h.location),
+        esc(h.addedAt != null ? dateFormatter.format(h.addedAt!) : ''),
+      ].join(','));
+    }
+    return buf.toString();
+  }
+
+  /// Exports all highlights as a Notion-importable CSV, shared as a .csv file.
+  static Future<void> exportAllCsv(
+    List<Highlight> allHighlights, {
+    Rect? sharePositionOrigin,
+  }) async {
+    final csv = buildHighlightsCsv(allHighlights);
+    final date = DateFormat('yyyyMMdd').format(DateTime.now());
+    await writeAndShareCsv(
+      csv: csv,
+      filename: 'marginalia_reading_tracker_$date.csv',
+      subject: 'Marginalia — Reading Tracker (CSV)',
+      sharePositionOrigin: sharePositionOrigin,
+    );
+  }
+
   // ─── Public API ─────────────────────────────────────────────────────────────
 
   /// Exports all highlights grouped by book, shared as a .md file.

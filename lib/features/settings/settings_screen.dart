@@ -18,6 +18,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/services/export_service.dart';
 import '../../core/services/clippings_importer.dart';
+import '../import/paste_import_screen.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/services/gender_service.dart';
 import '../widget/widget_preview_screen.dart';
@@ -412,6 +413,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               ),
               _SettingsTile(
+                icon: Icons.content_paste_rounded,
+                label: context.l10n.importPasteTile,
+                subtitle: context.l10n.importPasteSubtitle,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const PasteImportScreen()),
+                ),
+              ),
+              _SettingsTile(
                 icon: Icons.menu_book_outlined,
                 label: context.l10n.importKoboTile,
                 subtitle: context.l10n.importKoboSubtitle,
@@ -437,6 +447,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: context.l10n.exportMarkdownTile,
                 subtitle: context.l10n.exportMarkdownSubtitle,
                 onTap: () => _exportAllHighlights(context, ref),
+              ),
+              _SettingsTile(
+                icon: Icons.table_chart_outlined,
+                label: context.l10n.exportNotionTile,
+                subtitle: context.l10n.exportNotionSubtitle,
+                onTap: () => _exportAllHighlights(context, ref, asCsv: true),
               ),
               _SettingsTile(
                 icon: Icons.widgets_outlined,
@@ -574,7 +590,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // ── Export all highlights ─────────────────────────────────────────────────
 
   Future<void> _exportAllHighlights(
-      BuildContext context, WidgetRef ref) async {
+      BuildContext context, WidgetRef ref,
+      {bool asCsv = false}) async {
     // Show a loading snackbar while preparing the export
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -615,7 +632,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return;
       }
 
-      await ExportService.exportAll(highlights, sharePositionOrigin: shareRect);
+      if (asCsv) {
+        await ExportService.exportAllCsv(highlights,
+            sharePositionOrigin: shareRect);
+      } else {
+        await ExportService.exportAll(highlights,
+            sharePositionOrigin: shareRect);
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
