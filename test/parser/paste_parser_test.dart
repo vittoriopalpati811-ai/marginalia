@@ -115,4 +115,80 @@ This material may be protected by copyright.''';
       expect(synthesizeClippingsFromPaste('   '), '');
     });
   });
+
+  group('bug-hunt regressions', () {
+    test('Apple Books WITHOUT the copyright sentinel keeps title/author', () {
+      const text = '''
+“A passage to keep.”
+
+Excerpt From
+The Republic
+Plato''';
+      final hs = parsePastedHighlights(text);
+      expect(hs, hasLength(1));
+      expect(hs.first.content, 'A passage to keep.');
+      expect(hs.first.title, 'The Republic');
+      expect(hs.first.author, 'Plato');
+    });
+
+    test('multiple Apple Books highlights without sentinel are all kept', () {
+      const text = '''
+“First quote.”
+
+Excerpt From
+Book A
+Author A
+
+“Second quote.”
+
+Excerpt From
+Book B
+Author B''';
+      final hs = parsePastedHighlights(text);
+      expect(hs, hasLength(2));
+      expect(hs[0].content, 'First quote.');
+      expect(hs[0].title, 'Book A');
+      expect(hs[1].content, 'Second quote.');
+      expect(hs[1].title, 'Book B');
+    });
+
+    test('localized (Italian) copyright line is ignored', () {
+      const text = '''
+“Una frase da ricordare.”
+
+Excerpt From
+Le Confessioni
+Agostino
+Questo materiale può essere protetto da copyright.''';
+      final hs = parsePastedHighlights(text);
+      expect(hs, hasLength(1));
+      expect(hs.first.title, 'Le Confessioni');
+      expect(hs.first.author, 'Agostino');
+      expect(hs.first.content, 'Una frase da ricordare.');
+    });
+
+    test('author containing a ) still round-trips (not dropped)', () {
+      final synthesized = synthesizeClippingsFromPaste(
+        'A thought.',
+        fallbackTitle: 'Dune',
+        fallbackAuthor: 'Frank Herbert (Jr.)',
+      );
+      final parsed = MyClippingsParser().parse(synthesized);
+      expect(parsed, hasLength(1));
+      expect(parsed.first.content, 'A thought.');
+      expect(parsed.first.bookTitle, 'Dune');
+    });
+
+    test('free-form text with a ===== divider is not misclassified', () {
+      final synthesized = synthesizeClippingsFromPaste(
+        'First note here.\n==========\nSecond note here.',
+        fallbackTitle: 'Notes',
+      );
+      final parsed = MyClippingsParser().parse(synthesized);
+      expect(parsed, isNotEmpty);
+      final contents = parsed.map((p) => p.content).join(' ');
+      expect(contents, contains('First note'));
+      expect(contents, contains('Second note'));
+    });
+  });
 }

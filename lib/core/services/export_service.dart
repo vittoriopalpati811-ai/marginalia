@@ -182,11 +182,17 @@ class ExportService {
     // RFC 4180 escaping: collapse newlines to spaces (single-line cells), wrap
     // in quotes when the value contains a comma/quote, and double inner quotes.
     String esc(String? value) {
-      final s = (value ?? '')
+      var s = (value ?? '')
           .replaceAll('\r\n', ' ')
           .replaceAll('\n', ' ')
           .replaceAll('\r', ' ')
           .trim();
+      // Neutralise spreadsheet formula injection (CWE-1236) AND the very common
+      // case of a Kindle highlight that legitimately starts with "- " (which
+      // Excel/Sheets would otherwise parse as a formula → #NAME? error).
+      if (s.isNotEmpty && '=+-@'.contains(s[0])) {
+        s = "'$s";
+      }
       if (s.contains(',') || s.contains('"')) {
         return '"${s.replaceAll('"', '""')}"';
       }

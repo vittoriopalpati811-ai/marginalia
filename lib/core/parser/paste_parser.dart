@@ -9,38 +9,42 @@
 //
 // Three input shapes are recognised, in priority order:
 //
-//   1. Kindle "My Clippings.txt" already (contains the "==========" separator):
-//      passed through verbatim — the existing parser handles every locale.
+//   1. Kindle "My Clippings.txt" already — recognised by parsing it and seeing
+//      that it actually yields clippings (not merely by containing "==========",
+//      which can appear as a divider in free-form notes).
 //
-//   2. Apple Books copy: each highlight ends with the attribution block
+//   2. Apple Books copy: each highlight is a quote FOLLOWED by an attribution
 //        Excerpt From
 //        <Title>
 //        <Author>
 //        This material may be protected by copyright.
-//      (or the inline "Excerpt From: <Title> by <Author>"). Title/author are
-//      extracted per highlight; the surrounding smart-quotes are stripped.
+//      (or the inline "Excerpt From: <Title> by <Author>"). Parsed line-by-line
+//      so it works whether or not the (localised) copyright line is present.
 //
 //   3. Free-form: one highlight per blank-line-separated block (or the whole
-//      text as a single highlight), filed under the title/author the user typed
-//      in the paste screen.
+//      text as a single highlight), filed under the title/author the user typed.
 //
 // Every synthesised entry gets a STABLE numeric "location" derived from the
 // content, so the downstream importer (which dedups on book+location) treats a
 // re-paste of the same text as a duplicate instead of collapsing distinct
-// highlights together (null locations all collide on one row).
+// highlights together.
+
+import 'my_clippings_parser.dart';
 
 const _clippingsSeparator = '==========';
 
 /// All straight + smart quotation marks we strip from the edges of a quote.
-final _edgeQuotes = RegExp(
-  r'^["«“”‘’‹]+|["»“”‘’›]+$',
-);
+final _edgeQuotes = RegExp(r'^["«“”‘’‹]+|["»“”‘’›]+$');
 
 final _excerptMarker = RegExp(r'excerpt from', caseSensitive: false);
-final _copyrightSentinel =
-    RegExp(r'This material may be protected by copyright\.?', caseSensitive: false);
 final _excerptInline =
     RegExp(r'^[:\s]*(.+?)\s+by\s+(.+)$', caseSensitive: false, dotAll: true);
+// Loose copyright-notice matcher — English ("…protected by copyright."),
+// Italian ("…protetto da copyright."), and the © glyph.
+final _copyrightLine =
+    RegExp(r'copyright|©|protett|protected', caseSensitive: false);
+
+bool _isCopyright(String line) => _copyrightLine.hasMatch(line);
 
 class PastedHighlight {
   const PastedHighlight(this.content, this.title, this.author);
@@ -56,13 +60,16 @@ String synthesizeClippingsFromPaste(
   String? fallbackTitle,
   String? fallbackAuthor,
 }) {
-  final text =
-      raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
+  final text = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n').trim();
   if (text.isEmpty) return '';
 
-  // (1) Already Kindle format → pass through; the existing parser is better at
-  // it (handles locations, dates, every firmware locale) than we could be.
-  if (text.contains(_clippingsSeparator)) return text;
+  // (1) Already Kindle format → pass through, but ONLY if it really parses as
+  // clippings. A bare "==========" divider in free-form notes must NOT short-
+  // circuit here (it would be split into sub-3-line fragments and dropped).
+  if (text.contains(_clippingsSeparator) &&
+      MyClippingsParser().parse(text).isNotEmpty) {
+    return text;
+  }
 
   final highlights = parsePastedHighlights(
     text,
@@ -77,11 +84,21 @@ String synthesizeClippingsFromPaste(
     // dedups instead of duplicating. abs() keeps the location-regex ([\d\-]+)
     // happy (no leading minus).
     final location = h.content.hashCode.abs();
-    final author = h.author.trim().isEmpty ? ' ' : h.author.trim();
+    // Defuse any run of '=' that could look like the Kindle entry separator and
+    // split this content into broken fragments on re-parse.
+    final safeContent = h.content.trim().replaceAll(RegExp(r'={5,}'), '=');
+    // Sanitise the author's parentheses: the synthesised header is
+    // "Title (Author)" and MyClippingsParser's title/author regex needs the
+    // LAST '(...)' to be the author — a ')' inside the author breaks it and the
+    // whole entry is silently dropped on re-parse.
+    final rawAuthor = h.author.trim();
+    final author = rawAuthor.isEmpty
+        ? ' '
+        : rawAuthor.replaceAll('(', '[').replaceAll(')', ']');
     buffer.writeln('${h.title.trim()} ($author)');
     buffer.writeln('- Your Highlight | location $location');
     buffer.writeln();
-    buffer.writeln(h.content.trim());
+    buffer.writeln(safeContent);
     buffer.writeln(_clippingsSeparator);
   }
   return buffer.toString();
@@ -98,62 +115,70 @@ List<PastedHighlight> parsePastedHighlights(
   final fbAuthor = (fallbackAuthor ?? '').trim();
   final genericTitle = fbTitle.isEmpty ? 'Pasted highlights' : fbTitle;
 
-  // ── (2) Apple Books ────────────────────────────────────────────────────────
+  // ── (2) Apple Books (quote FOLLOWED by "Excerpt From …") ────────────────────
   if (_excerptMarker.hasMatch(text)) {
     final out = <PastedHighlight>[];
-    // Each highlight ends with the copyright sentinel when present; otherwise
-    // split just before each "Excerpt From" so multiple highlights separate.
-    final records = _copyrightSentinel.hasMatch(text)
-        ? text.split(_copyrightSentinel)
-        : text.split(RegExp(r'(?=excerpt from)', caseSensitive: false));
+    final lines = text.split('\n');
+    final quoteBuf = <String>[];
 
-    for (final record in records) {
-      final rec = record.trim();
-      if (rec.isEmpty) continue;
+    for (var i = 0; i < lines.length; i++) {
+      final trimmed = lines[i].trim();
 
-      final markerMatch = _excerptMarker.firstMatch(rec);
-      if (markerMatch == null) {
-        // A trailing quote with no attribution → file under the fallback book.
-        final quote = _stripQuotes(rec);
-        if (quote.isNotEmpty) {
-          out.add(PastedHighlight(quote, genericTitle, fbAuthor));
+      if (_excerptMarker.hasMatch(trimmed)) {
+        final quote = _stripQuotes(quoteBuf.join('\n'));
+        quoteBuf.clear();
+
+        var title = fbTitle;
+        var author = fbAuthor;
+
+        // inline form: "Excerpt From: <Title> by <Author>"
+        final afterMarker = trimmed.replaceFirst(_excerptMarker, '').trim();
+        final inline = afterMarker.isEmpty ? null : _excerptInline.firstMatch(afterMarker);
+        if (inline != null) {
+          title = inline.group(1)!.trim();
+          author = inline.group(2)!.trim();
+        } else {
+          // multi-line: the next up-to-two non-empty, non-copyright lines are
+          // the title then the author.
+          final attr = <String>[];
+          var j = i + 1;
+          while (j < lines.length && attr.length < 2) {
+            final t = lines[j].trim();
+            j++;
+            if (t.isEmpty) {
+              if (attr.isEmpty) continue; // skip blanks before the title
+              break; // a blank after the title ends the attribution
+            }
+            if (_isCopyright(t)) break;
+            attr.add(t);
+          }
+          if (attr.isNotEmpty) title = attr[0];
+          if (attr.length > 1) author = attr[1];
+          i = j - 1; // resume after the consumed attribution lines
         }
+
+        if (quote.isNotEmpty) {
+          out.add(PastedHighlight(
+            quote,
+            title.trim().isEmpty ? genericTitle : title.trim(),
+            author.trim(),
+          ));
+        }
+      } else if (_isCopyright(trimmed)) {
+        // drop stray copyright lines so they never leak into a quote
         continue;
-      }
-
-      final quote = _stripQuotes(rec.substring(0, markerMatch.start));
-      final attribution = rec.substring(markerMatch.end).trim();
-      var title = fbTitle;
-      var author = fbAuthor;
-
-      final inline = _excerptInline.firstMatch(attribution);
-      if (inline != null && !attribution.contains('\n')) {
-        title = inline.group(1)!.trim();
-        author = inline.group(2)!.trim();
       } else {
-        final lines = attribution
-            .split('\n')
-            .map((l) => l.trim())
-            .where((l) => l.isNotEmpty)
-            .toList();
-        if (lines.isNotEmpty) title = lines[0];
-        if (lines.length > 1) author = lines[1];
-      }
-
-      if (quote.isNotEmpty) {
-        out.add(PastedHighlight(
-          quote,
-          title.trim().isEmpty ? genericTitle : title.trim(),
-          author.trim(),
-        ));
+        quoteBuf.add(lines[i]);
       }
     }
     if (out.isNotEmpty) return out;
   }
 
   // ── (3) Free-form ──────────────────────────────────────────────────────────
+  // Split on a blank line OR a divider line of 3+ '=' (people paste lists
+  // separated either way), so each becomes its own highlight.
   final blocks = text
-      .split(RegExp(r'\n\s*\n'))
+      .split(RegExp(r'\n\s*\n|\n\s*={3,}\s*\n'))
       .map((b) => _stripQuotes(b))
       .where((b) => b.isNotEmpty)
       .toList();
