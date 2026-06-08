@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -764,6 +765,33 @@ class SupabaseService {
       'follower_id': userId,
       'following_id': targetId,
     });
+    // Best-effort in-app notification for the user who just got followed. The
+    // notify_new_follow RPC (migration 054) is SECURITY DEFINER: it derives the
+    // recipient + actor server-side and verifies the follow really exists, so a
+    // failure here must never block the follow itself.
+    if (targetId != userId) {
+      unawaited(_notifyNewFollow(targetId));
+    }
+  }
+
+  /// Fire-and-forget call to the notify_new_follow RPC + APNs push. Swallows
+  /// every error — a missing notification is cosmetic; the follow succeeded.
+  Future<void> _notifyNewFollow(String targetId) async {
+    try {
+      await _client.rpc('notify_new_follow', params: {
+        'p_following_id': targetId,
+      });
+    } catch (_) {
+      // Ignore — never surface to the user.
+    }
+    try {
+      await _client.functions.invoke('send-push-notification', body: {
+        'mode': 'follow',
+        'following_id': targetId,
+      });
+    } catch (_) {
+      // Push is best-effort; the in-app notification already landed.
+    }
   }
 
   /// Stop following a user.

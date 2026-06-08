@@ -139,6 +139,8 @@ class _NotificationCard extends StatelessWidget {
         return (Icons.mode_comment_outlined, MarginaliaColors.primary);
       case 'mention':
         return (Icons.alternate_email, MarginaliaColors.primary);
+      case 'follow':
+        return (Icons.person_add_alt_1, MarginaliaColors.primaryDark);
       default:
         return (Icons.notifications_none_outlined, MarginaliaColors.sienna);
     }

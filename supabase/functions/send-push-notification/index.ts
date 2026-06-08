@@ -203,6 +203,14 @@ serve(async (req) => {
     return await handlePostInteraction(req, supabase, apns, caller.id, reqBody);
   }
 
+  // ── Mode 3: NEW FOLLOW (recipient = the followed user) ────────────────────
+  // Recognised by `mode === "follow"` + `following_id`. The recipient is the
+  // followed user; the caller must have a real follows row (verified
+  // server-side) so a client can't push to an arbitrary user.
+  if (reqBody.mode === "follow" && reqBody.following_id) {
+    return await handleNewFollow(supabase, apns, caller.id, reqBody);
+  }
+
   // ── Mode 1: MESSAGE (explicit recipient, conversation/jam-authorized) ─────
   const { user_id, title, body, data = {}, is_group, group_name } = reqBody;
   if (!user_id || !title || !body) {
@@ -404,6 +412,65 @@ async function handlePostInteraction(
     type: kind,
     post_id: postId,
   });
+}
+
+// ─── New-follow handler ───────────────────────────────────────────────────────
+//
+// Derives the recipient (the followed user) from `following_id`, verifies the
+// caller genuinely follows them (a real follows row), composes Italian copy from
+// the actor's display name, then reuses pushToUser() to deliver. The caller can
+// ONLY push to someone they actually follow — this prevents push spam.
+
+async function handleNewFollow(
+  supabase: ReturnType<typeof createClient>,
+  apns: ApnsConfig,
+  callerId: string,
+  reqBody: { following_id?: unknown },
+): Promise<Response> {
+  const followingId = typeof reqBody.following_id === "string"
+    ? reqBody.following_id
+    : "";
+  if (!followingId) {
+    return jsonResponse({ error: "following_id (uuid) is required" }, 400);
+  }
+
+  // Never notify yourself.
+  if (followingId === callerId) {
+    return jsonResponse({ sent: 0, message: "Self-follow" }, 200);
+  }
+
+  // SECURITY: the caller must genuinely follow the target (a real follows row).
+  const { data: follow, error: followErr } = await supabase
+    .from("follows")
+    .select("follower_id")
+    .eq("follower_id", callerId)
+    .eq("following_id", followingId)
+    .limit(1)
+    .maybeSingle();
+
+  if (followErr || !follow) {
+    return jsonResponse({ error: "forbidden" }, 403);
+  }
+
+  // Actor display name (fallback "Qualcuno"). Italian is the app language.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", callerId)
+    .maybeSingle();
+  const rawName = typeof profile?.display_name === "string"
+    ? profile.display_name.trim()
+    : "";
+  const name = rawName.length > 0 ? rawName : "Qualcuno";
+
+  return await pushToUser(
+    supabase,
+    apns,
+    followingId,
+    "Nuovo follower",
+    `${name} ha iniziato a seguirti`,
+    { type: "follow", actor_id: callerId },
+  );
 }
 
 // ─── Authorization helper ─────────────────────────────────────────────────────

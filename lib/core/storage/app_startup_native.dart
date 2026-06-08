@@ -34,7 +34,9 @@ Future<void> launchApp() async {
   // The remaining reads are already internally defensive, but guard them too so
   // a surprise here can never block the app from launching.
   var onboardingComplete = false;
-  var savedLocale = const Locale('it');
+  // English-predominant default until the persisted choice is read below
+  // (Italian only on Italian-language devices). See LocaleService.deviceDefault.
+  var savedLocale = LocaleService.deviceDefault();
   try {
     onboardingComplete = await OnboardingService.isComplete();
   } catch (error) {

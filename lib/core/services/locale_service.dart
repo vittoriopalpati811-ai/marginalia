@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -15,14 +16,19 @@ class LocaleService {
   static const _filename = '.marginalia_locale';
 
   static const _supported = [Locale('it'), Locale('en')];
-  static const _default = Locale('it');
 
   static Future<File> _file() async {
     final dir = await getApplicationDocumentsDirectory();
     return File('${dir.path}/$_filename');
   }
 
-  /// Returns the stored locale, or the default (Italian) if none is stored.
+  /// Returns the user's explicitly-chosen locale if one was stored; otherwise
+  /// resolves the locale from the DEVICE language.
+  ///
+  /// Marginalia is English-predominant (international rollout), so a fresh
+  /// install with no saved choice opens in English for everyone EXCEPT phones
+  /// whose primary language is Italian — those open in Italian. Once the user
+  /// picks a language (onboarding / settings) that choice is persisted and wins.
   static Future<Locale> getLocale() async {
     try {
       final f = await _file();
@@ -32,7 +38,18 @@ class LocaleService {
         if (match != null) return match;
       }
     } catch (_) {}
-    return _default;
+    return deviceDefault();
+  }
+
+  /// English-predominant device default: Italian only when the device's primary
+  /// language is Italian, English in every other case. Pure + never throws, so
+  /// it is safe to call from startup before the widget tree exists.
+  static Locale deviceDefault() {
+    try {
+      final device = PlatformDispatcher.instance.locale;
+      if (device.languageCode == 'it') return const Locale('it');
+    } catch (_) {}
+    return const Locale('en');
   }
 
   /// Persists the chosen locale code for future launches.
