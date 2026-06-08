@@ -11,6 +11,8 @@ import '../models/book_native.dart';
 import '../models/highlight_native.dart';
 import '../models/tag_native.dart';
 import '../models/jam_native.dart';
+import '../models/review_state_native.dart';
+import '../models/daily_activity_native.dart';
 import '../providers/isar_provider_native.dart';
 import '../providers/locale_provider.dart';
 import '../providers/onboarding_provider.dart';
@@ -80,6 +82,8 @@ Future<Isar> _openIsar() async {
     HighlightSchema,
     TagSchema,
     JamSchema,
+    ReviewStateSchema,
+    DailyActivitySchema,
   ];
 
   // Reuse an instance that is already open (idempotent across retries).

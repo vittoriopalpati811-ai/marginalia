@@ -52,4 +52,75 @@ class LocalNotifService {
       debugPrint('[LocalNotif] cancel failed: $e');
     }
   }
+
+  /// Schedule (or re-schedule) a repeating daily "Ripasso" reminder telling the
+  /// user how many highlights are due. Runs under its own stable identifier
+  /// ("review_due") in parallel with the daily phrase, so it is idempotent —
+  /// re-scheduling on each launch/foreground replaces the pending request and
+  /// keeps the count fresh. Cancel it (see [cancelReviewReminder]) when nothing
+  /// is due, so a stale "you have N to review" never fires.
+  static Future<void> scheduleReviewReminder({
+    int hour = 9,
+    int minute = 0,
+    required String title,
+    required String body,
+  }) async {
+    if (!_supported) return;
+    try {
+      await _ch.invokeMethod<bool>('scheduleReviewReminder', {
+        'hour': hour,
+        'minute': minute,
+        'title': title,
+        'body': body,
+      });
+    } catch (e) {
+      debugPrint('[LocalNotif] scheduleReviewReminder failed: $e');
+    }
+  }
+
+  /// Cancel the pending Ripasso reminder, if any.
+  static Future<void> cancelReviewReminder() async {
+    if (!_supported) return;
+    try {
+      await _ch.invokeMethod<bool>('cancelReviewReminder');
+    } catch (e) {
+      debugPrint('[LocalNotif] cancelReviewReminder failed: $e');
+    }
+  }
+
+  /// Schedule (or re-schedule) the repeating evening "Did you do your review
+  /// today?" nudge under its own stable identifier ("review_evening"), firing at
+  /// 21:00 local. Distinct from the morning [scheduleReviewReminder] so the two
+  /// never collide. Idempotent (re-scheduling replaces the pending request). The
+  /// caller is responsible for only scheduling this when the user has NOT
+  /// reviewed today, and for cancelling it (see [cancelEveningReviewReminder])
+  /// the moment a review session is started/completed.
+  static Future<void> scheduleEveningReviewReminder({
+    int hour = 21,
+    int minute = 0,
+    required String title,
+    required String body,
+  }) async {
+    if (!_supported) return;
+    try {
+      await _ch.invokeMethod<bool>('scheduleEveningReviewReminder', {
+        'hour': hour,
+        'minute': minute,
+        'title': title,
+        'body': body,
+      });
+    } catch (e) {
+      debugPrint('[LocalNotif] scheduleEveningReviewReminder failed: $e');
+    }
+  }
+
+  /// Cancel the pending evening Ripasso reminder, if any.
+  static Future<void> cancelEveningReviewReminder() async {
+    if (!_supported) return;
+    try {
+      await _ch.invokeMethod<bool>('cancelEveningReviewReminder');
+    } catch (e) {
+      debugPrint('[LocalNotif] cancelEveningReviewReminder failed: $e');
+    }
+  }
 }

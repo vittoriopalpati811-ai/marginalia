@@ -23,6 +23,20 @@ class Highlight {
   @Index()
   late String userId;
 
+  // ── Spaced-repetition (SM-2) schedule — LOCAL, offline-first ───────────────
+  //
+  // These power the daily "Ripasso" recall ritual. All scheduling math lives in
+  // lib/core/review/sm2.dart and is computed entirely on-device; nothing here is
+  // synced to Supabase in v1. NULLABLE so existing records migrate for free:
+  // a null [reviewDueAt] means "never scheduled" → eligible as a brand-new card
+  // (treated as due now). See [scheduleSm2] for how these advance on each grade.
+  double? reviewEase;        // SM-2 ease factor (default 2.5, floor 1.3)
+  int? reviewIntervalDays;   // current interval in whole days
+  int? reviewReps;           // consecutive successful (q>=3) recalls
+
+  @Index()
+  DateTime? reviewDueAt;     // null = never scheduled (eligible as "new")
+
   final book = IsarLink<Book>();
   final tags = IsarLinks<Tag>();
 

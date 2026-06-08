@@ -13,10 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/review_provider.dart';
 import '../../core/services/share_card_service.dart';
 import 'stats_screen.dart' show readingGoalProvider, readingSessionsProvider;
 
@@ -27,6 +29,7 @@ class ReadingStatsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goalAsync     = ref.watch(readingGoalProvider);
     final sessionsAsync = ref.watch(readingSessionsProvider);
+    final reviewState   = ref.watch(reviewStateProvider).asData?.value;
 
     final goal     = goalAsync.asData?.value;
     final sessions = sessionsAsync.asData?.value ?? const [];
@@ -38,7 +41,16 @@ class ReadingStatsCard extends ConsumerWidget {
       DateTime.now().year,
     );
 
-    final hasAnyData = streak > 0 || monthMinutes > 0 || yearBooks > 0 || goal != null;
+    // Ripasso (spaced-repetition) streak — distinct from the reading-session
+    // streak above. Read straight from the local ReviewState singleton.
+    final reviewStreak     = reviewState?.currentStreak ?? 0;
+    final reviewBestStreak = reviewState?.bestStreak ?? 0;
+
+    final hasAnyData = streak > 0 ||
+        monthMinutes > 0 ||
+        yearBooks > 0 ||
+        goal != null ||
+        reviewStreak > 0;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -137,6 +149,12 @@ class ReadingStatsCard extends ConsumerWidget {
                     ),
                   ),
                 ] else ...[
+                  // ── Ripasso streak banner ──────────────────────────────
+                  const SizedBox(height: 14),
+                  _ReviewStreakBanner(
+                    streak: reviewStreak,
+                    bestStreak: reviewBestStreak,
+                  ),
                   const SizedBox(height: 14),
 
                   // ── 3 stat tiles ───────────────────────────────────────
@@ -247,6 +265,97 @@ class _MiniDivider extends StatelessWidget {
         color: MarginaliaColors.ruleFaint,
         margin: const EdgeInsets.symmetric(horizontal: 4),
       );
+}
+
+/// Prominent review-streak element: a sage flame tile + the current streak as
+/// the headline, with the all-time best as a quiet secondary line. Reads from
+/// reviewStateProvider; styled to sit naturally inside the reading-stats card.
+class _ReviewStreakBanner extends StatelessWidget {
+  const _ReviewStreakBanner({required this.streak, required this.bestStreak});
+
+  final int streak;
+  final int bestStreak;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasStreak = streak > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: MarginaliaColors.siennaFaint,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          // Flame tile.
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.surface,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(
+              hasStreak
+                  ? PhosphorIconsFill.flame
+                  : PhosphorIconsRegular.flame,
+              size: 20,
+              color: MarginaliaColors.primaryDark,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  hasStreak
+                      ? context.l10n.ripassoStreakLabel(streak)
+                      : context.l10n.ripassoStreakStart,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: MarginaliaColors.primaryDark,
+                    letterSpacing: -0.2,
+                    height: 1.1,
+                  ),
+                ),
+                if (bestStreak > 0) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.ripassoBestStreak(bestStreak),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: MarginaliaColors.inkMuted,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // The current streak as a large numeral on the right — the headline.
+          if (hasStreak)
+            Text(
+              streak.toString(),
+              style: GoogleFonts.ebGaramond(
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+                color: MarginaliaColors.primaryDark,
+                letterSpacing: -0.6,
+                height: 1.0,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _GoalProgressBar extends StatelessWidget {

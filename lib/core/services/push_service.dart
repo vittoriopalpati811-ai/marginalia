@@ -138,12 +138,17 @@ class PushService with WidgetsBindingObserver {
 
     final conversationId = data['conversation_id'] as String?;
     final postId = data['post_id'] as String?;
+    // The Ripasso reminders (morning + evening local notifications) carry
+    // `review == "true"` so a tap opens the daily recall screen directly.
+    final isReview = data['review'] == 'true' || data['review'] == true;
 
     final String? location;
     if (conversationId != null && conversationId.isNotEmpty) {
       location = '/chat/${Uri.encodeComponent(conversationId)}';
     } else if (postId != null && postId.isNotEmpty) {
       location = '/post/${Uri.encodeComponent(postId)}';
+    } else if (isReview) {
+      location = '/review';
     } else {
       location = null;
     }

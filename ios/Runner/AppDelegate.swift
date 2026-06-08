@@ -110,6 +110,18 @@ import WatchConnectivity
           UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: ["daily_phrase"])
           result(true)
+        case "scheduleReviewReminder":
+          self?.scheduleReviewReminder(call.arguments, result: result)
+        case "cancelReviewReminder":
+          UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["review_due"])
+          result(true)
+        case "scheduleEveningReviewReminder":
+          self?.scheduleEveningReviewReminder(call.arguments, result: result)
+        case "cancelEveningReviewReminder":
+          UNUserNotificationCenter.current()
+            .removePendingNotificationRequests(withIdentifiers: ["review_evening"])
+          result(true)
         default:
           result(FlutterMethodNotImplemented)
         }
@@ -290,8 +302,13 @@ import WatchConnectivity
   // from a terminated state), the tap is buffered and replayed on
   // `tapHandlerReady`.
   private func forwardTap(_ userInfo: [AnyHashable: Any]) {
+    // The Ripasso reminders (morning + evening) carry `review: true` so a tap
+    // deep-links straight to /review.
+    let isReview = (userInfo["review"] as? Bool) == true
+      || (userInfo["review"] as? NSNumber)?.boolValue == true
     let hasNavData = userInfo["conversation_id"] != nil
       || userInfo["post_id"] != nil
+      || isReview
     guard hasNavData else { return }
 
     guard tapHandlerReady, let channel = pushChannel else {
@@ -308,6 +325,9 @@ import WatchConnectivity
     }
     if let type = userInfo["type"] as? String {
       payload["type"] = type
+    }
+    if isReview {
+      payload["review"] = "true"
     }
 
     channel.invokeMethod("onNotificationTap", arguments: payload)
@@ -352,6 +372,83 @@ import WatchConnectivity
     center.add(request) { error in
       if let error = error {
         NSLog("scheduleDailyPhrase failed: \(error.localizedDescription)")
+      }
+    }
+    result(true)
+  }
+
+  // ── Ripasso (spaced-repetition) reminder ──────────────────────────────────────
+
+  // Schedules (or re-schedules) the repeating daily "Hai N highlight da
+  // ripassare" nudge under the stable "review_due" identifier, parallel to
+  // "daily_phrase". Reuses the same UNUserNotificationCenter authorization, so
+  // there is no extra permission prompt. The due count is captured at schedule
+  // time; re-scheduling on launch/foreground keeps it fresh, and the Dart side
+  // cancels it when nothing is due.
+  private func scheduleReviewReminder(_ arguments: Any?, result: @escaping FlutterResult) {
+    let args = arguments as? [String: Any]
+    let hour = args?["hour"] as? Int ?? 9
+    let minute = args?["minute"] as? Int ?? 0
+    let title = args?["title"] as? String ?? "Marginalia"
+    let body = args?["body"] as? String ?? ""
+
+    let center = UNUserNotificationCenter.current()
+    center.removePendingNotificationRequests(withIdentifiers: ["review_due"])
+
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.body = body
+    content.sound = .default
+    // Payload so a future tap can deep-link to /review (follow-up wave).
+    content.userInfo = ["review": true]
+
+    var dc = DateComponents()
+    dc.hour = hour
+    dc.minute = minute
+    let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+
+    let request = UNNotificationRequest(
+      identifier: "review_due", content: content, trigger: trigger)
+    center.add(request) { error in
+      if let error = error {
+        NSLog("scheduleReviewReminder failed: \(error.localizedDescription)")
+      }
+    }
+    result(true)
+  }
+
+  // Schedules (or re-schedules) the repeating EVENING "Did you do your review
+  // today?" nudge under the stable "review_evening" identifier, parallel to
+  // "review_due". Fires at 21:00 by default. The Dart side only schedules this
+  // when the user has NOT reviewed today and cancels it the moment a session
+  // starts, so it never nags someone who already did their ripasso. Like the
+  // morning reminder, it carries `review: true` so a tap deep-links to /review.
+  private func scheduleEveningReviewReminder(_ arguments: Any?, result: @escaping FlutterResult) {
+    let args = arguments as? [String: Any]
+    let hour = args?["hour"] as? Int ?? 21
+    let minute = args?["minute"] as? Int ?? 0
+    let title = args?["title"] as? String ?? "Marginalia"
+    let body = args?["body"] as? String ?? ""
+
+    let center = UNUserNotificationCenter.current()
+    center.removePendingNotificationRequests(withIdentifiers: ["review_evening"])
+
+    let content = UNMutableNotificationContent()
+    content.title = title
+    content.body = body
+    content.sound = .default
+    content.userInfo = ["review": true]
+
+    var dc = DateComponents()
+    dc.hour = hour
+    dc.minute = minute
+    let trigger = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+
+    let request = UNNotificationRequest(
+      identifier: "review_evening", content: content, trigger: trigger)
+    center.add(request) { error in
+      if let error = error {
+        NSLog("scheduleEveningReviewReminder failed: \(error.localizedDescription)")
       }
     }
     result(true)

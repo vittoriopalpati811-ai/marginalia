@@ -1087,6 +1087,28 @@ class SupabaseService {
     }).eq('id', userId!);
   }
 
+  /// Best-effort mirror of the LOCAL Ripasso streak to the user's profile so it
+  /// can become social later (leaderboards, profile badge). The local Isar
+  /// ReviewState is authoritative; this is a fire-and-forget publish. Requires
+  /// migration 050 (review_streak / review_best_streak / last_reviewed_on) —
+  /// the caller wraps this in try/catch, so it degrades silently until applied.
+  Future<void> updateReviewStreak({
+    required int streak,
+    required int bestStreak,
+    required DateTime lastReviewedOn,
+  }) async {
+    if (!isAuthenticated || userId == null) return;
+    // `last_reviewed_on` is a Postgres `date` — send a plain YYYY-MM-DD string.
+    final d = lastReviewedOn;
+    final dateStr =
+        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    await _client.from('profiles').update({
+      'review_streak': streak,
+      'review_best_streak': bestStreak,
+      'last_reviewed_on': dateStr,
+    }).eq('id', userId!);
+  }
+
   // ─── Realtime ─────────────────────────────────────────────────────────────
 
   RealtimeChannel subscribeToJam(String jamId, void Function(Map<String, dynamic>) onHighlightShared) {

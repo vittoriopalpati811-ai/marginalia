@@ -17,6 +17,7 @@ import 'core/theme.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/unread_messages_provider.dart';
 import 'core/providers/auth_provider.dart';
+import 'core/providers/review_provider.dart';
 import 'core/services/push_service.dart';
 import 'core/services/local_notif_service.dart';
 import 'features/paywall/paywall_screen.dart';
@@ -26,6 +27,7 @@ import 'features/social/home_tab.dart';
 import 'features/library/library_screen.dart';
 import 'features/library/book_detail_screen.dart';
 import 'features/reader/highlight_detail_screen.dart';
+import 'features/review/review_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/social/social_screen.dart';
 import 'features/social/jam_detail_screen.dart';
@@ -260,6 +262,13 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _pushPage(const StatsScreen(), state),
     ),
+    // Ripasso (spaced-repetition daily recall) — full-screen push with the iOS
+    // slide + interactive back-swipe like every other pushed route.
+    GoRoute(
+      path: '/review',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) => _pushPage(const ReviewScreen(), state),
+    ),
     GoRoute(
       path: '/edit-profile',
       parentNavigatorKey: _rootNavigatorKey,
@@ -351,6 +360,14 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
                 ? 'Your phrase of the day is waiting 📖'
                 : 'La tua frase di oggi ti aspetta 📖',
           );
+
+          // Ripasso nudges: a morning reminder at 08:00 whose body carries the
+          // live due count ("You have N highlights to review"), and an evening
+          // reminder at 21:00 ("Did you do your review today?") that only fires
+          // when today's ripasso isn't done yet. Best-effort and idempotent
+          // (fixed "review_due" / "review_evening" identifiers); both are
+          // computed from the local Isar state, so this works fully offline.
+          _scheduleReviewReminder(isEnglish);
         }
       });
     } catch (error) {
@@ -363,6 +380,54 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
   void dispose() {
     _authSub?.cancel();
     super.dispose();
+  }
+
+  /// Best-effort: (re)schedules BOTH Ripasso reminders from the local Isar
+  /// state, iOS-only and fully offline. Never throws into the caller.
+  ///
+  ///   • Morning (08:00): "You have N highlights to review" — scheduled with a
+  ///     dynamic count when something is due, cancelled when nothing is.
+  ///   • Evening (21:00): "Did you do your review today?" — scheduled only when
+  ///     the user has NOT yet reviewed today, cancelled once they have (the
+  ///     session controller also cancels it the instant a session starts).
+  Future<void> _scheduleReviewReminder(bool isEnglish) async {
+    try {
+      final due = await ref.read(dueCountProvider.future);
+      if (due <= 0) {
+        await LocalNotifService.cancelReviewReminder();
+      } else {
+        final body = isEnglish
+            ? 'You have $due highlights to review 📖'
+            : 'Hai $due highlight da ripassare 📖';
+        await LocalNotifService.scheduleReviewReminder(
+          hour: 8,
+          minute: 0,
+          title: 'Marginalia',
+          body: body,
+        );
+      }
+
+      // Evening nudge: only when there is something to review AND today's
+      // ripasso isn't done yet. Re-evaluated on every session-active event.
+      final reviewState = await ref.read(reviewStateProvider.future);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final reviewedToday = reviewState.lastReviewedOn == today;
+      if (due > 0 && !reviewedToday) {
+        await LocalNotifService.scheduleEveningReviewReminder(
+          hour: 21,
+          minute: 0,
+          title: 'Marginalia',
+          body: isEnglish
+              ? 'Did you do your review today?'
+              : 'Hai fatto il tuo ripasso di oggi?',
+        );
+      } else {
+        await LocalNotifService.cancelEveningReviewReminder();
+      }
+    } catch (error) {
+      debugPrint('[MarginaliaApp] review reminder schedule skipped: $error');
+    }
   }
 
   @override

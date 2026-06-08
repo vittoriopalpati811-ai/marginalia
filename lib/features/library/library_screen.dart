@@ -19,6 +19,7 @@ import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
+import '../review/review_entry_card.dart';
 import '../../core/providers/daily_highlight_provider.dart';
 import '../../core/providers/daily_subtitle_provider.dart';
 import '../stats/stats_screen.dart'
@@ -92,6 +93,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 userName: ref.watch(myDisplayNameProvider).asData?.value,
               ),
             ),
+
+            // ── Ripasso del giorno — daily recall entry point ──────────────
+            // The first action of the day: a warm card with the due count +
+            // streak flame. Hidden when nothing is due and unreviewed; collapses
+            // to a quiet "done" pill once today's session is complete.
+            const SliverToBoxAdapter(child: RipassoEntryCard()),
 
             // ── Hero pull-quote: highlight del giorno ──────────────────────
             randomAsync.when(

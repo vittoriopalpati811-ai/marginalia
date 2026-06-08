@@ -10,8 +10,10 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/review_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import 'followers_screen.dart';
 import 'posts_timeline.dart';
@@ -319,6 +321,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               data: (s) => _StatsRow(
                 stats: s,
                 booksCount: booksAsync.asData?.value?.length ?? 0,
+                streak: ref.watch(reviewStateProvider).asData?.value
+                        .currentStreak ??
+                    0,
                 onFollowers: () => showProfileList(context,
                     userId: uid,
                     type: ProfileListType.followers,
@@ -836,12 +841,14 @@ class _StatsRow extends StatelessWidget {
   const _StatsRow({
     required this.stats,
     required this.booksCount,
+    required this.streak,
     required this.onFollowers,
     required this.onFollowing,
     required this.onBooks,
   });
   final Map<String, int> stats;
   final int booksCount;
+  final int streak;
   final VoidCallback onFollowers;
   final VoidCallback onFollowing;
   final VoidCallback onBooks;
@@ -858,12 +865,65 @@ class _StatsRow extends StatelessWidget {
           _Div(),
           _StatBox(label: context.l10n.profileHighlightsStat, value: stats['highlights'] ?? 0),
           _Div(),
+          // Ripasso streak — a flame glyph instead of a label, since it reads as
+          // a personal achievement next to the social counts.
+          _StreakStatBox(streak: streak),
+          _Div(),
           _StatBox(label: context.l10n.profileFollowing, value: stats['following'] ?? 0, onTap: onFollowing),
           _Div(),
           _StatBox(label: context.l10n.profileFollowers, value: stats['followers'] ?? 0, onTap: onFollowers),
         ],
       ),
     ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0, duration: 350.ms);
+  }
+}
+
+/// A stat cell that shows the Ripasso streak: the count over a small flame +
+/// "streak" label. Lit (sage) when the streak is active, muted at zero.
+class _StreakStatBox extends StatelessWidget {
+  const _StreakStatBox({required this.streak});
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = streak > 0;
+    final color = active ? MarginaliaColors.primaryDark : MarginaliaColors.inkFaint;
+    return Expanded(
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                active ? PhosphorIconsFill.flame : PhosphorIconsRegular.flame,
+                size: 15,
+                color: color,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                '$streak',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: active ? MarginaliaColors.ink : MarginaliaColors.inkFaint,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            context.l10n.profileStreakStat,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: MarginaliaColors.inkFaint,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
