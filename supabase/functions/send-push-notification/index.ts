@@ -76,6 +76,14 @@ async function requireUser(req: Request): Promise<{ id: string } | null> {
 
 // ─── APNs JWT helper ──────────────────────────────────────────────────────────
 
+// base64URL-encode a Latin-1/binary string for JWT segments (RFC 7515): the
+// alphabet is A-Za-z0-9-_ with NO '=' padding. Plain btoa() emits STANDARD
+// base64 ('+', '/', '='), which APNs rejects with HTTP 403 InvalidProviderToken
+// — silently dropping EVERY push. All three JWT segments must go through this.
+function base64url(input: string): string {
+  return btoa(input).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+
 async function generateApnsJwt(
   teamId: string,
   keyId: string,
@@ -83,8 +91,8 @@ async function generateApnsJwt(
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
 
-  const header = btoa(JSON.stringify({ alg: "ES256", kid: keyId }));
-  const payload = btoa(JSON.stringify({ iss: teamId, iat: now }));
+  const header = base64url(JSON.stringify({ alg: "ES256", kid: keyId }));
+  const payload = base64url(JSON.stringify({ iss: teamId, iat: now }));
   const signingInput = `${header}.${payload}`;
 
   // Import the ECDSA P-256 private key
@@ -108,7 +116,7 @@ async function generateApnsJwt(
     new TextEncoder().encode(signingInput),
   );
 
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+  const sigB64 = base64url(String.fromCharCode(...new Uint8Array(signature)));
   return `${header}.${payload}.${sigB64}`;
 }
 
@@ -195,31 +203,34 @@ serve(async (req) => {
     return await handlePostInteraction(req, supabase, apns, caller.id, reqBody);
   }
 
-  // ── Mode 1: MESSAGE (explicit recipient, conversation-authorized) ─────────
-  const { user_id, title, body, data = {} } = reqBody;
+  // ── Mode 1: MESSAGE (explicit recipient, conversation/jam-authorized) ─────
+  const { user_id, title, body, data = {}, is_group, group_name } = reqBody;
   if (!user_id || !title || !body) {
     return jsonResponse({ error: "user_id, title, body are required" }, 400);
   }
 
-  // ── Authorize: caller and target must share a conversation ─────────────────
-  // A user may only push to people they share a conversation with. Sending to
-  // yourself is allowed (no-op in practice — the client skips self). This
-  // blocks the "push arbitrary text to any user" abuse without trusting any
-  // client-supplied conversation_id.
+  // ── Authorize: caller and target must share a conversation OR a jam ────────
+  // A user may push to people they share a conversation with (the chat path) OR
+  // a jam with (the "finished today's review" nudge to jam-mates who may never
+  // have opened a DM). BOTH are verified SERVER-SIDE via the service-role
+  // client, so no client-supplied id is trusted and a client still cannot push
+  // to strangers. Sending to yourself is allowed (the client skips self).
   if (user_id !== caller.id) {
-    const authorized = await sharesConversation(supabase, caller.id, user_id);
+    const authorized =
+      (await sharesConversation(supabase, caller.id, user_id)) ||
+      (await sharesJam(supabase, caller.id, user_id));
     if (!authorized) {
       return jsonResponse({ error: "forbidden" }, 403);
     }
   }
 
-  // Render the message notification as "<sender>: <message>": put the SENDER's
-  // display name in the alert TITLE (iOS shows it bold on the first line, the
-  // message body below — the standard chat-notification layout that tells the
-  // recipient who wrote and what). The name is resolved SERVER-SIDE from the
-  // verified caller (caller.id), so a modified client can never spoof it. Falls
-  // back to the client-supplied title ("Nuovo messaggio") when the sender has
-  // no display name yet.
+  // Render the notification. The SENDER's display name is resolved SERVER-SIDE
+  // from the verified caller (caller.id) so it can never be spoofed.
+  //   • 1:1 chat  → title = sender, body = message          ("Alice" / "ciao")
+  //   • group chat→ title = group name, body = "sender: msg" ("Libri" /
+  //                 "Alice: ciao") so the recipient sees WHICH group + WHO.
+  // Falls back to the client title ("Nuovo messaggio") when the sender has no
+  // display name yet.
   const { data: senderProfile } = await supabase
     .from("profiles")
     .select("display_name")
@@ -230,7 +241,12 @@ serve(async (req) => {
     : "";
   const senderName = senderRawName.length > 0 ? senderRawName : title;
 
-  return await pushToUser(supabase, apns, user_id, senderName, body, data);
+  const groupName = typeof group_name === "string" ? group_name.trim() : "";
+  const isGroup = is_group === true && groupName.length > 0;
+  const finalTitle = isGroup ? groupName : senderName;
+  const finalBody = isGroup ? `${senderName}: ${body}` : body;
+
+  return await pushToUser(supabase, apns, user_id, finalTitle, finalBody, data);
 });
 
 // ─── Shared recipient send ────────────────────────────────────────────────────
@@ -268,8 +284,23 @@ async function pushToUser(
   const results = await Promise.all(
     tokens.map((t) =>
       sendApns(t.token, title, body, data, apnsJwt, apns.bundleId)
+        .then((r) => ({ ...r, token: t.token })),
     ),
   );
+
+  // Prune tokens APNs permanently rejected (410 Unregistered / 400
+  // BadDeviceToken) so the table doesn't accumulate dead tokens and a rotated
+  // token can't keep delivering a previous account's pushes to this device.
+  const dead = results
+    .filter((r) => r.status === 410 || r.status === 400)
+    .map((r) => r.token);
+  if (dead.length > 0) {
+    await supabase
+      .from("device_tokens")
+      .delete()
+      .eq("user_id", userId)
+      .in("token", dead);
+  }
 
   const sent = results.filter((r) => r.ok).length;
   return jsonResponse({ sent, total: tokens.length }, 200);
@@ -400,6 +431,35 @@ async function sharesConversation(
     .select("conversation_id")
     .eq("user_id", targetId)
     .in("conversation_id", ids)
+    .limit(1);
+
+  if (sharedErr) return false;
+  return (shared?.length ?? 0) > 0;
+}
+
+// Returns true if `callerId` and `targetId` are both members of at least one
+// common JAM. Mirrors sharesConversation but over jam_members, so the "finished
+// today's review" nudge can reach jam-mates who have never opened a DM. Uses the
+// service-role client; no client-supplied jam id is trusted.
+async function sharesJam(
+  supabase: ReturnType<typeof createClient>,
+  callerId: string,
+  targetId: string,
+): Promise<boolean> {
+  const { data: mine, error: mineErr } = await supabase
+    .from("jam_members")
+    .select("jam_id")
+    .eq("user_id", callerId);
+
+  if (mineErr || !mine?.length) return false;
+
+  const ids = mine.map((r) => r.jam_id as string);
+
+  const { data: shared, error: sharedErr } = await supabase
+    .from("jam_members")
+    .select("jam_id")
+    .eq("user_id", targetId)
+    .in("jam_id", ids)
     .limit(1);
 
   if (sharedErr) return false;

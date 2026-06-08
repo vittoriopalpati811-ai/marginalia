@@ -43,7 +43,32 @@ class SupabaseService {
   Future<AuthResponse> signUpWithEmail(String email, String password) =>
       _client.auth.signUp(email: email, password: password);
 
-  Future<void> signOut() => _client.auth.signOut();
+  /// The APNs token most recently registered for THIS device, cached so it can
+  /// be removed from `device_tokens` on sign-out — closing the cross-account
+  /// push leak when two accounts are used on the same device.
+  String? _currentDeviceToken;
+
+  Future<void> signOut() async {
+    // Remove THIS device's push token for the current account BEFORE the session
+    // is torn down — RLS authorizes the delete only while still signed in. This
+    // stops a different account that signs in next on the SAME device from
+    // receiving the previous user's pushes. Best-effort; never blocks sign-out.
+    final token = _currentDeviceToken;
+    final uid = _client.auth.currentUser?.id;
+    if (token != null && uid != null) {
+      try {
+        await _client
+            .from('device_tokens')
+            .delete()
+            .eq('user_id', uid)
+            .eq('token', token);
+      } catch (_) {
+        // best-effort
+      }
+    }
+    _currentDeviceToken = null;
+    await _client.auth.signOut();
+  }
 
   // ─── OAuth providers ──────────────────────────────────────────────────────
   //
@@ -2197,6 +2222,22 @@ class SupabaseService {
         'get_conversation_member_profiles',
         params: {'p_conversation_id': conversationId},
       ) as List;
+      // Group context, so a group push reads "GroupName" / "Sender: message"
+      // instead of just the sender. Best-effort: on any failure it falls back to
+      // the 1:1-style push (the edge function ignores empty group fields).
+      bool isGroup = false;
+      String groupName = '';
+      try {
+        final conv = await _client
+            .from('conversations')
+            .select('is_group, group_name')
+            .eq('id', conversationId)
+            .maybeSingle();
+        isGroup = conv?['is_group'] == true;
+        groupName = (conv?['group_name'] as String?)?.trim() ?? '';
+      } catch (_) {
+        // ignore — push degrades to the 1:1 layout
+      }
       final text = content?.trim() ?? '';
       final preview = text.isNotEmpty
           ? (text.length > 140 ? '${text.substring(0, 140)}…' : text)
@@ -2210,6 +2251,8 @@ class SupabaseService {
             'user_id': uid,
             'title': 'Nuovo messaggio',
             'body': preview,
+            'is_group': isGroup,
+            'group_name': groupName,
             'data': {'conversation_id': conversationId},
           },
         );
@@ -2483,6 +2526,9 @@ class SupabaseService {
       },
       onConflict: 'user_id,token',
     );
+    // Remember the token for this device so signOut() can delete exactly this
+    // row (this user + this device) and not leak pushes to the next account.
+    _currentDeviceToken = token;
   }
 
   RealtimeChannel subscribeToNotifications(

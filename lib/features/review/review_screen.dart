@@ -529,7 +529,9 @@ class _NextReviewCountdownState extends State<_NextReviewCountdown> {
   Duration _untilNextReview() {
     final now = DateTime.now();
     var next = DateTime(now.year, now.month, now.day, _kReviewHour);
-    if (!next.isAfter(now)) next = next.add(const Duration(days: 1));
+    // Use isBefore (not !isAfter): at exactly 08:00:00 `next` equals `now`, so
+    // the countdown reads 00:00:00 instead of rolling a full 24h to "24:00:00".
+    if (next.isBefore(now)) next = next.add(const Duration(days: 1));
     return next.difference(now);
   }
 

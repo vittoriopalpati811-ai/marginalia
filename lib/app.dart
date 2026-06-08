@@ -386,6 +386,12 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
           // (fixed "review_due" / "review_evening" identifiers); both are
           // computed from the local Isar state, so this works fully offline.
           _scheduleReviewReminder(isEnglish);
+        } else if (data.event == AuthChangeEvent.signedOut) {
+          // Stop re-registering the signed-out account's device token (the row
+          // was already deleted in SupabaseService.signOut() while still
+          // authenticated); resetting lets the NEXT account's start() register
+          // cleanly instead of being blocked by the _started guard.
+          _pushService.reset();
         }
       });
     } catch (error) {

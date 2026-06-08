@@ -218,69 +218,84 @@ class ReviewSessionController
     var advanced = false;
     var streak = 0;
     var best = 0;
+    var persisted = false;
 
-    await isar.writeTxn(() async {
-      // 1 ─ SM-2 schedule on the highlight.
-      final fresh = await isar.highlights.get(card.id);
-      if (fresh != null) {
-        fresh
-          ..reviewEase = next.easeFactor
-          ..reviewIntervalDays = next.intervalDays
-          ..reviewReps = next.repetitions
-          ..reviewDueAt = next.dueAt;
-        await isar.highlights.put(fresh);
-      }
-
-      // 2 ─ Today's activity row: +1 reviewedCount, and on the first graded card
-      //     of the session flip reviewedComplete (so a heatmap can tell "did a
-      //     full session" from "graded a card or two"). Date-only keyed, so it
-      //     auto-rolls at midnight with no background task.
-      var activity = await isar.dailyActivitys
-          .filter()
-          .userIdEqualTo(userId)
-          .dayEqualTo(today)
-          .findFirst();
-      activity ??= DailyActivity()
-        ..userId = userId
-        ..day = today;
-      activity.reviewedCount += 1;
-      if (isFirstGradeOfSession) activity.reviewedComplete = true;
-      await isar.dailyActivitys.put(activity);
-
-      // 3 ─ Streak — advances at most once per day, on the first graded card, so
-      //     even a partial ripasso keeps the flame alive.
-      if (isFirstGradeOfSession) {
-        var rs =
-            await isar.reviewStates.filter().userIdEqualTo(userId).findFirst();
-        rs ??= ReviewState()..userId = userId;
-
-        // Reset today's counter across the day boundary.
-        if (rs.reviewedTodayDate != today) {
-          rs.reviewedTodayCount = 0;
-          rs.reviewedTodayDate = today;
+    // The review ritual must NEVER crash the UI. The single write below is the
+    // only thing here that can fail, so it is wrapped: ANY error (a transient
+    // storage failure, or — belt-and-suspenders — an unexpected transaction
+    // state) is logged and swallowed, and the deck still advances. An unsaved
+    // card simply resurfaces next session.
+    try {
+      await isar.writeTxn(() async {
+        // 1 ─ SM-2 schedule on the highlight.
+        final fresh = await isar.highlights.get(card.id);
+        if (fresh != null) {
+          fresh
+            ..reviewEase = next.easeFactor
+            ..reviewIntervalDays = next.intervalDays
+            ..reviewReps = next.repetitions
+            ..reviewDueAt = next.dueAt;
+          await isar.highlights.put(fresh);
         }
-        rs.reviewedTodayCount += 1;
 
-        if (rs.lastReviewedOn != today) {
-          final yesterday = today.subtract(const Duration(days: 1));
-          rs.currentStreak =
-              rs.lastReviewedOn == yesterday ? rs.currentStreak + 1 : 1;
-          if (rs.currentStreak > rs.bestStreak) {
-            rs.bestStreak = rs.currentStreak;
+        // 2 ─ Today's activity row: +1 reviewedCount, and on the first graded
+        //     card of the session flip reviewedComplete (so a heatmap can tell
+        //     "did a full session" from "graded a card or two"). Date-only
+        //     keyed, so it auto-rolls at midnight with no background task.
+        var activity = await isar.dailyActivitys
+            .filter()
+            .userIdEqualTo(userId)
+            .dayEqualTo(today)
+            .findFirst();
+        activity ??= DailyActivity()
+          ..userId = userId
+          ..day = today;
+        activity.reviewedCount += 1;
+        if (isFirstGradeOfSession) activity.reviewedComplete = true;
+        await isar.dailyActivitys.put(activity);
+
+        // 3 ─ Streak — advances at most once per day, on the first graded card,
+        //     so even a partial ripasso keeps the flame alive.
+        if (isFirstGradeOfSession) {
+          var rs = await isar.reviewStates
+              .filter()
+              .userIdEqualTo(userId)
+              .findFirst();
+          rs ??= ReviewState()..userId = userId;
+
+          // Reset today's counter across the day boundary.
+          if (rs.reviewedTodayDate != today) {
+            rs.reviewedTodayCount = 0;
+            rs.reviewedTodayDate = today;
           }
-          rs.lastReviewedOn = today;
-          advanced = true;
+          rs.reviewedTodayCount += 1;
+
+          if (rs.lastReviewedOn != today) {
+            final yesterday = today.subtract(const Duration(days: 1));
+            rs.currentStreak =
+                rs.lastReviewedOn == yesterday ? rs.currentStreak + 1 : 1;
+            if (rs.currentStreak > rs.bestStreak) {
+              rs.bestStreak = rs.currentStreak;
+            }
+            rs.lastReviewedOn = today;
+            advanced = true;
+          }
+
+          streak = rs.currentStreak;
+          best = rs.bestStreak;
+          await isar.reviewStates.put(rs);
         }
+      });
+      persisted = true;
+    } catch (error, stack) {
+      // Never surface a crash to the review UI — log and degrade gracefully.
+      debugPrint('[Ripasso] grade not persisted (continuing session): '
+          '$error\n$stack');
+    }
 
-        streak = rs.currentStreak;
-        best = rs.bestStreak;
-        await isar.reviewStates.put(rs);
-      }
-    });
-
-    // ── Side effects, strictly AFTER the transaction has committed ───────────
+    // ── Side effects, only when the write actually committed ─────────────────
     var incremented = state.streakIncremented;
-    if (isFirstGradeOfSession) {
+    if (persisted && isFirstGradeOfSession) {
       incremented = advanced || incremented;
       // The session now counts as today's review — silence the evening
       // "did you do your review today?" nudge so it can't fire later.
@@ -295,14 +310,17 @@ class ReviewSessionController
       }
     }
 
+    // Advance the deck regardless, so a grade tap is never a dead end.
     state = state.copyWith(
       index: state.index + 1,
       streakIncremented: incremented,
     );
 
     // The streak + activity log changed; refresh the streak + heatmap sources.
-    ref.invalidate(reviewStateProvider);
-    ref.invalidate(reviewedDaysProvider);
+    if (persisted) {
+      ref.invalidate(reviewStateProvider);
+      ref.invalidate(reviewedDaysProvider);
+    }
   }
 
   Future<void> _notifyJamMates() async {

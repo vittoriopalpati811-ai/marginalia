@@ -77,6 +77,18 @@ class PushService with WidgetsBindingObserver {
     await _register();
   }
 
+  /// Tears down push wiring on sign-out so the NEXT account that signs in on this
+  /// device re-registers cleanly. The device-token ROW for the old account is
+  /// deleted in [SupabaseService.signOut] (which runs while still authenticated);
+  /// here we just stop re-registering, drop the method handler + lifecycle
+  /// observer, and clear [_started] so a later [start] re-initialises.
+  void reset() {
+    if (!_started) return;
+    WidgetsBinding.instance.removeObserver(this);
+    _channel.setMethodCallHandler(null);
+    _started = false;
+  }
+
   /// Re-runs registration when the app returns to the foreground. The native
   /// `register` re-requests permission if needed and re-fires `onToken`, so the
   /// latest token is re-upserted every time — covering a token that rotated
