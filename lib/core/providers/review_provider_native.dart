@@ -101,11 +101,13 @@ final reviewStateProvider = FutureProvider<ReviewState>((ref) async {
 
   final existing =
       await isar.reviewStates.filter().userIdEqualTo(userId).findFirst();
-  if (existing != null) return existing;
-
-  final created = ReviewState()..userId = userId;
-  await isar.writeTxn(() async => isar.reviewStates.put(created));
-  return created;
+  // Return the persisted row, or a transient default. We deliberately DO NOT
+  // create/persist the singleton here: the ONLY Isar writer for ReviewState is
+  // the review session's grade() write transaction. Keeping this provider
+  // strictly read-only means it can be recomputed at any time (including while
+  // a grade transaction is committing) without ever opening a nested
+  // transaction — Isar forbids transaction nesting.
+  return existing ?? (ReviewState()..userId = userId);
 });
 
 /// The set of local days (date-only midnight) on which the user reviewed at
@@ -185,14 +187,22 @@ class ReviewSessionController
     );
   }
 
-  /// Grades the current card: persists the new SM-2 schedule, advances the deck,
-  /// and — the first time a card is graded in this session — bumps the streak.
+  /// Grades the current card. EVERY Isar mutation for this grade — the SM-2
+  /// schedule on the highlight, today's [DailyActivity] row, and the streak in
+  /// [ReviewState] — happens inside ONE write transaction, so there is never a
+  /// second transaction in flight (Isar forbids nesting). Reads issued inside a
+  /// write transaction reuse the ambient transaction; they do NOT open a new
+  /// one. Every non-Isar side effect (notifications, the Supabase mirror, the
+  /// streak-bounce flag, provider invalidation) runs strictly AFTER the
+  /// transaction has committed.
   Future<void> grade(ReviewGrade grade) async {
     final card = state.current;
     if (card == null) return;
 
     final isFirstGradeOfSession = state.index == 0;
     final now = DateTime.now();
+    final today = _dateOnly(now);
+    final userId = ref.read(currentUserProvider)?.id ?? 'local';
 
     final next = scheduleSm2(
       easeFactor: card.reviewEase ?? kDefaultEaseFactor,
@@ -203,30 +213,86 @@ class ReviewSessionController
     );
 
     final isar = ref.read(isarProvider);
+
+    // Filled inside the transaction, read back out after it commits.
+    var advanced = false;
+    var streak = 0;
+    var best = 0;
+
     await isar.writeTxn(() async {
+      // 1 ─ SM-2 schedule on the highlight.
       final fresh = await isar.highlights.get(card.id);
-      if (fresh == null) return;
-      fresh
-        ..reviewEase = next.easeFactor
-        ..reviewIntervalDays = next.intervalDays
-        ..reviewReps = next.repetitions
-        ..reviewDueAt = next.dueAt;
-      await isar.highlights.put(fresh);
+      if (fresh != null) {
+        fresh
+          ..reviewEase = next.easeFactor
+          ..reviewIntervalDays = next.intervalDays
+          ..reviewReps = next.repetitions
+          ..reviewDueAt = next.dueAt;
+        await isar.highlights.put(fresh);
+      }
+
+      // 2 ─ Today's activity row: +1 reviewedCount, and on the first graded card
+      //     of the session flip reviewedComplete (so a heatmap can tell "did a
+      //     full session" from "graded a card or two"). Date-only keyed, so it
+      //     auto-rolls at midnight with no background task.
+      var activity = await isar.dailyActivitys
+          .filter()
+          .userIdEqualTo(userId)
+          .dayEqualTo(today)
+          .findFirst();
+      activity ??= DailyActivity()
+        ..userId = userId
+        ..day = today;
+      activity.reviewedCount += 1;
+      if (isFirstGradeOfSession) activity.reviewedComplete = true;
+      await isar.dailyActivitys.put(activity);
+
+      // 3 ─ Streak — advances at most once per day, on the first graded card, so
+      //     even a partial ripasso keeps the flame alive.
+      if (isFirstGradeOfSession) {
+        var rs =
+            await isar.reviewStates.filter().userIdEqualTo(userId).findFirst();
+        rs ??= ReviewState()..userId = userId;
+
+        // Reset today's counter across the day boundary.
+        if (rs.reviewedTodayDate != today) {
+          rs.reviewedTodayCount = 0;
+          rs.reviewedTodayDate = today;
+        }
+        rs.reviewedTodayCount += 1;
+
+        if (rs.lastReviewedOn != today) {
+          final yesterday = today.subtract(const Duration(days: 1));
+          rs.currentStreak =
+              rs.lastReviewedOn == yesterday ? rs.currentStreak + 1 : 1;
+          if (rs.currentStreak > rs.bestStreak) {
+            rs.bestStreak = rs.currentStreak;
+          }
+          rs.lastReviewedOn = today;
+          advanced = true;
+        }
+
+        streak = rs.currentStreak;
+        best = rs.bestStreak;
+        await isar.reviewStates.put(rs);
+      }
     });
 
-    // Record this card in today's activity log (offline-first; foundation for
-    // the profile review-heatmap). One row per local day; reviewedCount sums
-    // every card graded that day across sessions.
-    await _logActivity(now, completedSession: isFirstGradeOfSession);
-
-    // Streak counts after the FIRST graded card, so even a partial ripasso keeps
-    // the flame alive.
+    // ── Side effects, strictly AFTER the transaction has committed ───────────
     var incremented = state.streakIncremented;
     if (isFirstGradeOfSession) {
-      incremented = await _applyStreak(now) || incremented;
-      // The session is now under way and counts as today's review — silence the
-      // evening "did you do your review today?" nudge so it can't fire later.
+      incremented = advanced || incremented;
+      // The session now counts as today's review — silence the evening
+      // "did you do your review today?" nudge so it can't fire later.
       unawaited(LocalNotifService.cancelEveningReviewReminder());
+      if (advanced) {
+        // Best-effort, fire-and-forget Supabase mirrors — they never block or
+        // break the offline loop and silently degrade if migration 050/051
+        // isn't applied yet. Guarded by `advanced`, so each fires at most once
+        // per day (when the streak rolls to a new day).
+        unawaited(_mirrorStreak(streak, best, today));
+        unawaited(_notifyJamMates());
+      }
     }
 
     state = state.copyWith(
@@ -234,87 +300,9 @@ class ReviewSessionController
       streakIncremented: incremented,
     );
 
-    // The activity log changed; refresh the heatmap source.
-    ref.invalidate(reviewedDaysProvider);
-  }
-
-  /// Upserts today's [DailyActivity] row: +1 [reviewedCount], and on the first
-  /// graded card of the session flips [reviewedComplete] so a heatmap can tell
-  /// "did a full session" from "graded a card or two". Date-only keyed, so it
-  /// auto-rolls at midnight without a background task.
-  Future<void> _logActivity(
-    DateTime now, {
-    required bool completedSession,
-  }) async {
-    final isar = ref.read(isarProvider);
-    final userId = ref.read(currentUserProvider)?.id ?? 'local';
-    final today = _dateOnly(now);
-
-    await isar.writeTxn(() async {
-      var row = await isar.dailyActivitys
-          .filter()
-          .userIdEqualTo(userId)
-          .dayEqualTo(today)
-          .findFirst();
-      row ??= DailyActivity()
-        ..userId = userId
-        ..day = today;
-      row.reviewedCount += 1;
-      if (completedSession) row.reviewedComplete = true;
-      await isar.dailyActivitys.put(row);
-    });
-  }
-
-  /// Continues/resets the consecutive-day streak and records today's progress.
-  /// Returns true if [currentStreak] advanced to a new day (for the UI bounce).
-  Future<bool> _applyStreak(DateTime now) async {
-    final isar = ref.read(isarProvider);
-    final userId = ref.read(currentUserProvider)?.id ?? 'local';
-    final today = _dateOnly(now);
-
-    var advanced = false;
-    late int streak;
-    late int best;
-
-    await isar.writeTxn(() async {
-      var rs =
-          await isar.reviewStates.filter().userIdEqualTo(userId).findFirst();
-      rs ??= ReviewState()..userId = userId;
-
-      // Reset today's counter across the day boundary.
-      if (rs.reviewedTodayDate != today) {
-        rs.reviewedTodayCount = 0;
-        rs.reviewedTodayDate = today;
-      }
-      rs.reviewedTodayCount += 1;
-
-      if (rs.lastReviewedOn != today) {
-        final yesterday = today.subtract(const Duration(days: 1));
-        rs.currentStreak =
-            rs.lastReviewedOn == yesterday ? rs.currentStreak + 1 : 1;
-        if (rs.currentStreak > rs.bestStreak) rs.bestStreak = rs.currentStreak;
-        rs.lastReviewedOn = today;
-        advanced = true;
-      }
-
-      streak = rs.currentStreak;
-      best = rs.bestStreak;
-      await isar.reviewStates.put(rs);
-    });
-
-    // Refresh any widget watching the streak (Library card, Profile, review UI).
+    // The streak + activity log changed; refresh the streak + heatmap sources.
     ref.invalidate(reviewStateProvider);
-
-    if (advanced) {
-      // Best-effort, fire-and-forget Supabase mirror — never blocks the offline
-      // loop and silently degrades if migration 050 isn't applied yet.
-      unawaited(_mirrorStreak(streak, best, today));
-      // First completed review of the day → tell our jam-mates. The `advanced`
-      // guard means this fires at most once per day (when the streak rolls to a
-      // new day), never on subsequent cards. Fire-and-forget, never throws.
-      unawaited(_notifyJamMates());
-    }
-    return advanced;
+    ref.invalidate(reviewedDaysProvider);
   }
 
   Future<void> _notifyJamMates() async {

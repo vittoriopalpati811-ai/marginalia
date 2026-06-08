@@ -574,29 +574,51 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                 ),
               ),
               child: PageTransitionSwitcher(
-                duration: const Duration(milliseconds: 320),
-                // Direction-aware tab transition, per the founder's explicit
-                // spec: clicking a tab to the LEFT of the current one must slide
-                // RIGHT→LEFT; clicking a tab to the RIGHT must slide LEFT→RIGHT.
-                // _direction = +1 when the target tab is to the RIGHT (higher
-                // index), -1 when it's to the LEFT. The earlier `_direction < 0`
-                // produced the opposite motion (founder flagged it), so the flag
-                // is inverted here. PageTransitionSwitcher drives BOTH the
-                // incoming and outgoing pages from this one flag, so they never
-                // fight each other (that was the AnimatedSwitcher bug).
-                reverse: _direction > 0,
+                duration: const Duration(milliseconds: 300),
+                // Direction-aware tab transition (founder spec, matched to the
+                // reference video): tapping a tab to the RIGHT slides the new
+                // page in FROM the right (content moves right→left); tapping a
+                // tab to the LEFT slides it in FROM the left (left→right). It is a
+                // clean lock-step horizontal slide — NO fade/scale (the old
+                // SharedAxisTransition) — so it reads exactly like paging
+                // sideways, both pages moving as one.
+                //
+                // `_direction` = +1 when the target tab is to the RIGHT (higher
+                // index), -1 when it's to the LEFT. The offsets are driven
+                // straight from it with `reverse: false`, so direction lives in
+                // ONE place and the two pages can never fight each other.
+                reverse: false,
                 layoutBuilder: (entries) => Stack(
                   fit: StackFit.expand,
                   children: entries,
                 ),
                 transitionBuilder:
                     (child, primaryAnimation, secondaryAnimation) {
-                  return SharedAxisTransition(
-                    animation: primaryAnimation,
-                    secondaryAnimation: secondaryAnimation,
-                    transitionType: SharedAxisTransitionType.horizontal,
-                    fillColor: Colors.transparent,
-                    child: child,
+                  final dir = _direction.toDouble();
+                  // Incoming page: starts one full width off, on the side we are
+                  // moving FROM, and settles to centre.
+                  final enter = Tween<Offset>(
+                    begin: Offset(dir, 0.0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: primaryAnimation,
+                    curve: Curves.easeOutCubic,
+                  ));
+                  // Outgoing page: leaves centre toward the opposite side, in
+                  // lock-step with the incoming one.
+                  final leave = Tween<Offset>(
+                    begin: Offset.zero,
+                    end: Offset(-dir, 0.0),
+                  ).animate(CurvedAnimation(
+                    parent: secondaryAnimation,
+                    curve: Curves.easeInCubic,
+                  ));
+                  return SlideTransition(
+                    position: enter,
+                    child: SlideTransition(
+                      position: leave,
+                      child: child,
+                    ),
                   );
                 },
                 child: KeyedSubtree(

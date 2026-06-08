@@ -16,6 +16,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -113,6 +114,7 @@ class ActivityHeatmap extends StatelessWidget {
     this.showLegend = true,
     this.showTitle = true,
     this.emptyColor,
+    this.ramp,
     this.localeTag,
   });
 
@@ -137,6 +139,12 @@ class ActivityHeatmap extends StatelessWidget {
   /// Override for the level-0 cell colour (used on the dark share card where the
   /// default warm-stone empty cell would be invisible).
   final Color? emptyColor;
+
+  /// Override for the 5-step intensity ramp (level 0..4). When null the default
+  /// editorial sienna→amber [_kRamp] is used. The profile passes a ramp derived
+  /// from the user's chosen background colour (see [activityRampFromSeed]) so the
+  /// heatmap + its legend stay coherent with the rest of the profile.
+  final List<Color>? ramp;
 
   /// BCP-47 locale for the month labels; defaults to the ambient locale.
   final String? localeTag;
@@ -170,10 +178,11 @@ class ActivityHeatmap extends StatelessWidget {
           cellGap: cellGap,
           locale: locale,
           emptyColor: emptyColor,
+          ramp: ramp ?? _kRamp,
         ),
         if (showLegend) ...[
           const SizedBox(height: 12),
-          _Legend(emptyColor: emptyColor, locale: locale),
+          _Legend(emptyColor: emptyColor, ramp: ramp ?? _kRamp, locale: locale),
         ],
       ],
     );
@@ -189,6 +198,7 @@ class _HeatGrid extends StatelessWidget {
     required this.cellSize,
     required this.cellGap,
     required this.locale,
+    required this.ramp,
     this.emptyColor,
   });
 
@@ -197,6 +207,7 @@ class _HeatGrid extends StatelessWidget {
   final double cellSize;
   final double cellGap;
   final String locale;
+  final List<Color> ramp;
   final Color? emptyColor;
 
   static const double _monthLabelHeight = 16;
@@ -237,7 +248,8 @@ class _HeatGrid extends StatelessWidget {
                 cellGap: cellGap,
                 locale: locale,
                 monthLabelHeight: _monthLabelHeight,
-                emptyColor: emptyColor ?? _kRamp[0],
+                ramp: ramp,
+                emptyColor: emptyColor ?? ramp[0],
               ),
             ),
           ),
@@ -317,6 +329,7 @@ class _HeatmapPainter extends CustomPainter {
     required this.cellGap,
     required this.locale,
     required this.monthLabelHeight,
+    required this.ramp,
     required this.emptyColor,
   });
 
@@ -326,6 +339,7 @@ class _HeatmapPainter extends CustomPainter {
   final double cellGap;
   final String locale;
   final double monthLabelHeight;
+  final List<Color> ramp;
   final Color emptyColor;
 
   static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -370,7 +384,7 @@ class _HeatmapPainter extends CustomPainter {
 
         final count = data[date] ?? 0;
         final level = activityLevel(count);
-        cellPaint.color = level == 0 ? emptyColor : _kRamp[level];
+        cellPaint.color = level == 0 ? emptyColor : ramp[level];
 
         final dx = col * step;
         final dy = monthLabelHeight + row * step;
@@ -407,14 +421,16 @@ class _HeatmapPainter extends CustomPainter {
       old.data != data ||
       old.weeks != weeks ||
       old.cellSize != cellSize ||
-      old.emptyColor != emptyColor;
+      old.emptyColor != emptyColor ||
+      !listEquals(old.ramp, ramp);
 }
 
 // ─── Legend ──────────────────────────────────────────────────────────────────
 
 class _Legend extends StatelessWidget {
-  const _Legend({this.emptyColor, required this.locale});
+  const _Legend({this.emptyColor, required this.ramp, required this.locale});
   final Color? emptyColor;
+  final List<Color> ramp;
   final String locale;
 
   @override
@@ -422,7 +438,7 @@ class _Legend extends StatelessWidget {
     final it = locale.toLowerCase().startsWith('it');
     final less = it ? 'Meno' : 'Less';
     final more = it ? 'Più' : 'More';
-    final empty = emptyColor ?? _kRamp[0];
+    final empty = emptyColor ?? ramp[0];
 
     Widget swatch(Color c) => Container(
           width: 11,
@@ -447,7 +463,7 @@ class _Legend extends StatelessWidget {
         Text(less, style: labelStyle),
         const SizedBox(width: 6),
         swatch(empty),
-        for (var i = 1; i < _kRamp.length; i++) swatch(_kRamp[i]),
+        for (var i = 1; i < ramp.length; i++) swatch(ramp[i]),
         const SizedBox(width: 6),
         Text(more, style: labelStyle),
       ],
@@ -463,6 +479,34 @@ const Color activityAccent = Color(0xFF9C5B22);
 /// The full intensity ramp, exposed read-only for callers that want to echo it
 /// (e.g. the share card legend).
 List<Color> get activityRamp => List.unmodifiable(_kRamp);
+
+/// Builds a 5-step intensity ramp (level 0..4) from a single [seed] colour — the
+/// user's chosen profile background. Level 0 stays a neutral warm stone so the
+/// empty grid still reads as a grid; levels 1..4 climb from a pale tint of the
+/// seed's hue to a deep, legible version of it.
+///
+/// The construction is hue/saturation-locked to the seed but lightness-driven,
+/// with two clamps that keep EVERY preset readable on the warm paper ground:
+///   • saturation is floored (so near-grey seeds like Coconut Milk still tint),
+///   • the deepest step's lightness is capped (so light seeds like Pastel Yellow
+///     don't top out as near-white and vanish against the page).
+/// This is what makes the heatmap + its legend coherent with the profile colour.
+List<Color> activityRampFromSeed(Color seed) {
+  final hsl = HSLColor.fromColor(seed);
+  final double hue = hsl.hue;
+  final double sat = hsl.saturation.clamp(0.30, 0.95).toDouble();
+  const double lPale = 0.80;
+  final double lDeep = (hsl.lightness * 0.55).clamp(0.22, 0.40).toDouble();
+  Color at(double t) =>
+      HSLColor.fromAHSL(1.0, hue, sat, lPale + (lDeep - lPale) * t).toColor();
+  return [
+    const Color(0xFFEDEAE2), // 0 — empty: neutral warm stone
+    at(0.00), // 1 — pale tint of the seed
+    at(0.40), // 2
+    at(0.72), // 3
+    at(1.00), // 4 — deep, legible seed (MORE)
+  ];
+}
 
 /// Largest count present anywhere in [data] (for callers that show a "peak").
 int peakCount(Map<DateTime, int> data) =>

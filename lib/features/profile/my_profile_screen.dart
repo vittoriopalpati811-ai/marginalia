@@ -366,6 +366,11 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               child: ActivityTab(
                 displayName:
                     profileAsync.asData?.value?['display_name'] as String?,
+                // Heatmap ramp + share-card header derive from the profile's
+                // chosen background colour, so the Activity tab stays coherent
+                // with the rest of the profile.
+                seedColor: gp.mid,
+                headerColors: gp.colors,
               ),
             ),
 
@@ -631,30 +636,10 @@ class _ProfileHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Opaque gradient base filling the FULL rect (square top, rounded
-          // bottom) so the status-bar top corners never reveal the page colour
-          // through the anti-aliased ClipRRect edge ("due buchetti ai lati").
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gp.colors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
-              ),
-            ),
-          ),
-          // ── Background: cover photo OR gradient ───────────────────────────
-          // Bottom corners rounded so the cover banner isn't a hard rectangle.
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(28),
-              bottomRight: Radius.circular(28),
-            ),
-            child: Stack(
+          // ── Background: cover photo OR gradient (square corners) ──────────
+          // The hero banner is a plain rectangle — the Stack clips its children
+          // to its rectangular bounds, so the bottom edge is a clean square cut.
+          Stack(
             fit: StackFit.expand,
             children: [
               if (coverUrl != null && coverUrl.isNotEmpty)
@@ -682,7 +667,6 @@ class _ProfileHeader extends StatelessWidget {
               // Cover pattern overlay removed — personalization with
               // dots/lines/circles was dropped at the founder's request.
             ],
-            ),
           ),
 
           // Bottom fade

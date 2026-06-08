@@ -44,10 +44,24 @@ DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 // ═══════════════════════════════════════════════════════════════════════════
 
 class ActivityTab extends ConsumerWidget {
-  const ActivityTab({super.key, this.displayName});
+  const ActivityTab({
+    super.key,
+    this.displayName,
+    required this.seedColor,
+    required this.headerColors,
+  });
 
   /// The profile owner's display name, stamped on the shareable cards.
   final String? displayName;
+
+  /// The profile's chosen background colour (the gradient's mid stop). The
+  /// heatmaps + share cards derive their intensity ramp from it so the whole
+  /// Activity tab is coherent with the rest of the profile.
+  final Color seedColor;
+
+  /// The profile's full gradient (light→mid→dark), reused as the share-card
+  /// header so the shared image matches the profile the viewer would land on.
+  final List<Color> headerColors;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -58,6 +72,7 @@ class ActivityTab extends ConsumerWidget {
     final reading = readingAsync.asData?.value ?? const <DateTime, int>{};
     final review = reviewAsync.asData?.value ?? const <DateTime, int>{};
     final today = _dateOnly(DateTime.now());
+    final ramp = activityRampFromSeed(seedColor);
 
     final readToday = (reading[today] ?? 0) > 0;
     final reviewedToday =
@@ -86,6 +101,9 @@ class ActivityTab extends ConsumerWidget {
             summary: _readingSummary(context, reading),
             displayName: displayName,
             shareKind: _ActivityKind.reading,
+            ramp: ramp,
+            seedColor: seedColor,
+            headerColors: headerColors,
           ).animate().fadeIn(duration: 360.ms, delay: 60.ms).slideY(
               begin: 0.04, end: 0, duration: 360.ms),
 
@@ -100,6 +118,9 @@ class ActivityTab extends ConsumerWidget {
             summary: _reviewSummary(context, review, reviewState),
             displayName: displayName,
             shareKind: _ActivityKind.review,
+            ramp: ramp,
+            seedColor: seedColor,
+            headerColors: headerColors,
           ).animate().fadeIn(duration: 400.ms, delay: 120.ms).slideY(
               begin: 0.04, end: 0, duration: 400.ms),
 
@@ -233,6 +254,9 @@ class _ActivityCard extends StatelessWidget {
     required this.loading,
     required this.summary,
     required this.shareKind,
+    required this.ramp,
+    required this.seedColor,
+    required this.headerColors,
     this.displayName,
   });
 
@@ -242,6 +266,9 @@ class _ActivityCard extends StatelessWidget {
   final bool loading;
   final String summary;
   final _ActivityKind shareKind;
+  final List<Color> ramp;
+  final Color seedColor;
+  final List<Color> headerColors;
   final String? displayName;
 
   @override
@@ -295,6 +322,7 @@ class _ActivityCard extends StatelessWidget {
               data: data,
               title: title,
               showTitle: false,
+              ramp: ramp,
             ),
 
           const SizedBox(height: 14),
@@ -349,6 +377,8 @@ class _ActivityCard extends StatelessWidget {
         summary: summary,
         data: data,
         displayName: displayName,
+        ramp: ramp,
+        headerColors: headerColors,
       ),
     );
   }
@@ -414,6 +444,8 @@ class _ActivityShareSheet extends StatefulWidget {
     required this.headline,
     required this.summary,
     required this.data,
+    required this.ramp,
+    required this.headerColors,
     this.displayName,
   });
 
@@ -422,6 +454,8 @@ class _ActivityShareSheet extends StatefulWidget {
   final String headline;
   final String summary;
   final Map<DateTime, int> data;
+  final List<Color> ramp;
+  final List<Color> headerColors;
   final String? displayName;
 
   @override
@@ -620,6 +654,8 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
                         summary: widget.summary,
                         data: widget.data,
                         displayName: widget.displayName,
+                        ramp: widget.ramp,
+                        headerColors: widget.headerColors,
                         localeTag:
                             Localizations.localeOf(context).toLanguageTag(),
                       ),
@@ -730,6 +766,8 @@ class ActivityShareCard extends StatelessWidget {
     required this.headline,
     required this.summary,
     required this.data,
+    required this.ramp,
+    required this.headerColors,
     this.displayName,
     this.localeTag,
   });
@@ -739,30 +777,56 @@ class ActivityShareCard extends StatelessWidget {
   final String headline;
   final String summary;
   final Map<DateTime, int> data;
+
+  /// Intensity ramp derived from the profile colour (see [activityRampFromSeed]).
+  final List<Color> ramp;
+
+  /// The profile gradient, reused as the card header so the shared image matches
+  /// the profile's own background.
+  final List<Color> headerColors;
+
   final String? displayName;
   final String? localeTag;
+
+  /// Cream when the header is dark, near-ink when it's light — so the header text
+  /// stays legible on EVERY profile preset (Pastel Yellow + Coconut Milk through
+  /// Navy + Vintage Wine).
+  Color get _onHeader =>
+      _headerMid.computeLuminance() > 0.55 ? const Color(0xFF2A2620) : _cream;
+
+  /// The gradient's representative colour for the contrast decision (the mid
+  /// stop of a 3-stop gradient, else the first).
+  Color get _headerMid =>
+      headerColors.length >= 2 ? headerColors[headerColors.length ~/ 2]
+                               : headerColors.first;
 
   @override
   Widget build(BuildContext context) {
     final name = (displayName ?? '').trim();
+    final onHeader = _onHeader;
 
     return SizedBox(
       width: _kCardSize,
       height: _kCardSize,
+      // Clip with a save-layer so the rounded corners are a clean alpha cut with
+      // NO dark fringe ("bordini strani negli angoli"): the corners are fully
+      // transparent in the exported PNG, the rest is the card.
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
         child: ColoredBox(
           color: MarginaliaColors.background,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Gradient header — sienna/amber, on-brand for activity ──────
+              // ── Gradient header — the profile's own gradient, so the shared
+              //    image matches the profile it links back to ────────────────
               Container(
                 height: 96,
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFFB8772F), Color(0xFF8A4A1C)],
+                    colors: headerColors,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -777,7 +841,7 @@ class ActivityShareCard extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
-                            color: _cream.withAlpha(210),
+                            color: onHeader.withAlpha(210),
                             letterSpacing: 2.0,
                           ),
                         ),
@@ -792,7 +856,7 @@ class ActivityShareCard extends StatelessWidget {
                               style: GoogleFonts.manrope(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: _cream.withAlpha(180),
+                                color: onHeader.withAlpha(180),
                                 letterSpacing: 0.2,
                               ),
                             ),
@@ -807,7 +871,7 @@ class ActivityShareCard extends StatelessWidget {
                       style: GoogleFonts.ebGaramond(
                         fontSize: 26,
                         fontWeight: FontWeight.w600,
-                        color: _cream,
+                        color: onHeader,
                         letterSpacing: -0.4,
                         height: 1.05,
                       ),
@@ -833,6 +897,7 @@ class ActivityShareCard extends StatelessWidget {
                         showLegend: true,
                         cellSize: 4.4,
                         cellGap: 1.4,
+                        ramp: ramp,
                         localeTag: localeTag,
                       ),
                       const SizedBox(height: 16),
