@@ -69,6 +69,7 @@ class BookRecommendation {
     this.categories = const [],
     this.pages = '',
     this.whyRead = '',
+    this.match = 0,
   });
   final String title;
   final String author;
@@ -80,6 +81,7 @@ class BookRecommendation {
   final List<String> categories; // genres
   final String pages; // page count (string — may be a range/estimate)
   final String whyRead; // "because you read X by Y"
+  final int match; // Netflix-style AI confidence 0-99 (0 = absent → hidden)
 }
 
 /// Parse a categories field that may arrive as a list or comma-joined string.
@@ -322,6 +324,7 @@ final libraryRecommendationsProvider =
               categories: _parseCategories(r['categories']),
               pages: (r['pages']?.toString() ?? '').trim(),
               whyRead: (r['why'] as String? ?? '').trim(),
+              match: (r['match'] as num?)?.toInt() ?? 0,
             ))
         .where((r) => r.title.isNotEmpty)
         .toList();
@@ -432,6 +435,7 @@ final libraryRecommendationsProvider =
       categories: _parseCategories(r['categories']),
       pages:  (r['pages']?.toString() ?? '').trim(),
       whyRead: (r['why']   as String? ?? '').trim(),
+      match:  (r['match'] as num?)?.toInt() ?? 0,
     );
   }).where((r) => r.title.isNotEmpty).toList();
 
@@ -459,6 +463,7 @@ final libraryRecommendationsProvider =
                 'categories': r.categories,
                 'pages': r.pages,
                 'why': r.whyRead,
+                'match': r.match,
               })
           .toList(),
     );
@@ -691,6 +696,10 @@ class _RecommendationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (rec.match > 0) ...[
+                  _MatchChip(match: rec.match),
+                  const SizedBox(width: 8),
+                ],
                 Icon(Icons.chevron_right_rounded,
                     size: 18, color: ScriptaColors.inkFaint),
               ],
@@ -950,6 +959,62 @@ class _RecommendationDetailScreenState
                         ],
                       ]),
                     ),
+                    // ── Netflix-style "% match" ───────────────────────────
+                    // The AI's genuine confidence that THIS reader will love
+                    // the book, judged from the affinity between the book and
+                    // their highlights. Hidden when absent (match == 0) — never
+                    // a fabricated number.
+                    if (rec.match > 0) ...[
+                      const SizedBox(height: 22),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: ScriptaColors.primaryFaint,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 54,
+                              height: 54,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Color(0xFF4E8A3E), Color(0xFF3C5E2E)],
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${rec.match}%',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                it
+                                    ? 'Questo libro potrebbe piacerti. Ne siamo sicuri al ${rec.match}%.'
+                                    : 'You might love this book — we’re ${rec.match}% sure.',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14.5,
+                                  height: 1.45,
+                                  fontWeight: FontWeight.w600,
+                                  color: ScriptaColors.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     // ── The AI phrase — now BELOW the title/author block ──
                     // White card (was a green siennaFaint box): a subtle
                     // border + soft shadow give it definition without the
@@ -1189,6 +1254,32 @@ class _RecStat extends StatelessWidget {
                   fontWeight: FontWeight.w600)),
         ],
       );
+}
+
+// Netflix-style green "% match" pill shown on each recommendation card.
+class _MatchChip extends StatelessWidget {
+  const _MatchChip({required this.match});
+  final int match;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: ScriptaColors.primaryFaint,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$match%',
+        style: GoogleFonts.manrope(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: ScriptaColors.primaryDark,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
 }
 
 class _BookDetailSheet extends StatefulWidget {

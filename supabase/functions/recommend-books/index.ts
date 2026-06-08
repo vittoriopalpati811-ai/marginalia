@@ -53,6 +53,7 @@ interface Recommendation {
   categories: string[];
   pages: string;
   why: string;
+  match: number; // AI confidence 0-99 (0 = absent → UI hides it)
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -341,6 +342,7 @@ INSTRUCTIONS:
 - For EACH recommendation first choose a "sourceBook": the SINGLE book from the BOOKS READ list above that MOST justifies the pick (strongest affinity of theme, style, author or era). Copy its "title" and "author" EXACTLY as they appear in the list; never cite a book that is not in the list.
 - The "reason" must explain the link to THAT sourceBook, and "why" must be EXACTLY "Because you read " + sourceBook title + " by " + sourceBook author + ".". The book cited in "why" MUST be the same as sourceBook and the same one the reason refers to — NEVER a different book.
 - Also fill, for each book: "plot" (1-2 sentence synopsis in ENGLISH), "categories" (2-4 genres such as "Fiction", "Mystery", "Coming-of-age"), "pages" (approximate page count as a plain number string).
+- Add "match": an INTEGER from 80 to 99 — how strongly THIS user will love the book, judged from the real affinity between the book and their highlights and themes. Differentiate honestly per book (do NOT give them all the same value): the strongest fit gets the highest number, a looser one a lower number. This is your genuine confidence, never a round placeholder.
 - Reply ONLY with valid JSON in the format below, no markdown and no extra text. Use straight quotes (") only, never typographic quotes.
 
 {
@@ -354,6 +356,7 @@ INSTRUCTIONS:
       "plot": "One or two sentence synopsis.",
       "categories": ["Fiction", "Mystery"],
       "pages": "320",
+      "match": 92,
       "why": "Because you read [sourceBook title] by [sourceBook author]."
     }
   ]
@@ -373,6 +376,7 @@ ISTRUZIONI:
 - Per OGNI libro consigliato scegli PRIMA un "sourceBook": il SINGOLO libro della lista LIBRI LETTI qui sopra che PIÙ giustifica il consiglio (massima affinità di tema, stile, autore o epoca). Copia "title" e "author" ESATTAMENTE come appaiono nella lista; non citare libri che non sono in lista.
 - La "reason" deve spiegare il legame proprio con QUEL sourceBook, e "why" deve essere ESATTAMENTE "Perché hai letto " + titolo del sourceBook + " di " + autore del sourceBook + ".". Il libro citato in "why" DEVE essere lo stesso di sourceBook e lo stesso a cui si riferisce la reason — MAI un libro diverso.
 - Compila inoltre, per ogni libro: "plot" (trama in 1-2 frasi, in italiano), "categories" (2-4 generi, es. "Narrativa", "Giallo", "Formazione"), "pages" (numero di pagine approssimativo come stringa numerica).
+- Aggiungi "match": un INTERO da 80 a 99 — quanto fortemente QUESTO utente amerà il libro, in base alla reale affinità tra il libro e i suoi highlight e temi. Differenzialo onestamente per ogni libro (NON dare a tutti lo stesso valore): l'affinità più forte ottiene il numero più alto, una più debole un numero più basso. È la tua reale confidenza, mai un numero generico.
 - Rispondi SOLO con JSON valido nel formato sotto, senza markdown e senza testo extra. Usa esclusivamente virgolette dritte ("), mai virgolette tipografiche.
 
 {
@@ -386,6 +390,7 @@ ISTRUZIONI:
       "plot": "Trama in una o due frasi.",
       "categories": ["Narrativa", "Giallo"],
       "pages": "320",
+      "match": 92,
       "why": "Perché hai letto [titolo del sourceBook] di [autore del sourceBook]."
     }
   ]
@@ -509,6 +514,7 @@ async function callGroq(
         ? (rr.categories as unknown[]).map((c) => String(c)).slice(0, 5)
         : [],
       pages:  String(rr.pages ?? ""),
+      match:  clampMatch(rr.match),
       why,
     };
   });
@@ -652,6 +658,15 @@ async function requireUser(req: Request): Promise<{ id: string } | null> {
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
+
+// Netflix-style "% match": the model's GENUINE per-book confidence (0 = absent
+// → the UI hides the line and never fabricates one). Valid scores are clamped to
+// a believable 70–99 band so an AI pick never reads as a discouraging low match.
+function clampMatch(v: unknown): number {
+  const n = typeof v === "number" ? v : parseInt(String(v ?? ""), 10);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.max(70, Math.min(99, Math.round(n)));
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {

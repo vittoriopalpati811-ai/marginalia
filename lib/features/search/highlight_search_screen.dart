@@ -37,6 +37,7 @@ class HighlightSearchScreen extends ConsumerStatefulWidget {
 
 class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
   final _ctrl = TextEditingController();
+  final FocusNode _focus = FocusNode();
   Timer? _debounce;
   String _query = '';
   bool _loading = false;
@@ -53,12 +54,26 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _backfill());
+    // Reliable keyboard on a freshly PUSHED route. `autofocus: true` regularly
+    // lost the race with the route-push transition (and with the indexing
+    // setState below), leaving the field looking focusable but with no keyboard
+    // — the "non fa scrivere" bug. Request focus once the transition has
+    // settled, and defer the heavier embedding backfill so its rebuilds can't
+    // steal that focus the instant the screen opens.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 320), () {
+        if (mounted) _focus.requestFocus();
+      });
+      Future.delayed(const Duration(milliseconds: 650), () {
+        if (mounted) _backfill();
+      });
+    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _focus.dispose();
     _ctrl.dispose();
     super.dispose();
   }
@@ -170,7 +185,7 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
               child: TextField(
                 controller: _ctrl,
-                autofocus: true,
+                focusNode: _focus,
                 onChanged: _onChanged,
                 textInputAction: TextInputAction.search,
                 onSubmitted: _runSearch,
