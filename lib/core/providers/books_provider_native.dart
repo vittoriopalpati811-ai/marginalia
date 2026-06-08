@@ -65,13 +65,17 @@ class BookCoverController {
   Future<void> setCover(Id bookId, String? coverUrl) async {
     final isar = _ref.read(isarProvider);
     Book? book;
-    await isar.writeTxn(() async {
-      final fresh = await isar.books.get(bookId);
-      if (fresh == null) return;
-      fresh.coverUrl = coverUrl;
-      await isar.books.put(fresh);
-      book = fresh;
-    });
+    try {
+      await isar.writeTxn(() async {
+        final fresh = await isar.books.get(bookId);
+        if (fresh == null) return;
+        fresh.coverUrl = coverUrl;
+        await isar.books.put(fresh);
+        book = fresh;
+      });
+    } catch (_) {
+      // never crash the UI on a storage error
+    }
     _ref.invalidate(bookByIdProvider(bookId));
     final b = book;
     if (b != null) {

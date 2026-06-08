@@ -51,12 +51,18 @@ class HighlightFavoriteNotifier extends Notifier<void> {
 
   Future<void> toggleFavorite(Id highlightId) async {
     final isar = ref.read(isarProvider);
-    await isar.writeTxn(() async {
-      final highlight = await isar.highlights.get(highlightId);
-      if (highlight == null) return;
-      highlight.isFavorite = !highlight.isFavorite;
-      await isar.highlights.put(highlight);
-    });
+    // Guarded like grade(): a storage error must never crash the UI. The
+    // favorites stream stays consistent with whatever actually persisted.
+    try {
+      await isar.writeTxn(() async {
+        final highlight = await isar.highlights.get(highlightId);
+        if (highlight == null) return;
+        highlight.isFavorite = !highlight.isFavorite;
+        await isar.highlights.put(highlight);
+      });
+    } catch (_) {
+      // swallow — non-critical
+    }
   }
 }
 
