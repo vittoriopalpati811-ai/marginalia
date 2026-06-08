@@ -1742,5 +1742,22 @@
   "@ripassoStreakLabel": { "placeholders": { "count": { "type": "int" } } },
   "ripassoStreakStart": "Inizia la tua serie",
   "ripassoBestStreak": "Record {count}",
-  "@ripassoBestStreak": { "placeholders": { "count": { "type": "int" } } }
+  "@ripassoBestStreak": { "placeholders": { "count": { "type": "int" } } },
+
+  "profileTabActivity": "Attività",
+  "activityReadingTitle": "Letture",
+  "activityReviewTitle": "Ripasso",
+  "activityReadTodayLabel": "Letto oggi",
+  "activityReviewedTodayLabel": "Ripassato oggi",
+  "activityReadingSummary": "{days, plural, =0{Ancora nessun giorno di lettura nell'ultimo anno} =1{1 giorno di lettura nell'ultimo anno · serie più lunga {streak}} other{{days} giorni di lettura nell'ultimo anno · serie più lunga {streak}}}",
+  "@activityReadingSummary": { "placeholders": { "days": { "type": "int" }, "streak": { "type": "int" } } },
+  "activityReviewSummary": "{reviews, plural, =0{Ancora nessun ripasso · serie attuale {current} · record {best}} =1{1 ripasso · serie attuale {current} · record {best}} other{{reviews} ripassi · serie attuale {current} · record {best}}}",
+  "@activityReviewSummary": { "placeholders": { "reviews": { "type": "int" }, "current": { "type": "int" }, "best": { "type": "int" } } },
+  "activityShareTooltip": "Condividi",
+  "activityShareSheetTitle": "Condividi la tua attività",
+  "activityShareSheetTagline": "Un anno della tua vita da lettore, pronto da pubblicare.",
+  "activityShareReadingHeadline": "{days, plural, =0{Un anno di letture} =1{1 giorno di lettura quest'anno} other{{days} giorni di lettura quest'anno}}",
+  "@activityShareReadingHeadline": { "placeholders": { "days": { "type": "int" } } },
+  "activityShareReviewHeadline": "{reviews, plural, =0{Un anno di ripasso} =1{1 ripasso quest'anno} other{{reviews} ripassi quest'anno}}",
+  "@activityShareReviewHeadline": { "placeholders": { "reviews": { "type": "int" } } }
 }

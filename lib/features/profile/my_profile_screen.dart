@@ -18,6 +18,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'followers_screen.dart';
 import 'posts_timeline.dart';
 import 'reviews_tab.dart';
+import 'activity_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
 import '../reader/book_info_screen.dart';
@@ -144,7 +145,7 @@ final _mySpotlightProvider =
 final _gradientKeyProvider = StateProvider<String>((ref) => 'sepia');
 final _patternKeyProvider   = StateProvider<String>((ref) => 'none');
 
-/// Which profile tab is active: 0 = Profilo, 1 = Recensioni.
+/// Which profile tab is active: 0 = Profilo, 1 = Recensioni, 2 = Attività.
 final _profileTabProvider = StateProvider.autoDispose<int>((ref) => 0);
 
 /// Locally selected favourite books (up to 6). Prefilled from profile on load.
@@ -358,6 +359,15 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           // ════════════════ TAB 1 · RECENSIONI ════════════════════════════
           if (activeTab == 1)
             const SliverToBoxAdapter(child: ReviewsTab()),
+
+          // ════════════════ TAB 2 · ATTIVITÀ (Activity) ═══════════════════
+          if (activeTab == 2)
+            SliverToBoxAdapter(
+              child: ActivityTab(
+                displayName:
+                    profileAsync.asData?.value?['display_name'] as String?,
+              ),
+            ),
 
           // ════════════════ TAB 0 · PROFILO ═══════════════════════════════
           if (activeTab == 0) ...[
@@ -1011,6 +1021,12 @@ class _ProfileTabBar extends StatelessWidget {
             icon: Icons.rate_review_outlined,
             selected: active == 1,
             onTap: () => onChanged(1),
+          ),
+          _Segment(
+            label: context.l10n.profileTabActivity,
+            icon: Icons.grid_view_rounded,
+            selected: active == 2,
+            onTap: () => onChanged(2),
           ),
         ],
       ),
