@@ -437,14 +437,39 @@ class BookEditorialCover extends StatelessWidget {
     required this.title,
     required this.author,
     this.borderRadius = BorderRadius.zero,
+    this.coverUrl,
   });
 
   final String       title;
   final String       author;
   final BorderRadius borderRadius;
 
+  /// A real cover (custom upload or a Kindle-scraped cover URL). When present
+  /// and loadable it OVERRIDES the generated doodle; on any load/network error
+  /// it gracefully falls back to the doodle so a book is never blank.
+  final String?      coverUrl;
+
   @override
   Widget build(BuildContext context) {
+    final url = coverUrl;
+    if (url != null && url.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (_, __, ___) => _doodle(),
+          loadingBuilder: (context, child, progress) =>
+              progress == null ? child : _doodle(),
+        ),
+      );
+    }
+    return _doodle();
+  }
+
+  Widget _doodle() {
     final seed = ((title.hashCode * 1315423911) ^ (author.hashCode * 2654435769)).abs();
     final mood        = _detectMood(title);
     final palettes    = _palettes[mood]!;

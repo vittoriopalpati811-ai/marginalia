@@ -1,14 +1,18 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import '../../core/utils/share_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../core/motion/airbnb_motion.dart';
+import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'book_cover.dart';
@@ -76,13 +80,26 @@ class BookDetailScreen extends ConsumerWidget {
                       child: BookEditorialCover(
                         title: book.title,
                         author: book.author,
+                        coverUrl: book.coverUrl,
                       ),
                     ),
                   ),
                   child: BookEditorialCover(
                     title: book.title,
                     author: book.author,
+                    coverUrl: book.coverUrl,
                   ),
+                ),
+              ),
+
+              // ── Cover edit (matitina) ─────────────────────────────────────
+              // A small frosted pencil on the cover: pick a photo, search Google
+              // for one, or remove a custom cover. Sits clear of the back button.
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 6,
+                right: 12,
+                child: _CoverEditButton(
+                  onTap: () => _editCover(context, ref, book),
                 ),
               ),
 
@@ -480,6 +497,155 @@ class _HighlightCard extends StatelessWidget {
       'orange' => const Color(0xFFBF7A34),
       _ => MarginaliaColors.siennaLight,
     };
+  }
+}
+
+// ─── Cover editing (matitina) ────────────────────────────────────────────────
+
+/// Opens the cover-edit sheet for [book]: pick a photo from the gallery, search
+/// Google for one, or remove a custom cover.
+void _editCover(BuildContext context, WidgetRef ref, Book book) {
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  final hasCustom = (book.coverUrl ?? '').isNotEmpty;
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: MarginaliaColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (sheetCtx) => SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 38,
+            height: 4,
+            decoration: BoxDecoration(
+              color: MarginaliaColors.rule,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 2),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                it ? 'Copertina del libro' : 'Book cover',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: MarginaliaColors.ink,
+                ),
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined,
+                color: MarginaliaColors.primaryDark),
+            title: Text(it ? 'Scegli dalla galleria' : 'Choose from gallery'),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _pickAndUploadCover(context, ref, book);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.search_rounded,
+                color: MarginaliaColors.primaryDark),
+            title: Text(it ? 'Cerca su Google' : 'Search on Google'),
+            subtitle: Text(
+              it
+                  ? 'Trova e scarica, poi scegline dalla galleria'
+                  : 'Find one, save it, then pick from gallery',
+              style: const TextStyle(
+                  fontSize: 12, color: MarginaliaColors.inkFaint),
+            ),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _searchCoverOnGoogle(book);
+            },
+          ),
+          if (hasCustom)
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded,
+                  color: MarginaliaColors.highlightRose),
+              title: Text(it ? 'Rimuovi copertina' : 'Remove cover'),
+              onTap: () {
+                Navigator.of(sheetCtx).pop();
+                ref.read(bookCoverControllerProvider).setCover(book.id, null);
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<void> _pickAndUploadCover(
+    BuildContext context, WidgetRef ref, Book book) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    final res = await FilePicker.platform
+        .pickFiles(type: FileType.image, withData: true);
+    if (res == null || res.files.isEmpty) return;
+    final file = res.files.first;
+    final bytes = file.bytes;
+    if (bytes == null) return;
+    var ext = (file.extension ?? 'jpg').toLowerCase();
+    if (ext == 'jpeg') ext = 'jpg';
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
+    final url = await ref
+        .read(supabaseServiceProvider)
+        .uploadBookCover(bytes, ext, book.supabaseId);
+    await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
+  } catch (_) {
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it
+            ? 'Impossibile aggiornare la copertina'
+            : "Couldn't update the cover")));
+  }
+}
+
+Future<void> _searchCoverOnGoogle(Book book) async {
+  final q = Uri.encodeComponent('${book.title} ${book.author} book cover');
+  final uri = Uri.parse('https://www.google.com/search?tbm=isch&q=$q');
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    // ignore — nothing to open
+  }
+}
+
+/// Small frosted pencil overlaid on the cover.
+class _CoverEditButton extends StatelessWidget {
+  const _CoverEditButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.28),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+        ),
+        child: const Icon(Icons.edit_rounded, size: 18, color: Colors.white),
+      ),
+    );
   }
 }
 

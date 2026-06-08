@@ -208,6 +208,18 @@ class SupabaseService {
     });
   }
 
+  /// Lightweight remote sync of just a book's cover URL (by Supabase id), used
+  /// by the cover editor so it doesn't depend on the platform-specific Book
+  /// type. Best-effort: the local Isar cover is authoritative.
+  Future<void> setBookCoverUrl(String supabaseId, String? coverUrl) async {
+    if (!isAuthenticated || supabaseId.isEmpty || userId == null) return;
+    await _client
+        .from('books')
+        .update({'cover_url': coverUrl})
+        .eq('id', supabaseId)
+        .eq('user_id', userId!);
+  }
+
   Future<void> upsertRawBook({
     required String id,
     required String userId,
@@ -1285,6 +1297,26 @@ class SupabaseService {
     final url = '${_client.storage.from('covers').getPublicUrl(path)}?v=$ts';
     await _client.from('profiles').update({'cover_url': url}).eq('id', userId!);
     return url;
+  }
+
+  /// Uploads a CUSTOM book cover and returns its public URL. Keyed per book so
+  /// each library book owns one cover object. The book row itself is updated
+  /// separately (via upsertBook) by the caller. Image is moderated first.
+  Future<String> uploadBookCover(
+      Uint8List bytes, String ext, String bookKey) async {
+    await _ensureBucket('book-covers');
+    final safeKey = bookKey.isNotEmpty
+        ? bookKey
+        : DateTime.now().millisecondsSinceEpoch.toString();
+    final path = '${userId!}/$safeKey.$ext';
+    await _assertImageClean(bytes);
+    await _client.storage.from('book-covers').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'),
+        );
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    return '${_client.storage.from('book-covers').getPublicUrl(path)}?v=$ts';
   }
 
   /// Uploads a Jam cover photo and updates the jam's cover_url column.

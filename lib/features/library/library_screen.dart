@@ -1001,11 +1001,13 @@ class _BookGridCard extends StatelessWidget {
                   child: BookEditorialCover(
                     title: book.title,
                     author: book.author,
+                    coverUrl: book.coverUrl,
                   ),
                 ),
                 child: BookEditorialCover(
                   title: book.title,
                   author: book.author,
+                  coverUrl: book.coverUrl,
                   borderRadius: const BorderRadius.only(
                     topLeft:  Radius.circular(15),
                     topRight: Radius.circular(15),

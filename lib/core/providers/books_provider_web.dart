@@ -88,6 +88,17 @@ final favoriteHighlightsProvider =
   }
 });
 
+// Web stub — covers are read-only in the web build (no local Isar store).
+class BookCoverController {
+  BookCoverController(this._ref);
+  // ignore: unused_field
+  final Ref _ref;
+  Future<void> setCover(int bookId, String? coverUrl) async {}
+}
+
+final bookCoverControllerProvider =
+    Provider<BookCoverController>((ref) => BookCoverController(ref));
+
 final randomHighlightProvider =
     FutureProvider.autoDispose<Highlight?>((ref) async {
   final service = ref.watch(supabaseServiceProvider);
