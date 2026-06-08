@@ -103,6 +103,36 @@ final dueCountProvider = FutureProvider.autoDispose<int>((ref) async {
   return total > kMaxSessionCards ? kMaxSessionCards : total;
 });
 
+/// Pulls the given highlights FORWARD into the Ripasso queue (sets reviewDueAt to
+/// now) — used by the Quiz to schedule the passages you got WRONG for spaced
+/// review, so the quiz strengthens exactly what you forgot. Only ever moves a
+/// card earlier, never later. Best-effort: never throws into the UI. Returns the
+/// number of highlights actually pulled forward.
+Future<int> markHighlightsDueForReview(WidgetRef ref, Set<int> ids) async {
+  if (ids.isEmpty) return 0;
+  var moved = 0;
+  try {
+    final isar = ref.read(isarProvider);
+    final now = DateTime.now();
+    await isar.writeTxn(() async {
+      for (final id in ids) {
+        final h = await isar.highlights.get(id);
+        if (h == null) continue;
+        if (h.reviewDueAt == null || h.reviewDueAt!.isAfter(now)) {
+          h.reviewDueAt = now;
+          await isar.highlights.put(h);
+          moved++;
+        }
+      }
+    });
+    ref.invalidate(dueCountProvider);
+    ref.invalidate(dueHighlightsProvider);
+  } catch (e) {
+    debugPrint('[quiz] markHighlightsDueForReview failed: $e');
+  }
+  return moved;
+}
+
 /// Reads (creating if absent) the per-user [ReviewState] singleton. Not
 /// autoDispose: the streak should stay stable across navigation within a
 /// session. Invalidated by the session controller after a streak update.

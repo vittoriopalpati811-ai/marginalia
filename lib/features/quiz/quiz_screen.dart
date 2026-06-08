@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/providers/highlights_provider.dart';
+import '../../core/providers/review_provider.dart';
 import '../../core/theme.dart';
 import 'quiz_generator.dart';
 
@@ -41,6 +42,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   String? _picked;
   bool _answered = false;
 
+  // highlights you missed → scheduled for Ripasso at the end
+  final Set<int> _wrongIds = {};
+  int _scheduled = 0;
+
   bool get _it => Localizations.localeOf(context).languageCode == 'it';
 
   @override
@@ -57,7 +62,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
           .where((h) => filter == null
               ? true
               : (h.bookTitle ?? '').trim().toLowerCase() == filter)
-          .map((h) => QuizSource(h.content, h.bookTitle, h.bookAuthor))
+          .map((h) =>
+              QuizSource(h.content, h.bookTitle, h.bookAuthor, highlightId: h.id))
           .toList();
       final qs = generateQuiz(sources, count: 10, rng: Random());
       if (!mounted) return;
@@ -77,6 +83,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       _picked = null;
       _answered = false;
       _loading = true;
+      _wrongIds.clear();
+      _scheduled = 0;
     });
     _load();
   }
@@ -84,6 +92,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   void _next() {
     if (_index >= _questions.length - 1) {
       setState(() => _index = _questions.length); // → results
+      _feedRipasso();
       return;
     }
     setState(() {
@@ -99,8 +108,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     setState(() {
       _picked = option;
       _answered = true;
-      if (option == q.answer) _score++;
+      if (option == q.answer) {
+        _score++;
+      } else if (q.highlightId != null && q.highlightId! > 0) {
+        _wrongIds.add(q.highlightId!);
+      }
     });
+  }
+
+  // At the end, schedule every missed passage for Ripasso (spaced repetition) so
+  // the quiz reinforces exactly what you forgot. Native-only; no-op on web.
+  Future<void> _feedRipasso() async {
+    final n = await markHighlightsDueForReview(ref, _wrongIds);
+    if (mounted && n > 0) setState(() => _scheduled = n);
   }
 
   String _label(bool it, QuizKind kind) {
@@ -188,6 +208,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         it: it,
         score: _score,
         total: _questions.length,
+        scheduled: _scheduled,
         onRestart: _restart,
         onClose: () => Navigator.of(context).maybePop(),
       );
@@ -391,12 +412,14 @@ class _Results extends StatelessWidget {
     required this.it,
     required this.score,
     required this.total,
+    required this.scheduled,
     required this.onRestart,
     required this.onClose,
   });
   final bool it;
   final int score;
   final int total;
+  final int scheduled;
   final VoidCallback onRestart;
   final VoidCallback onClose;
 
@@ -433,6 +456,36 @@ class _Results extends StatelessWidget {
             Text(head,
                 style: GoogleFonts.ebGaramond(
                     fontSize: 26, fontWeight: FontWeight.w600, color: MarginaliaColors.ink)),
+            if (scheduled > 0) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: MarginaliaColors.primaryFaint,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_fire_department_rounded,
+                        size: 16, color: MarginaliaColors.primaryDark),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        it
+                            ? '$scheduled da ripassare aggiunti al Ripasso'
+                            : '$scheduled added to your Ripasso',
+                        style: GoogleFonts.manrope(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: MarginaliaColors.primaryDark),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,

@@ -21,6 +21,10 @@ final dueCountProvider = FutureProvider.autoDispose<int>((ref) async => 0);
 final reviewStateProvider =
     FutureProvider<ReviewState>((ref) async => ReviewState());
 
+/// Web no-op: Ripasso (Isar) doesn't run on web, so the Quiz → review link does
+/// nothing here. Keeps the shared Quiz screen compiling on the Chrome target.
+Future<int> markHighlightsDueForReview(WidgetRef ref, Set<int> ids) async => 0;
+
 final reviewedDaysProvider =
     FutureProvider<Set<DateTime>>((ref) async => <DateTime>{});
 

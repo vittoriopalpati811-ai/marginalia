@@ -15,10 +15,15 @@ import 'dart:math';
 enum QuizKind { cloze, whichBook, whichAuthor }
 
 class QuizSource {
-  const QuizSource(this.content, this.bookTitle, this.bookAuthor);
+  const QuizSource(this.content, this.bookTitle, this.bookAuthor,
+      {this.highlightId});
   final String content;
   final String? bookTitle;
   final String? bookAuthor;
+
+  /// Local Isar id of the source highlight (native). Lets the screen schedule a
+  /// missed passage for Ripasso. Null on web / when unknown.
+  final int? highlightId;
 }
 
 class QuizQuestion {
@@ -30,9 +35,13 @@ class QuizQuestion {
     this.clozeWord,
     this.bookTitle,
     this.bookAuthor,
+    this.highlightId,
   });
 
   final QuizKind kind;
+
+  /// Local Isar id of the source highlight (for the Ripasso link). May be null.
+  final int? highlightId;
 
   /// The passage shown (with a blank for cloze).
   final String prompt;
@@ -176,6 +185,7 @@ QuizQuestion? _cloze(QuizSource s, List<String> wordPool, Random r) {
     clozeWord: word,
     bookTitle: s.bookTitle,
     bookAuthor: s.bookAuthor,
+    highlightId: s.highlightId,
   );
 }
 
@@ -194,6 +204,7 @@ QuizQuestion? _whichBook(QuizSource s, List<String> allTitles, Random r) {
     options: options,
     bookTitle: s.bookTitle,
     bookAuthor: s.bookAuthor,
+    highlightId: s.highlightId,
   );
 }
 
@@ -212,5 +223,6 @@ QuizQuestion? _whichAuthor(QuizSource s, List<String> allAuthors, Random r) {
     options: options,
     bookTitle: s.bookTitle,
     bookAuthor: s.bookAuthor,
+    highlightId: s.highlightId,
   );
 }
