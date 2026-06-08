@@ -211,6 +211,14 @@ serve(async (req) => {
     return await handleNewFollow(supabase, apns, caller.id, reqBody);
   }
 
+  // ── Mode 4: JAM HIGHLIGHT COMMENT (recipient = the highlight's sharer) ─────
+  // Recognised by `mode === "jam_comment"` + `jam_highlight_id`. Recipient is
+  // jam_highlights.shared_by; the caller must have a real comment row on that
+  // highlight (verified server-side) so a client can't push arbitrarily.
+  if (reqBody.mode === "jam_comment" && reqBody.jam_highlight_id) {
+    return await handleJamComment(supabase, apns, caller.id, reqBody);
+  }
+
   // ── Mode 1: MESSAGE (explicit recipient, conversation/jam-authorized) ─────
   const { user_id, title, body, data = {}, is_group, group_name } = reqBody;
   if (!user_id || !title || !body) {
@@ -478,6 +486,86 @@ async function handleNewFollow(
 // Returns true if `callerId` and `targetId` are both members of at least one
 // common conversation. Uses the service-role client (passed in) so it can read
 // across users' conversation_members rows.
+
+// ─── Jam-highlight comment handler ────────────────────────────────────────────
+//
+// Derives the recipient (the highlight's sharer) from jam_highlights.shared_by,
+// verifies the caller actually commented on that highlight, composes Italian
+// copy, then reuses pushToUser(). Caller can ONLY push for a highlight they
+// really commented on. Pushes navigation data { type, jam_id, jam_highlight_id }.
+async function handleJamComment(
+  supabase: ReturnType<typeof createClient>,
+  apns: ApnsConfig,
+  callerId: string,
+  reqBody: { jam_highlight_id?: unknown; preview?: unknown },
+): Promise<Response> {
+  const jamHighlightId = typeof reqBody.jam_highlight_id === "string"
+    ? reqBody.jam_highlight_id
+    : "";
+  if (!jamHighlightId) {
+    return jsonResponse({ error: "jam_highlight_id (uuid) is required" }, 400);
+  }
+
+  // 1) Resolve sharer + jam. Unknown highlight → silent no-op.
+  const { data: jh, error: jhErr } = await supabase
+    .from("jam_highlights")
+    .select("shared_by, jam_id")
+    .eq("id", jamHighlightId)
+    .maybeSingle();
+
+  if (jhErr || !jh) {
+    return jsonResponse({ sent: 0, message: "Jam highlight not found" }, 200);
+  }
+  const ownerId = jh.shared_by as string;
+  const jamId = jh.jam_id as string;
+
+  // 2) Never notify yourself.
+  if (ownerId === callerId) {
+    return jsonResponse({ sent: 0, message: "Self-comment" }, 200);
+  }
+
+  // 3) SECURITY: the caller must have a real comment on this highlight.
+  const { data: comment, error: cErr } = await supabase
+    .from("jam_highlight_comments")
+    .select("id")
+    .eq("jam_highlight_id", jamHighlightId)
+    .eq("user_id", callerId)
+    .limit(1)
+    .maybeSingle();
+
+  if (cErr || !comment) {
+    return jsonResponse({ error: "forbidden" }, 403);
+  }
+
+  // 4) Actor display name (fallback "Qualcuno").
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", callerId)
+    .maybeSingle();
+  const rawName = typeof profile?.display_name === "string"
+    ? profile.display_name.trim()
+    : "";
+  const name = rawName.length > 0 ? rawName : "Qualcuno";
+
+  // 5) Compose copy.
+  const rawPreview = typeof reqBody.preview === "string"
+    ? reqBody.preview.trim()
+    : "";
+  let body = `${name} ha commentato la tua evidenziazione`;
+  if (rawPreview.length > 0) {
+    const preview = rawPreview.length > 120
+      ? `${rawPreview.slice(0, 120)}…`
+      : rawPreview;
+    body = `${name}: ${preview}`;
+  }
+
+  return await pushToUser(supabase, apns, ownerId, "Nuovo commento", body, {
+    type: "jam_comment",
+    jam_id: jamId,
+    jam_highlight_id: jamHighlightId,
+  });
+}
 
 async function sharesConversation(
   supabase: ReturnType<typeof createClient>,

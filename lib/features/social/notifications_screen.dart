@@ -37,6 +37,17 @@ String? _notificationDestination(Map<String, dynamic> n) {
     if (jamId != null && jamId.isNotEmpty) return '/jam/$jamId';
     return null;
   }
+  if (type == 'group_add') {
+    final convId = data['conversation_id'] as String?;
+    if (convId != null && convId.isNotEmpty) {
+      final name = Uri.encodeQueryComponent(
+          (data['group_name'] as String?)?.trim().isNotEmpty == true
+              ? data['group_name'] as String
+              : 'Gruppo');
+      return '/chat/$convId?name=$name';
+    }
+    return null;
+  }
   // Unknown type: best-effort generic resolution (actor profile, then jam).
   final actorId = data['actor_id'] as String?;
   if (actorId != null && actorId.isNotEmpty) return '/user/$actorId';
@@ -141,6 +152,10 @@ class _NotificationCard extends StatelessWidget {
         return (Icons.alternate_email, MarginaliaColors.primary);
       case 'follow':
         return (Icons.person_add_alt_1, MarginaliaColors.primaryDark);
+      case 'jam_comment':
+        return (Icons.forum_outlined, MarginaliaColors.primaryDark);
+      case 'group_add':
+        return (Icons.group_add_outlined, MarginaliaColors.primaryDark);
       default:
         return (Icons.notifications_none_outlined, MarginaliaColors.sienna);
     }

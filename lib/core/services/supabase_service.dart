@@ -469,6 +469,34 @@ class SupabaseService {
       'content': content,
       if (imageUrl != null) 'image_url': imageUrl,
     });
+    // Best-effort: notify the highlight's sharer (in-app + push). Never blocks
+    // the comment — the comment already succeeded above.
+    unawaited(_notifyJamHighlightComment(jamHighlightId, content));
+  }
+
+  /// Fire-and-forget notification for a jam-highlight comment. The RPC
+  /// (migration 055) derives the recipient (the sharer) server-side and skips
+  /// self-comments; the edge push verifies the caller really commented.
+  Future<void> _notifyJamHighlightComment(
+      String jamHighlightId, String content) async {
+    final preview = content.trim();
+    try {
+      await _client.rpc('notify_jam_highlight_comment', params: {
+        'p_jam_highlight_id': jamHighlightId,
+        'p_preview': preview.isEmpty ? null : preview,
+      });
+    } catch (_) {
+      // Ignore — never surface to the user.
+    }
+    try {
+      await _client.functions.invoke('send-push-notification', body: {
+        'mode': 'jam_comment',
+        'jam_highlight_id': jamHighlightId,
+        'preview': preview,
+      });
+    } catch (_) {
+      // Push is best-effort; the in-app notification already landed.
+    }
   }
 
   /// Uploads an image for a comment and returns the public URL.
