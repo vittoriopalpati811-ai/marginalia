@@ -16,6 +16,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -305,13 +306,31 @@ class _WrappedPlayerState extends State<_WrappedPlayer>
                 ),
 
                 // ── Slide body ───────────────────────────────────────────────
+                // The AnimatedSwitcher cross-fades slides; on top, each new slide
+                // RISES + SCALES in (Spotify-Wrapped energy) so it reads as a
+                // dynamic reveal, not a static page.
                 Expanded(
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 350),
-                    switchInCurve: Curves.easeOut,
+                    duration: const Duration(milliseconds: 420),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeIn,
                     child: KeyedSubtree(
                       key: ValueKey<int>(_index),
-                      child: slide.buildBody(context),
+                      child: slide
+                          .buildBody(context)
+                          .animate()
+                          .slideY(
+                            begin: 0.14,
+                            end: 0,
+                            duration: 600.ms,
+                            curve: Curves.easeOutCubic,
+                          )
+                          .scaleXY(
+                            begin: 0.93,
+                            end: 1.0,
+                            duration: 600.ms,
+                            curve: Curves.easeOutCubic,
+                          ),
                     ),
                   ),
                 ),
