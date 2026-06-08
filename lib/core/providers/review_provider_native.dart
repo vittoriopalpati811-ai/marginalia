@@ -25,6 +25,11 @@ import 'auth_provider.dart';
 /// cards on the user. Genuinely-due (already-scheduled) cards are never capped.
 const int kDailyNewCardCap = 20;
 
+/// Hard cap on cards shown in ONE review session — the founder's "max 10 slide
+/// nei ripassi". Even if more are genuinely due, a session never exceeds this,
+/// keeping the daily ritual short and finishable; the rest roll to tomorrow.
+const int kMaxSessionCards = 10;
+
 /// Local midnight of the day [now] falls in (date-only).
 DateTime _dateOnly(DateTime now) => DateTime(now.year, now.month, now.day);
 
@@ -61,7 +66,9 @@ final dueHighlightsProvider =
       .limit(kDailyNewCardCap)
       .findAll();
 
-  final deck = [...due, ...fresh];
+  // Cap the whole session at [kMaxSessionCards] — due cards first, then new
+  // ones fill any remaining slots. Anything beyond rolls to a future session.
+  final deck = [...due, ...fresh].take(kMaxSessionCards).toList();
   await Future.wait(deck.map((h) => h.book.load()));
   return deck;
 });
@@ -89,7 +96,11 @@ final dueCountProvider = FutureProvider.autoDispose<int>((ref) async {
       .reviewDueAtIsNull()
       .count();
 
-  return due + (freshTotal > kDailyNewCardCap ? kDailyNewCardCap : freshTotal);
+  final total =
+      due + (freshTotal > kDailyNewCardCap ? kDailyNewCardCap : freshTotal);
+  // Mirror the session cap so the entry card never promises more than a session
+  // will actually show.
+  return total > kMaxSessionCards ? kMaxSessionCards : total;
 });
 
 /// Reads (creating if absent) the per-user [ReviewState] singleton. Not

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/theme.dart';
 import '../../core/review/sm2.dart';
@@ -322,7 +323,17 @@ class ReviewCard extends StatelessWidget {
                 ],
               ],
             ),
-          ),
+          )
+              // Each new card's content rises + fades in (replays when the
+              // highlight changes, i.e. when a fresh card reaches the top).
+              .animate(key: ValueKey(highlight.content))
+              .fadeIn(duration: 420.ms, curve: Curves.easeOut)
+              .slideY(
+                begin: 0.06,
+                end: 0,
+                duration: 460.ms,
+                curve: Curves.easeOutCubic,
+              ),
         ],
       ),
     );

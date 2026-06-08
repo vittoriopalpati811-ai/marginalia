@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -444,18 +445,19 @@ class _FinishedState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // A large faint flame — calm, satisfying, no confetti.
-            Icon(
-              PhosphorIconsFill.flame,
-              size: 64,
-              color: streak > 0
-                  ? MarginaliaColors.primaryDark.withOpacity(0.85)
-                  : MarginaliaColors.siennaLight,
-            )
-                .animate(target: streakIncremented ? 1 : 0)
-                .scaleXY(begin: 1.0, end: 1.18, duration: 360.ms, curve: Curves.easeOutBack)
-                .then()
-                .scaleXY(begin: 1.18, end: 1.0, duration: 240.ms),
+            // Completed a session → a "Great Success" burst (check pops in with
+            // an elastic spring, a ring expands, sparkles radiate). The empty
+            // state keeps a calm flame so it never over-celebrates "nothing due".
+            if (isEmpty)
+              Icon(
+                PhosphorIconsFill.flame,
+                size: 64,
+                color: streak > 0
+                    ? MarginaliaColors.primaryDark.withOpacity(0.85)
+                    : MarginaliaColors.siennaLight,
+              )
+            else
+              const _SuccessBurst(),
             const SizedBox(height: 24),
             Text(
               isEmpty
@@ -481,6 +483,100 @@ class _FinishedState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── "Great Success" completion burst ────────────────────────────────────────
+//
+// A satisfying, on-brand success moment (a calm adaptation of the classic
+// "Great Success" micro-interaction): a sage check-circle springs in
+// (elasticOut), a ring expands and fades behind it, and six sparkles radiate
+// outward. No neon, no confetti — it stays in the paper/sienna world.
+
+class _SuccessBurst extends StatelessWidget {
+  const _SuccessBurst({this.diameter = 96});
+
+  final double diameter;
+
+  @override
+  Widget build(BuildContext context) {
+    final field = diameter * 1.9;
+    return SizedBox(
+      width: field,
+      height: field,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Expanding ring.
+          Container(
+            width: diameter,
+            height: diameter,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: MarginaliaColors.primary, width: 3),
+            ),
+          )
+              .animate()
+              .scaleXY(
+                  begin: 0.55,
+                  end: 1.8,
+                  duration: 760.ms,
+                  curve: Curves.easeOutCubic)
+              .fadeOut(duration: 760.ms),
+          // Radiating sparkles.
+          for (var i = 0; i < 6; i++)
+            Builder(builder: (_) {
+              final angle = (math.pi * 2 / 6) * i;
+              final dir = Offset(math.cos(angle), math.sin(angle));
+              return Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: MarginaliaColors.siennaLight,
+                ),
+              )
+                  .animate()
+                  .move(
+                    begin: Offset.zero,
+                    end: dir * (diameter * 0.92),
+                    duration: 640.ms,
+                    delay: 140.ms,
+                    curve: Curves.easeOutCubic,
+                  )
+                  .fadeOut(begin: 1.0, duration: 460.ms, delay: 300.ms);
+            }),
+          // Check circle — pops in with an elastic spring.
+          Container(
+            width: diameter,
+            height: diameter,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [MarginaliaColors.primary, MarginaliaColors.primaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: MarginaliaColors.primary.withOpacity(0.40),
+                  blurRadius: 26,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.check_rounded, size: 52, color: Colors.white),
+          )
+              .animate()
+              .scale(
+                begin: const Offset(0, 0),
+                end: const Offset(1, 1),
+                duration: 560.ms,
+                curve: Curves.elasticOut,
+              ),
+        ],
       ),
     );
   }

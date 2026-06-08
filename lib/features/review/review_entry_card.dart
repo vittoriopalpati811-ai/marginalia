@@ -30,14 +30,18 @@ class RipassoEntryCard extends ConsumerWidget {
     final today = DateTime(now.year, now.month, now.day);
     final reviewedToday = reviewState?.lastReviewedOn == today;
 
-    // Nothing due and nothing done today → don't show anything.
-    if (dueCount == 0 && !reviewedToday) {
+    // Once today's review is done, the card LOCKS to a non-tappable "completato"
+    // state until tomorrow's slot — a ripasso is a once-a-day ritual, so even if
+    // more cards are technically due it won't reopen today. Otherwise: the
+    // tappable due card, or (nothing due, nothing done) hide so it never nags.
+    final Widget card;
+    if (reviewedToday) {
+      card = _CompletedCard(streak: streak);
+    } else if (dueCount > 0) {
+      card = _DueCard(dueCount: dueCount, streak: streak);
+    } else {
       return const SizedBox.shrink();
     }
-
-    final card = dueCount == 0
-        ? _CompletedPill(streak: streak)
-        : _DueCard(dueCount: dueCount, streak: streak);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -143,39 +147,72 @@ class _Subtitle extends StatelessWidget {
   }
 }
 
-/// Quiet one-line "done for today" state on a calm sage wash.
-class _CompletedPill extends StatelessWidget {
-  const _CompletedPill({required this.streak});
+/// The locked "Ripasso di oggi completato!" state — shown after today's review
+/// is done and NOT tappable until tomorrow's slot. A calm check-circle pops in
+/// (elastic) for a small sense of accomplishment; the streak flame rides along.
+class _CompletedCard extends StatelessWidget {
+  const _CompletedCard({required this.streak});
 
   final int streak;
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = streak > 0
+        ? '${context.l10n.ripassoComeBackTomorrow}  ·  ${context.l10n.ripassoStreak(streak)}'
+        : context.l10n.ripassoComeBackTomorrow;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: MarginaliaColors.siennaFaint,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: MarginaliaDecorations.card(radius: 20),
       child: Row(
         children: [
-          const Icon(
-            PhosphorIconsFill.flame,
-            size: 18,
-            color: MarginaliaColors.primaryDark,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              context.l10n.ripassoDoneToday(streak),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: MarginaliaTextStyles.body.copyWith(
-                color: MarginaliaColors.primaryDark,
-                fontWeight: FontWeight.w600,
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [MarginaliaColors.primary, MarginaliaColors.primaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.check_rounded, size: 24, color: Colors.white),
+          )
+              .animate()
+              .scale(
+                begin: const Offset(0.5, 0.5),
+                end: const Offset(1, 1),
+                duration: 460.ms,
+                curve: Curves.elasticOut,
+              ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.ripassoTodayCompleted,
+                  style: MarginaliaTextStyles.sectionTitleClean,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: MarginaliaTextStyles.subtitle,
+                ),
+              ],
             ),
           ),
+          if (streak > 0) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              PhosphorIconsFill.flame,
+              size: 18,
+              color: MarginaliaColors.primaryDark,
+            ),
+          ],
         ],
       ),
     );
