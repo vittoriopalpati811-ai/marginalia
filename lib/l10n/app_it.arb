@@ -647,6 +647,28 @@
     "placeholders": { "count": { "type": "int" } }
   },
 
+  "jamFeatureRipasso": "Ripasso",
+  "@jamFeatureRipasso": {},
+  "jamFeatureRipassoSubtitle": "Classifica ripassi",
+  "@jamFeatureRipassoSubtitle": {},
+
+  "jamRipassoTitle": "Ripasso",
+  "@jamRipassoTitle": {},
+  "jamRipassoSubtitle": "Tieni viva la tua serie di ripassi e scala la classifica con gli amici della Jam.",
+  "@jamRipassoSubtitle": {},
+  "jamRipassoYouBadge": "TU",
+  "@jamRipassoYouBadge": {},
+  "jamRipassoBest": "Record {count}",
+  "@jamRipassoBest": { "placeholders": { "count": { "type": "int" } } },
+  "jamRipassoDoneToday": "Ripassato oggi",
+  "@jamRipassoDoneToday": {},
+  "jamRipassoAnonymous": "Lettore",
+  "@jamRipassoAnonymous": {},
+  "jamRipassoEmptyTitle": "Ancora nessuna serie",
+  "@jamRipassoEmptyTitle": {},
+  "jamRipassoEmptyBody": "Sii il primo a ripassare oggi. Continua giorno dopo giorno e guiderai la classifica.",
+  "@jamRipassoEmptyBody": {},
+
   "jamFeatureVoting": "Libro del mese",
   "@jamFeatureVoting": {},
 

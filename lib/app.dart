@@ -34,6 +34,7 @@ import 'features/social/jam_detail_screen.dart';
 import 'features/social/jam_book_voting_screen.dart';
 import 'features/social/jam_challenge_screen.dart';
 import 'features/social/jam_poll_screen.dart';
+import 'features/social/jam_review_leaderboard_screen.dart';
 import 'features/social/notifications_screen.dart';
 import 'features/social/feed_tab.dart';
 import 'features/profile/user_profile_screen.dart';
@@ -225,6 +226,14 @@ final router = GoRouter(
       pageBuilder: (_, state) {
         final id = state.pathParameters['id'] ?? '';
         return _pushPage(JamPollScreen(jamId: id), state);
+      },
+    ),
+    GoRoute(
+      path: '/jam/:id/ripasso',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) {
+        final id = state.pathParameters['id'] ?? '';
+        return _pushPage(JamReviewLeaderboardScreen(jamId: id), state);
       },
     ),
     GoRoute(

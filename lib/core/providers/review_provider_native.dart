@@ -309,8 +309,20 @@ class ReviewSessionController
       // Best-effort, fire-and-forget Supabase mirror — never blocks the offline
       // loop and silently degrades if migration 050 isn't applied yet.
       unawaited(_mirrorStreak(streak, best, today));
+      // First completed review of the day → tell our jam-mates. The `advanced`
+      // guard means this fires at most once per day (when the streak rolls to a
+      // new day), never on subsequent cards. Fire-and-forget, never throws.
+      unawaited(_notifyJamMates());
     }
     return advanced;
+  }
+
+  Future<void> _notifyJamMates() async {
+    try {
+      await ref.read(supabaseServiceProvider).notifyJamMatesReviewDone();
+    } catch (error) {
+      debugPrint('[Ripasso] jam-mate notify skipped: $error');
+    }
   }
 
   Future<void> _mirrorStreak(int streak, int best, DateTime lastReviewedOn) async {

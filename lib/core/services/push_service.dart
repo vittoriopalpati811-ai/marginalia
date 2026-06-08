@@ -141,6 +141,11 @@ class PushService with WidgetsBindingObserver {
     // The Ripasso reminders (morning + evening local notifications) carry
     // `review == "true"` so a tap opens the daily recall screen directly.
     final isReview = data['review'] == 'true' || data['review'] == true;
+    // A jam-mate finished their daily review (data {type:'jam_review'}). The push
+    // isn't scoped to a single jam (it fans out across every shared jam), so a
+    // tap just opens the Jam tab where the Ripasso leaderboards live.
+    final type = data['type'] as String?;
+    final isJamReview = type == 'jam_review';
 
     final String? location;
     if (conversationId != null && conversationId.isNotEmpty) {
@@ -149,6 +154,8 @@ class PushService with WidgetsBindingObserver {
       location = '/post/${Uri.encodeComponent(postId)}';
     } else if (isReview) {
       location = '/review';
+    } else if (isJamReview) {
+      location = '/social';
     } else {
       location = null;
     }

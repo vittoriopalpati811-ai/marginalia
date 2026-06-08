@@ -661,6 +661,64 @@ class SupabaseService {
     ];
   }
 
+  // ─── Jam review competition (Ripasso leaderboard) ─────────────────────────
+
+  /// The Ripasso leaderboard for [jamId]: one row per jam member with their
+  /// streak snapshot, ordered by current streak desc. Backed by the
+  /// `jam_review_leaderboard` SECURITY DEFINER RPC (migration 051), which is
+  /// self-guarded so only a member of that jam gets rows.
+  ///
+  /// Each row carries: `id`, `display_name`, `avatar_url`, `review_streak`,
+  /// `review_best_streak`, `last_reviewed_on`, `reviewed_today` (bool, computed
+  /// server-side against current_date).
+  Future<List<Map<String, dynamic>>> fetchJamReviewLeaderboard(
+    String jamId,
+  ) async {
+    final res = await _client.rpc(
+      'jam_review_leaderboard',
+      params: {'p_jam_id': jamId},
+    );
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  /// Best-effort APNs push to the caller's jam-mates when they finish today's
+  /// review. Reads the recipient ids from the `jam_mates_for_review` RPC (the
+  /// DISTINCT other members across every jam the caller belongs to), then fans
+  /// out one `send-push-notification` invocation per recipient — mirroring the
+  /// [_notifyConversationMembers] pattern. Fire-and-forget: never throws, so it
+  /// can never affect the offline review loop.
+  Future<void> notifyJamMatesReviewDone() async {
+    try {
+      if (!isAuthenticated || userId == null) return;
+
+      final mates = await _client.rpc('jam_mates_for_review') as List;
+      if (mates.isEmpty) return;
+
+      // Resolve the caller's display name for the push body.
+      final me = await fetchProfile();
+      final name =
+          (me?['display_name'] as String?)?.trim().isNotEmpty == true
+              ? (me!['display_name'] as String).trim()
+              : 'A jam-mate';
+
+      for (final row in mates) {
+        final uid = (row as Map)['user_id'] as String?;
+        if (uid == null || uid == userId) continue;
+        await _client.functions.invoke(
+          'send-push-notification',
+          body: {
+            'user_id': uid,
+            'title': 'Ripasso completato',
+            'body': "$name finished today's review",
+            'data': {'type': 'jam_review'},
+          },
+        );
+      }
+    } catch (_) {
+      // Push is best-effort; a failure must never affect the review loop.
+    }
+  }
+
   // ─── Follows ──────────────────────────────────────────────────────────────
 
   /// Follow another user (idempotent upsert).

@@ -222,6 +222,28 @@
     "placeholders": { "count": { "type": "int" } }
   },
 
+  "jamFeatureRipasso": "Ripasso",
+  "@jamFeatureRipasso": { "description": "Label of the Ripasso (review competition) feature card in the Jam activity row." },
+  "jamFeatureRipassoSubtitle": "Review leaderboard",
+  "@jamFeatureRipassoSubtitle": { "description": "Subtitle of the Ripasso feature card in the Jam activity row." },
+
+  "jamRipassoTitle": "Ripasso",
+  "@jamRipassoTitle": { "description": "Screen title of the Jam Ripasso review-streak leaderboard." },
+  "jamRipassoSubtitle": "Keep your daily review streak alive and climb the board with your jam-mates.",
+  "@jamRipassoSubtitle": { "description": "Explanatory blurb at the top of the Jam Ripasso leaderboard." },
+  "jamRipassoYouBadge": "YOU",
+  "@jamRipassoYouBadge": { "description": "Small badge on the current user's row in the Jam Ripasso leaderboard." },
+  "jamRipassoBest": "Best {count}",
+  "@jamRipassoBest": { "description": "Secondary line under a member's name showing their best (record) review streak.", "placeholders": { "count": { "type": "int" } } },
+  "jamRipassoDoneToday": "Reviewed today",
+  "@jamRipassoDoneToday": { "description": "Inline label next to a member who has done their review today on the Ripasso leaderboard." },
+  "jamRipassoAnonymous": "Reader",
+  "@jamRipassoAnonymous": { "description": "Fallback name for a jam member with no display name on the Ripasso leaderboard." },
+  "jamRipassoEmptyTitle": "No streaks yet",
+  "@jamRipassoEmptyTitle": { "description": "Title of the empty state when no jam member has started a review streak." },
+  "jamRipassoEmptyBody": "Be the first to review today. Keep it up day after day and you'll lead the board.",
+  "@jamRipassoEmptyBody": { "description": "Body of the empty state on the Jam Ripasso leaderboard." },
+
   "jamFeatureVoting": "Book of the month",
   "jamFeatureVotingSubtitle": "Vote for the next book",
   "jamFeatureChallenges": "Challenges",

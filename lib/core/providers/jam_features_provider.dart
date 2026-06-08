@@ -30,6 +30,14 @@ final jamPollsProvider =
       ref.read(supabaseServiceProvider).fetchJamPolls(jamId),
 );
 
+// ─── Ripasso leaderboard (review competition) ─────────────────────────────────
+
+final jamReviewLeaderboardProvider =
+    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
+  (ref, jamId) =>
+      ref.read(supabaseServiceProvider).fetchJamReviewLeaderboard(jamId),
+);
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 final notificationsProvider =

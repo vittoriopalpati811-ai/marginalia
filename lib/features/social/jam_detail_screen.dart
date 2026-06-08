@@ -1723,6 +1723,12 @@ class _JamFeaturesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final features = [
       (
+        icon: Icons.local_fire_department_rounded,
+        label: context.l10n.jamFeatureRipasso,
+        sub: context.l10n.jamFeatureRipassoSubtitle,
+        route: '/jam/$jamId/ripasso',
+      ),
+      (
         icon: Icons.menu_book_rounded,
         label: context.l10n.jamFeatureVoting,
         sub: context.l10n.jamFeatureVotingSubtitle,
