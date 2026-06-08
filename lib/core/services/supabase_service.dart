@@ -820,6 +820,40 @@ class SupabaseService {
     }
   }
 
+  /// Best-effort APNs push to the caller's jam-mates when they finish today's
+  /// Quiz — mirrors [notifyJamMatesReviewDone]. Fire-and-forget; never throws,
+  /// so it can't affect the quiz UI.
+  Future<void> notifyJamMatesQuizDone(int score, int total) async {
+    try {
+      if (!isAuthenticated || userId == null) return;
+
+      final mates = await _client.rpc('jam_mates_for_review') as List;
+      if (mates.isEmpty) return;
+
+      final me = await fetchProfile();
+      final name =
+          (me?['display_name'] as String?)?.trim().isNotEmpty == true
+              ? (me!['display_name'] as String).trim()
+              : 'A jam-mate';
+
+      for (final row in mates) {
+        final uid = (row as Map)['user_id'] as String?;
+        if (uid == null || uid == userId) continue;
+        await _client.functions.invoke(
+          'send-push-notification',
+          body: {
+            'user_id': uid,
+            'title': 'Quiz completato',
+            'body': "$name scored $score/$total on today's quiz",
+            'data': {'type': 'jam_quiz'},
+          },
+        );
+      }
+    } catch (_) {
+      // best-effort; a failure must never affect the quiz UI.
+    }
+  }
+
   // ─── Follows ──────────────────────────────────────────────────────────────
 
   /// Follow another user (idempotent upsert).

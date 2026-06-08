@@ -13,6 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/review_provider.dart';
 import '../../core/theme.dart';
@@ -93,6 +94,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     if (_index >= _questions.length - 1) {
       setState(() => _index = _questions.length); // → results
       _feedRipasso();
+      _shareQuizToJams();
       return;
     }
     setState(() {
@@ -121,6 +123,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Future<void> _feedRipasso() async {
     final n = await markHighlightsDueForReview(ref, _wrongIds);
     if (mounted && n > 0) setState(() => _scheduled = n);
+  }
+
+  // Auto-share the finished quiz with the reader's Jams — a best-effort push to
+  // jam-mates (mirrors the Ripasso completion share). Never blocks the UI.
+  Future<void> _shareQuizToJams() async {
+    try {
+      await ref
+          .read(supabaseServiceProvider)
+          .notifyJamMatesQuizDone(_score, _questions.length);
+    } catch (_) {/* best-effort */}
   }
 
   String _label(bool it, QuizKind kind) {

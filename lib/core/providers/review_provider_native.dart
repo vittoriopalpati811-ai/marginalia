@@ -304,17 +304,29 @@ class ReviewSessionController
               .findFirst();
           rs ??= ReviewState()..userId = userId;
 
+          // Normalise stored timestamps to LOCAL date-only before comparing.
+          // Isar reads DateTime back as UTC, so the old raw `!= today` (today is
+          // local midnight) was ALWAYS true — which silently reset the streak to
+          // 1 every day and re-fired the Supabase/Jam side effects on every
+          // session. Compare local-day to local-day.
+          final lastReviewedLocal = rs.lastReviewedOn == null
+              ? null
+              : _dateOnly(rs.lastReviewedOn!.toLocal());
+          final reviewedTodayLocal = rs.reviewedTodayDate == null
+              ? null
+              : _dateOnly(rs.reviewedTodayDate!.toLocal());
+
           // Reset today's counter across the day boundary.
-          if (rs.reviewedTodayDate != today) {
+          if (reviewedTodayLocal != today) {
             rs.reviewedTodayCount = 0;
             rs.reviewedTodayDate = today;
           }
           rs.reviewedTodayCount += 1;
 
-          if (rs.lastReviewedOn != today) {
+          if (lastReviewedLocal != today) {
             final yesterday = today.subtract(const Duration(days: 1));
             rs.currentStreak =
-                rs.lastReviewedOn == yesterday ? rs.currentStreak + 1 : 1;
+                lastReviewedLocal == yesterday ? rs.currentStreak + 1 : 1;
             if (rs.currentStreak > rs.bestStreak) {
               rs.bestStreak = rs.currentStreak;
             }

@@ -309,8 +309,12 @@ final libraryRecommendationsProvider =
   // guarded below and in RecsCache.write), so a transient failure can never be
   // served from disk on the next cold start. On an explicit "Riprova"
   // (forceFresh) we skip the read entirely and go straight to a live fetch.
+  // 'v2' busts every pre-existing daily cache once, so the new "match %" field
+  // appears immediately on this build instead of waiting for the library to
+  // change — old cached sets (written without a match) would otherwise hide the
+  // box until the next import.
   final cacheSig =
-      '${orderedBookIds.length}:$totalHighlights:${ref.read(localeProvider).languageCode}';
+      'v2:${orderedBookIds.length}:$totalHighlights:${ref.read(localeProvider).languageCode}';
   final cachedRecs = forceFresh ? null : await RecsCache.read(cacheSig);
   if (cachedRecs != null) {
     debugPrint('[Recs] cache hit ($cacheSig) — skipping AI call');
@@ -696,10 +700,6 @@ class _RecommendationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (rec.match > 0) ...[
-                  _MatchChip(match: rec.match),
-                  const SizedBox(width: 8),
-                ],
                 Icon(Icons.chevron_right_rounded,
                     size: 18, color: ScriptaColors.inkFaint),
               ],
@@ -722,6 +722,12 @@ class _RecommendationCard extends StatelessWidget {
                     : ScriptaColors.inkFaint,
               ),
             ),
+            // Dedicated Netflix-style "% match" box — the AI's genuine
+            // confidence this reader will love the book. Hidden when absent.
+            if (rec.match > 0) ...[
+              const SizedBox(height: 12),
+              _MatchBox(match: rec.match),
+            ],
           ],
         ),
       ),
@@ -1256,27 +1262,59 @@ class _RecStat extends StatelessWidget {
       );
 }
 
-// Netflix-style green "% match" pill shown on each recommendation card.
-class _MatchChip extends StatelessWidget {
-  const _MatchChip({required this.match});
+// Netflix-style dedicated "% match" box on each recommendation card: a green
+// gradient percentage chip + the reassuring line. The full "…al X%." sentence
+// lives on the detail page; here it stays compact.
+class _MatchBox extends StatelessWidget {
+  const _MatchBox({required this.match});
   final int match;
 
   @override
   Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: ScriptaColors.primaryFaint,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        '$match%',
-        style: GoogleFonts.manrope(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: ScriptaColors.primaryDark,
-          letterSpacing: 0.2,
-        ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF4E8A3E), Color(0xFF3C5E2E)],
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            child: Text(
+              '$match%',
+              style: GoogleFonts.manrope(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              it
+                  ? 'Questo libro potrebbe piacerti. Ne siamo sicuri.'
+                  : "You might love this book — we're confident.",
+              style: GoogleFonts.manrope(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+                color: ScriptaColors.ink,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

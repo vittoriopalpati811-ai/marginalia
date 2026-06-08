@@ -19,7 +19,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -275,9 +274,9 @@ class _WrappedBanner extends StatelessWidget {
     final onColor =
         mid.computeLuminance() > 0.55 ? const Color(0xFF2A2620) : _cream;
 
-    return GestureDetector(
-      onTap: () => context.push('/wrapped'),
-      behavior: HitTestBehavior.opaque,
+    // Wrapped is not live yet: non-clickable "Coming soon" state.
+    return Opacity(
+      opacity: 0.92,
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
         decoration: BoxDecoration(
@@ -341,7 +340,23 @@ class _WrappedBanner extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded, color: onColor.withAlpha(220), size: 24),
+            // "Coming soon" pill replaces the tap chevron — Wrapped isn't live.
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+              decoration: BoxDecoration(
+                color: onColor.withAlpha(38),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Coming soon',
+                style: GoogleFonts.manrope(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: onColor,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ),
           ],
         ),
       ),
