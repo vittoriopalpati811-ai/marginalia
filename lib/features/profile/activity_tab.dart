@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -84,10 +85,18 @@ class ActivityTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Reading Wrapped entry ───────────────────────────────────────
+          _WrappedBanner(headerColors: headerColors)
+              .animate()
+              .fadeIn(duration: 320.ms)
+              .slideY(begin: 0.06, end: 0, duration: 320.ms),
+
+          const SizedBox(height: 16),
+
           // ── Today status pills ──────────────────────────────────────────
           _TodayStrip(readToday: readToday, reviewedToday: reviewedToday)
               .animate()
-              .fadeIn(duration: 320.ms)
+              .fadeIn(duration: 320.ms, delay: 40.ms)
               .slideY(begin: 0.05, end: 0, duration: 320.ms),
 
           const SizedBox(height: 18),
@@ -237,6 +246,102 @@ class _StatusPill extends StatelessWidget {
             color: accent,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Reading Wrapped entry banner
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _WrappedBanner extends StatelessWidget {
+  const _WrappedBanner({required this.headerColors});
+
+  /// The profile gradient, reused so the banner sits in the same world as the
+  /// rest of the profile (and the Wrapped story it opens).
+  final List<Color> headerColors;
+
+  @override
+  Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final mid = headerColors.length >= 2
+        ? headerColors[headerColors.length ~/ 2]
+        : headerColors.first;
+    // Cream on dark presets, near-ink on light ones, so the banner is legible on
+    // every profile colour.
+    final onColor =
+        mid.computeLuminance() > 0.55 ? const Color(0xFF2A2620) : _cream;
+
+    return GestureDetector(
+      onTap: () => context.push('/wrapped'),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: headerColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: mid.withAlpha(60),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: onColor.withAlpha(38),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Icon(PhosphorIconsFill.sparkle, size: 20, color: onColor),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    it ? 'La tua settimana, Wrapped' : 'Your week, Wrapped',
+                    style: GoogleFonts.ebGaramond(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
+                      color: onColor,
+                      letterSpacing: -0.3,
+                      height: 1.05,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    it
+                        ? 'Un recap da condividere sulle storie'
+                        : 'A shareable recap for your stories',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.manrope(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: onColor.withAlpha(200),
+                      letterSpacing: -0.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded, color: onColor.withAlpha(220), size: 24),
+          ],
+        ),
       ),
     );
   }

@@ -1055,5 +1055,72 @@
   "activityShareReadingHeadline": "{days, plural, =0{A year of reading} =1{1 day of reading this year} other{{days} days of reading this year}}",
   "@activityShareReadingHeadline": { "description": "Headline stamped on the reading share card.", "placeholders": { "days": { "type": "int" } } },
   "activityShareReviewHeadline": "{reviews, plural, =0{A year of review} =1{1 review this year} other{{reviews} reviews this year}}",
-  "@activityShareReviewHeadline": { "description": "Headline stamped on the review share card.", "placeholders": { "reviews": { "type": "int" } } }
+  "@activityShareReviewHeadline": { "description": "Headline stamped on the review share card.", "placeholders": { "reviews": { "type": "int" } } },
+
+  "wrappedShareTitle": "Your Reading Wrapped",
+  "wrappedShareTagline": "Share it and show what you've read ✨",
+
+  "wrappedPeriodWeek": "Week",
+  "wrappedPeriodMonth": "Month",
+  "wrappedPeriodAllTime": "All-time",
+
+  "wrappedIntroEyebrow": "Reading Wrapped",
+  "wrappedIntroTitle": "Your reading, this {period}",
+  "@wrappedIntroTitle": { "placeholders": { "period": { "type": "String", "example": "Week" } } },
+  "wrappedIntroSubtitle": "A little look back at what you underlined — built entirely from your own data.",
+
+  "wrappedHighlightsLabel": "Highlights",
+  "wrappedHighlightsFootnote": "of {count} all-time",
+  "@wrappedHighlightsFootnote": { "placeholders": { "count": { "type": "int" } } },
+
+  "wrappedBooksLabel": "Books",
+  "wrappedDaysReadLabel": "Days read",
+  "wrappedBusiestDay": "Your busiest day was {day}.",
+  "@wrappedBusiestDay": { "placeholders": { "day": { "type": "String", "example": "Monday" } } },
+
+  "wrappedTopBookEyebrow": "Most highlighted",
+  "wrappedTopBookCount": "{count, plural, =1{1 highlight from this book} other{{count} highlights from this book}}",
+  "@wrappedTopBookCount": { "placeholders": { "count": { "type": "int" } } },
+
+  "wrappedStandoutEyebrow": "The passage that stood out",
+
+  "wrappedStreakLabel": "Day streak",
+  "wrappedStreakZero": "Your next review can light the flame. Start tomorrow.",
+  "wrappedStreakCaption": "{count, plural, =1{One day of review in a row. Keep it lit.} other{{count} days of review in a row. Keep it lit.}}",
+  "@wrappedStreakCaption": { "placeholders": { "count": { "type": "int" } } },
+
+  "wrappedSummaryEyebrow": "Your reading personality",
+
+  "wrappedWeekdayMon": "Monday",
+  "wrappedWeekdayTue": "Tuesday",
+  "wrappedWeekdayWed": "Wednesday",
+  "wrappedWeekdayThu": "Thursday",
+  "wrappedWeekdayFri": "Friday",
+  "wrappedWeekdaySat": "Saturday",
+  "wrappedWeekdaySun": "Sunday",
+
+  "wrappedPersonaMarginalia": "The Marginalist",
+  "wrappedPersonaMarginaliaDesc": "You read with balance and annotate with care — your notes in the margins are the whole point.",
+  "wrappedPersonaDevourer": "The Devourer",
+  "wrappedPersonaDevourerDesc": "When a book grabs you, you don't let go — you underline it cover to cover.",
+  "wrappedPersonaCollector": "The Collector",
+  "wrappedPersonaCollectorDesc": "You range across many books, gathering a thought here and a line there.",
+  "wrappedPersonaDeepDiver": "The Deep Diver",
+  "wrappedPersonaDeepDiverDesc": "You sink into just a couple of books and explore every depth.",
+  "wrappedPersonaDabbler": "The Explorer",
+  "wrappedPersonaDabblerDesc": "You're just starting to annotate — every line is a fine beginning.",
+  "wrappedPersonaMarathoner": "The Marathoner",
+  "wrappedPersonaMarathonerDesc": "Day after day you come back to the page — reading is your ritual.",
+
+  "wrappedPersonaShareCaption": "My reading personality this year is {persona}",
+  "@wrappedPersonaShareCaption": { "placeholders": { "persona": { "type": "String", "example": "The Marginalist" } } },
+
+  "wrappedShareHighlightsCaption": "{count, plural, =1{1 highlight this {period}} other{{count} highlights this {period}}}",
+  "@wrappedShareHighlightsCaption": { "placeholders": { "count": { "type": "int" }, "period": { "type": "String", "example": "week" } } },
+  "wrappedShareBooksCaption": "{count, plural, =1{1 book in my hands} other{{count} books in my hands}}",
+  "@wrappedShareBooksCaption": { "placeholders": { "count": { "type": "int" } } },
+  "wrappedShareTopBookCaption": "My most-highlighted book: {title} ({count})",
+  "@wrappedShareTopBookCaption": { "placeholders": { "title": { "type": "String" }, "count": { "type": "int" } } },
+  "wrappedShareStreakCaption": "{count, plural, =0{My review streak is about to begin} =1{1 day of review in a row} other{{count} days of review in a row}}",
+  "@wrappedShareStreakCaption": { "placeholders": { "count": { "type": "int" } } }
 }

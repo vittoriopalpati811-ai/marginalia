@@ -28,6 +28,7 @@ import 'features/library/library_screen.dart';
 import 'features/library/book_detail_screen.dart';
 import 'features/reader/highlight_detail_screen.dart';
 import 'features/review/review_screen.dart';
+import 'features/wrapped/wrapped_screen.dart';
 import 'features/search/search_screen.dart';
 import 'features/social/social_screen.dart';
 import 'features/social/jam_detail_screen.dart';
@@ -277,6 +278,14 @@ final router = GoRouter(
       path: '/review',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _pushPage(const ReviewScreen(), state),
+    ),
+    // Reading Wrapped — a full-screen, immersive story player. Uses the modal
+    // fade/slide-up (not the Cupertino push) so there is no left-edge back-swipe
+    // fighting the "tap left third = previous slide" gesture.
+    GoRoute(
+      path: '/wrapped',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, state) => _modalPage(const WrappedScreen(), state),
     ),
     GoRoute(
       path: '/edit-profile',
