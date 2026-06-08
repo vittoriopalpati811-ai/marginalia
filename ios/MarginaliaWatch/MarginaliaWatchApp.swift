@@ -170,7 +170,7 @@ struct ContentView: View {
 
     private var phrase: String {
         session.text.isEmpty
-            ? "Apri Marginalia sull'iPhone per ricevere la tua frase del giorno."
+            ? "Apri Scripta sull'iPhone per ricevere la tua frase del giorno."
             : session.text
     }
 
@@ -190,11 +190,11 @@ struct ContentView: View {
                         .fill(Color.mPrimary)
                         .frame(width: 18, height: 18)
                         .overlay(
-                            Text("M")
+                            Text("S")
                                 .font(.system(size: 11, weight: .bold, design: .serif))
                                 .foregroundStyle(.white)
                         )
-                    Text("Marginalia")
+                    Text("Scripta")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }

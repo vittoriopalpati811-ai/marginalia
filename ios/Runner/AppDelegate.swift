@@ -351,7 +351,7 @@ import WatchConnectivity
     let args = arguments as? [String: Any]
     let hour = args?["hour"] as? Int ?? 9
     let minute = args?["minute"] as? Int ?? 0
-    let title = args?["title"] as? String ?? "Marginalia"
+    let title = args?["title"] as? String ?? "Scripta"
     let body = args?["body"] as? String ?? ""
 
     let center = UNUserNotificationCenter.current()
@@ -389,7 +389,7 @@ import WatchConnectivity
     let args = arguments as? [String: Any]
     let hour = args?["hour"] as? Int ?? 9
     let minute = args?["minute"] as? Int ?? 0
-    let title = args?["title"] as? String ?? "Marginalia"
+    let title = args?["title"] as? String ?? "Scripta"
     let body = args?["body"] as? String ?? ""
 
     let center = UNUserNotificationCenter.current()
@@ -427,7 +427,7 @@ import WatchConnectivity
     let args = arguments as? [String: Any]
     let hour = args?["hour"] as? Int ?? 21
     let minute = args?["minute"] as? Int ?? 0
-    let title = args?["title"] as? String ?? "Marginalia"
+    let title = args?["title"] as? String ?? "Scripta"
     let body = args?["body"] as? String ?? ""
 
     let center = UNUserNotificationCenter.current()

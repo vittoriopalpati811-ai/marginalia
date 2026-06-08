@@ -53,7 +53,7 @@ private struct GlassTint: View {
     }
 }
 
-// ─── Marginalia "M" badge ──────────────────────────────────────────────────────
+// ─── Scripta "S" badge ──────────────────────────────────────────────────────
 
 private struct BrandMark: View {
     var label: String? = nil
@@ -64,7 +64,7 @@ private struct BrandMark: View {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                     .fill(Color.mPrimary)
                     .frame(width: 20, height: 20)
-                Text("M")
+                Text("S")
                     .font(.system(size: 12, weight: .bold, design: .serif))
                     .foregroundStyle(.white)
             }
