@@ -1484,7 +1484,7 @@
   "@jamResultCount": { "placeholders": { "count": { "type": "int" } } },
   "jamMatchCount": "{count, plural, =1{Hai 1 citazione da questo libro · Rispondi} other{Hai {count} citazioni da questo libro · Rispondi}}",
   "@jamMatchCount": { "placeholders": { "count": { "type": "int" } } },
-  "jamShareBody": "Unisciti alla mia Jam su Scripta.\n\nCodice: {code}\n\nScarica l'app: https://marginalia.app",
+  "jamShareBody": "Unisciti alla mia Jam su Scripta.\n\nCodice: {code}\n\nScarica l'app: https://get-scripta.app",
   "@jamShareBody": { "placeholders": { "code": { "type": "String" } } },
   "jamShareSubject": "Unisciti alla Jam «{title}»",
   "@jamShareSubject": { "placeholders": { "title": { "type": "String" } } },
@@ -1523,7 +1523,7 @@
 
   "settingsInJamsSection": "NELLE JAM",
   "settingsSettingsSection": "IMPOSTAZIONI",
-  "settingsShareInvite": "Leggo su Scripta\nVieni a leggere con me!\nhttps://marginalia.app",
+  "settingsShareInvite": "Leggo su Scripta\nVieni a leggere con me!\nhttps://get-scripta.app",
   "settingsNothingToExport": "Nessun highlight da esportare. Importa prima My Clippings.txt.",
   "settingsCurrentlyReading": "IN LETTURA",
   "settingsSignInPromoBody": "Tieni traccia dei tuoi libri,\nhighlight e connessioni.",

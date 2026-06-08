@@ -20,9 +20,9 @@ class TermsOfServiceScreen extends StatefulWidget {
   final bool isItalian;
 
   static const _itUrl =
-      'https://vittoriopalpati811-ai.github.io/marginalia/terms/it/';
+      'https://get-scripta.app/terms/it/';
   static const _enUrl =
-      'https://vittoriopalpati811-ai.github.io/marginalia/terms/';
+      'https://get-scripta.app/terms/';
 
   @override
   State<TermsOfServiceScreen> createState() => _TermsOfServiceScreenState();

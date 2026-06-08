@@ -20,9 +20,9 @@ class PrivacyPolicyScreen extends StatefulWidget {
   final bool isItalian;
 
   static const _itUrl =
-      'https://vittoriopalpati811-ai.github.io/marginalia/privacy/it/';
+      'https://get-scripta.app/privacy/it/';
   static const _enUrl =
-      'https://vittoriopalpati811-ai.github.io/marginalia/privacy/';
+      'https://get-scripta.app/privacy/';
 
   @override
   State<PrivacyPolicyScreen> createState() => _PrivacyPolicyScreenState();
