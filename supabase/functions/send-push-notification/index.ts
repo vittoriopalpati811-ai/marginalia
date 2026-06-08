@@ -213,7 +213,24 @@ serve(async (req) => {
     }
   }
 
-  return await pushToUser(supabase, apns, user_id, title, body, data);
+  // Render the message notification as "<sender>: <message>": put the SENDER's
+  // display name in the alert TITLE (iOS shows it bold on the first line, the
+  // message body below — the standard chat-notification layout that tells the
+  // recipient who wrote and what). The name is resolved SERVER-SIDE from the
+  // verified caller (caller.id), so a modified client can never spoof it. Falls
+  // back to the client-supplied title ("Nuovo messaggio") when the sender has
+  // no display name yet.
+  const { data: senderProfile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", caller.id)
+    .maybeSingle();
+  const senderRawName = typeof senderProfile?.display_name === "string"
+    ? senderProfile.display_name.trim()
+    : "";
+  const senderName = senderRawName.length > 0 ? senderRawName : title;
+
+  return await pushToUser(supabase, apns, user_id, senderName, body, data);
 });
 
 // ─── Shared recipient send ────────────────────────────────────────────────────

@@ -65,7 +65,19 @@ final inboxRealtimeProvider = Provider<void>((ref) {
 
   RealtimeChannel? channel;
   Timer? reconnectTimer;
+  Timer? invalidateTimer;
   var disposed = false;
+
+  // Coalesce rapid inbox refetches into one fetchConversations() call ~300ms
+  // later. In an active chat every incoming message fires an INSERT *and* the
+  // read-receipt UPDATE it triggers; debouncing keeps the N+1 inbox query from
+  // running twice per message while still feeling instant.
+  void scheduleInboxRefresh() {
+    invalidateTimer?.cancel();
+    invalidateTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!disposed) ref.invalidate(conversationsProvider);
+    });
+  }
 
   void subscribe() {
     // Tear down any previous channel before opening a fresh one so a
@@ -88,8 +100,27 @@ final inboxRealtimeProvider = Provider<void>((ref) {
             // flicker.
             final senderId = payload.newRecord['sender_id'] as String?;
             if (senderId == uid) return;
-            ref.invalidate(conversationsProvider);
+            scheduleInboxRefresh();
           },
+        )
+        .onPostgresChanges(
+          // Read-state reactivity: when THIS user's conversation_members row
+          // changes (last_read_at advances as they read a chat — here or on
+          // another device), refetch the inbox so the unread/bold styling
+          // clears WITHOUT a manual pull-to-refresh. This is the missing link:
+          // marking a conversation read updates conversation_members, which was
+          // not previously surfaced to the list. Requires migration 052
+          // (conversation_members added to the realtime publication +
+          // REPLICA IDENTITY FULL, so this user_id filter actually matches).
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'conversation_members',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: uid,
+          ),
+          callback: (_) => scheduleInboxRefresh(),
         )
         .subscribe((status, [error]) {
           // Surface all status transitions so this is debuggable if it
@@ -119,6 +150,7 @@ final inboxRealtimeProvider = Provider<void>((ref) {
   ref.onDispose(() {
     disposed = true;
     reconnectTimer?.cancel();
+    invalidateTimer?.cancel();
     final c = channel;
     if (c != null) svc.client.removeChannel(c);
   });
