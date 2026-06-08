@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:animations/animations.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:marginalia/generated/app_localizations.dart';
+import 'package:scripta/generated/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -330,14 +330,14 @@ final router = GoRouter(
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-class MarginaliaApp extends ConsumerStatefulWidget {
-  const MarginaliaApp({super.key});
+class ScriptaApp extends ConsumerStatefulWidget {
+  const ScriptaApp({super.key});
 
   @override
-  ConsumerState<MarginaliaApp> createState() => _MarginaliaAppState();
+  ConsumerState<ScriptaApp> createState() => _ScriptaAppState();
 }
 
-class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
+class _ScriptaAppState extends ConsumerState<ScriptaApp> {
   StreamSubscription<AuthState>? _authSub;
   late final PushService _pushService =
       PushService(ref.read(supabaseServiceProvider));
@@ -373,7 +373,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
           LocalNotifService.scheduleDailyPhrase(
             hour: 9,
             minute: 0,
-            title: 'Marginalia',
+            title: 'Scripta',
             body: isEnglish
                 ? 'Your phrase of the day is waiting 📖'
                 : 'La tua frase di oggi ti aspetta 📖',
@@ -396,7 +396,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
       });
     } catch (error) {
       debugPrint(
-          '[MarginaliaApp] auth listener not attached (Supabase unavailable): $error');
+          '[ScriptaApp] auth listener not attached (Supabase unavailable): $error');
     }
   }
 
@@ -426,7 +426,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         await LocalNotifService.scheduleReviewReminder(
           hour: 8,
           minute: 0,
-          title: 'Marginalia',
+          title: 'Scripta',
           body: body,
         );
       }
@@ -441,7 +441,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         await LocalNotifService.scheduleEveningReviewReminder(
           hour: 21,
           minute: 0,
-          title: 'Marginalia',
+          title: 'Scripta',
           body: isEnglish
               ? 'Did you do your review today?'
               : 'Hai fatto il tuo ripasso di oggi?',
@@ -450,7 +450,7 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
         await LocalNotifService.cancelEveningReviewReminder();
       }
     } catch (error) {
-      debugPrint('[MarginaliaApp] review reminder schedule skipped: $error');
+      debugPrint('[ScriptaApp] review reminder schedule skipped: $error');
     }
   }
 
@@ -464,10 +464,10 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
     // and Flutter rebuilds the router-based shell immediately.
     if (!onboardingComplete) {
       return MaterialApp(
-        title: 'Marginalia',
-        theme: buildMarginaliaTheme(),
-        darkTheme: buildMarginaliaDarkTheme(),
-        // Marginalia is designed entirely on the warm "paper" light palette and
+        title: 'Scripta',
+        theme: buildScriptaTheme(),
+        darkTheme: buildScriptaDarkTheme(),
+        // Scripta is designed entirely on the warm "paper" light palette and
         // no screen implements dark-mode colours, so following the system theme
         // produced light text on light surfaces (illegible) on dark-mode phones.
         // Pin to light until a real dark theme is built across all screens.
@@ -486,9 +486,9 @@ class _MarginaliaAppState extends ConsumerState<MarginaliaApp> {
     ref.watch(widgetSyncProvider);
 
     return MaterialApp.router(
-      title: 'Marginalia',
-      theme: buildMarginaliaTheme(),
-      darkTheme: buildMarginaliaDarkTheme(),
+      title: 'Scripta',
+      theme: buildScriptaTheme(),
+      darkTheme: buildScriptaDarkTheme(),
       // Pinned to LIGHT (same as the onboarding MaterialApp above): the app is
       // designed entirely on the warm "paper" light palette and no screen
       // implements real dark-mode colours, so following the system theme on a
@@ -679,7 +679,7 @@ class _DevStatusBar extends StatelessWidget {
     final m = now.minute.toString().padLeft(2, '0');
     return Container(
       height: 44,
-      color: MarginaliaColors.background,
+      color: ScriptaColors.background,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
@@ -688,16 +688,16 @@ class _DevStatusBar extends StatelessWidget {
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.3,
             ),
           ),
           const Spacer(),
-          const Icon(Icons.signal_cellular_alt, size: 14, color: MarginaliaColors.inkMuted),
+          const Icon(Icons.signal_cellular_alt, size: 14, color: ScriptaColors.inkMuted),
           const SizedBox(width: 4),
-          const Icon(Icons.wifi, size: 14, color: MarginaliaColors.inkMuted),
+          const Icon(Icons.wifi, size: 14, color: ScriptaColors.inkMuted),
           const SizedBox(width: 4),
-          const Icon(Icons.battery_full, size: 14, color: MarginaliaColors.inkMuted),
+          const Icon(Icons.battery_full, size: 14, color: ScriptaColors.inkMuted),
         ],
       ),
     );
@@ -781,8 +781,8 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
     // iOS frosted glass; the selected tab is highlighted purely by colour
     // (filled icon + accent). The drop shadow and the thin border live on
     // the OUTER container, OUTSIDE the clip, so the shadow isn't blurred away.
-    const selectedColor   = MarginaliaColors.primaryDark; // sage accent
-    const unselectedColor = MarginaliaColors.inkMuted;
+    const selectedColor   = ScriptaColors.primaryDark; // sage accent
+    const unselectedColor = ScriptaColors.inkMuted;
     const radius = 26.0;
 
     return AnimatedBuilder(
@@ -801,7 +801,7 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
           // never clips away the shadow.
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.5),
+            border: Border.all(color: ScriptaColors.ruleFaint, width: 0.5),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x1F000000),

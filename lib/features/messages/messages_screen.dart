@@ -55,13 +55,13 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
     final conversationsAsync = ref.watch(conversationsProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       // FAB sits at the standard position — no extra bottom padding now
       // that the bottom nav is a flat bar (was 96px for the old floating
       // glass pill, which pushed the FAB into the middle of the screen).
       floatingActionButton: FloatingActionButton(
         onPressed: _showNewConversationSheet,
-        backgroundColor: MarginaliaColors.primary,
+        backgroundColor: ScriptaColors.primary,
         foregroundColor: Colors.white,
         elevation: 6,
         child: const Icon(Icons.edit_outlined, size: 22),
@@ -79,8 +79,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                   return const _EmptyState();
                 }
                 return RefreshIndicator(
-                  color: MarginaliaColors.primary,
-                  backgroundColor: MarginaliaColors.surface,
+                  color: ScriptaColors.primary,
+                  backgroundColor: ScriptaColors.surface,
                   onRefresh: () async {
                     ref.invalidate(conversationsProvider);
                     await ref.read(conversationsProvider.future);
@@ -110,7 +110,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
               },
               loading: () => const Center(
                 child: CircularProgressIndicator(
-                  color: MarginaliaColors.sienna,
+                  color: ScriptaColors.sienna,
                   strokeWidth: 1.5,
                 ),
               ),
@@ -121,14 +121,14 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.error_outline,
-                          color: MarginaliaColors.inkFaint, size: 40),
+                          color: ScriptaColors.inkFaint, size: 40),
                       const SizedBox(height: 16),
                       Text(
                         context.l10n.msgErrorLoading,
                         style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -137,7 +137,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                         child: Text(
                           context.l10n.retry,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.primaryDark,
+                            color: ScriptaColors.primaryDark,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -210,14 +210,14 @@ class _MessagesHeader extends StatelessWidget {
                     Text(
                       context.l10n.messagesTitle,
                       textAlign: TextAlign.center,
-                      style: MarginaliaTextStyles.wordmark,
+                      style: ScriptaTextStyles.wordmark,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       context.l10n.msgSubtitle,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.manrope(
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                         fontSize: 12,
                         letterSpacing: 0.1,
                       ),
@@ -269,12 +269,12 @@ class _NotificationBell extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: MarginaliaColors.ink.withAlpha(12),
+              color: ScriptaColors.ink.withAlpha(12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               PhosphorIconsRegular.bell,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               size: 18,
             ),
           ),
@@ -394,16 +394,16 @@ class _ConversationCard extends ConsumerWidget {
     }
 
     final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-    final avatarBg = MarginaliaDecorations.bookCoverColor(displayName);
+    final avatarBg = ScriptaDecorations.bookCoverColor(displayName);
 
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
       child: Container(
         decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: MarginaliaColors.rule, width: 0.5),
+          border: Border.all(color: ScriptaColors.rule, width: 0.5),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0A000000),
@@ -441,7 +441,7 @@ class _ConversationCard extends ConsumerWidget {
                             style: GoogleFonts.manrope(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: MarginaliaColors.ink,
+                              color: ScriptaColors.ink,
                               letterSpacing: -0.1,
                             ),
                           ),
@@ -452,7 +452,7 @@ class _ConversationCard extends ConsumerWidget {
                             timeLabel,
                             style: GoogleFonts.manrope(
                               fontSize: 11,
-                              color: MarginaliaColors.inkFaint,
+                              color: ScriptaColors.inkFaint,
                             ),
                           ),
                         ],
@@ -469,8 +469,8 @@ class _ConversationCard extends ConsumerWidget {
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               color: hasUnread
-                                  ? MarginaliaColors.ink
-                                  : MarginaliaColors.inkMuted,
+                                  ? ScriptaColors.ink
+                                  : ScriptaColors.inkMuted,
                               fontWeight: hasUnread
                                   ? FontWeight.w700
                                   : FontWeight.w400,
@@ -484,7 +484,7 @@ class _ConversationCard extends ConsumerWidget {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: MarginaliaColors.sienna,
+                              color: ScriptaColors.sienna,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -497,7 +497,7 @@ class _ConversationCard extends ConsumerWidget {
                         context.l10n.msgParticipantCount(members.length),
                         style: GoogleFonts.manrope(
                           fontSize: 11,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                           letterSpacing: 0.2,
                         ),
                       ),
@@ -509,7 +509,7 @@ class _ConversationCard extends ConsumerWidget {
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
                 size: 18,
               ),
             ],
@@ -747,13 +747,13 @@ class _EmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: MarginaliaColors.siennaFaint,
+                color: ScriptaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(22),
               ),
               child: Icon(
                 Icons.send_outlined,
                 size: 36,
-                color: MarginaliaColors.sienna,
+                color: ScriptaColors.sienna,
               ),
             ),
             const SizedBox(height: 24),
@@ -762,7 +762,7 @@ class _EmptyState extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -771,7 +771,7 @@ class _EmptyState extends StatelessWidget {
               context.l10n.msgEmptyBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 height: 1.6,
                 fontSize: 14,
               ),
@@ -794,7 +794,7 @@ class _NewConversationSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
@@ -809,7 +809,7 @@ class _NewConversationSheet extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -819,7 +819,7 @@ class _NewConversationSheet extends StatelessWidget {
                 style: GoogleFonts.ebGaramond(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                 ),
               ),
               const SizedBox(height: 24),
@@ -895,9 +895,9 @@ class _SheetOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: MarginaliaColors.surfaceElevated,
+          color: ScriptaColors.surfaceElevated,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: MarginaliaColors.rule, width: 0.5),
+          border: Border.all(color: ScriptaColors.rule, width: 0.5),
         ),
         child: Row(
           children: [
@@ -905,10 +905,10 @@ class _SheetOption extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
+                color: ScriptaColors.primaryFaint,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: MarginaliaColors.primary, size: 20),
+              child: Icon(icon, color: ScriptaColors.primary, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -920,21 +920,21 @@ class _SheetOption extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: GoogleFonts.manrope(
                       fontSize: 12,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                     ),
                   ),
                 ],
               ),
             ),
             const Icon(Icons.chevron_right,
-                color: MarginaliaColors.inkFaint, size: 18),
+                color: ScriptaColors.inkFaint, size: 18),
           ],
         ),
       ),
@@ -1021,7 +1021,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
     return Container(
       height: sheetHeight > 0 ? sheetHeight : screenHeight * 0.75,
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -1035,7 +1035,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1045,7 +1045,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1055,7 +1055,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                   onChanged: _search,
                   style: GoogleFonts.manrope(
                     fontSize: 15,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                   decoration: InputDecoration(
                     hintText: context.l10n.msgSearchUsersHint,
@@ -1068,13 +1068,13 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.5,
-                                color: MarginaliaColors.sienna,
+                                color: ScriptaColors.sienna,
                               ),
                             ),
                           )
                         : null,
                     filled: true,
-                    fillColor: MarginaliaColors.surfaceElevated,
+                    fillColor: ScriptaColors.surfaceElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -1086,7 +1086,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         width: 1.5,
                       ),
                     ),
@@ -1108,7 +1108,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                 ? Center(
                     child: Text(
                       _error!,
-                      style: GoogleFonts.manrope(color: MarginaliaColors.inkMuted),
+                      style: GoogleFonts.manrope(color: ScriptaColors.inkMuted),
                     ),
                   )
                 : _results.isEmpty && _searchController.text.isNotEmpty && !_loading
@@ -1116,7 +1116,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                         child: Text(
                           context.l10n.msgNoUsersFound,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                             fontSize: 14,
                           ),
                         ),
@@ -1134,7 +1134,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                           final initial =
                               name.isNotEmpty ? name[0].toUpperCase() : '?';
                           final avatarBg =
-                              MarginaliaDecorations.bookCoverColor(name);
+                              ScriptaDecorations.bookCoverColor(name);
 
                           return ListTile(
                             contentPadding: const EdgeInsets.symmetric(
@@ -1150,7 +1150,7 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                               style: GoogleFonts.manrope(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: MarginaliaColors.ink,
+                                color: ScriptaColors.ink,
                               ),
                             ),
                             subtitle: username.isNotEmpty
@@ -1158,12 +1158,12 @@ class _UserSearchSheetState extends ConsumerState<_UserSearchSheet> {
                                     '@$username',
                                     style: GoogleFonts.manrope(
                                       fontSize: 12,
-                                      color: MarginaliaColors.inkFaint,
+                                      color: ScriptaColors.inkFaint,
                                     ),
                                   )
                                 : null,
                             trailing: const Icon(Icons.chevron_right,
-                                color: MarginaliaColors.inkFaint, size: 18),
+                                color: ScriptaColors.inkFaint, size: 18),
                             onTap: () => _startConversation(userId),
                           );
                         },
@@ -1283,7 +1283,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
     return Container(
       height: sheetHeight > 0 ? sheetHeight : screenHeight * 0.85,
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -1299,7 +1299,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.rule,
+                      color: ScriptaColors.rule,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1310,7 +1310,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1321,13 +1321,13 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                   textCapitalization: TextCapitalization.sentences,
                   style: GoogleFonts.manrope(
                     fontSize: 15,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                   decoration: InputDecoration(
                     hintText: context.l10n.msgGroupNameHint,
                     prefixIcon: const Icon(Icons.group_outlined, size: 20),
                     filled: true,
-                    fillColor: MarginaliaColors.surfaceElevated,
+                    fillColor: ScriptaColors.surfaceElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -1339,7 +1339,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         width: 1.5,
                       ),
                     ),
@@ -1357,7 +1357,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                   onChanged: _search,
                   style: GoogleFonts.manrope(
                     fontSize: 15,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                   decoration: InputDecoration(
                     hintText: context.l10n.msgSearchUsersToAddHint,
@@ -1370,13 +1370,13 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.5,
-                                color: MarginaliaColors.sienna,
+                                color: ScriptaColors.sienna,
                               ),
                             ),
                           )
                         : null,
                     filled: true,
-                    fillColor: MarginaliaColors.surfaceElevated,
+                    fillColor: ScriptaColors.surfaceElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -1388,7 +1388,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         width: 1.5,
                       ),
                     ),
@@ -1411,10 +1411,10 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                         label: Text(name),
                         onDeleted: () => _toggleUser(user),
                         deleteIcon: const Icon(Icons.close, size: 14),
-                        backgroundColor: MarginaliaColors.primaryFaint,
+                        backgroundColor: ScriptaColors.primaryFaint,
                         labelStyle: GoogleFonts.manrope(
                           fontSize: 12,
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                           fontWeight: FontWeight.w600,
                         ),
                         side: BorderSide.none,
@@ -1435,7 +1435,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                     child: Text(
                       context.l10n.msgSearchUserToAdd,
                       style: GoogleFonts.manrope(
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                         fontSize: 13,
                       ),
                     ),
@@ -1445,7 +1445,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                         child: Text(
                           context.l10n.msgNoUsersFound,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                             fontSize: 14,
                           ),
                         ),
@@ -1462,7 +1462,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                           final initial =
                               name.isNotEmpty ? name[0].toUpperCase() : '?';
                           final avatarBg =
-                              MarginaliaDecorations.bookCoverColor(name);
+                              ScriptaDecorations.bookCoverColor(name);
                           final isSelected = _selectedUsers
                               .any((u) => u['id'] == user['id']);
 
@@ -1480,7 +1480,7 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                               style: GoogleFonts.manrope(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: MarginaliaColors.ink,
+                                color: ScriptaColors.ink,
                               ),
                             ),
                             subtitle: username.isNotEmpty
@@ -1488,15 +1488,15 @@ class _CreateGroupSheetState extends ConsumerState<_CreateGroupSheet> {
                                     '@$username',
                                     style: GoogleFonts.manrope(
                                       fontSize: 12,
-                                      color: MarginaliaColors.inkFaint,
+                                      color: ScriptaColors.inkFaint,
                                     ),
                                   )
                                 : null,
                             trailing: isSelected
                                 ? const Icon(Icons.check_circle,
-                                    color: MarginaliaColors.primaryDark, size: 20)
+                                    color: ScriptaColors.primaryDark, size: 20)
                                 : const Icon(Icons.add_circle_outline,
-                                    color: MarginaliaColors.inkFaint, size: 20),
+                                    color: ScriptaColors.inkFaint, size: 20),
                             onTap: () => _toggleUser(user),
                           );
                         },

@@ -30,11 +30,11 @@ class WidgetHighlight {
 // writes it to the iOS home-screen widget via the home_widget package.
 //
 // App Group ID must match the one configured in Xcode for both the Runner
-// target and the MarginaliaWidget extension target.
+// target and the ScriptaWidget extension target.
 
 class WidgetService {
   static const _appGroupId = 'group.marginalia.widget';
-  static const _iOSWidgetName = 'MarginaliaWidget';
+  static const _iOSWidgetName = 'ScriptaWidget';
 
   // ── Initialise ────────────────────────────────────────────────────────────
 
@@ -98,7 +98,7 @@ class WidgetService {
     return snapshot;
   }
 
-  /// Push reading statistics to the iOS stats widget ("MarginaliaStats").
+  /// Push reading statistics to the iOS stats widget ("ScriptaStats").
   /// Values are written as integers into the shared App Group container and the
   /// widget timeline is reloaded so the home screen reflects them.
   static Future<void> updateStats({
@@ -112,7 +112,7 @@ class WidgetService {
       await HomeWidget.saveWidgetData<int>('w_month_min', monthMinutes);
       await HomeWidget.saveWidgetData<int>('w_year_books', yearBooks);
       await HomeWidget.saveWidgetData<int>('w_year_goal', yearGoal);
-      await HomeWidget.updateWidget(iOSName: 'MarginaliaStats');
+      await HomeWidget.updateWidget(iOSName: 'ScriptaStats');
     } catch (e) {
       debugPrint('[WidgetService] updateStats failed: $e');
     }

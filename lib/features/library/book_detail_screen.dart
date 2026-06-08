@@ -34,12 +34,12 @@ class BookDetailScreen extends ConsumerWidget {
             appBar: AppBar(),
             body: Center(
               child: Text(context.l10n.bookNotFound,
-                  style: const TextStyle(color: MarginaliaColors.inkMuted)),
+                  style: const TextStyle(color: ScriptaColors.inkMuted)),
             ),
           );
         }
 
-        final coverColor = MarginaliaDecorations.bookCoverColor(book.title);
+        final coverColor = ScriptaDecorations.bookCoverColor(book.title);
 
         final highlightCount = highlightsAsync.maybeWhen(
           data: (h) => h.length,
@@ -47,7 +47,7 @@ class BookDetailScreen extends ConsumerWidget {
         );
 
         return Scaffold(
-          backgroundColor: MarginaliaColors.background,
+          backgroundColor: ScriptaColors.background,
           body: Stack(
             children: [
               // ── Editorial hero cover ──────────────────────────────────────
@@ -112,7 +112,7 @@ class BookDetailScreen extends ConsumerWidget {
                   builder: (ctx, scrollCtrl) {
                     return Container(
                       decoration: const BoxDecoration(
-                        color: MarginaliaColors.background,
+                        color: ScriptaColors.background,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(28),
                           topRight: Radius.circular(28),
@@ -137,7 +137,7 @@ class BookDetailScreen extends ConsumerWidget {
                                   width: 36,
                                   height: 4,
                                   decoration: BoxDecoration(
-                                    color: MarginaliaColors.rule,
+                                    color: ScriptaColors.rule,
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
@@ -163,11 +163,11 @@ class BookDetailScreen extends ConsumerWidget {
                                 children: [
                                   Text(context.l10n.bookHighlightLabel,
                                       style:
-                                          MarginaliaTextStyles.sectionTitle),
+                                          ScriptaTextStyles.sectionTitle),
                                   const SizedBox(width: 12),
                                   const Expanded(
                                     child: Divider(
-                                        color: MarginaliaColors.ruleFaint,
+                                        color: ScriptaColors.ruleFaint,
                                         height: 1),
                                   ),
                                 ],
@@ -184,7 +184,7 @@ class BookDetailScreen extends ConsumerWidget {
                                         context.l10n.bookNoHighlights,
                                         style: const TextStyle(
                                             color:
-                                                MarginaliaColors.inkMuted),
+                                                ScriptaColors.inkMuted),
                                       ),
                                     ),
                                   )
@@ -205,7 +205,7 @@ class BookDetailScreen extends ConsumerWidget {
                             loading: () => const SliverFillRemaining(
                               child: Center(
                                 child: CircularProgressIndicator(
-                                  color: MarginaliaColors.primaryDark,
+                                  color: ScriptaColors.primaryDark,
                                   strokeWidth: 1.5,
                                 ),
                               ),
@@ -245,10 +245,10 @@ class BookDetailScreen extends ConsumerWidget {
         );
       },
       loading: () => Scaffold(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         body: const Center(
           child: CircularProgressIndicator(
-            color: MarginaliaColors.primaryDark,
+            color: ScriptaColors.primaryDark,
             strokeWidth: 1.5,
           ),
         ),
@@ -284,7 +284,7 @@ class _StatRow extends StatelessWidget {
           // Sottile divisore verticale
           Container(
             width: 0.8, height: 32,
-            color: MarginaliaColors.ruleFaint,
+            color: ScriptaColors.ruleFaint,
             margin: const EdgeInsets.symmetric(horizontal: 20),
           ),
           _StatBox(
@@ -294,7 +294,7 @@ class _StatRow extends StatelessWidget {
           ),
           Container(
             width: 0.8, height: 32,
-            color: MarginaliaColors.ruleFaint,
+            color: ScriptaColors.ruleFaint,
             margin: const EdgeInsets.symmetric(horizontal: 20),
           ),
           _StatBox(
@@ -331,22 +331,22 @@ class _StatBox extends StatelessWidget {
           if (value.isNotEmpty)
             Text(
               value,
-              style: MarginaliaTextStyles.bookTitle.copyWith(
+              style: ScriptaTextStyles.bookTitle.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             )
           else if (icon != null)
-            Icon(icon, size: 18, color: MarginaliaColors.primaryDark),
+            Icon(icon, size: 18, color: ScriptaColors.primaryDark),
           const SizedBox(height: 3),
           // Label in Barlow Condensed uppercase
           Text(
             label.toUpperCase(),
-            style: MarginaliaTextStyles.sectionTitle.copyWith(
+            style: ScriptaTextStyles.sectionTitle.copyWith(
               fontSize: 8.5,
               letterSpacing: 1.5,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
             ),
             textAlign: TextAlign.center,
           ),
@@ -393,8 +393,8 @@ class _HighlightCard extends StatelessWidget {
                     children: [
                       Text(
                         '${(index + 1).toString().padLeft(2, '0')}',
-                        style: MarginaliaTextStyles.indexNumber.copyWith(
-                          color: MarginaliaColors.inkFaint,
+                        style: ScriptaTextStyles.indexNumber.copyWith(
+                          color: ScriptaColors.inkFaint,
                           fontSize: 11,
                         ),
                       ),
@@ -411,7 +411,7 @@ class _HighlightCard extends StatelessWidget {
                         const Icon(
                           Icons.bookmark_rounded,
                           size: 14,
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                         ),
                     ],
                   ),
@@ -420,7 +420,7 @@ class _HighlightCard extends StatelessWidget {
                   // ── Testo in EB Garamond italic ────────────────────
                   Text(
                     highlight.content,
-                    style: MarginaliaTextStyles.highlightBodySmall.copyWith(
+                    style: ScriptaTextStyles.highlightBodySmall.copyWith(
                       fontSize: 15.5,
                       height: 1.75,
                     ),
@@ -433,14 +433,14 @@ class _HighlightCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.edit_outlined,
-                            size: 11, color: MarginaliaColors.inkFaint),
+                            size: 11, color: ScriptaColors.inkFaint),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             highlight.note!,
                             style: GoogleFonts.manrope(
                               fontSize: 12,
-                              color: MarginaliaColors.inkMuted,
+                              color: ScriptaColors.inkMuted,
                               fontStyle: FontStyle.italic,
                               height: 1.55,
                             ),
@@ -457,9 +457,9 @@ class _HighlightCard extends StatelessWidget {
                       if (highlight.location != null)
                         Text(
                           context.l10n.bookLocationPrefix(highlight.location!),
-                          style: MarginaliaTextStyles.label.copyWith(
+                          style: ScriptaTextStyles.label.copyWith(
                             fontSize: 10,
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                           ),
                         ),
                       const Spacer(),
@@ -469,7 +469,7 @@ class _HighlightCard extends StatelessWidget {
                           sharePositionOrigin: shareOrigin(context),
                         ),
                         child: const Icon(Icons.ios_share_rounded,
-                            size: 14, color: MarginaliaColors.inkFaint),
+                            size: 14, color: ScriptaColors.inkFaint),
                       ),
                     ],
                   ),
@@ -478,7 +478,7 @@ class _HighlightCard extends StatelessWidget {
               ),
             ),
             // Divider sottile tra highlight
-            Container(height: 0.8, color: MarginaliaColors.ruleFaint),
+            Container(height: 0.8, color: ScriptaColors.ruleFaint),
           ],
         ),
       ),
@@ -495,7 +495,7 @@ class _HighlightCard extends StatelessWidget {
       'blue' => const Color(0xFF4A90BF),
       'pink' => const Color(0xFFBF4A72),
       'orange' => const Color(0xFFBF7A34),
-      _ => MarginaliaColors.siennaLight,
+      _ => ScriptaColors.siennaLight,
     };
   }
 }
@@ -509,7 +509,7 @@ void _editCover(BuildContext context, WidgetRef ref, Book book) {
   final hasCustom = (book.coverUrl ?? '').isNotEmpty;
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: MarginaliaColors.surface,
+    backgroundColor: ScriptaColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -523,7 +523,7 @@ void _editCover(BuildContext context, WidgetRef ref, Book book) {
             width: 38,
             height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -536,14 +536,14 @@ void _editCover(BuildContext context, WidgetRef ref, Book book) {
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                 ),
               ),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.photo_library_outlined,
-                color: MarginaliaColors.primaryDark),
+                color: ScriptaColors.primaryDark),
             title: Text(it ? 'Scegli dalla galleria' : 'Choose from gallery'),
             onTap: () {
               Navigator.of(sheetCtx).pop();
@@ -552,14 +552,14 @@ void _editCover(BuildContext context, WidgetRef ref, Book book) {
           ),
           ListTile(
             leading: const Icon(Icons.search_rounded,
-                color: MarginaliaColors.primaryDark),
+                color: ScriptaColors.primaryDark),
             title: Text(it ? 'Cerca su Google' : 'Search on Google'),
             subtitle: Text(
               it
                   ? 'Trova e scarica, poi scegline dalla galleria'
                   : 'Find one, save it, then pick from gallery',
               style: const TextStyle(
-                  fontSize: 12, color: MarginaliaColors.inkFaint),
+                  fontSize: 12, color: ScriptaColors.inkFaint),
             ),
             onTap: () {
               Navigator.of(sheetCtx).pop();
@@ -569,7 +569,7 @@ void _editCover(BuildContext context, WidgetRef ref, Book book) {
           if (hasCustom)
             ListTile(
               leading: const Icon(Icons.delete_outline_rounded,
-                  color: MarginaliaColors.highlightRose),
+                  color: ScriptaColors.highlightRose),
               title: Text(it ? 'Rimuovi copertina' : 'Remove cover'),
               onTap: () {
                 Navigator.of(sheetCtx).pop();

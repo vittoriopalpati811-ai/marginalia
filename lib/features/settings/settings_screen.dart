@@ -95,7 +95,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         : user.email?[0].toUpperCase() ?? 'L';
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -104,7 +104,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             expandedHeight: 240,
             pinned: true,
             stretch: true,
-            backgroundColor: MarginaliaColors.primary,
+            backgroundColor: ScriptaColors.primary,
             foregroundColor: const Color(0xFFF1EEE7),
             elevation: 0,
             scrolledUnderElevation: 0,
@@ -138,10 +138,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       coverUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
-                          decoration: MarginaliaDecorations.gradientHeader),
+                          decoration: ScriptaDecorations.gradientHeader),
                     )
                   else
-                    Container(decoration: MarginaliaDecorations.gradientHeader),
+                    Container(decoration: ScriptaDecorations.gradientHeader),
                   // Scrim so the name/email stay legible over a photo.
                   if (coverUrl != null && coverUrl.isNotEmpty)
                     const DecoratedBox(
@@ -167,9 +167,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                MarginaliaDecorations.bookCoverColor(
+                                ScriptaDecorations.bookCoverColor(
                                     displayName),
-                                MarginaliaColors.primaryDark,
+                                ScriptaColors.primaryDark,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -270,8 +270,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: const Icon(Icons.edit_outlined, size: 16),
                       label: Text(context.l10n.profileEditProfile),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: MarginaliaColors.primary,
-                        side: const BorderSide(color: MarginaliaColors.rule),
+                        foregroundColor: ScriptaColors.primary,
+                        side: const BorderSide(color: ScriptaColors.rule),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -287,8 +287,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       sharePositionOrigin: shareOrigin(context),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: MarginaliaColors.primary,
-                      side: const BorderSide(color: MarginaliaColors.rule),
+                      foregroundColor: ScriptaColors.primary,
+                      side: const BorderSide(color: ScriptaColors.rule),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(
@@ -319,7 +319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Row(
                 children: [
                   Text(context.l10n.settingsInJamsSection,
-                      style: MarginaliaTextStyles.sectionTitle),
+                      style: ScriptaTextStyles.sectionTitle),
                   const SizedBox(width: 8),
                   Text(
                     sharedHighlights.isNotEmpty
@@ -327,12 +327,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         : '',
                     style: const TextStyle(
                       fontSize: 11,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                  const Expanded(child: Divider(color: ScriptaColors.rule)),
                 ],
               ),
             ),
@@ -375,9 +375,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Row(
                 children: [
                   Text(context.l10n.settingsSettingsSection,
-                      style: MarginaliaTextStyles.sectionTitle),
+                      style: ScriptaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
-                  const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                  const Expanded(child: Divider(color: ScriptaColors.rule)),
                 ],
               ),
             ),
@@ -470,7 +470,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 trailing: const Text(
                   '1.0.0',
                   style: TextStyle(
-                      color: MarginaliaColors.inkFaint, fontSize: 13),
+                      color: ScriptaColors.inkFaint, fontSize: 13),
                 ),
               ),
 
@@ -481,9 +481,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Row(
                   children: [
                     Text(context.l10n.personalizationSection,
-                        style: MarginaliaTextStyles.sectionTitle),
+                        style: ScriptaTextStyles.sectionTitle),
                     const SizedBox(width: 12),
-                    const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                    const Expanded(child: Divider(color: ScriptaColors.rule)),
                   ],
                 ),
               ),
@@ -501,9 +501,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Row(
                   children: [
                     Text(context.l10n.settingsPrivacyDataSection,
-                        style: MarginaliaTextStyles.sectionTitle),
+                        style: ScriptaTextStyles.sectionTitle),
                     const SizedBox(width: 12),
-                    const Expanded(child: Divider(color: MarginaliaColors.rule)),
+                    const Expanded(child: Divider(color: ScriptaColors.rule)),
                   ],
                 ),
               ),
@@ -526,7 +526,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ));
                 },
                 trailing: const Icon(Icons.chevron_right,
-                    size: 18, color: MarginaliaColors.inkFaint),
+                    size: 18, color: ScriptaColors.inkFaint),
               ),
               _SettingsTile(
                 icon: Icons.description_outlined,
@@ -541,7 +541,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ));
                 },
                 trailing: const Icon(Icons.chevron_right,
-                    size: 18, color: MarginaliaColors.inkFaint),
+                    size: 18, color: ScriptaColors.inkFaint),
               ),
               _SettingsTile(
                 icon: Icons.block_outlined,
@@ -550,7 +550,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   builder: (_) => const BlockedUsersScreen(),
                 )),
                 trailing: const Icon(Icons.chevron_right,
-                    size: 18, color: MarginaliaColors.inkFaint),
+                    size: 18, color: ScriptaColors.inkFaint),
               ),
               _SettingsTile(
                 icon: Icons.delete_forever_outlined,
@@ -656,7 +656,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -671,7 +671,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -709,7 +709,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.sienna,
+                color: ScriptaColors.sienna,
               ),
             ),
           ],
@@ -730,7 +730,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -745,7 +745,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -760,7 +760,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               ctx.l10n.personalizationBody,
               style: const TextStyle(
-                  fontSize: 13, height: 1.5, color: MarginaliaColors.inkMuted),
+                  fontSize: 13, height: 1.5, color: ScriptaColors.inkMuted),
             ),
             const SizedBox(height: 16),
             _GenderChoiceRow(
@@ -858,7 +858,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -875,7 +875,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -894,7 +894,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 prefixIcon: const Icon(Icons.person_outline),
                 labelText: context.l10n.editProfileName,
                 filled: true,
-                fillColor: MarginaliaColors.surfaceElevated,
+                fillColor: ScriptaColors.surfaceElevated,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none),
@@ -904,7 +904,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark, width: 1.5)),
+                        color: ScriptaColors.primaryDark, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 14),
               ),
@@ -915,7 +915,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: const TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 letterSpacing: 2,
               ),
             ),
@@ -927,7 +927,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 hintText: context.l10n.editProfileBookTitleHint,
                 prefixIcon: const Icon(Icons.menu_book_outlined),
                 filled: true,
-                fillColor: MarginaliaColors.surfaceElevated,
+                fillColor: ScriptaColors.surfaceElevated,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none),
@@ -937,7 +937,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark, width: 1.5)),
+                        color: ScriptaColors.primaryDark, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 14),
               ),
@@ -950,7 +950,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 hintText: context.l10n.editProfileAuthorHint,
                 prefixIcon: const Icon(Icons.person_outline),
                 filled: true,
-                fillColor: MarginaliaColors.surfaceElevated,
+                fillColor: ScriptaColors.surfaceElevated,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none),
@@ -960,7 +960,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark, width: 1.5)),
+                        color: ScriptaColors.primaryDark, width: 1.5)),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 14),
               ),
@@ -1011,14 +1011,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.fromLTRB(0, 16, 0, 48),
         child: ListTileTheme(
-          data: const ListTileThemeData(textColor: MarginaliaColors.ink),
+          data: const ListTileThemeData(textColor: ScriptaColors.ink),
           child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1027,7 +1027,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1035,7 +1035,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.edit_outlined,
-                  color: MarginaliaColors.primary),
+                  color: ScriptaColors.primary),
               title: Text(context.l10n.profileEditProfile),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1044,7 +1044,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.bar_chart_outlined,
-                  color: MarginaliaColors.primary),
+                  color: ScriptaColors.primary),
               title: Text(context.l10n.statsTitle),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1053,7 +1053,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.sync_outlined,
-                  color: MarginaliaColors.primary),
+                  color: ScriptaColors.primary),
               title: Text(context.l10n.settingsSyncWithKindle),
               onTap: () {
                 Navigator.pop(ctx);
@@ -1062,7 +1062,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.upload_file_outlined,
-                  color: MarginaliaColors.primary),
+                  color: ScriptaColors.primary),
               title: Text(context.l10n.settingsImportClippings),
               onTap: () async {
                 final messenger = ScaffoldMessenger.of(context);
@@ -1084,10 +1084,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.privacy_tip_outlined,
-                  color: MarginaliaColors.primary),
+                  color: ScriptaColors.primary),
               title: Text(context.l10n.settingsPrivacyPolicy),
               trailing: const Icon(Icons.chevron_right,
-                  size: 18, color: MarginaliaColors.inkFaint),
+                  size: 18, color: ScriptaColors.inkFaint),
               onTap: () {
                 Navigator.pop(ctx);
                 final isIt =
@@ -1115,9 +1115,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const Divider(indent: 16, endIndent: 16),
               ListTile(
                 leading: const Icon(Icons.restart_alt_outlined,
-                    color: MarginaliaColors.inkMuted),
+                    color: ScriptaColors.inkMuted),
                 title: const Text('[DEV] Reset onboarding',
-                    style: TextStyle(color: MarginaliaColors.inkMuted, fontSize: 13)),
+                    style: TextStyle(color: ScriptaColors.inkMuted, fontSize: 13)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   await OnboardingService.resetComplete();
@@ -1163,7 +1163,7 @@ class _StatsRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Row(
         children: [
           _StatBox(label: context.l10n.profileBooksStat, value: stats['books'] ?? 0),
@@ -1196,7 +1196,7 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.5,
               height: 1,
             ),
@@ -1206,7 +1206,7 @@ class _StatBox extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 10,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
             ),
@@ -1223,7 +1223,7 @@ class _Divider extends StatelessWidget {
     return Container(
       width: 1,
       height: 32,
-      color: MarginaliaColors.rule,
+      color: ScriptaColors.rule,
     );
   }
 }
@@ -1242,13 +1242,13 @@ class _CurrentlyReadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final coverColor = MarginaliaDecorations.bookCoverColor(title);
+    final coverColor = ScriptaDecorations.bookCoverColor(title);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         padding: const EdgeInsets.all(14),
-        decoration: MarginaliaDecorations.card(),
+        decoration: ScriptaDecorations.card(),
         child: Row(
           children: [
             // Mini book cover
@@ -1257,7 +1257,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
               height: 58,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [coverColor, MarginaliaColors.primaryDark],
+                  colors: [coverColor, ScriptaColors.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -1284,14 +1284,14 @@ class _CurrentlyReadingCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.sienna,
+                      color: ScriptaColors.sienna,
                       letterSpacing: 1.8,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     title,
-                    style: MarginaliaTextStyles.bookTitle
+                    style: ScriptaTextStyles.bookTitle
                         .copyWith(fontSize: 15),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1299,7 +1299,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
                   if ((author ?? '').isNotEmpty)
                     Text(
                       (author!).toUpperCase(),
-                      style: MarginaliaTextStyles.bookAuthor,
+                      style: ScriptaTextStyles.bookAuthor,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1307,7 +1307,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
               ),
             ),
             const Icon(Icons.edit_outlined,
-                size: 16, color: MarginaliaColors.inkFaint),
+                size: 16, color: ScriptaColors.inkFaint),
           ],
         ),
       ),
@@ -1345,7 +1345,7 @@ class _SharedHighlightCell extends StatelessWidget {
         : content;
 
     return Container(
-      decoration: MarginaliaDecorations.quietCard(radius: 14),
+      decoration: ScriptaDecorations.quietCard(radius: 14),
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(
@@ -1364,7 +1364,7 @@ class _SharedHighlightCell extends StatelessWidget {
                       child: Text(
                         '“$excerpt”',
                         style: GoogleFonts.ebGaramond(
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           fontSize: 13.5,
                           fontStyle: FontStyle.italic,
                           height: 1.45,
@@ -1377,7 +1377,7 @@ class _SharedHighlightCell extends StatelessWidget {
                       Text(
                         bookTitle.toUpperCase(),
                         style: const TextStyle(
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           fontSize: 8.5,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.4,
@@ -1393,7 +1393,7 @@ class _SharedHighlightCell extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.primaryFaint,
+                          color: ScriptaColors.primaryFaint,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -1401,13 +1401,13 @@ class _SharedHighlightCell extends StatelessWidget {
                           children: [
                             const Icon(Icons.groups_outlined,
                                 size: 11,
-                                color: MarginaliaColors.primaryDark),
+                                color: ScriptaColors.primaryDark),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 jamTitle,
                                 style: const TextStyle(
-                                  color: MarginaliaColors.primaryDark,
+                                  color: ScriptaColors.primaryDark,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.1,
@@ -1440,7 +1440,7 @@ class _SharedHighlightCell extends StatelessWidget {
         'blue'   => const Color(0xFF4A90BF),
         'pink'   => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _        => MarginaliaDecorations.bookCoverColor(bookTitle),
+        _        => ScriptaDecorations.bookCoverColor(bookTitle),
       };
 }
 
@@ -1462,12 +1462,12 @@ class _EmptySharedHighlights extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              MarginaliaColors.primary.withOpacity(0.06),
-              MarginaliaColors.surface,
+              ScriptaColors.primary.withOpacity(0.06),
+              ScriptaColors.surface,
             ],
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: MarginaliaColors.rule.withOpacity(0.6)),
+          border: Border.all(color: ScriptaColors.rule.withOpacity(0.6)),
         ),
         child: Column(
           children: [
@@ -1475,11 +1475,11 @@ class _EmptySharedHighlights extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: MarginaliaColors.primary.withOpacity(0.10),
+                color: ScriptaColors.primary.withOpacity(0.10),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_stories_outlined,
-                  size: 24, color: MarginaliaColors.primary),
+                  size: 24, color: ScriptaColors.primary),
             ),
             const SizedBox(height: 14),
             Text(
@@ -1487,7 +1487,7 @@ class _EmptySharedHighlights extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.2,
               ),
             ),
@@ -1496,7 +1496,7 @@ class _EmptySharedHighlights extends StatelessWidget {
               context.l10n.profileNoSharedBody,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontSize: 12.5, color: MarginaliaColors.inkMuted, height: 1.5),
+                  fontSize: 12.5, color: ScriptaColors.inkMuted, height: 1.5),
             ),
             const SizedBox(height: 18),
             FilledButton.icon(
@@ -1504,7 +1504,7 @@ class _EmptySharedHighlights extends StatelessWidget {
               icon: const Icon(Icons.groups_outlined, size: 17),
               label: Text(context.l10n.editProfileGoToJams),
               style: FilledButton.styleFrom(
-                backgroundColor: MarginaliaColors.primary,
+                backgroundColor: ScriptaColors.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -1541,18 +1541,18 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: MarginaliaColors.primary, size: 22),
+      leading: Icon(icon, color: ScriptaColors.primary, size: 22),
       title: Text(label,
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
       subtitle: subtitle != null
           ? Text(subtitle!,
               style: const TextStyle(
-                  fontSize: 12, color: MarginaliaColors.inkMuted))
+                  fontSize: 12, color: ScriptaColors.inkMuted))
           : null,
       trailing: trailing ??
           (onTap != null
               ? const Icon(Icons.chevron_right,
-                  color: MarginaliaColors.inkFaint, size: 18)
+                  color: ScriptaColors.inkFaint, size: 18)
               : null),
       onTap: onTap,
     );
@@ -1601,11 +1601,11 @@ class _GenderChoiceRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: selected
-                ? MarginaliaColors.primary.withOpacity(0.08)
+                ? ScriptaColors.primary.withOpacity(0.08)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? MarginaliaColors.primary : MarginaliaColors.rule,
+              color: selected ? ScriptaColors.primary : ScriptaColors.rule,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -1619,12 +1619,12 @@ class _GenderChoiceRow extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: MarginaliaColors.ink)),
+                            color: ScriptaColors.ink)),
                     if (hint != null) ...[
                       const SizedBox(height: 2),
                       Text(hint!,
                           style: const TextStyle(
-                              fontSize: 12, color: MarginaliaColors.inkMuted)),
+                              fontSize: 12, color: ScriptaColors.inkMuted)),
                     ],
                   ],
                 ),
@@ -1634,8 +1634,8 @@ class _GenderChoiceRow extends StatelessWidget {
                     ? Icons.radio_button_checked
                     : Icons.radio_button_unchecked,
                 color: selected
-                    ? MarginaliaColors.primary
-                    : MarginaliaColors.inkFaint,
+                    ? ScriptaColors.primary
+                    : ScriptaColors.inkFaint,
                 size: 20,
               ),
             ],
@@ -1654,16 +1654,16 @@ class _UnauthenticatedProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
           // Dark gradient header bleeds under the status bar; force light
           // system icons so the iOS clock/battery don't disappear into it.
           AnnotatedRegion<SystemUiOverlayStyle>(
-            value: MarginaliaDecorations.lightStatusBar,
+            value: ScriptaDecorations.lightStatusBar,
             child: Container(
             width: double.infinity,
-            decoration: MarginaliaDecorations.gradientHeader,
+            decoration: ScriptaDecorations.gradientHeader,
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -1689,11 +1689,11 @@ class _UnauthenticatedProfile extends StatelessWidget {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.primaryFaint,
+                        color: ScriptaColors.primaryFaint,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Icon(Icons.person_outline,
-                          size: 32, color: MarginaliaColors.primary),
+                          size: 32, color: ScriptaColors.primary),
                     ),
                     const SizedBox(height: 24),
                     Text(context.l10n.profileLoginRequired,
@@ -1706,7 +1706,7 @@ class _UnauthenticatedProfile extends StatelessWidget {
                       context.l10n.settingsSignInPromoBody,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           height: 1.65,
                           fontSize: 14),
                     ),
@@ -1746,7 +1746,7 @@ class _DataRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: MarginaliaColors.sienna),
+          Icon(icon, size: 18, color: ScriptaColors.sienna),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1757,7 +1757,7 @@ class _DataRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1765,7 +1765,7 @@ class _DataRow extends StatelessWidget {
                   body,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                     height: 1.5,
                   ),
                 ),

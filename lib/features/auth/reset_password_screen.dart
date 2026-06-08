@@ -61,7 +61,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -130,12 +130,12 @@ class _FormState extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: MarginaliaColors.primaryFaint,
+              color: ScriptaColors.primaryFaint,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.lock_reset_outlined,
-              color: MarginaliaColors.primary,
+              color: ScriptaColors.primary,
               size: 30,
             ),
           ).animate().scale(
@@ -160,7 +160,7 @@ class _FormState extends StatelessWidget {
 
           Text(
             context.l10n.resetSubtitle,
-            style: const TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
+            style: const TextStyle(fontSize: 14, color: ScriptaColors.inkMuted),
           ).animate(delay: 60.ms).fadeIn(duration: 300.ms),
 
           const SizedBox(height: 32),
@@ -179,7 +179,7 @@ class _FormState extends StatelessWidget {
                 onPressed: onToggle1,
               ),
               filled: true,
-              fillColor: MarginaliaColors.surfaceElevated,
+              fillColor: ScriptaColors.surfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
@@ -193,7 +193,7 @@ class _FormState extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(
-                    color: MarginaliaColors.primaryDark, width: 1.5),
+                    color: ScriptaColors.primaryDark, width: 1.5),
               ),
             ),
             validator: (v) {
@@ -219,7 +219,7 @@ class _FormState extends StatelessWidget {
                 onPressed: onToggle2,
               ),
               filled: true,
-              fillColor: MarginaliaColors.surfaceElevated,
+              fillColor: ScriptaColors.surfaceElevated,
               contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
@@ -233,7 +233,7 @@ class _FormState extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(
-                    color: MarginaliaColors.primaryDark, width: 1.5),
+                    color: ScriptaColors.primaryDark, width: 1.5),
               ),
             ),
             validator: (v) {
@@ -302,7 +302,7 @@ class _DoneState extends StatelessWidget {
         const SizedBox(height: 60),
         const Icon(
           Icons.check_circle_outline_rounded,
-          color: MarginaliaColors.primary,
+          color: ScriptaColors.primary,
           size: 72,
         )
             .animate()
@@ -321,7 +321,7 @@ class _DoneState extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           context.l10n.resetRedirecting,
-          style: const TextStyle(fontSize: 14, color: MarginaliaColors.inkMuted),
+          style: const TextStyle(fontSize: 14, color: ScriptaColors.inkMuted),
           textAlign: TextAlign.center,
         ).animate(delay: 350.ms).fadeIn(duration: 300.ms),
       ],

@@ -119,7 +119,7 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -138,11 +138,11 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
                 width: 64,
                 height: 64,
                 decoration: const BoxDecoration(
-                  color: MarginaliaColors.primaryFaint,
+                  color: ScriptaColors.primaryFaint,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.mark_email_read_outlined,
-                    color: MarginaliaColors.primary, size: 30),
+                    color: ScriptaColors.primary, size: 30),
               ).animate().scale(
                     begin: const Offset(0.5, 0.5),
                     end: const Offset(1, 1),
@@ -161,7 +161,7 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
               Text(
                 l10n.otpSubtitle(widget.email),
                 style: const TextStyle(
-                    fontSize: 14, color: MarginaliaColors.inkMuted, height: 1.4),
+                    fontSize: 14, color: ScriptaColors.inkMuted, height: 1.4),
               ),
               const SizedBox(height: 30),
 
@@ -178,7 +178,7 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 12,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                 ),
                 onChanged: (v) {
                   if (_error != null) setState(() => _error = null);
@@ -189,10 +189,10 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
                   hintText: '••••••',
                   hintStyle: TextStyle(
                     letterSpacing: 12,
-                    color: MarginaliaColors.inkFaint.withAlpha(120),
+                    color: ScriptaColors.inkFaint.withAlpha(120),
                   ),
                   filled: true,
-                  fillColor: MarginaliaColors.surfaceElevated,
+                  fillColor: ScriptaColors.surfaceElevated,
                   contentPadding: const EdgeInsets.symmetric(vertical: 18),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -205,7 +205,7 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark, width: 1.5),
+                        color: ScriptaColors.primaryDark, width: 1.5),
                   ),
                 ),
               ),
@@ -263,8 +263,8 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
                     style: TextStyle(
                       fontSize: 13.5,
                       color: _cooldown > 0
-                          ? MarginaliaColors.inkFaint
-                          : MarginaliaColors.primaryDark,
+                          ? ScriptaColors.inkFaint
+                          : ScriptaColors.primaryDark,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

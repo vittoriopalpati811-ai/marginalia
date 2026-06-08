@@ -32,7 +32,7 @@ class SocialAuthButtons extends StatelessWidget {
         onPressed: loading ? null : onGoogle,
         background: Colors.white,
         foreground: const Color(0xFF1F1F1F),
-        border: MarginaliaColors.rule,
+        border: ScriptaColors.rule,
         iconBuilder: () => const _GoogleMark(),
         label: googleLabel,
       ),

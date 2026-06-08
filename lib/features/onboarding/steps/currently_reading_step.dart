@@ -108,7 +108,7 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
               style: GoogleFonts.ebGaramond(
                 fontSize: 38,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -1.0,
                 height: 1.05,
               ),
@@ -144,7 +144,7 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
             Row(
               children: [
                 const Expanded(
-                  child: Divider(color: MarginaliaColors.rule, height: 1),
+                  child: Divider(color: ScriptaColors.rule, height: 1),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -153,13 +153,13 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
                     style: GoogleFonts.manrope(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                       letterSpacing: 0.6,
                     ),
                   ),
                 ),
                 const Expanded(
-                  child: Divider(color: MarginaliaColors.rule, height: 1),
+                  child: Divider(color: ScriptaColors.rule, height: 1),
                 ),
               ],
             ),
@@ -174,8 +174,8 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
                 icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
                 label: Text(context.l10n.onboardingScanBarcode),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.ink,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.ink,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
@@ -194,11 +194,11 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: MarginaliaColors.rule),
+                border: Border.all(color: ScriptaColors.rule),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.tag_rounded, size: 18, color: MarginaliaColors.inkMuted),
+                  const Icon(Icons.tag_rounded, size: 18, color: ScriptaColors.inkMuted),
                   const SizedBox(width: 10),
                   Expanded(
                     child: TextField(
@@ -211,7 +211,7 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
                       onSubmitted: (_) => _lookupIsbn(),
                       style: GoogleFonts.manrope(
                         fontSize: 14,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                       ),
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -220,7 +220,7 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
                         hintText: context.l10n.onboardingIsbnHint,
                         hintStyle: GoogleFonts.manrope(
                           fontSize: 13,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                     ),
@@ -228,7 +228,7 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
                   TextButton(
                     onPressed: _looking ? null : _lookupIsbn,
                     style: TextButton.styleFrom(
-                      foregroundColor: MarginaliaColors.primary,
+                      foregroundColor: ScriptaColors.primary,
                       minimumSize: const Size(60, 36),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
@@ -236,7 +236,7 @@ class _CurrentlyReadingStepState extends State<CurrentlyReadingStep> {
                         ? const SizedBox(
                             width: 14, height: 14,
                             child: CircularProgressIndicator(
-                                strokeWidth: 1.5, color: MarginaliaColors.primary),
+                                strokeWidth: 1.5, color: ScriptaColors.primary),
                           )
                         : Text(
                             context.l10n.onboardingIsbnLookup,
@@ -306,11 +306,11 @@ class _SearchPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: MarginaliaColors.rule),
+        border: Border.all(color: ScriptaColors.rule),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: MarginaliaColors.inkMuted),
+          Icon(icon, size: 18, color: ScriptaColors.inkMuted),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -318,7 +318,7 @@ class _SearchPill extends StatelessWidget {
               textCapitalization: TextCapitalization.words,
               style: GoogleFonts.manrope(
                 fontSize: 15,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -327,7 +327,7 @@ class _SearchPill extends StatelessWidget {
                 hintText: hint,
                 hintStyle: GoogleFonts.manrope(
                   fontSize: 15,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                 ),
               ),
               onChanged: onChanged,

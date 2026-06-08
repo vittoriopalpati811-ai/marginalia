@@ -120,7 +120,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             children: [
               Text(
                 context.l10n.authForgotPasswordBody,
-                style: TextStyle(fontSize: 13, color: MarginaliaColors.inkMuted),
+                style: TextStyle(fontSize: 13, color: ScriptaColors.inkMuted),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -131,7 +131,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                   hintText: context.l10n.authEmail,
                   prefixIcon: const Icon(Icons.email_outlined),
                   filled: true,
-                  fillColor: MarginaliaColors.surfaceElevated,
+                  fillColor: ScriptaColors.surfaceElevated,
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
@@ -145,7 +145,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark, width: 1.5),
+                        color: ScriptaColors.primaryDark, width: 1.5),
                   ),
                 ),
               ),
@@ -198,7 +198,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 content: Text(
                                   context.l10n.authForgotPasswordSent(email),
                                 ),
-                                backgroundColor: MarginaliaColors.primary,
+                                backgroundColor: ScriptaColors.primary,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10)),
@@ -239,7 +239,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
           // ── Header con gradient ────────────────────────────────────────────
@@ -268,7 +268,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                     hintText: context.l10n.authName,
                                     prefixIcon: const Icon(Icons.person_outline),
                                     filled: true,
-                                    fillColor: MarginaliaColors.surfaceElevated,
+                                    fillColor: ScriptaColors.surfaceElevated,
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 14),
                                     border: OutlineInputBorder(
@@ -282,7 +282,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(14),
                                       borderSide: const BorderSide(
-                                          color: MarginaliaColors.primaryDark,
+                                          color: ScriptaColors.primaryDark,
                                           width: 1.5),
                                     ),
                                   ),
@@ -304,7 +304,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         hintText: context.l10n.authEmail,
                         prefixIcon: const Icon(Icons.email_outlined),
                         filled: true,
-                        fillColor: MarginaliaColors.surfaceElevated,
+                        fillColor: ScriptaColors.surfaceElevated,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
@@ -318,7 +318,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(
-                              color: MarginaliaColors.primaryDark, width: 1.5),
+                              color: ScriptaColors.primaryDark, width: 1.5),
                         ),
                       ),
                       validator: (v) {
@@ -341,7 +341,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                         filled: true,
-                        fillColor: MarginaliaColors.surfaceElevated,
+                        fillColor: ScriptaColors.surfaceElevated,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
                         border: OutlineInputBorder(
@@ -355,7 +355,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(
-                              color: MarginaliaColors.primaryDark, width: 1.5),
+                              color: ScriptaColors.primaryDark, width: 1.5),
                         ),
                       ),
                       validator: (v) {
@@ -373,7 +373,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                           onPressed: _showForgotPassword,
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                            foregroundColor: MarginaliaColors.primaryDark,
+                            foregroundColor: ScriptaColors.primaryDark,
                           ),
                           child: Text(
                             context.l10n.authForgotPassword,
@@ -466,7 +466,7 @@ class _AuthHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: MarginaliaDecorations.gradientHeader,
+      decoration: ScriptaDecorations.gradientHeader,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -484,7 +484,7 @@ class _AuthHeader extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Marginalia',
+              'Scripta',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 26,
@@ -517,7 +517,7 @@ class _AuthHeader extends StatelessWidget {
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
-                labelColor: MarginaliaColors.primaryDark,
+                labelColor: ScriptaColors.primaryDark,
                 unselectedLabelColor: Colors.white.withAlpha(200),
                 labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
@@ -592,7 +592,7 @@ class _TermsAcceptanceRowState extends State<_TermsAcceptanceRow> {
   @override
   Widget build(BuildContext context) {
     const linkStyle = TextStyle(
-      color: MarginaliaColors.primaryDark,
+      color: ScriptaColors.primaryDark,
       fontWeight: FontWeight.w600,
       decoration: TextDecoration.underline,
     );
@@ -606,13 +606,13 @@ class _TermsAcceptanceRowState extends State<_TermsAcceptanceRow> {
           child: Checkbox(
             value: widget.accepted,
             onChanged: widget.onChanged,
-            activeColor: MarginaliaColors.primary,
+            activeColor: ScriptaColors.primary,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             visualDensity: VisualDensity.compact,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
-            side: const BorderSide(color: MarginaliaColors.rule, width: 1.5),
+            side: const BorderSide(color: ScriptaColors.rule, width: 1.5),
           ),
         ),
         const SizedBox(width: 10),
@@ -627,7 +627,7 @@ class _TermsAcceptanceRowState extends State<_TermsAcceptanceRow> {
                 TextSpan(
                   style: const TextStyle(
                     fontSize: 13,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                     height: 1.45,
                   ),
                   children: [

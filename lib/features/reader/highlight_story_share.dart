@@ -1,6 +1,6 @@
 // ─── Share a highlight as an Instagram-Story image (9:16) ──────────────────
 //
-// Renders a 1080×1920 card built around the Marginalia-generated book cover for
+// Renders a 1080×1920 card built around the Scripta-generated book cover for
 // the highlight's book — heavily blurred with a dark scrim so the quote sits
 // legibly on top — and lets the user post it.
 //
@@ -77,7 +77,7 @@ Future<void> shareHighlightAsStory(
     isScrollControlled: true,
     // Solid surface + rounded top so the sheet has a proper card background
     // (previously transparent → the preview floated with "no sfondo, no box").
-    backgroundColor: MarginaliaColors.surface,
+    backgroundColor: ScriptaColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -88,7 +88,7 @@ Future<void> shareHighlightAsStory(
 String _storyShareText(String cta, String text, String? title) {
   final excerpt = text.length > 140 ? '${text.substring(0, 140)}…' : text;
   final book = (title != null && title.isNotEmpty) ? '\n— $title' : '';
-  return '❝ $excerpt ❞$book\n\n$cta → https://marginalia.app';
+  return '❝ $excerpt ❞$book\n\n$cta → https://get-scripta.app';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -271,7 +271,7 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -280,7 +280,7 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
               style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w800,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -291,7 +291,7 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 14),
@@ -362,8 +362,8 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : _saveToPhotos,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primaryDark,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.primaryDark,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -385,8 +385,8 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : () => _shareViaSystem(),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.ink,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.ink,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -396,7 +396,7 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: MarginaliaColors.inkMuted),
+                            strokeWidth: 2, color: ScriptaColors.inkMuted),
                       )
                     : const Icon(Icons.ios_share_rounded, size: 20),
                 label: Text(
@@ -454,7 +454,7 @@ class HighlightStoryCard extends StatelessWidget {
     final safeTitle = (title ?? '').trim();
     final safeAuthor = (author ?? '').trim();
     // The cover art keys off the title, so give it a sensible fallback.
-    final coverTitle = safeTitle.isNotEmpty ? safeTitle : 'Marginalia';
+    final coverTitle = safeTitle.isNotEmpty ? safeTitle : 'Scripta';
 
     return SizedBox(
       width: _kStoryWidth,
@@ -604,7 +604,7 @@ class HighlightStoryCard extends StatelessWidget {
               ),
             ),
 
-            // ── 4. Bottom-right Marginalia wordmark + logo mark ───────────
+            // ── 4. Bottom-right Scripta wordmark + logo mark ───────────
             Positioned(
               right: 28,
               bottom: 34,
@@ -612,7 +612,7 @@ class HighlightStoryCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'MARGINALIA',
+                    'SCRIPTA',
                     style: GoogleFonts.manrope(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,

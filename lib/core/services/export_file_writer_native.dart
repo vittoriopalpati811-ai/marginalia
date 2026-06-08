@@ -17,8 +17,8 @@ Future<void> writeAndShareMarkdown({
 
   await Share.shareXFiles(
     [XFile(file.path, mimeType: 'text/markdown')],
-    subject: subject ?? 'Marginalia Export',
-    text: '📚 I miei highlight da Marginalia',
+    subject: subject ?? 'Scripta Export',
+    text: '📚 I miei highlight da Scripta',
     sharePositionOrigin: sharePositionOrigin,
   );
 }
@@ -38,8 +38,8 @@ Future<void> writeAndShareCsv({
 
   await Share.shareXFiles(
     [XFile(file.path, mimeType: 'text/csv')],
-    subject: subject ?? 'Marginalia Export',
-    text: '📚 Marginalia — Reading Tracker',
+    subject: subject ?? 'Scripta Export',
+    text: '📚 Scripta — Reading Tracker',
     sharePositionOrigin: sharePositionOrigin,
   );
 }

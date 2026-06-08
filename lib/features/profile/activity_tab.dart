@@ -7,7 +7,7 @@
 // framing.
 //
 // Tapping a card's share button rasterises a dedicated, gorgeous 1080×1080 share
-// card (gradient header + the heatmap + the headline stat + the Marginalia
+// card (gradient header + the heatmap + the headline stat + the Scripta
 // wordmark) and offers Instagram Stories / Save / system share — reusing the
 // exact capture+share infrastructure from highlight_story_share.dart.
 
@@ -208,18 +208,18 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = done ? MarginaliaColors.primaryDark : MarginaliaColors.inkFaint;
+    final accent = done ? ScriptaColors.primaryDark : ScriptaColors.inkFaint;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: done
-            ? MarginaliaColors.primaryFaint
-            : MarginaliaColors.surfaceElevated,
+            ? ScriptaColors.primaryFaint
+            : ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: done
-              ? MarginaliaColors.primary.withAlpha(70)
-              : MarginaliaColors.ruleFaint,
+              ? ScriptaColors.primary.withAlpha(70)
+              : ScriptaColors.ruleFaint,
           width: 0.8,
         ),
       ),
@@ -235,7 +235,7 @@ class _StatusPill extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: done ? MarginaliaColors.ink : MarginaliaColors.inkMuted,
+                color: done ? ScriptaColors.ink : ScriptaColors.inkMuted,
                 letterSpacing: -0.1,
               ),
             ),
@@ -382,7 +382,7 @@ class _ActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-      decoration: MarginaliaDecorations.card(radius: 18),
+      decoration: ScriptaDecorations.card(radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -393,11 +393,11 @@ class _ActivityCard extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.siennaFaint,
+                  color: ScriptaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(9),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 17, color: MarginaliaColors.primaryDark),
+                child: Icon(icon, size: 17, color: ScriptaColors.primaryDark),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -406,7 +406,7 @@ class _ActivityCard extends StatelessWidget {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                     letterSpacing: -0.3,
                     height: 1.0,
                   ),
@@ -434,7 +434,7 @@ class _ActivityCard extends StatelessWidget {
 
           const SizedBox(height: 14),
           const Divider(
-              height: 1, thickness: 0.6, color: MarginaliaColors.ruleFaint),
+              height: 1, thickness: 0.6, color: ScriptaColors.ruleFaint),
           const SizedBox(height: 12),
 
           // Summary line.
@@ -443,7 +443,7 @@ class _ActivityCard extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               height: 1.4,
               letterSpacing: -0.1,
             ),
@@ -464,7 +464,7 @@ class _ActivityCard extends StatelessWidget {
       // No rasterise / Instagram on web — share a friendly text line instead so
       // the button still does something.
       Share.share(
-        '$headline · $summary\n\nhttps://marginalia.app',
+        '$headline · $summary\n\nhttps://get-scripta.app',
         sharePositionOrigin: origin,
       );
       return;
@@ -473,7 +473,7 @@ class _ActivityCard extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.surface,
+      backgroundColor: ScriptaColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -506,13 +506,13 @@ class _ShareIconButton extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: MarginaliaColors.surfaceElevated,
+            color: ScriptaColors.surfaceElevated,
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(
             Icons.ios_share_rounded,
             size: 16,
-            color: MarginaliaColors.primaryDark,
+            color: ScriptaColors.primaryDark,
           ),
         ),
       ),
@@ -528,7 +528,7 @@ class _HeatmapSkeleton extends StatelessWidget {
     return Container(
       height: 132,
       decoration: BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(12),
       ),
     );
@@ -720,7 +720,7 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -729,7 +729,7 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
               style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w800,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -740,7 +740,7 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 16),
@@ -814,8 +814,8 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : _saveToPhotos,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primaryDark,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.primaryDark,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -837,8 +837,8 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : () => _shareViaSystem(),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.ink,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.ink,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -848,7 +848,7 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: MarginaliaColors.inkMuted),
+                            strokeWidth: 2, color: ScriptaColors.inkMuted),
                       )
                     : const Icon(Icons.ios_share_rounded, size: 20),
                 label: Text(
@@ -906,7 +906,7 @@ class ActivityShareCard extends StatelessWidget {
     // is stable per person), exactly like the highlight story share — then a
     // dark scrim for legibility. Full-bleed 9:16, SQUARE corners → fills
     // Instagram Stories with NO black bars.
-    final coverSeed = name.isNotEmpty ? name : 'Marginalia';
+    final coverSeed = name.isNotEmpty ? name : 'Scripta';
 
     return SizedBox(
       width: _kCardWidth,
@@ -988,7 +988,7 @@ class ActivityShareCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.background.withAlpha(244),
+                      color: ScriptaColors.background.withAlpha(244),
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: const [
                         BoxShadow(
@@ -1019,7 +1019,7 @@ class ActivityShareCard extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: MarginaliaColors.inkMuted,
+                            color: ScriptaColors.inkMuted,
                             height: 1.4,
                           ),
                         ),
@@ -1054,7 +1054,7 @@ class ActivityShareCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'MARGINALIA',
+                        'SCRIPTA',
                         style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
@@ -1064,7 +1064,7 @@ class ActivityShareCard extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        'marginalia.app',
+                        'get-scripta.app',
                         style: GoogleFonts.manrope(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,

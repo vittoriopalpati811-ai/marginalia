@@ -140,15 +140,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final inQuestion =
         !_loading && _questions.isNotEmpty && _index < _questions.length;
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: MarginaliaColors.ink,
+        foregroundColor: ScriptaColors.ink,
         title: Text(widget.appBarTitle ?? 'Quiz',
             style: GoogleFonts.manrope(
-                fontWeight: FontWeight.w700, fontSize: 18, color: MarginaliaColors.ink)),
+                fontWeight: FontWeight.w700, fontSize: 18, color: ScriptaColors.ink)),
         actions: [
           if (inQuestion)
             Padding(
@@ -158,19 +158,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.primaryFaint,
+                    color: ScriptaColors.primaryFaint,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
                       const Icon(Icons.check_circle,
-                          size: 15, color: MarginaliaColors.primaryDark),
+                          size: 15, color: ScriptaColors.primaryDark),
                       const SizedBox(width: 5),
                       Text('$_score',
                           style: GoogleFonts.manrope(
                               fontWeight: FontWeight.w700,
                               fontSize: 13.5,
-                              color: MarginaliaColors.primaryDark)),
+                              color: ScriptaColors.primaryDark)),
                     ],
                   ),
                 ),
@@ -183,9 +183,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 child: LinearProgressIndicator(
                   value: (_index + 1) / _questions.length,
                   minHeight: 4,
-                  backgroundColor: MarginaliaColors.surfaceElevated,
+                  backgroundColor: ScriptaColors.surfaceElevated,
                   valueColor:
-                      const AlwaysStoppedAnimation(MarginaliaColors.primaryDark),
+                      const AlwaysStoppedAnimation(ScriptaColors.primaryDark),
                 ),
               )
             : null,
@@ -198,7 +198,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     if (_loading) {
       return const Center(
           child: CircularProgressIndicator(
-              color: MarginaliaColors.primaryDark, strokeWidth: 1.6));
+              color: ScriptaColors.primaryDark, strokeWidth: 1.6));
     }
     if (_questions.length < 3) {
       return _Empty(it: it);
@@ -230,7 +230,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
-                color: MarginaliaColors.primaryDark)),
+                color: ScriptaColors.primaryDark)),
         const SizedBox(height: 14),
         _PassageCard(question: q, answered: _answered),
         if (q.kind != QuizKind.cloze &&
@@ -244,7 +244,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
             style: GoogleFonts.manrope(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.inkFaint),
+                color: ScriptaColors.inkFaint),
           ),
         ],
         const SizedBox(height: 18),
@@ -258,12 +258,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   Widget _optionTile(QuizQuestion q, String opt) {
     final isCorrect = opt == q.answer;
     final isPicked = opt == _picked;
-    Color bg = MarginaliaColors.surface;
-    Color border = MarginaliaColors.rule;
+    Color bg = ScriptaColors.surface;
+    Color border = ScriptaColors.rule;
     if (_answered) {
       if (isCorrect) {
         bg = const Color(0xFFE7F0E0);
-        border = MarginaliaColors.primaryDark;
+        border = ScriptaColors.primaryDark;
       } else if (isPicked) {
         bg = const Color(0xFFF6E4E4);
         border = const Color(0xFFB54848);
@@ -288,11 +288,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
                     style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.ink)),
+                        color: ScriptaColors.ink)),
               ),
               if (_answered && isCorrect)
                 const Icon(Icons.check_circle,
-                    color: MarginaliaColors.primaryDark, size: 20),
+                    color: ScriptaColors.primaryDark, size: 20),
               if (_answered && isPicked && !isCorrect)
                 const Icon(Icons.cancel, color: Color(0xFFB54848), size: 20),
             ],
@@ -311,7 +311,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       child: FilledButton(
         onPressed: _next,
         style: FilledButton.styleFrom(
-          backgroundColor: MarginaliaColors.primaryDark,
+          backgroundColor: ScriptaColors.primaryDark,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: Text(label,
@@ -330,7 +330,7 @@ class _PassageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = GoogleFonts.ebGaramond(
-        fontSize: 20, height: 1.5, color: MarginaliaColors.ink);
+        fontSize: 20, height: 1.5, color: ScriptaColors.ink);
 
     Widget child;
     // After answering a cloze, fill the blank with the correct word in green.
@@ -346,7 +346,7 @@ class _PassageCard extends StatelessWidget {
             TextSpan(
               text: question.clozeWord,
               style: style.copyWith(
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                   fontWeight: FontWeight.w700),
             ),
             if (parts.length > 1) TextSpan(text: parts.sublist(1).join('_____')),
@@ -361,7 +361,7 @@ class _PassageCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -386,19 +386,19 @@ class _Empty extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.quiz_outlined, size: 46, color: MarginaliaColors.primaryDark),
+            const Icon(Icons.quiz_outlined, size: 46, color: ScriptaColors.primaryDark),
             const SizedBox(height: 18),
             Text(it ? 'Servono più highlight' : 'Need more highlights',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.ebGaramond(
-                    fontSize: 22, fontWeight: FontWeight.w600, color: MarginaliaColors.ink)),
+                    fontSize: 22, fontWeight: FontWeight.w600, color: ScriptaColors.ink)),
             const SizedBox(height: 10),
             Text(
               it
                   ? 'Importa o evidenzia qualche passaggio in più e torna a metterti alla prova.'
                   : 'Import or highlight a few more passages, then come back to test yourself.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(fontSize: 14, height: 1.5, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 14, height: 1.5, color: ScriptaColors.inkMuted),
             ),
           ],
         ),
@@ -444,32 +444,32 @@ class _Results extends StatelessWidget {
               width: 132,
               height: 132,
               decoration: const BoxDecoration(
-                  color: MarginaliaColors.primaryFaint, shape: BoxShape.circle),
+                  color: ScriptaColors.primaryFaint, shape: BoxShape.circle),
               alignment: Alignment.center,
               child: Text('$score/$total',
                   style: GoogleFonts.ebGaramond(
                       fontSize: 40,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.primaryDark)),
+                      color: ScriptaColors.primaryDark)),
             ).animate().scaleXY(begin: 0.6, end: 1, duration: 520.ms, curve: Curves.elasticOut),
             const SizedBox(height: 24),
             Text(head,
                 style: GoogleFonts.ebGaramond(
-                    fontSize: 26, fontWeight: FontWeight.w600, color: MarginaliaColors.ink)),
+                    fontSize: 26, fontWeight: FontWeight.w600, color: ScriptaColors.ink)),
             if (scheduled > 0) ...[
               const SizedBox(height: 16),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.primaryFaint,
+                  color: ScriptaColors.primaryFaint,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.local_fire_department_rounded,
-                        size: 16, color: MarginaliaColors.primaryDark),
+                        size: 16, color: ScriptaColors.primaryDark),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
@@ -479,7 +479,7 @@ class _Results extends StatelessWidget {
                         style: GoogleFonts.manrope(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: MarginaliaColors.primaryDark),
+                            color: ScriptaColors.primaryDark),
                       ),
                     ),
                   ],
@@ -493,7 +493,7 @@ class _Results extends StatelessWidget {
               child: FilledButton(
                 onPressed: onRestart,
                 style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primaryDark,
+                  backgroundColor: ScriptaColors.primaryDark,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(it ? 'Nuovo quiz' : 'New quiz',
@@ -506,7 +506,7 @@ class _Results extends StatelessWidget {
               onPressed: onClose,
               child: Text(it ? 'Chiudi' : 'Close',
                   style: GoogleFonts.manrope(
-                      fontWeight: FontWeight.w600, color: MarginaliaColors.inkMuted)),
+                      fontWeight: FontWeight.w600, color: ScriptaColors.inkMuted)),
             ),
           ],
         ),

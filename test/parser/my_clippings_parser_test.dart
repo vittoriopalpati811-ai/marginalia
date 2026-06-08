@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:marginalia/core/parser/my_clippings_parser.dart';
+import 'package:scripta/core/parser/my_clippings_parser.dart';
 
 void main() {
   final parser = MyClippingsParser();

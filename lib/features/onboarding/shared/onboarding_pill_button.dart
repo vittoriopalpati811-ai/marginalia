@@ -26,7 +26,7 @@ class OnboardingPrimaryPill extends StatelessWidget {
       child: FilledButton(
         style: FilledButton.styleFrom(
           backgroundColor:
-              enabled ? MarginaliaColors.ink : MarginaliaColors.inkFaint,
+              enabled ? ScriptaColors.ink : ScriptaColors.inkFaint,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(
@@ -62,8 +62,8 @@ class OnboardingSecondaryPill extends StatelessWidget {
       width: double.infinity,
       child: TextButton(
         style: TextButton.styleFrom(
-          backgroundColor: MarginaliaColors.surfaceElevated,
-          foregroundColor: MarginaliaColors.ink,
+          backgroundColor: ScriptaColors.surfaceElevated,
+          foregroundColor: ScriptaColors.ink,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(36),

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:marginalia/core/services/amazon_sync_service.dart';
-import 'package:marginalia/core/parser/my_clippings_parser.dart';
+import 'package:scripta/core/services/amazon_sync_service.dart';
+import 'package:scripta/core/parser/my_clippings_parser.dart';
 
 // Pure-logic tests for the Kindle sync. The WebView/DOM extraction itself can't
 // run off-device, but the URL/region handling, the channel-message protocol and

@@ -8,7 +8,7 @@
 //
 // The thing we render is [WrappedShareCard] — a dedicated 1080×1920 layout that
 // re-stages a single Wrapped story (passed in as a [WrappedStorySlide]) with the
-// brand mark and a subtle "marginalia.app" footer, so the shared image is
+// brand mark and a subtle "get-scripta.app" footer, so the shared image is
 // polished and on-brand regardless of how the on-screen card was laid out.
 
 import 'dart:typed_data';
@@ -46,7 +46,7 @@ Future<void> shareWrappedSlide(
     // Web can't rasterise reliably and has no Instagram app — share text.
     final origin = shareOrigin(context);
     await Share.share(
-      '${slide.shareCaption}\n\nmarginalia.app',
+      '${slide.shareCaption}\n\nget-scripta.app',
       sharePositionOrigin: origin,
     );
     return;
@@ -55,7 +55,7 @@ Future<void> shareWrappedSlide(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: MarginaliaColors.surface,
+    backgroundColor: ScriptaColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
@@ -228,7 +228,7 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -237,7 +237,7 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
               style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w800,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -248,7 +248,7 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 14),
@@ -311,8 +311,8 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : _saveToPhotos,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primaryDark,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.primaryDark,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -334,8 +334,8 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : () => _shareViaSystem(),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.ink,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.ink,
+                  side: const BorderSide(color: ScriptaColors.rule),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -345,7 +345,7 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: MarginaliaColors.inkMuted),
+                            strokeWidth: 2, color: ScriptaColors.inkMuted),
                       )
                     : const Icon(Icons.ios_share_rounded, size: 20),
                 label: Text(
@@ -368,7 +368,7 @@ class _WrappedSharePreviewSheetState extends State<_WrappedSharePreviewSheet> {
 
 /// A polished 9:16 render of a single Wrapped [slide]: the slide's gradient,
 /// its editorial content re-staged for a story frame, the brand mark, and a
-/// subtle "marginalia.app" footer.
+/// subtle "get-scripta.app" footer.
 class WrappedShareCard extends StatelessWidget {
   const WrappedShareCard({super.key, required this.slide});
   final WrappedStorySlide slide;
@@ -432,7 +432,7 @@ class WrappedShareCard extends StatelessWidget {
               ),
             ),
 
-            // ── Bottom-right brand mark + marginalia.app ─────────────────
+            // ── Bottom-right brand mark + get-scripta.app ─────────────────
             Positioned(
               right: 26,
               bottom: 30,
@@ -443,7 +443,7 @@ class WrappedShareCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'MARGINALIA',
+                        'SCRIPTA',
                         style: GoogleFonts.manrope(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
@@ -453,7 +453,7 @@ class WrappedShareCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'marginalia.app',
+                        'get-scripta.app',
                         style: GoogleFonts.manrope(
                           fontSize: 8.5,
                           fontWeight: FontWeight.w600,

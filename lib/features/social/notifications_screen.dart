@@ -66,22 +66,22 @@ class NotificationsScreen extends ConsumerWidget {
     final notificationsAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         // Force the back arrow (and any leading icon) to ink. On the founder's
         // phone it had rendered white/invisible; pinning it here keeps it
         // visible regardless of theme, matching every other screen.
-        iconTheme: const IconThemeData(color: MarginaliaColors.ink),
+        iconTheme: const IconThemeData(color: ScriptaColors.ink),
         title: Text(
           context.l10n.notificationsTitle,
           style: GoogleFonts.manrope(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
       ),
@@ -118,7 +118,7 @@ class NotificationsScreen extends ConsumerWidget {
               ),
         loading: () => const Center(
           child: CircularProgressIndicator(
-            color: MarginaliaColors.primary,
+            color: ScriptaColors.primary,
             strokeWidth: 1.5,
           ),
         ),
@@ -147,17 +147,17 @@ class _NotificationCard extends StatelessWidget {
       case 'like':
         return (Icons.favorite, const Color(0xFFBF4A72));
       case 'comment':
-        return (Icons.mode_comment_outlined, MarginaliaColors.primary);
+        return (Icons.mode_comment_outlined, ScriptaColors.primary);
       case 'mention':
-        return (Icons.alternate_email, MarginaliaColors.primary);
+        return (Icons.alternate_email, ScriptaColors.primary);
       case 'follow':
-        return (Icons.person_add_alt_1, MarginaliaColors.primaryDark);
+        return (Icons.person_add_alt_1, ScriptaColors.primaryDark);
       case 'jam_comment':
-        return (Icons.forum_outlined, MarginaliaColors.primaryDark);
+        return (Icons.forum_outlined, ScriptaColors.primaryDark);
       case 'group_add':
-        return (Icons.group_add_outlined, MarginaliaColors.primaryDark);
+        return (Icons.group_add_outlined, ScriptaColors.primaryDark);
       default:
-        return (Icons.notifications_none_outlined, MarginaliaColors.sienna);
+        return (Icons.notifications_none_outlined, ScriptaColors.sienna);
     }
   }
 
@@ -182,13 +182,13 @@ class _NotificationCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isRead
-              ? MarginaliaColors.surface
-              : MarginaliaColors.primaryFaint,
+              ? ScriptaColors.surface
+              : ScriptaColors.primaryFaint,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isRead
-                ? MarginaliaColors.rule
-                : MarginaliaColors.primary.withAlpha(70),
+                ? ScriptaColors.rule
+                : ScriptaColors.primary.withAlpha(70),
             width: isRead ? 0.8 : 1.2,
           ),
         ),
@@ -216,7 +216,7 @@ class _NotificationCard extends StatelessWidget {
                       fontSize: 14,
                       fontWeight:
                           isRead ? FontWeight.w500 : FontWeight.w700,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       height: 1.3,
                     ),
                   ),
@@ -226,7 +226,7 @@ class _NotificationCard extends StatelessWidget {
                       body,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                         height: 1.4,
                       ),
                     ),
@@ -235,7 +235,7 @@ class _NotificationCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       _formatDate(createdAt),
-                      style: MarginaliaTextStyles.label,
+                      style: ScriptaTextStyles.label,
                     ),
                   ],
                 ],
@@ -273,7 +273,7 @@ class _EmptyState extends StatelessWidget {
             const Icon(
               Icons.notifications_none_outlined,
               size: 56,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
             ),
             const SizedBox(height: 16),
             Text(
@@ -282,7 +282,7 @@ class _EmptyState extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             ),
             const SizedBox(height: 8),
@@ -300,7 +300,7 @@ class _EmptyState extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
               ),
             ),
           ],

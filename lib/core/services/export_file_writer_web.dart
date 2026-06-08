@@ -11,7 +11,7 @@ Future<void> writeAndShareMarkdown({
 }) async {
   await Share.share(
     markdown,
-    subject: subject ?? 'Marginalia Export',
+    subject: subject ?? 'Scripta Export',
     sharePositionOrigin: sharePositionOrigin,
   );
 }
@@ -25,7 +25,7 @@ Future<void> writeAndShareCsv({
 }) async {
   await Share.share(
     csv,
-    subject: subject ?? 'Marginalia Export',
+    subject: subject ?? 'Scripta Export',
     sharePositionOrigin: sharePositionOrigin,
   );
 }

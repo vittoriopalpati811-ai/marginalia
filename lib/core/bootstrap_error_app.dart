@@ -42,7 +42,7 @@ class BootstrapErrorApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Marginalia',
+      title: 'Scripta',
       home: Scaffold(
         backgroundColor: _cream,
         body: SafeArea(
@@ -56,7 +56,7 @@ class BootstrapErrorApp extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'MARGINALIA',
+                      'SCRIPTA',
                       style: TextStyle(
                         fontFamily: 'serif',
                         fontSize: 13,

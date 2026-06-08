@@ -100,8 +100,8 @@ class FeedTab extends ConsumerWidget {
     final followingAsync = ref.watch(followingProfilesProvider);
 
     return RefreshIndicator(
-      color: MarginaliaColors.sienna,
-      backgroundColor: MarginaliaColors.surface,
+      color: ScriptaColors.sienna,
+      backgroundColor: ScriptaColors.surface,
       strokeWidth: 1.5,
       onRefresh: () async {
         ref.invalidate(postsProvider);
@@ -130,7 +130,7 @@ class FeedTab extends ConsumerWidget {
             child: Divider(
               height: 0.5,
               thickness: 0.5,
-              color: MarginaliaColors.ruleFaint,
+              color: ScriptaColors.ruleFaint,
             ),
           ),
 
@@ -141,7 +141,7 @@ class FeedTab extends ConsumerWidget {
                 padding: EdgeInsets.only(top: 80),
                 child: Center(
                   child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna,
+                    color: ScriptaColors.sienna,
                     strokeWidth: 1.5,
                   ),
                 ),
@@ -202,7 +202,7 @@ class _StoriesRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: MarginaliaColors.surface,
+      color: ScriptaColors.surface,
       child: SizedBox(
         height: 92,
         child: ListView.builder(
@@ -225,7 +225,7 @@ class _StoryCircle extends StatelessWidget {
     final name      = user['display_name'] as String? ?? '?';
     final avatarUrl = user['avatar_url']   as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final tint      = MarginaliaDecorations.bookCoverColor(name);
+    final tint      = ScriptaDecorations.bookCoverColor(name);
     final firstName = name.split(' ').first;
 
     return Padding(
@@ -246,7 +246,7 @@ class _StoryCircle extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [MarginaliaColors.sienna, MarginaliaColors.primaryDark],
+                  colors: [ScriptaColors.sienna, ScriptaColors.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -255,7 +255,7 @@ class _StoryCircle extends StatelessWidget {
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: MarginaliaColors.background,
+                  color: ScriptaColors.background,
                 ),
                 padding: const EdgeInsets.all(1.5),
                 child: _AvatarCircle(
@@ -273,7 +273,7 @@ class _StoryCircle extends StatelessWidget {
                 firstName,
                 style: const TextStyle(
                   fontSize: 10,
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -310,7 +310,7 @@ class _AvatarCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [tint, MarginaliaColors.primaryDark],
+          colors: [tint, ScriptaColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -585,7 +585,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
     return Container(
       constraints: BoxConstraints(maxHeight: maxSheetHeight),
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 20),
@@ -599,7 +599,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -613,7 +613,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -622,7 +622,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 const SizedBox(
                   width: 44, height: 44,
                   child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna,
+                    color: ScriptaColors.sienna,
                     strokeWidth: 2,
                   ),
                 )
@@ -641,9 +641,9 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           Container(
             constraints: const BoxConstraints(maxHeight: 200),
             decoration: BoxDecoration(
-              color: MarginaliaColors.surfaceElevated,
+              color: ScriptaColors.surfaceElevated,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: MarginaliaColors.rule, width: 1),
+              border: Border.all(color: ScriptaColors.rule, width: 1),
             ),
             child: TextField(
               controller: _controller,
@@ -657,13 +657,13 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
               onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: const TextStyle(
                 fontSize: 15,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 height: 1.55,
               ),
               decoration: InputDecoration(
                 hintText: context.l10n.feedComposerHint,
                 hintStyle: const TextStyle(
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
@@ -672,7 +672,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 contentPadding: const EdgeInsets.all(14),
                 counterStyle: const TextStyle(
                   fontSize: 10,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                 ),
               ),
               onChanged: _onComposerChanged,
@@ -686,9 +686,9 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
             const SizedBox(height: 6),
             Container(
               decoration: BoxDecoration(
-                color: MarginaliaColors.surfaceElevated,
+                color: ScriptaColors.surfaceElevated,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: MarginaliaColors.rule, width: 1),
+                border: Border.all(color: ScriptaColors.rule, width: 1),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -744,19 +744,19 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.surfaceElevated,
+                    color: ScriptaColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: MarginaliaColors.rule),
+                    border: Border.all(color: ScriptaColors.rule),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.image_outlined, size: 16,
-                          color: MarginaliaColors.inkMuted),
+                          color: ScriptaColors.inkMuted),
                       const SizedBox(width: 6),
                       Text(context.l10n.feedPhoto, style: const TextStyle(
                         fontSize: 12,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                         fontWeight: FontWeight.w500,
                       )),
                     ],
@@ -789,7 +789,7 @@ class _MentionSuggestionRow extends StatelessWidget {
     final avatarUrl = user['avatar_url'] as String?;
     final initial =
         displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-    final tint = MarginaliaDecorations.bookCoverColor(displayName);
+    final tint = ScriptaDecorations.bookCoverColor(displayName);
 
     return InkWell(
       onTap: onTap,
@@ -815,7 +815,7 @@ class _MentionSuggestionRow extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -825,7 +825,7 @@ class _MentionSuggestionRow extends StatelessWidget {
                       '@$username',
                       style: GoogleFonts.manrope(
                         fontSize: 11.5,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -1110,9 +1110,9 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
           decoration: BoxDecoration(
             color: widget.enabled
                 ? (_holding
-                    ? MarginaliaColors.sienna.withAlpha(180)
-                    : MarginaliaColors.sienna)
-                : MarginaliaColors.rule,
+                    ? ScriptaColors.sienna.withAlpha(180)
+                    : ScriptaColors.sienna)
+                : ScriptaColors.rule,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -1122,7 +1122,7 @@ class _HoldToPublishButtonState extends State<_HoldToPublishButton>
               fontWeight: FontWeight.w700,
               color: widget.enabled
                   ? const Color(0xFFF2F5EA)
-                  : MarginaliaColors.inkFaint,
+                  : ScriptaColors.inkFaint,
             ),
           ),
         ),
@@ -1309,7 +1309,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
             _MenuAction(
               icon: Icons.flag_outlined,
               label: l10n.feedReport,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               onTap: () async {
                 Navigator.pop(ctx);
                 if (postId == null) return;
@@ -1362,7 +1362,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
           _MenuAction(
             icon: Icons.edit_outlined,
             label: context.l10n.feedEdit,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
             onTap: () async {
               Navigator.pop(ctx);
               if (postId == null) return;
@@ -1545,7 +1545,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
         'blue'   => const Color(0xFF4A90BF),
         'pink'   => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _        => MarginaliaColors.siennaLight,
+        _        => ScriptaColors.siennaLight,
       };
 
   @override
@@ -1571,7 +1571,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final hlBookTitle   = hlBook?['title']  as String?;
     final hlAuthor      = hlBook?['author'] as String?;
     final initial       = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final tint          = MarginaliaDecorations.bookCoverColor(name);
+    final tint          = ScriptaDecorations.bookCoverColor(name);
     final timeAgo       = _timeAgo(context, createdAt);
     final accent        = _accentFor(hlColor);
 
@@ -1615,7 +1615,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                               style: GoogleFonts.manrope(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
-                                color: MarginaliaColors.ink,
+                                color: ScriptaColors.ink,
                                 letterSpacing: -0.1,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -1626,13 +1626,13 @@ class _PostCardState extends ConsumerState<_PostCard> {
                               ' · ',
                               style: GoogleFonts.manrope(
                                 fontSize: 11,
-                                color: MarginaliaColors.inkFaint,
+                                color: ScriptaColors.inkFaint,
                               ),
                             ),
                             const Icon(
                               Icons.menu_book_rounded,
                               size: 10,
-                              color: MarginaliaColors.primaryDark,
+                              color: ScriptaColors.primaryDark,
                             ),
                             const SizedBox(width: 3),
                             Flexible(
@@ -1641,7 +1641,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                                 style: GoogleFonts.manrope(
                                   fontSize: 11,
                                   fontStyle: FontStyle.italic,
-                                  color: MarginaliaColors.primaryDark,
+                                  color: ScriptaColors.primaryDark,
                                   fontWeight: FontWeight.w500,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -1656,7 +1656,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           timeAgo,
                           style: GoogleFonts.manrope(
                             fontSize: 11,
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                           ),
                         ),
                     ],
@@ -1680,7 +1680,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       child: Icon(
                         PhosphorIconsRegular.dotsThreeOutline,
                         size: 20,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                       ),
                     ),
                   ),
@@ -1719,11 +1719,11 @@ class _PostCardState extends ConsumerState<_PostCard> {
                     ? child
                     : Container(
                         height: 180,
-                        color: MarginaliaColors.surfaceElevated,
+                        color: ScriptaColors.surfaceElevated,
                         child: Center(
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
-                            color: MarginaliaColors.sienna,
+                            color: ScriptaColors.sienna,
                             value: progress.expectedTotalBytes != null
                                 ? progress.cumulativeBytesLoaded /
                                     progress.expectedTotalBytes!
@@ -1733,19 +1733,19 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       ),
                 errorBuilder: (_, __, ___) => Container(
                   height: 64,
-                  color: MarginaliaColors.surfaceElevated,
+                  color: ScriptaColors.surfaceElevated,
                   child: Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.broken_image_outlined,
-                            size: 18, color: MarginaliaColors.inkFaint),
+                            size: 18, color: ScriptaColors.inkFaint),
                         const SizedBox(width: 6),
                         Text(
                           context.l10n.feedImageUnavailable,
                           style: GoogleFonts.manrope(
                             fontSize: 11,
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                           ),
                         ),
                       ],
@@ -1784,7 +1784,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: _liked
-                        ? MarginaliaColors.primaryFaint
+                        ? ScriptaColors.primaryFaint
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -1797,8 +1797,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
                             : PhosphorIconsRegular.heart,
                         size: 17,
                         color: _liked
-                            ? MarginaliaColors.primaryDark
-                            : MarginaliaColors.inkFaint,
+                            ? ScriptaColors.primaryDark
+                            : ScriptaColors.inkFaint,
                       ),
                       const SizedBox(width: 5),
                       Text(
@@ -1807,8 +1807,8 @@ class _PostCardState extends ConsumerState<_PostCard> {
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: _liked
-                              ? MarginaliaColors.primaryDark
-                              : MarginaliaColors.inkFaint,
+                              ? ScriptaColors.primaryDark
+                              : ScriptaColors.inkFaint,
                         ),
                       ),
                     ],
@@ -1838,7 +1838,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                       Icon(
                         PhosphorIconsRegular.chatCircle,
                         size: 18,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                       const SizedBox(width: 5),
                       Text(
@@ -1846,7 +1846,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                         style: GoogleFonts.manrope(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                     ],
@@ -1868,7 +1868,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
                   child: Icon(
                     PhosphorIconsRegular.paperPlaneTilt,
                     size: 18,
-                    color: MarginaliaColors.inkFaint,
+                    color: ScriptaColors.inkFaint,
                   ),
                 ),
               ),
@@ -1880,7 +1880,7 @@ class _PostCardState extends ConsumerState<_PostCard> {
         const Divider(
           height: 0.5,
           thickness: 0.5,
-          color: MarginaliaColors.ruleFaint,
+          color: ScriptaColors.ruleFaint,
         ),
       ],
     );
@@ -1917,10 +1917,10 @@ class _HighlightQuoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: MarginaliaColors.ruleFaint,
+          color: ScriptaColors.ruleFaint,
           width: 0.8,
         ),
       ),
@@ -1940,10 +1940,10 @@ class _HighlightQuoteCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title!,
-                    style: MarginaliaTextStyles.sectionTitle.copyWith(
+                    style: ScriptaTextStyles.sectionTitle.copyWith(
                       fontSize: 9,
                       letterSpacing: 1.2,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1952,22 +1952,22 @@ class _HighlightQuoteCard extends StatelessWidget {
                 if (author != null && author!.isNotEmpty)
                   Text(
                     author!.toUpperCase(),
-                    style: MarginaliaTextStyles.bookAuthor.copyWith(
+                    style: ScriptaTextStyles.bookAuthor.copyWith(
                       fontSize: 8.5,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 6),
-            Container(height: 0.5, color: MarginaliaColors.ruleFaint),
+            Container(height: 0.5, color: ScriptaColors.ruleFaint),
             const SizedBox(height: 8),
           ],
           Text(
             content.length > 240
                 ? '${content.substring(0, 240)}…'
                 : content,
-            style: MarginaliaTextStyles.highlightBodySmall.copyWith(
+            style: ScriptaTextStyles.highlightBodySmall.copyWith(
               fontSize: 13.5,
               height: 1.75,
             ),
@@ -2031,9 +2031,9 @@ class _GatedTextState extends State<_GatedText> {
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: MarginaliaColors.surfaceElevated,
+          color: ScriptaColors.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: MarginaliaColors.rule, width: 1),
+          border: Border.all(color: ScriptaColors.rule, width: 1),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Row(
@@ -2042,7 +2042,7 @@ class _GatedTextState extends State<_GatedText> {
             const Icon(
               Icons.visibility_off_outlined,
               size: 18,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -2054,7 +2054,7 @@ class _GatedTextState extends State<_GatedText> {
                     style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -2063,7 +2063,7 @@ class _GatedTextState extends State<_GatedText> {
                     style: GoogleFonts.manrope(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                     ),
                   ),
                 ],
@@ -2118,7 +2118,7 @@ class _MentionTextState extends State<_MentionText> {
 
     const baseStyle = TextStyle(
       fontSize: 15,
-      color: MarginaliaColors.ink,
+      color: ScriptaColors.ink,
       height: 1.65,
     );
     final textStyle = GoogleFonts.manrope(
@@ -2129,7 +2129,7 @@ class _MentionTextState extends State<_MentionText> {
     final mentionStyle = GoogleFonts.manrope(
       fontSize: 15,
       height: 1.65,
-      color: MarginaliaColors.primaryDark,
+      color: ScriptaColors.primaryDark,
       fontWeight: FontWeight.w600,
     );
 
@@ -2202,14 +2202,14 @@ class PostDetailScreen extends ConsumerWidget {
     final postAsync = ref.watch(singlePostProvider(postId));
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: MarginaliaColors.ink),
+          icon: const Icon(Icons.arrow_back, color: ScriptaColors.ink),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
@@ -2217,15 +2217,15 @@ class PostDetailScreen extends ConsumerWidget {
           style: GoogleFonts.ebGaramond(
             fontSize: 19,
             fontWeight: FontWeight.w600,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
             letterSpacing: -0.3,
           ),
         ),
         centerTitle: true,
       ),
       body: RefreshIndicator(
-        color: MarginaliaColors.sienna,
-        backgroundColor: MarginaliaColors.surface,
+        color: ScriptaColors.sienna,
+        backgroundColor: ScriptaColors.surface,
         strokeWidth: 1.5,
         onRefresh: () async {
           ref.invalidate(singlePostProvider(postId));
@@ -2242,7 +2242,7 @@ class PostDetailScreen extends ConsumerWidget {
                 padding: EdgeInsets.only(top: 120),
                 child: Center(
                   child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna,
+                    color: ScriptaColors.sienna,
                     strokeWidth: 1.5,
                   ),
                 ),
@@ -2286,7 +2286,7 @@ class _PostDetailEmpty extends StatelessWidget {
                 '"',
                 style: GoogleFonts.ebGaramond(
                   fontSize: 64,
-                  color: MarginaliaColors.ruleFaint,
+                  color: ScriptaColors.ruleFaint,
                   height: 1,
                 ),
               ),
@@ -2297,7 +2297,7 @@ class _PostDetailEmpty extends StatelessWidget {
                 style: GoogleFonts.ebGaramond(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -2504,7 +2504,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       constraints: BoxConstraints(
@@ -2519,7 +2519,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -2534,7 +2534,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -2542,12 +2542,12 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
                   child: const Icon(Icons.close,
-                      size: 20, color: MarginaliaColors.inkMuted),
+                      size: 20, color: ScriptaColors.inkMuted),
                 ),
               ],
             ),
           ),
-          const Divider(height: 0.5, thickness: 0.5, color: MarginaliaColors.ruleFaint),
+          const Divider(height: 0.5, thickness: 0.5, color: ScriptaColors.ruleFaint),
 
           // Comments list
           Flexible(
@@ -2556,7 +2556,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     child: Padding(
                       padding: EdgeInsets.all(40),
                       child: CircularProgressIndicator(
-                        color: MarginaliaColors.sienna,
+                        color: ScriptaColors.sienna,
                         strokeWidth: 1.5,
                       ),
                     ),
@@ -2570,7 +2570,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.manrope(
                               fontSize: 14,
-                              color: MarginaliaColors.inkMuted,
+                              color: ScriptaColors.inkMuted,
                               height: 1.6,
                             ),
                           ),
@@ -2618,24 +2618,24 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       ),
           ),
 
-          const Divider(height: 0.5, thickness: 0.5, color: MarginaliaColors.ruleFaint),
+          const Divider(height: 0.5, thickness: 0.5, color: ScriptaColors.ruleFaint),
 
           // "Rispondendo a…" banner
           if (isReplying)
             Container(
-              color: MarginaliaColors.surfaceElevated,
+              color: ScriptaColors.surfaceElevated,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               child: Row(
                 children: [
                   const Icon(Icons.reply_rounded,
-                      size: 14, color: MarginaliaColors.inkMuted),
+                      size: 14, color: ScriptaColors.inkMuted),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       context.l10n.feedReplyingTo(_replyingToName ?? ''),
                       style: GoogleFonts.manrope(
                         fontSize: 12.5,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2643,7 +2643,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                   GestureDetector(
                     onTap: _cancelReply,
                     child: const Icon(Icons.close,
-                        size: 16, color: MarginaliaColors.inkMuted),
+                        size: 16, color: ScriptaColors.inkMuted),
                   ),
                 ],
               ),
@@ -2703,12 +2703,12 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.surfaceElevated,
+                      color: ScriptaColors.surfaceElevated,
                       shape: BoxShape.circle,
-                      border: Border.all(color: MarginaliaColors.rule),
+                      border: Border.all(color: ScriptaColors.rule),
                     ),
                     child: const Icon(Icons.image_outlined,
-                        size: 18, color: MarginaliaColors.inkMuted),
+                        size: 18, color: ScriptaColors.inkMuted),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -2719,9 +2719,9 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.surfaceElevated,
+                      color: ScriptaColors.surfaceElevated,
                       shape: BoxShape.circle,
-                      border: Border.all(color: MarginaliaColors.rule),
+                      border: Border.all(color: ScriptaColors.rule),
                     ),
                     child: Center(
                       child: Text(
@@ -2729,7 +2729,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                         style: GoogleFonts.manrope(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -2742,9 +2742,9 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                   child: Container(
                     constraints: const BoxConstraints(maxHeight: 120),
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.surfaceElevated,
+                      color: ScriptaColors.surfaceElevated,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: MarginaliaColors.rule),
+                      border: Border.all(color: ScriptaColors.rule),
                     ),
                     child: TextField(
                       controller: _ctrl,
@@ -2752,7 +2752,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       maxLines: null,
                       style: GoogleFonts.manrope(
                         fontSize: 14,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                         height: 1.5,
                       ),
                       decoration: InputDecoration(
@@ -2760,7 +2760,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                             ? context.l10n.feedReplyHint(_replyingToName ?? '')
                             : context.l10n.feedCommentHint,
                         hintStyle: TextStyle(
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
@@ -2781,8 +2781,8 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                     height: 36,
                     decoration: BoxDecoration(
                       color: canSend
-                          ? MarginaliaColors.sienna
-                          : MarginaliaColors.rule,
+                          ? ScriptaColors.sienna
+                          : ScriptaColors.rule,
                       shape: BoxShape.circle,
                     ),
                     child: _submitting
@@ -2896,7 +2896,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
             _MenuAction(
               icon: Icons.flag_outlined,
               label: l10n.feedReport,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               onTap: () async {
                 Navigator.pop(ctx);
                 if (commentId == null) return;
@@ -3013,7 +3013,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
     final imageUrl  = widget.comment['image_url'] as String?;
     final gifUrl    = widget.comment['gif_url']   as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final tint      = MarginaliaDecorations.bookCoverColor(name);
+    final tint      = ScriptaDecorations.bookCoverColor(name);
     final avatarSize = widget.isReply ? 26.0 : 32.0;
 
     // The comment author's own view is never gated.
@@ -3051,7 +3051,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                               style: GoogleFonts.manrope(
                                 fontSize: widget.isReply ? 12.0 : 12.5,
                                 fontWeight: FontWeight.w700,
-                                color: MarginaliaColors.ink,
+                                color: ScriptaColors.ink,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -3061,7 +3061,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                             widget.timeAgo,
                             style: GoogleFonts.manrope(
                               fontSize: 11,
-                              color: MarginaliaColors.inkFaint,
+                              color: ScriptaColors.inkFaint,
                             ),
                           ),
                         ],
@@ -3076,7 +3076,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                         child: Icon(
                           PhosphorIconsRegular.dotsThree,
                           size: 18,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                     ),
@@ -3086,7 +3086,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                 // Bubble with text and/or media
                 Container(
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.surfaceElevated,
+                    color: ScriptaColors.surfaceElevated,
                     borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(16),
                       bottomLeft: Radius.circular(16),
@@ -3105,7 +3105,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                             content,
                             style: GoogleFonts.manrope(
                               fontSize: 13.5,
-                              color: MarginaliaColors.ink,
+                              color: ScriptaColors.ink,
                               height: 1.55,
                             ),
                           ),
@@ -3125,24 +3125,24 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                                     ? child
                                     : Container(
                                         height: 120,
-                                        color: MarginaliaColors.ruleFaint,
+                                        color: ScriptaColors.ruleFaint,
                                         child: const Center(
                                           child: CircularProgressIndicator(
                                             strokeWidth: 1.5,
-                                            color: MarginaliaColors.sienna,
+                                            color: ScriptaColors.sienna,
                                           ),
                                         ),
                                       ),
                             errorBuilder: (_, __, ___) => Container(
                               height: 60,
                               decoration: BoxDecoration(
-                                color: MarginaliaColors.ruleFaint,
+                                color: ScriptaColors.ruleFaint,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Center(
                                 child: Icon(Icons.broken_image_outlined,
                                     size: 20,
-                                    color: MarginaliaColors.inkFaint),
+                                    color: ScriptaColors.inkFaint),
                               ),
                             ),
                           ),
@@ -3157,13 +3157,13 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                             errorBuilder: (_, __, ___) => Container(
                               height: 48,
                               decoration: BoxDecoration(
-                                color: MarginaliaColors.ruleFaint,
+                                color: ScriptaColors.ruleFaint,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Center(
                                 child: Icon(Icons.gif,
                                     size: 24,
-                                    color: MarginaliaColors.inkFaint),
+                                    color: ScriptaColors.inkFaint),
                               ),
                             ),
                           ),
@@ -3188,8 +3188,8 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                                   : PhosphorIconsRegular.heart,
                               size: 15,
                               color: _liked
-                                  ? MarginaliaColors.primaryDark
-                                  : MarginaliaColors.inkFaint,
+                                  ? ScriptaColors.primaryDark
+                                  : ScriptaColors.inkFaint,
                             ),
                             if (_likeCount > 0) ...[
                               const SizedBox(width: 3),
@@ -3198,8 +3198,8 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                                 style: GoogleFonts.manrope(
                                   fontSize: 11.5,
                                   color: _liked
-                                      ? MarginaliaColors.primaryDark
-                                      : MarginaliaColors.inkFaint,
+                                      ? ScriptaColors.primaryDark
+                                      : ScriptaColors.inkFaint,
                                   fontWeight: _liked
                                       ? FontWeight.w600
                                       : FontWeight.w400,
@@ -3220,7 +3220,7 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                             context.l10n.feedReplyAction,
                             style: GoogleFonts.manrope(
                               fontSize: 11.5,
-                              color: MarginaliaColors.inkFaint,
+                              color: ScriptaColors.inkFaint,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -3268,7 +3268,7 @@ class _PostMenuSheet extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               // Translucent surface over a blurred backdrop = liquid glass.
-              color: MarginaliaColors.surface.withAlpha(225),
+              color: ScriptaColors.surface.withAlpha(225),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: Colors.white.withAlpha(46), width: 0.6),
             ),
@@ -3282,7 +3282,7 @@ class _PostMenuSheet extends StatelessWidget {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -3301,14 +3301,14 @@ class _PostMenuSheet extends StatelessWidget {
                             children: [
                               Icon(a.icon,
                                   size: 20,
-                                  color: a.color ?? MarginaliaColors.ink),
+                                  color: a.color ?? ScriptaColors.ink),
                               const SizedBox(width: 14),
                               Text(
                                 a.label,
                                 style: GoogleFonts.manrope(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: a.color ?? MarginaliaColors.ink,
+                                  color: a.color ?? ScriptaColors.ink,
                                 ),
                               ),
                             ],
@@ -3341,7 +3341,7 @@ class _EmptyFeed extends StatelessWidget {
             '"',
             style: GoogleFonts.ebGaramond(
               fontSize: 64,
-              color: MarginaliaColors.ruleFaint,
+              color: ScriptaColors.ruleFaint,
               height: 1,
             ),
           ),
@@ -3351,7 +3351,7 @@ class _EmptyFeed extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.3,
             ),
           ),
@@ -3360,7 +3360,7 @@ class _EmptyFeed extends StatelessWidget {
             context.l10n.feedEmptyFollowing,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               fontSize: 13,
               height: 1.65,
             ),
@@ -3388,11 +3388,11 @@ class _NotLoggedIn extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: MarginaliaColors.siennaFaint,
+                color: ScriptaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(Icons.lock_outline,
-                  size: 32, color: MarginaliaColors.primaryDark),
+                  size: 32, color: ScriptaColors.primaryDark),
             ),
             const SizedBox(height: 20),
             Text(
@@ -3400,7 +3400,7 @@ class _NotLoggedIn extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -3409,7 +3409,7 @@ class _NotLoggedIn extends StatelessWidget {
               context.l10n.profileLoginBody,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
                 height: 1.65,
               ),

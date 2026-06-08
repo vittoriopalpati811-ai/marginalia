@@ -99,10 +99,10 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
     final async = ref.watch(_blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
-        foregroundColor: MarginaliaColors.ink,
+        backgroundColor: ScriptaColors.background,
+        foregroundColor: ScriptaColors.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(context.l10n.blockedUsersTitle),
@@ -110,7 +110,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
       body: async.when(
         loading: () => const Center(
           child: CircularProgressIndicator(
-            color: MarginaliaColors.sienna,
+            color: ScriptaColors.sienna,
             strokeWidth: 1.5,
           ),
         ),
@@ -122,8 +122,8 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
               users.where((u) => !_removed.contains(u.id)).toList();
           if (visible.isEmpty) return const _EmptyState();
           return RefreshIndicator(
-            color: MarginaliaColors.sienna,
-            backgroundColor: MarginaliaColors.surface,
+            color: ScriptaColors.sienna,
+            backgroundColor: ScriptaColors.surface,
             strokeWidth: 1.5,
             onRefresh: () async {
               _removed.clear();
@@ -136,7 +136,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
               separatorBuilder: (_, __) => const Divider(
                 height: 1,
                 indent: 72,
-                color: MarginaliaColors.ruleFaint,
+                color: ScriptaColors.ruleFaint,
               ),
               itemBuilder: (_, i) {
                 final user = visible[i];
@@ -171,7 +171,7 @@ class _BlockedUserRow extends StatelessWidget {
         ? user.displayName!.trim()
         : context.l10n.accountDeleted;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '·';
-    final tint = MarginaliaDecorations.bookCoverColor(name);
+    final tint = ScriptaDecorations.bookCoverColor(name);
     final avatarUrl = user.avatarUrl;
 
     return ListTile(
@@ -182,7 +182,7 @@ class _BlockedUserRow extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [tint, MarginaliaColors.primaryDark],
+            colors: [tint, ScriptaColors.primaryDark],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -201,7 +201,7 @@ class _BlockedUserRow extends StatelessWidget {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -212,14 +212,14 @@ class _BlockedUserRow extends StatelessWidget {
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 1.5,
-                color: MarginaliaColors.sienna,
+                color: ScriptaColors.sienna,
               ),
             )
           : OutlinedButton(
               onPressed: onUnblock,
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.primaryDark,
-                side: const BorderSide(color: MarginaliaColors.rule),
+                foregroundColor: ScriptaColors.primaryDark,
+                side: const BorderSide(color: ScriptaColors.rule),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
                 padding:
@@ -265,11 +265,11 @@ class _EmptyState extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
+                color: ScriptaColors.primaryFaint,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(Icons.block_outlined,
-                  size: 28, color: MarginaliaColors.primaryDark),
+                  size: 28, color: ScriptaColors.primaryDark),
             ),
             const SizedBox(height: 18),
             Text(
@@ -278,7 +278,7 @@ class _EmptyState extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 15,
                 height: 1.5,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
               ),
             ),
           ],
@@ -301,7 +301,7 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.error_outline,
-                color: MarginaliaColors.inkFaint, size: 40),
+                color: ScriptaColors.inkFaint, size: 40),
             const SizedBox(height: 16),
             TextButton(
               onPressed: onRetry,

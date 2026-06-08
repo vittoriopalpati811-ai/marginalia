@@ -51,9 +51,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     final due = ref.watch(dueHighlightsProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -67,7 +67,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         child: due.when(
           loading: () => const Center(
             child: CircularProgressIndicator(
-              color: MarginaliaColors.primaryDark,
+              color: ScriptaColors.primaryDark,
               strokeWidth: 1.5,
             ),
           ),
@@ -92,7 +92,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
             if (session.deck.isEmpty) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                   strokeWidth: 1.5,
                 ),
               );
@@ -191,7 +191,7 @@ class _ProgressHeader extends ConsumerWidget {
             children: [
               Text(
                 context.l10n.ripassoProgress(done, total),
-                style: MarginaliaTextStyles.label,
+                style: ScriptaTextStyles.label,
               ),
               const SizedBox(height: 6),
               ClipRRect(
@@ -203,9 +203,9 @@ class _ProgressHeader extends ConsumerWidget {
                   builder: (context, value, _) => LinearProgressIndicator(
                     value: value,
                     minHeight: 3,
-                    backgroundColor: MarginaliaColors.ruleFaint,
+                    backgroundColor: ScriptaColors.ruleFaint,
                     valueColor: const AlwaysStoppedAnimation<Color>(
-                      MarginaliaColors.primary,
+                      ScriptaColors.primary,
                     ),
                   ),
                 ),
@@ -232,7 +232,7 @@ class StreakPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: MarginaliaColors.siennaFaint,
+        color: ScriptaColors.siennaFaint,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -243,7 +243,7 @@ class StreakPill extends StatelessWidget {
                 ? PhosphorIconsFill.flame
                 : PhosphorIconsRegular.flame,
             size: 15,
-            color: MarginaliaColors.primaryDark,
+            color: ScriptaColors.primaryDark,
           ),
           const SizedBox(width: 5),
           Text(
@@ -251,7 +251,7 @@ class StreakPill extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: MarginaliaColors.primaryDark,
+              color: ScriptaColors.primaryDark,
               letterSpacing: -0.2,
             ),
           ),
@@ -342,18 +342,18 @@ class _GradeButton extends StatelessWidget {
     final (bg, fg, border) = switch (kind) {
       _GradeKind.neutral => (
           Colors.transparent,
-          MarginaliaColors.ink,
-          MarginaliaColors.rule,
+          ScriptaColors.ink,
+          ScriptaColors.rule,
         ),
       _GradeKind.hard => (
-          MarginaliaColors.siennaLight,
-          MarginaliaColors.ink,
-          MarginaliaColors.siennaLight,
+          ScriptaColors.siennaLight,
+          ScriptaColors.ink,
+          ScriptaColors.siennaLight,
         ),
       _GradeKind.good => (
-          MarginaliaColors.primary,
-          MarginaliaColors.ink,
-          MarginaliaColors.primary,
+          ScriptaColors.primary,
+          ScriptaColors.ink,
+          ScriptaColors.primary,
         ),
     };
 
@@ -391,9 +391,9 @@ class _GradeButton extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: MarginaliaTextStyles.label.copyWith(
+          style: ScriptaTextStyles.label.copyWith(
             fontSize: 10,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
           ),
         ),
       ],
@@ -453,8 +453,8 @@ class _FinishedState extends StatelessWidget {
                 PhosphorIconsFill.flame,
                 size: 64,
                 color: streak > 0
-                    ? MarginaliaColors.primaryDark.withOpacity(0.85)
-                    : MarginaliaColors.siennaLight,
+                    ? ScriptaColors.primaryDark.withOpacity(0.85)
+                    : ScriptaColors.siennaLight,
               )
             else
               const _SuccessBurst(),
@@ -464,7 +464,7 @@ class _FinishedState extends StatelessWidget {
                   ? context.l10n.ripassoEmptyTitle
                   : context.l10n.ripassoAllDone,
               textAlign: TextAlign.center,
-              style: MarginaliaTextStyles.heroTitle,
+              style: ScriptaTextStyles.heroTitle,
             ),
             const SizedBox(height: 12),
             Text(
@@ -472,7 +472,7 @@ class _FinishedState extends StatelessWidget {
                   ? context.l10n.ripassoEmpty
                   : context.l10n.ripassoStreakDays(streak),
               textAlign: TextAlign.center,
-              style: MarginaliaTextStyles.subtitle,
+              style: ScriptaTextStyles.subtitle,
             ),
             const SizedBox(height: 28),
             const _NextReviewCountdown(),
@@ -515,7 +515,7 @@ class _SuccessBurst extends StatelessWidget {
             height: diameter,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: MarginaliaColors.primary, width: 3),
+              border: Border.all(color: ScriptaColors.primary, width: 3),
             ),
           )
               .animate()
@@ -535,7 +535,7 @@ class _SuccessBurst extends StatelessWidget {
                 height: 7,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: MarginaliaColors.siennaLight,
+                  color: ScriptaColors.siennaLight,
                 ),
               )
                   .animate()
@@ -555,13 +555,13 @@ class _SuccessBurst extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [MarginaliaColors.primary, MarginaliaColors.primaryDark],
+                colors: [ScriptaColors.primary, ScriptaColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: MarginaliaColors.primary.withOpacity(0.40),
+                  color: ScriptaColors.primary.withOpacity(0.40),
                   blurRadius: 26,
                   offset: const Offset(0, 10),
                 ),
@@ -645,14 +645,14 @@ class _NextReviewCountdownState extends State<_NextReviewCountdown> {
         const Icon(
           PhosphorIconsRegular.clock,
           size: 14,
-          color: MarginaliaColors.inkFaint,
+          color: ScriptaColors.inkFaint,
         ),
         const SizedBox(width: 7),
         Text(
           context.l10n.ripassoNextReview(_format(_remaining)),
-          style: MarginaliaTextStyles.label.copyWith(
+          style: ScriptaTextStyles.label.copyWith(
             fontSize: 12,
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
             // Tabular figures so the seconds tick without the row reflowing.
             fontFeatures: const [FontFeature.tabularFigures()],
             letterSpacing: 0.2,

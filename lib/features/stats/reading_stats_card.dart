@@ -61,10 +61,10 @@ class ReadingStatsCard extends ConsumerWidget {
           onTap: () => context.push('/stats'),
           child: Container(
             decoration: BoxDecoration(
-              color: MarginaliaColors.surface,
+              color: ScriptaColors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: MarginaliaColors.ruleFaint,
+                color: ScriptaColors.ruleFaint,
                 width: 0.8,
               ),
               boxShadow: const [
@@ -86,7 +86,7 @@ class ReadingStatsCard extends ConsumerWidget {
                       style: GoogleFonts.ebGaramond(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -118,7 +118,7 @@ class ReadingStatsCard extends ConsumerWidget {
                           child: Icon(
                             Icons.ios_share,
                             size: 16,
-                            color: MarginaliaColors.sienna,
+                            color: ScriptaColors.sienna,
                           ),
                         ),
                       ),
@@ -128,12 +128,12 @@ class ReadingStatsCard extends ConsumerWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.sienna,
+                        color: ScriptaColors.sienna,
                       ),
                     ),
                     const SizedBox(width: 4),
                     const Icon(Icons.arrow_forward_ios,
-                        size: 11, color: MarginaliaColors.sienna),
+                        size: 11, color: ScriptaColors.sienna),
                   ],
                 ),
 
@@ -144,7 +144,7 @@ class ReadingStatsCard extends ConsumerWidget {
                     context.l10n.profileReadingEmpty,
                     style: GoogleFonts.manrope(
                       fontSize: 13,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                       height: 1.45,
                     ),
                   ),
@@ -221,7 +221,7 @@ class _StatTile extends StatelessWidget {
                 style: GoogleFonts.ebGaramond(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                   letterSpacing: -0.6,
                   height: 1.0,
                 ),
@@ -232,7 +232,7 @@ class _StatTile extends StatelessWidget {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: MarginaliaColors.inkFaint,
+                    color: ScriptaColors.inkFaint,
                     height: 1.0,
                   ),
                 ),
@@ -246,7 +246,7 @@ class _StatTile extends StatelessWidget {
           style: GoogleFonts.manrope(
             fontSize: 9,
             fontWeight: FontWeight.w600,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
             letterSpacing: 0.6,
             height: 1.2,
           ),
@@ -262,7 +262,7 @@ class _MiniDivider extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         width: 1,
         height: 28,
-        color: MarginaliaColors.ruleFaint,
+        color: ScriptaColors.ruleFaint,
         margin: const EdgeInsets.symmetric(horizontal: 4),
       );
 }
@@ -282,7 +282,7 @@ class _ReviewStreakBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        color: MarginaliaColors.siennaFaint,
+        color: ScriptaColors.siennaFaint,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -292,7 +292,7 @@ class _ReviewStreakBanner extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: MarginaliaColors.surface,
+              color: ScriptaColors.surface,
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(
@@ -300,7 +300,7 @@ class _ReviewStreakBanner extends StatelessWidget {
                   ? PhosphorIconsFill.flame
                   : PhosphorIconsRegular.flame,
               size: 20,
-              color: MarginaliaColors.primaryDark,
+              color: ScriptaColors.primaryDark,
             ),
           ),
           const SizedBox(width: 12),
@@ -318,7 +318,7 @@ class _ReviewStreakBanner extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: MarginaliaColors.primaryDark,
+                    color: ScriptaColors.primaryDark,
                     letterSpacing: -0.2,
                     height: 1.1,
                   ),
@@ -332,7 +332,7 @@ class _ReviewStreakBanner extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                       letterSpacing: 0.1,
                     ),
                   ),
@@ -347,7 +347,7 @@ class _ReviewStreakBanner extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 30,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
                 letterSpacing: -0.6,
                 height: 1.0,
               ),
@@ -374,9 +374,9 @@ class _GoalProgressBar extends StatelessWidget {
           child: LinearProgressIndicator(
             value: pct == 0 ? null : pct, // null = indeterminate, avoid 0-width
             minHeight: 6,
-            backgroundColor: MarginaliaColors.primaryFaint,
+            backgroundColor: ScriptaColors.primaryFaint,
             valueColor:
-                const AlwaysStoppedAnimation<Color>(MarginaliaColors.primary),
+                const AlwaysStoppedAnimation<Color>(ScriptaColors.primary),
           ),
         ),
         const SizedBox(height: 6),
@@ -388,7 +388,7 @@ class _GoalProgressBar extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.primary,
+                color: ScriptaColors.primary,
                 letterSpacing: 0.2,
               ),
             ),
@@ -398,7 +398,7 @@ class _GoalProgressBar extends StatelessWidget {
                   : context.l10n.profileStatsGoalRemaining(target - done),
               style: GoogleFonts.manrope(
                 fontSize: 11,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
               ),
             ),
           ],

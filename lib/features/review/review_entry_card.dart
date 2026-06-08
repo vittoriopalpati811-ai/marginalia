@@ -74,7 +74,7 @@ class _DueCard extends StatelessWidget {
       onPressed: () => context.push('/review'),
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: MarginaliaDecorations.card(radius: 20),
+        decoration: ScriptaDecorations.card(radius: 20),
         child: Row(
           children: [
             // Flame / book glyph tile.
@@ -82,7 +82,7 @@ class _DueCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: MarginaliaColors.siennaFaint,
+                color: ScriptaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -90,7 +90,7 @@ class _DueCard extends StatelessWidget {
                     ? PhosphorIconsFill.flame
                     : PhosphorIconsFill.bookOpen,
                 size: 22,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
             const SizedBox(width: 14),
@@ -100,7 +100,7 @@ class _DueCard extends StatelessWidget {
                 children: [
                   Text(
                     context.l10n.ripassoOfTheDay,
-                    style: MarginaliaTextStyles.sectionTitleClean,
+                    style: ScriptaTextStyles.sectionTitleClean,
                   ),
                   const SizedBox(height: 3),
                   _Subtitle(dueCount: dueCount, streak: streak),
@@ -111,7 +111,7 @@ class _DueCard extends StatelessWidget {
             const Icon(
               PhosphorIconsRegular.caretRight,
               size: 18,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
             ),
           ],
         ),
@@ -129,12 +129,12 @@ class _Subtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = MarginaliaTextStyles.subtitle;
+    final base = ScriptaTextStyles.subtitle;
     final parts = <InlineSpan>[
       TextSpan(
         text: context.l10n.ripassoDueCount(dueCount),
         style: base.copyWith(
-          color: MarginaliaColors.primaryDark,
+          color: ScriptaColors.primaryDark,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -171,7 +171,7 @@ class _CompletedCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: MarginaliaDecorations.card(radius: 20),
+      decoration: ScriptaDecorations.card(radius: 20),
       child: Row(
         children: [
           Container(
@@ -179,7 +179,7 @@ class _CompletedCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [MarginaliaColors.primary, MarginaliaColors.primaryDark],
+                colors: [ScriptaColors.primary, ScriptaColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -201,14 +201,14 @@ class _CompletedCard extends StatelessWidget {
               children: [
                 Text(
                   context.l10n.ripassoTodayCompleted,
-                  style: MarginaliaTextStyles.sectionTitleClean,
+                  style: ScriptaTextStyles.sectionTitleClean,
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: MarginaliaTextStyles.subtitle,
+                  style: ScriptaTextStyles.subtitle,
                 ),
               ],
             ),
@@ -218,7 +218,7 @@ class _CompletedCard extends StatelessWidget {
             const Icon(
               PhosphorIconsFill.flame,
               size: 18,
-              color: MarginaliaColors.primaryDark,
+              color: ScriptaColors.primaryDark,
             ),
           ],
         ],

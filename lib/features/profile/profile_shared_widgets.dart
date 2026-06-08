@@ -104,12 +104,12 @@ class FavBookTile extends StatelessWidget {
     if (title.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: MarginaliaColors.surfaceElevated,
+          color: ScriptaColors.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: MarginaliaColors.ruleFaint),
+          border: Border.all(color: ScriptaColors.ruleFaint),
         ),
         child: const Center(
-          child: Icon(Icons.add_outlined, size: 22, color: MarginaliaColors.inkFaint),
+          child: Icon(Icons.add_outlined, size: 22, color: ScriptaColors.inkFaint),
         ),
       );
     }
@@ -269,8 +269,8 @@ class _PostTextTile extends StatelessWidget {
     if (isQuote) {
       return Container(
         decoration: BoxDecoration(
-          color: MarginaliaColors.background,
-          border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+          color: ScriptaColors.background,
+          border: Border.all(color: ScriptaColors.ruleFaint, width: 0.8),
         ),
         padding: const EdgeInsets.fromLTRB(7, 5, 7, 7),
         alignment: Alignment.topLeft,
@@ -282,7 +282,7 @@ class _PostTextTile extends StatelessWidget {
               '“',
               style: GoogleFonts.ebGaramond(
                 fontSize: 17,
-                color: MarginaliaColors.siennaLight.withAlpha(150),
+                color: ScriptaColors.siennaLight.withAlpha(150),
                 height: 0.85,
               ),
             ),
@@ -292,7 +292,7 @@ class _PostTextTile extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 10.5,
                 fontStyle: FontStyle.italic,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 height: 1.4,
               ),
               maxLines: 5,
@@ -304,8 +304,8 @@ class _PostTextTile extends StatelessWidget {
     }
     return Container(
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
-        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+        color: ScriptaColors.surface,
+        border: Border.all(color: ScriptaColors.ruleFaint, width: 0.8),
       ),
       padding: const EdgeInsets.all(8),
       alignment: Alignment.topLeft,
@@ -314,7 +314,7 @@ class _PostTextTile extends StatelessWidget {
         style: GoogleFonts.manrope(
           fontSize: 10,
           fontWeight: FontWeight.w500,
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
           height: 1.4,
         ),
         maxLines: 6,
@@ -337,14 +337,14 @@ class _PostImageTile extends StatelessWidget {
       loadingBuilder: (_, child, progress) => progress == null
           ? child
           : Container(
-              color: MarginaliaColors.surfaceElevated,
+              color: ScriptaColors.surfaceElevated,
               child: Center(
                 child: SizedBox(
                   width: 18,
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 1.5,
-                    color: MarginaliaColors.inkFaint,
+                    color: ScriptaColors.inkFaint,
                     value: progress.expectedTotalBytes != null
                         ? progress.cumulativeBytesLoaded /
                             progress.expectedTotalBytes!
@@ -354,12 +354,12 @@ class _PostImageTile extends StatelessWidget {
               ),
             ),
       errorBuilder: (_, __, ___) => Container(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         child: const Center(
           child: Icon(
             Icons.broken_image_outlined,
             size: 22,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
           ),
         ),
       ),
@@ -399,7 +399,7 @@ class PostDetailSheet extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -409,7 +409,7 @@ class PostDetailSheet extends StatelessWidget {
             margin: const EdgeInsets.only(top: 12, bottom: 8),
             width: 36, height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -425,7 +425,7 @@ class PostDetailSheet extends StatelessWidget {
                       _timeAgo(context, createdAt),
                       style: GoogleFonts.manrope(
                         fontSize: 11,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                     ),
                   // Body
@@ -435,7 +435,7 @@ class PostDetailSheet extends StatelessWidget {
                       body,
                       style: GoogleFonts.manrope(
                         fontSize: 15,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                         height: 1.65,
                       ),
                     ),
@@ -445,10 +445,10 @@ class PostDetailSheet extends StatelessWidget {
                     const SizedBox(height: 14),
                     Container(
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.surfaceElevated,
+                        color: ScriptaColors.surfaceElevated,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: MarginaliaColors.ruleFaint, width: 0.8),
+                            color: ScriptaColors.ruleFaint, width: 0.8),
                       ),
                       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
                       child: Column(
@@ -460,7 +460,7 @@ class PostDetailSheet extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
-                                color: MarginaliaColors.inkMuted,
+                                color: ScriptaColors.inkMuted,
                                 letterSpacing: 1.1,
                               ),
                             ),
@@ -470,7 +470,7 @@ class PostDetailSheet extends StatelessWidget {
                             style: GoogleFonts.ebGaramond(
                               fontSize: 14.5,
                               fontStyle: FontStyle.italic,
-                              color: MarginaliaColors.ink,
+                              color: ScriptaColors.ink,
                               height: 1.65,
                             ),
                           ),
@@ -493,27 +493,27 @@ class PostDetailSheet extends StatelessWidget {
                                 : Container(
                                     height: 180,
                                     decoration: BoxDecoration(
-                                      color: MarginaliaColors.surfaceElevated,
+                                      color: ScriptaColors.surfaceElevated,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
                                       child: CircularProgressIndicator(
                                         strokeWidth: 1.5,
-                                        color: MarginaliaColors.sienna,
+                                        color: ScriptaColors.sienna,
                                       ),
                                     ),
                                   ),
                         errorBuilder: (_, __, ___) => Container(
                           height: 64,
                           decoration: BoxDecoration(
-                            color: MarginaliaColors.surfaceElevated,
+                            color: ScriptaColors.surfaceElevated,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Center(
                             child: Icon(
                               Icons.broken_image_outlined,
                               size: 22,
-                              color: MarginaliaColors.inkFaint,
+                              color: ScriptaColors.inkFaint,
                             ),
                           ),
                         ),
@@ -525,13 +525,13 @@ class PostDetailSheet extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.favorite_border,
-                          size: 14, color: MarginaliaColors.inkFaint),
+                          size: 14, color: ScriptaColors.inkFaint),
                       const SizedBox(width: 5),
                       Text(
                         '$likes',
                         style: GoogleFonts.manrope(
                           fontSize: 12,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

@@ -19,7 +19,7 @@ class HomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
           _HomeHeader(onCreatePost: () => _openCreatePost(context, ref)),
@@ -81,11 +81,11 @@ class _HomeHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Marginalia',
+                    'Scripta',
                     style: GoogleFonts.manrope(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -93,7 +93,7 @@ class _HomeHeader extends StatelessWidget {
                   Text(
                     context.l10n.homeFeedSubtitle,
                     style: GoogleFonts.manrope(
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                       fontSize: 12,
                       letterSpacing: 0.1,
                     ),
@@ -115,22 +115,22 @@ class _HomeHeader extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.siennaFaint,
+                  color: ScriptaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: MarginaliaColors.sienna.withAlpha(60),
+                    color: ScriptaColors.sienna.withAlpha(60),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.edit_outlined,
-                        size: 15, color: MarginaliaColors.primaryDark),
+                        size: 15, color: ScriptaColors.primaryDark),
                     const SizedBox(width: 6),
                     Text(
                       context.l10n.commonScrivi,
                       style: const TextStyle(
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),

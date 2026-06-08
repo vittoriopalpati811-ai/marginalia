@@ -80,7 +80,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: MarginaliaColors.primary,
+        backgroundColor: ScriptaColors.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -113,7 +113,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     if (widget.modal) {
       return Container(
         decoration: const BoxDecoration(
-          color: MarginaliaColors.background,
+          color: ScriptaColors.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: body,
@@ -121,7 +121,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: body,
     );
   }
@@ -210,7 +210,7 @@ class _PaywallBody extends StatelessWidget {
                                    curve: Curves.easeOutBack),
                         const SizedBox(height: 20),
                         Text(
-                          'Marginalia\nPremium',
+                          'Scripta\nPremium',
                           style: GoogleFonts.playfairDisplay(
                             fontSize: 36,
                             fontWeight: FontWeight.w700,
@@ -361,8 +361,8 @@ class _PaywallBody extends StatelessWidget {
               child: FilledButton(
                 onPressed: purchasing || restoring ? null : onPurchase,
                 style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primary,
-                  foregroundColor: MarginaliaColors.ink,
+                  backgroundColor: ScriptaColors.primary,
+                  foregroundColor: ScriptaColors.ink,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
@@ -376,7 +376,7 @@ class _PaywallBody extends StatelessWidget {
                     ? const SizedBox(
                         width: 20, height: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: MarginaliaColors.ink),
+                            strokeWidth: 2, color: ScriptaColors.ink),
                       )
                     : Text(context.l10n.paywallPurchaseCta),
               ),
@@ -394,7 +394,7 @@ class _PaywallBody extends StatelessWidget {
                         width: 16, height: 16,
                         child: CircularProgressIndicator(
                             strokeWidth: 1.5,
-                            color: MarginaliaColors.inkMuted),
+                            color: ScriptaColors.inkMuted),
                       ),
                     ),
                   )
@@ -404,7 +404,7 @@ class _PaywallBody extends StatelessWidget {
                       context.l10n.paywallRestore,
                       style: const TextStyle(
                         fontSize: 13,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                       ),
                     ),
                   ),
@@ -418,7 +418,7 @@ class _PaywallBody extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
                 height: 1.6,
               ),
             ),
@@ -458,16 +458,16 @@ class _FeatureRow extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: premium
-                  ? MarginaliaColors.primaryFaint
-                  : MarginaliaColors.surfaceElevated,
+                  ? ScriptaColors.primaryFaint
+                  : ScriptaColors.surfaceElevated,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
               size: 22,
               color: premium
-                  ? MarginaliaColors.primaryDark
-                  : MarginaliaColors.inkFaint,
+                  ? ScriptaColors.primaryDark
+                  : ScriptaColors.inkFaint,
             ),
           ),
           const SizedBox(width: 14),
@@ -483,7 +483,7 @@ class _FeatureRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           letterSpacing: -0.1,
                         ),
                       ),
@@ -493,7 +493,7 @@ class _FeatureRow extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.primaryFaint,
+                        color: ScriptaColors.primaryFaint,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -501,7 +501,7 @@ class _FeatureRow extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -513,7 +513,7 @@ class _FeatureRow extends StatelessWidget {
                   subtitle,
                   style: const TextStyle(
                     fontSize: 12,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                     height: 1.4,
                   ),
                 ),

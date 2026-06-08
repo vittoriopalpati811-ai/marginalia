@@ -47,14 +47,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final resultsAsync = ref.watch(_userSearchResultsProvider(query));
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
           // ── Gradient header ─────────────────────────────────────────────────
           AnnotatedRegion<SystemUiOverlayStyle>(
-            value: MarginaliaDecorations.lightStatusBar,
+            value: ScriptaDecorations.lightStatusBar,
             child: Container(
-            decoration: MarginaliaDecorations.gradientHeader,
+            decoration: ScriptaDecorations.gradientHeader,
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -193,12 +193,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 : resultsAsync.when(
                     loading: () => const Center(
                       child: CircularProgressIndicator(
-                          color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
+                          color: ScriptaColors.primaryDark, strokeWidth: 1.5),
                     ),
                     error: (e, _) => Center(
                         child: Text(context.l10n.errorPrefix('$e'),
                             style: const TextStyle(
-                                color: MarginaliaColors.inkMuted))),
+                                color: ScriptaColors.inkMuted))),
                     data: (users) => users.isEmpty
                         ? _NoResults(query: query)
                         : ListView.builder(
@@ -241,13 +241,13 @@ class _UserCard extends StatelessWidget {
     final avatarUrl = user['avatar_url']   as String?;
     final bio       = user['bio']          as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final tint      = MarginaliaDecorations.bookCoverColor(name);
+    final tint      = ScriptaDecorations.bookCoverColor(name);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        decoration: MarginaliaDecorations.card(),
+        decoration: ScriptaDecorations.card(),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Row(
           children: [
@@ -281,7 +281,7 @@ class _UserCard extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: -0.1,
                     ),
                   ),
@@ -290,7 +290,7 @@ class _UserCard extends StatelessWidget {
                       '@$username',
                       style: GoogleFonts.manrope(
                         fontSize: 12,
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -303,7 +303,7 @@ class _UserCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.manrope(
                           fontSize: 12,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                         ),
                       ),
                     ),
@@ -313,7 +313,7 @@ class _UserCard extends StatelessWidget {
 
             // Arrow
             const Icon(Icons.chevron_right,
-                size: 18, color: MarginaliaColors.inkFaint),
+                size: 18, color: ScriptaColors.inkFaint),
           ],
         ),
       ),
@@ -352,11 +352,11 @@ class _EmptySearch extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: MarginaliaColors.siennaFaint,
+              color: ScriptaColors.siennaFaint,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(Icons.person_search_outlined,
-                size: 28, color: MarginaliaColors.siennaLight),
+                size: 28, color: ScriptaColors.siennaLight),
           ),
           const SizedBox(height: 20),
           Text(
@@ -364,7 +364,7 @@ class _EmptySearch extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.3,
             ),
           ),
@@ -373,7 +373,7 @@ class _EmptySearch extends StatelessWidget {
             context.l10n.searchEmptyBody,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               height: 1.65,
               fontSize: 14,
             ),
@@ -395,12 +395,12 @@ class _NoResults extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.search_off_outlined,
-              size: 40, color: MarginaliaColors.inkFaint),
+              size: 40, color: ScriptaColors.inkFaint),
           const SizedBox(height: 12),
           Text(
             context.l10n.searchNoResults(query),
             style: const TextStyle(
-                color: MarginaliaColors.inkMuted, fontSize: 14),
+                color: ScriptaColors.inkMuted, fontSize: 14),
           ),
         ],
       ),

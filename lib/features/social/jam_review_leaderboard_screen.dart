@@ -30,9 +30,9 @@ class JamReviewLeaderboardScreen extends ConsumerWidget {
     final myId = ref.watch(currentUserProvider)?.id ?? '';
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
@@ -41,12 +41,12 @@ class JamReviewLeaderboardScreen extends ConsumerWidget {
             fontSize: 20,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
       ),
       body: RefreshIndicator(
-        color: MarginaliaColors.primaryDark,
+        color: ScriptaColors.primaryDark,
         onRefresh: () async =>
             ref.refresh(jamReviewLeaderboardProvider(jamId).future),
         child: boardAsync.when(
@@ -85,7 +85,7 @@ class JamReviewLeaderboardScreen extends ConsumerWidget {
           },
           loading: () => const Center(
             child: CircularProgressIndicator(
-              color: MarginaliaColors.primaryDark,
+              color: ScriptaColors.primaryDark,
               strokeWidth: 1.5,
             ),
           ),
@@ -110,7 +110,7 @@ class _BoardHeader extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: MarginaliaColors.primaryFaint,
+          color: ScriptaColors.primaryFaint,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -124,7 +124,7 @@ class _BoardHeader extends StatelessWidget {
                   fontSize: 13,
                   height: 1.4,
                   fontWeight: FontWeight.w500,
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                 ),
               ),
             ),
@@ -167,13 +167,13 @@ class _LeaderRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
       decoration: BoxDecoration(
         color: isMe
-            ? MarginaliaColors.siennaFaint
-            : MarginaliaColors.surface,
+            ? ScriptaColors.siennaFaint
+            : ScriptaColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isMe
-              ? MarginaliaColors.primaryDark.withAlpha(120)
-              : (medal ?? MarginaliaColors.rule).withAlpha(
+              ? ScriptaColors.primaryDark.withAlpha(120)
+              : (medal ?? ScriptaColors.rule).withAlpha(
                   _isPodium ? 110 : 90,
                 ),
           width: isMe ? 1.4 : (_isPodium ? 1.2 : 0.8),
@@ -181,7 +181,7 @@ class _LeaderRow extends StatelessWidget {
         boxShadow: _isPodium
             ? [
                 BoxShadow(
-                  color: (medal ?? MarginaliaColors.primary).withAlpha(36),
+                  color: (medal ?? ScriptaColors.primary).withAlpha(36),
                   blurRadius: 16,
                   offset: const Offset(0, 5),
                 ),
@@ -219,7 +219,7 @@ class _LeaderRow extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -230,7 +230,7 @@ class _LeaderRow extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -254,7 +254,7 @@ class _LeaderRow extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                     ),
                     if (reviewedToday) ...[
@@ -262,7 +262,7 @@ class _LeaderRow extends StatelessWidget {
                       Icon(
                         Icons.check_circle,
                         size: 13,
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                       ),
                       const SizedBox(width: 3),
                       Text(
@@ -270,7 +270,7 @@ class _LeaderRow extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                         ),
                       ),
                     ],
@@ -332,7 +332,7 @@ class _RankBadge extends StatelessWidget {
           style: GoogleFonts.manrope(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
           ),
         ),
       ),
@@ -357,7 +357,7 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = isPodium ? 44.0 : 40.0;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarColor = MarginaliaDecorations.bookCoverColor(name);
+    final avatarColor = ScriptaDecorations.bookCoverColor(name);
 
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return ClipRRect(
@@ -381,7 +381,7 @@ class _Avatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [avatarColor, MarginaliaColors.primaryDark],
+          colors: [avatarColor, ScriptaColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -410,7 +410,7 @@ class _StreakPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = podiumMedal ?? MarginaliaColors.primaryDark;
+    final accent = podiumMedal ?? ScriptaColors.primaryDark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -456,7 +456,7 @@ class _EmptyBoard extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: MarginaliaColors.primaryFaint,
+              color: ScriptaColors.primaryFaint,
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Center(
@@ -472,7 +472,7 @@ class _EmptyBoard extends StatelessWidget {
             fontSize: 17,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
         const SizedBox(height: 8),
@@ -480,7 +480,7 @@ class _EmptyBoard extends StatelessWidget {
           context.l10n.jamRipassoEmptyBody,
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
             fontSize: 14,
             height: 1.65,
           ),
@@ -509,7 +509,7 @@ class _ErrorBoard extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               fontSize: 14,
             ),
           ),

@@ -5,7 +5,7 @@
 // WCSession.updateApplicationContext). The watch app stores the values in its
 // shared App Group and reloads the complications. No-op off iOS.
 //
-// Keys MUST match what the watch app reads (MarginaliaWatchApp.swift):
+// Keys MUST match what the watch app reads (ScriptaWatchApp.swift):
 // w_text / w_book / w_author / w_month_min / w_streak / w_updated.
 
 import 'package:flutter/foundation.dart'

@@ -64,7 +64,7 @@ Future<void> launchApp() async {
         localeProvider.overrideWith((ref) => savedLocale),
         genderProvider.overrideWith((ref) => savedGender),
       ],
-      child: const MarginaliaApp(),
+      child: const ScriptaApp(),
     ),
   );
 }

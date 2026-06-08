@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 //   • Type ink: graphite, never pure black, tinted slightly green.
 //   • Accent: deep matcha for primary CTAs (the green is the brand promise).
 
-class MarginaliaColors {
+class ScriptaColors {
   // Backgrounds — warm, paper-like
   static const background      = Color(0xFFFAFAF7); // warm off-white, "paper"
   static const surface         = Color(0xFFFFFFFF); // pure white cards
@@ -74,7 +74,7 @@ class MarginaliaColors {
 //
 // Scale (≈1.33× ratio): 10 · 12 · 14 · 16 · 20 · 26 · 34
 
-class MarginaliaTextStyles {
+class ScriptaTextStyles {
 
   // ── Highlight content — EB Garamond italic ────────────────────────────────
 
@@ -91,7 +91,7 @@ class MarginaliaTextStyles {
   static TextStyle get highlightBody => GoogleFonts.ebGaramond(
         fontSize: 22,
         height: 1.78,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.1,
       );
@@ -100,7 +100,7 @@ class MarginaliaTextStyles {
   static TextStyle get highlightBodySmall => GoogleFonts.ebGaramond(
         fontSize: 17,
         height: 1.68,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.05,
       );
@@ -109,7 +109,7 @@ class MarginaliaTextStyles {
   static TextStyle get highlightBodyMicro => GoogleFonts.ebGaramond(
         fontSize: 14,
         height: 1.6,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         fontWeight: FontWeight.w400,
       );
 
@@ -118,7 +118,7 @@ class MarginaliaTextStyles {
   static TextStyle get bookTitle => GoogleFonts.manrope(
         fontSize: 16,
         fontWeight: FontWeight.w700,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.3,
         height: 1.3,
       );
@@ -126,7 +126,7 @@ class MarginaliaTextStyles {
   static TextStyle get bookTitleLarge => GoogleFonts.manrope(
         fontSize: 26,
         fontWeight: FontWeight.w800,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.7,
         height: 1.15,
       );
@@ -135,7 +135,7 @@ class MarginaliaTextStyles {
 
   static TextStyle get bookAuthor => GoogleFonts.manrope(
         fontSize: 10,
-        color: MarginaliaColors.inkMuted,
+        color: ScriptaColors.inkMuted,
         letterSpacing: 0.8,
         fontWeight: FontWeight.w600,
         height: 1.4,
@@ -146,7 +146,7 @@ class MarginaliaTextStyles {
   /// Small metadata label — dates, counts, tags.
   static TextStyle get label => GoogleFonts.manrope(
         fontSize: 11,
-        color: MarginaliaColors.inkFaint,
+        color: ScriptaColors.inkFaint,
         letterSpacing: 0.1,
         fontWeight: FontWeight.w500,
       );
@@ -155,7 +155,7 @@ class MarginaliaTextStyles {
   static TextStyle get sectionTitle => GoogleFonts.manrope(
         fontSize: 11,
         fontWeight: FontWeight.w700,
-        color: MarginaliaColors.inkFaint,
+        color: ScriptaColors.inkFaint,
         letterSpacing: 1.0,
       );
 
@@ -170,7 +170,7 @@ class MarginaliaTextStyles {
   static TextStyle get heroTitle => GoogleFonts.manrope(
         fontSize: 28,
         fontWeight: FontWeight.w800,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.6,
         height: 1.15,
       );
@@ -180,7 +180,7 @@ class MarginaliaTextStyles {
   static TextStyle get sectionTitleClean => GoogleFonts.manrope(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.3,
         height: 1.25,
       );
@@ -189,7 +189,7 @@ class MarginaliaTextStyles {
   static TextStyle get subtitle => GoogleFonts.manrope(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: MarginaliaColors.inkMuted,
+        color: ScriptaColors.inkMuted,
         letterSpacing: 0,
         height: 1.45,
       );
@@ -198,7 +198,7 @@ class MarginaliaTextStyles {
   static TextStyle get body => GoogleFonts.manrope(
         fontSize: 15,
         fontWeight: FontWeight.w500,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.1,
         height: 1.45,
       );
@@ -208,7 +208,7 @@ class MarginaliaTextStyles {
   static TextStyle get wordmark => GoogleFonts.manrope(
         fontSize: 22,
         fontWeight: FontWeight.w800,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.5,
         height: 1,
       );
@@ -226,13 +226,13 @@ class MarginaliaTextStyles {
   static TextStyle get quoteDecor => GoogleFonts.ebGaramond(
         fontSize: 96,
         height: 0.7,
-        color: MarginaliaColors.siennaFaint,
+        color: ScriptaColors.siennaFaint,
         fontWeight: FontWeight.w700,
       );
 
   static TextStyle get indexNumber => GoogleFonts.manrope(
         fontSize: 12,
-        color: MarginaliaColors.sienna,
+        color: ScriptaColors.sienna,
         fontWeight: FontWeight.w700,
         height: 1,
       );
@@ -240,11 +240,11 @@ class MarginaliaTextStyles {
 
 // ─── Decorations ─────────────────────────────────────────────────────────────
 
-class MarginaliaDecorations {
+class ScriptaDecorations {
   /// Card — pure white, Airbnb-style layered shadow, no border.
   /// Two-layer shadow: tight ambient + soft diffuse, like Airbnb listings.
   static BoxDecoration card({Color? color, double radius = 16}) => BoxDecoration(
-        color: color ?? MarginaliaColors.surface,
+        color: color ?? ScriptaColors.surface,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: const [
           BoxShadow(
@@ -266,7 +266,7 @@ class MarginaliaDecorations {
   /// you want gentle separation without competing with the screen content.
   /// Single very-soft shadow, no border, 14px radius default.
   static BoxDecoration quietCard({Color? color, double radius = 14}) => BoxDecoration(
-        color: color ?? MarginaliaColors.surface,
+        color: color ?? ScriptaColors.surface,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: const [
           BoxShadow(
@@ -322,7 +322,7 @@ class MarginaliaDecorations {
 
   /// Page card — recessed, no shadow (list item variant)
   static BoxDecoration pageCard({double radius = 12}) => BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(radius),
       );
 
@@ -358,7 +358,7 @@ class MarginaliaDecorations {
 // ─── Spacing ─────────────────────────────────────────────────────────────────
 // 4pt scale: 4 · 8 · 12 · 16 · 24 · 32 · 48 · 64
 
-class MarginaliaSpacing {
+class ScriptaSpacing {
   static const xs   =  4.0;
   static const sm   =  8.0;
   static const md   = 12.0;
@@ -371,7 +371,7 @@ class MarginaliaSpacing {
 
 // ─── Dark palette ─────────────────────────────────────────────────────────────
 
-class MarginaliaColorsDark {
+class ScriptaColorsDark {
   static const background      = Color(0xFF111411); // very dark, green-tinted OLED
   static const surface         = Color(0xFF1C211C);
   static const surfaceElevated = Color(0xFF252C25);
@@ -394,24 +394,24 @@ class MarginaliaColorsDark {
 
 // ─── ThemeData ────────────────────────────────────────────────────────────────
 
-ThemeData buildMarginaliaTheme() {
+ThemeData buildScriptaTheme() {
   return ThemeData(
     useMaterial3: true,
     colorScheme: const ColorScheme.light(
-      surface: MarginaliaColors.background,
-      surfaceContainerHighest: MarginaliaColors.surfaceElevated,
-      primary: MarginaliaColors.primary,
-      onPrimary: MarginaliaColors.ink,
-      secondary: MarginaliaColors.sienna,
-      onSurface: MarginaliaColors.ink,
-      outline: MarginaliaColors.rule,
+      surface: ScriptaColors.background,
+      surfaceContainerHighest: ScriptaColors.surfaceElevated,
+      primary: ScriptaColors.primary,
+      onPrimary: ScriptaColors.ink,
+      secondary: ScriptaColors.sienna,
+      onSurface: ScriptaColors.ink,
+      outline: ScriptaColors.rule,
     ),
-    scaffoldBackgroundColor: MarginaliaColors.background,
+    scaffoldBackgroundColor: ScriptaColors.background,
 
     // ── AppBar ──────────────────────────────────────────────────────────────
     appBarTheme: AppBarTheme(
-      backgroundColor: MarginaliaColors.background,
-      foregroundColor: MarginaliaColors.ink,
+      backgroundColor: ScriptaColors.background,
+      foregroundColor: ScriptaColors.ink,
       elevation: 0,
       scrolledUnderElevation: 0.3,
       shadowColor: const Color(0x0A000000),
@@ -419,18 +419,18 @@ ThemeData buildMarginaliaTheme() {
       titleTextStyle: GoogleFonts.manrope(
         fontSize: 20,
         fontWeight: FontWeight.w800,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.5,
       ),
       iconTheme: const IconThemeData(
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
         size: 24,
       ),
     ),
 
     // ── Divider ─────────────────────────────────────────────────────────────
     dividerTheme: const DividerThemeData(
-      color: MarginaliaColors.rule,
+      color: ScriptaColors.rule,
       space: 1,
       thickness: 0.5,
     ),
@@ -438,7 +438,7 @@ ThemeData buildMarginaliaTheme() {
     // ── Card ────────────────────────────────────────────────────────────────
     // Airbnb: no border, shadow-only elevation
     cardTheme: CardTheme(
-      color: MarginaliaColors.surface,
+      color: ScriptaColors.surface,
       elevation: 0,
       shadowColor: Colors.transparent,
       margin: EdgeInsets.zero,
@@ -451,7 +451,7 @@ ThemeData buildMarginaliaTheme() {
     // Airbnb: filled, fully rounded, NO visible border at rest
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: MarginaliaColors.surfaceElevated,
+      fillColor: ScriptaColors.surfaceElevated,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
@@ -463,7 +463,7 @@ ThemeData buildMarginaliaTheme() {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
-            color: MarginaliaColors.primary, width: 1.5),
+            color: ScriptaColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -475,12 +475,12 @@ ThemeData buildMarginaliaTheme() {
             const BorderSide(color: Color(0xFF8B2E2E), width: 1.5),
       ),
       hintStyle: GoogleFonts.manrope(
-        color: MarginaliaColors.inkFaint,
+        color: ScriptaColors.inkFaint,
         fontSize: 15,
         fontWeight: FontWeight.w400,
       ),
       labelStyle: GoogleFonts.manrope(
-        color: MarginaliaColors.inkMuted,
+        color: ScriptaColors.inkMuted,
         fontSize: 15,
         fontWeight: FontWeight.w500,
       ),
@@ -501,7 +501,7 @@ ThemeData buildMarginaliaTheme() {
     // tone-on-tone matcha. The cursor stays matcha so it still reads as
     // "the brand is acting on this field."
     textSelectionTheme: const TextSelectionThemeData(
-      cursorColor:          MarginaliaColors.primary,
+      cursorColor:          ScriptaColors.primary,
       selectionColor:       Color(0x99FFE066),   // highlighter amber @ ~60%
       selectionHandleColor: Color(0xFFB07F0F),   // deep ochre — readable handles
     ),
@@ -509,7 +509,7 @@ ThemeData buildMarginaliaTheme() {
     // ── Buttons ─────────────────────────────────────────────────────────────
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: MarginaliaColors.primaryDark,
+        foregroundColor: ScriptaColors.primaryDark,
         textStyle: GoogleFonts.manrope(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -518,8 +518,8 @@ ThemeData buildMarginaliaTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: MarginaliaColors.primary,
-        foregroundColor: MarginaliaColors.ink,
+        backgroundColor: ScriptaColors.primary,
+        foregroundColor: ScriptaColors.ink,
         elevation: 0,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10)),
@@ -533,8 +533,8 @@ ThemeData buildMarginaliaTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MarginaliaColors.primary,
-        foregroundColor: MarginaliaColors.ink,
+        backgroundColor: ScriptaColors.primary,
+        foregroundColor: ScriptaColors.ink,
         elevation: 0,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10)),
@@ -547,8 +547,8 @@ ThemeData buildMarginaliaTheme() {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: MarginaliaColors.ink,
-        side: const BorderSide(color: MarginaliaColors.rule, width: 1.5),
+        foregroundColor: ScriptaColors.ink,
+        side: const BorderSide(color: ScriptaColors.rule, width: 1.5),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -561,9 +561,9 @@ ThemeData buildMarginaliaTheme() {
 
     // ── Chip ────────────────────────────────────────────────────────────────
     chipTheme: ChipThemeData(
-      backgroundColor: MarginaliaColors.primaryFaint,
+      backgroundColor: ScriptaColors.primaryFaint,
       labelStyle: GoogleFonts.manrope(
-        color: MarginaliaColors.primaryDark,
+        color: ScriptaColors.primaryDark,
         fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
@@ -576,7 +576,7 @@ ThemeData buildMarginaliaTheme() {
 
     // ── SnackBar ─────────────────────────────────────────────────────────────
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: MarginaliaColors.ink,
+      backgroundColor: ScriptaColors.ink,
       contentTextStyle: GoogleFonts.manrope(
         color: const Color(0xFFF5F5F5),
         fontSize: 14,
@@ -591,39 +591,39 @@ ThemeData buildMarginaliaTheme() {
       titleTextStyle: GoogleFonts.manrope(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
       ),
       subtitleTextStyle: GoogleFonts.manrope(
         fontSize: 13,
         fontWeight: FontWeight.w400,
-        color: MarginaliaColors.inkMuted,
+        color: ScriptaColors.inkMuted,
       ),
     ),
   );
 }
 
-ThemeData buildMarginaliaDarkTheme() {
+ThemeData buildScriptaDarkTheme() {
   const cs = ColorScheme.dark(
     brightness: Brightness.dark,
-    primary: MarginaliaColorsDark.primary,
+    primary: ScriptaColorsDark.primary,
     onPrimary: Colors.white,
-    primaryContainer: MarginaliaColorsDark.primaryFaint,
-    secondary: MarginaliaColorsDark.sienna,
+    primaryContainer: ScriptaColorsDark.primaryFaint,
+    secondary: ScriptaColorsDark.sienna,
     onSecondary: Colors.white,
-    surface: MarginaliaColorsDark.surface,
-    onSurface: MarginaliaColorsDark.ink,
-    surfaceContainerHighest: MarginaliaColorsDark.surfaceElevated,
-    outline: MarginaliaColorsDark.rule,
-    outlineVariant: MarginaliaColorsDark.ruleFaint,
+    surface: ScriptaColorsDark.surface,
+    onSurface: ScriptaColorsDark.ink,
+    surfaceContainerHighest: ScriptaColorsDark.surfaceElevated,
+    outline: ScriptaColorsDark.rule,
+    outlineVariant: ScriptaColorsDark.ruleFaint,
   );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: cs,
-    scaffoldBackgroundColor: MarginaliaColorsDark.background,
+    scaffoldBackgroundColor: ScriptaColorsDark.background,
     appBarTheme: AppBarTheme(
-      backgroundColor: MarginaliaColorsDark.background,
-      foregroundColor: MarginaliaColorsDark.ink,
+      backgroundColor: ScriptaColorsDark.background,
+      foregroundColor: ScriptaColorsDark.ink,
       elevation: 0,
       scrolledUnderElevation: 0.3,
       shadowColor: const Color(0x28000000),
@@ -631,21 +631,21 @@ ThemeData buildMarginaliaDarkTheme() {
       titleTextStyle: GoogleFonts.manrope(
         fontSize: 20,
         fontWeight: FontWeight.w800,
-        color: MarginaliaColorsDark.ink,
+        color: ScriptaColorsDark.ink,
         letterSpacing: -0.5,
       ),
       iconTheme: const IconThemeData(
-        color: MarginaliaColorsDark.ink,
+        color: ScriptaColorsDark.ink,
         size: 24,
       ),
     ),
     dividerTheme: const DividerThemeData(
-      color: MarginaliaColorsDark.rule,
+      color: ScriptaColorsDark.rule,
       space: 1,
       thickness: 0.5,
     ),
     cardTheme: CardTheme(
-      color: MarginaliaColorsDark.surface,
+      color: ScriptaColorsDark.surface,
       elevation: 0,
       shadowColor: Colors.transparent,
       margin: EdgeInsets.zero,
@@ -655,7 +655,7 @@ ThemeData buildMarginaliaDarkTheme() {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: MarginaliaColorsDark.surfaceElevated,
+      fillColor: ScriptaColorsDark.surfaceElevated,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide.none,
@@ -667,7 +667,7 @@ ThemeData buildMarginaliaDarkTheme() {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
-            color: MarginaliaColorsDark.primary, width: 1.5),
+            color: ScriptaColorsDark.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -679,12 +679,12 @@ ThemeData buildMarginaliaDarkTheme() {
             const BorderSide(color: Color(0xFFCF6679), width: 1.5),
       ),
       hintStyle: GoogleFonts.manrope(
-        color: MarginaliaColorsDark.inkFaint,
+        color: ScriptaColorsDark.inkFaint,
         fontSize: 15,
         fontWeight: FontWeight.w400,
       ),
       labelStyle: GoogleFonts.manrope(
-        color: MarginaliaColorsDark.inkMuted,
+        color: ScriptaColorsDark.inkMuted,
         fontSize: 15,
         fontWeight: FontWeight.w500,
       ),
@@ -695,14 +695,14 @@ ThemeData buildMarginaliaDarkTheme() {
     // Same highlighter selection as light theme — but slightly stronger
     // amber so it remains visible against the deep paper background.
     textSelectionTheme: const TextSelectionThemeData(
-      cursorColor:          MarginaliaColorsDark.primary,
+      cursorColor:          ScriptaColorsDark.primary,
       selectionColor:       Color(0xB3FFE066),   // amber @ 70% for dark bg
       selectionHandleColor: Color(0xFFD4A017),   // ochre handles
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: MarginaliaColorsDark.primary,
+        foregroundColor: ScriptaColorsDark.primary,
         textStyle: GoogleFonts.manrope(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -711,7 +711,7 @@ ThemeData buildMarginaliaDarkTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: MarginaliaColorsDark.primary,
+        backgroundColor: ScriptaColorsDark.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -726,7 +726,7 @@ ThemeData buildMarginaliaDarkTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: MarginaliaColorsDark.primary,
+        backgroundColor: ScriptaColorsDark.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -740,8 +740,8 @@ ThemeData buildMarginaliaDarkTheme() {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: MarginaliaColorsDark.ink,
-        side: const BorderSide(color: MarginaliaColorsDark.rule, width: 1.5),
+        foregroundColor: ScriptaColorsDark.ink,
+        side: const BorderSide(color: ScriptaColorsDark.rule, width: 1.5),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -752,9 +752,9 @@ ThemeData buildMarginaliaDarkTheme() {
       ),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: MarginaliaColorsDark.primaryFaint,
+      backgroundColor: ScriptaColorsDark.primaryFaint,
       labelStyle: GoogleFonts.manrope(
-        color: MarginaliaColorsDark.sienna,
+        color: ScriptaColorsDark.sienna,
         fontSize: 12,
         fontWeight: FontWeight.w600,
       ),
@@ -765,9 +765,9 @@ ThemeData buildMarginaliaDarkTheme() {
           const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: MarginaliaColorsDark.surfaceElevated,
+      backgroundColor: ScriptaColorsDark.surfaceElevated,
       contentTextStyle: GoogleFonts.manrope(
-        color: MarginaliaColorsDark.ink,
+        color: ScriptaColorsDark.ink,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
@@ -778,12 +778,12 @@ ThemeData buildMarginaliaDarkTheme() {
       titleTextStyle: GoogleFonts.manrope(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: MarginaliaColorsDark.ink,
+        color: ScriptaColorsDark.ink,
       ),
       subtitleTextStyle: GoogleFonts.manrope(
         fontSize: 13,
         fontWeight: FontWeight.w400,
-        color: MarginaliaColorsDark.inkMuted,
+        color: ScriptaColorsDark.inkMuted,
       ),
     ),
   );

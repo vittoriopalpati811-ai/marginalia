@@ -26,9 +26,9 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
     final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
@@ -37,12 +37,12 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
             fontSize: 20,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: MarginaliaColors.primaryDark),
+            icon: const Icon(Icons.add, color: ScriptaColors.primaryDark),
             onPressed: () => _showProposeSheet(),
             tooltip: context.l10n.jamVoteProposeBook,
           ),
@@ -64,7 +64,7 @@ class _JamBookVotingScreenState extends ConsumerState<JamBookVotingScreen> {
                 ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
               ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
+          child: CircularProgressIndicator(color: ScriptaColors.primaryDark, strokeWidth: 1.5),
         ),
         error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
@@ -146,12 +146,12 @@ class _ProposalCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: hasVoted
-              ? MarginaliaColors.primary.withAlpha(80)
-              : MarginaliaColors.rule,
+              ? ScriptaColors.primary.withAlpha(80)
+              : ScriptaColors.rule,
           width: hasVoted ? 1.5 : 0.8,
         ),
       ),
@@ -165,12 +165,12 @@ class _ProposalCard extends StatelessWidget {
               width: 48,
               height: 68,
               decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
+                color: ScriptaColors.primaryFaint,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Icon(
                 Icons.menu_book_rounded,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
                 size: 24,
               ),
             ),
@@ -184,14 +184,14 @@ class _ProposalCard extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                     ),
                   ),
                   if ((data['author'] as String?) != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       (data['author'] as String).toUpperCase(),
-                      style: MarginaliaTextStyles.bookAuthor,
+                      style: ScriptaTextStyles.bookAuthor,
                     ),
                   ],
                   if ((data['description'] as String?) != null) ...[
@@ -200,7 +200,7 @@ class _ProposalCard extends StatelessWidget {
                       data['description'] as String,
                       style: GoogleFonts.manrope(
                         fontSize: 13,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                         height: 1.4,
                       ),
                       maxLines: 2,
@@ -214,7 +214,7 @@ class _ProposalCard extends StatelessWidget {
                         context.l10n.jamVoteProposedBy(proposerName),
                         style: GoogleFonts.manrope(
                           fontSize: 11,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                       const Spacer(),
@@ -224,7 +224,7 @@ class _ProposalCard extends StatelessWidget {
                           child: const Icon(
                             Icons.delete_outline,
                             size: 16,
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                           ),
                         ),
                     ],
@@ -243,14 +243,14 @@ class _ProposalCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: hasVoted
-                          ? MarginaliaColors.primary
-                          : MarginaliaColors.primaryFaint,
+                          ? ScriptaColors.primary
+                          : ScriptaColors.primaryFaint,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       Icons.thumb_up_rounded,
                       size: 18,
-                      color: hasVoted ? Colors.white : MarginaliaColors.primaryDark,
+                      color: hasVoted ? Colors.white : ScriptaColors.primaryDark,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -260,8 +260,8 @@ class _ProposalCard extends StatelessWidget {
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: hasVoted
-                          ? MarginaliaColors.primaryDark
-                          : MarginaliaColors.inkMuted,
+                          ? ScriptaColors.primaryDark
+                          : ScriptaColors.inkMuted,
                     ),
                   ),
                 ],
@@ -291,7 +291,7 @@ class _EmptyState extends StatelessWidget {
             const Icon(
               Icons.menu_book_outlined,
               size: 56,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
             ),
             const SizedBox(height: 16),
             Text(
@@ -300,7 +300,7 @@ class _EmptyState extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             ),
             const SizedBox(height: 8),
@@ -309,7 +309,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 14,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
               ),
             ),
             const SizedBox(height: 24),
@@ -382,7 +382,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottom + 24),
@@ -398,7 +398,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
             child: Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -410,7 +410,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
               fontSize: 20,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.4,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
             ),
           ),
           const SizedBox(height: 20),

@@ -38,11 +38,11 @@ class PinnedHighlightsSection extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
               child: Row(
                 children: [
-                  Text(context.l10n.profilePinnedSection, style: MarginaliaTextStyles.sectionTitle),
+                  Text(context.l10n.profilePinnedSection, style: ScriptaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(
                       child:
-                          Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+                          Divider(color: ScriptaColors.ruleFaint, height: 1)),
                   const SizedBox(width: 12),
                   // Edit button
                   GestureDetector(
@@ -51,22 +51,22 @@ class PinnedHighlightsSection extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.primaryFaint,
+                        color: ScriptaColors.primaryFaint,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                            color: MarginaliaColors.primary.withAlpha(60)),
+                            color: ScriptaColors.primary.withAlpha(60)),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.edit_outlined,
-                              size: 11, color: MarginaliaColors.sienna),
+                              size: 11, color: ScriptaColors.sienna),
                           const SizedBox(width: 4),
                           Text(
                             context.l10n.profileEditButton,
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: MarginaliaColors.sienna,
+                              color: ScriptaColors.sienna,
                             ),
                           ),
                         ],
@@ -85,7 +85,7 @@ class PinnedHighlightsSection extends ConsumerWidget {
                   context.l10n.profilePinnedEmptyHint,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                     height: 1.5,
                   ),
                 ),
@@ -135,7 +135,7 @@ class _PinnedCard extends StatelessWidget {
         'blue'   => const Color(0xFF4A90BF),
         'pink'   => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _        => MarginaliaColors.sienna,
+        _        => ScriptaColors.sienna,
       };
 
   @override
@@ -152,7 +152,7 @@ class _PinnedCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       child: Container(
-        decoration: MarginaliaDecorations.card(),
+        decoration: ScriptaDecorations.card(),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
           child: Column(
@@ -173,10 +173,10 @@ class _PinnedCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: MarginaliaTextStyles.sectionTitle.copyWith(
+                        style: ScriptaTextStyles.sectionTitle.copyWith(
                           fontSize: 9,
                           letterSpacing: 1.2,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -185,20 +185,20 @@ class _PinnedCard extends StatelessWidget {
                     if (author != null && author.isNotEmpty)
                       Text(
                         author.toUpperCase(),
-                        style: MarginaliaTextStyles.bookAuthor.copyWith(
+                        style: ScriptaTextStyles.bookAuthor.copyWith(
                           fontSize: 8.5,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 6),
-                Container(height: 0.6, color: MarginaliaColors.ruleFaint),
+                Container(height: 0.6, color: ScriptaColors.ruleFaint),
                 const SizedBox(height: 8),
               ],
               Text(
                 excerpt,
-                style: MarginaliaTextStyles.highlightBodySmall,
+                style: ScriptaTextStyles.highlightBodySmall,
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -250,7 +250,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
       builder: (ctx, scrollCtrl) {
         return Container(
           decoration: const BoxDecoration(
-            color: MarginaliaColors.background,
+            color: ScriptaColors.background,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -261,7 +261,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -281,7 +281,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
-                              color: MarginaliaColors.ink,
+                              color: ScriptaColors.ink,
                               letterSpacing: -0.4,
                             ),
                           ),
@@ -289,7 +289,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             context.l10n.pinnedSelectUpTo(_selectedIds.length),
                             style: const TextStyle(
                               fontSize: 12,
-                              color: MarginaliaColors.inkMuted,
+                              color: ScriptaColors.inkMuted,
                             ),
                           ),
                         ],
@@ -304,7 +304,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                               if (mounted) Navigator.of(context).pop();
                             },
                       style: FilledButton.styleFrom(
-                        backgroundColor: MarginaliaColors.primary,
+                        backgroundColor: ScriptaColors.primary,
                         foregroundColor: const Color(0xFFF2F5EA),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 10),
@@ -325,14 +325,14 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                   ],
                 ),
               ),
-              const Divider(color: MarginaliaColors.ruleFaint, height: 20),
+              const Divider(color: ScriptaColors.ruleFaint, height: 20),
 
               // List of all highlights
               Expanded(
                 child: allAsync.when(
                   loading: () => const Center(
                     child: CircularProgressIndicator(
-                        color: MarginaliaColors.sienna, strokeWidth: 1.5),
+                        color: ScriptaColors.sienna, strokeWidth: 1.5),
                   ),
                   error: (e, _) =>
                       Center(child: Text(context.l10n.errorPrefix('$e'))),
@@ -348,7 +348,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             context.l10n.pinnedSyncFirst,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                                color: MarginaliaColors.inkMuted,
+                                color: ScriptaColors.inkMuted,
                                 fontSize: 14,
                                 height: 1.5)),
                         ),
@@ -359,7 +359,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                       padding: const EdgeInsets.only(bottom: 32),
                       itemCount: highlights.length,
                       separatorBuilder: (_, __) => const Divider(
-                          color: MarginaliaColors.ruleFaint,
+                          color: ScriptaColors.ruleFaint,
                           height: 1,
                           indent: 56),
                       itemBuilder: (_, i) {
@@ -386,15 +386,15 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             height: 28,
                             decoration: BoxDecoration(
                               color: sel
-                                  ? MarginaliaColors.primary
+                                  ? ScriptaColors.primary
                                   : maxed
-                                      ? MarginaliaColors.ruleFaint
-                                      : MarginaliaColors.surfaceElevated,
+                                      ? ScriptaColors.ruleFaint
+                                      : ScriptaColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: sel
-                                    ? MarginaliaColors.primary
-                                    : MarginaliaColors.rule,
+                                    ? ScriptaColors.primary
+                                    : ScriptaColors.rule,
                               ),
                             ),
                             child: sel
@@ -409,8 +409,8 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                             style: TextStyle(
                               fontSize: 13,
                               color: maxed
-                                  ? MarginaliaColors.inkFaint
-                                  : MarginaliaColors.ink,
+                                  ? ScriptaColors.inkFaint
+                                  : ScriptaColors.ink,
                               height: 1.4,
                             ),
                             maxLines: 2,
@@ -421,7 +421,7 @@ class _EditPinnedSheetState extends ConsumerState<_EditPinnedSheet> {
                                   h.bookTitle!,
                                   style: const TextStyle(
                                     fontSize: 10,
-                                    color: MarginaliaColors.sienna,
+                                    color: ScriptaColors.sienna,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,

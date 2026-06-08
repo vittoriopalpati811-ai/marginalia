@@ -262,7 +262,7 @@ class _WebNotSupported extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.phone_iphone,
-                size: 64, color: MarginaliaColors.accentLight),
+                size: 64, color: ScriptaColors.accentLight),
             const SizedBox(height: 24),
             Text(
               context.l10n.kindleWebTitle,
@@ -270,7 +270,7 @@ class _WebNotSupported extends StatelessWidget {
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.text),
+                  color: ScriptaColors.text),
             ),
             const SizedBox(height: 12),
             Text(
@@ -279,7 +279,7 @@ class _WebNotSupported extends StatelessWidget {
               style: const TextStyle(
                   fontSize: 14,
                   height: 1.6,
-                  color: MarginaliaColors.textMuted),
+                  color: ScriptaColors.textMuted),
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
@@ -287,7 +287,7 @@ class _WebNotSupported extends StatelessWidget {
               icon: const Icon(Icons.upload_file_outlined),
               label: Text(context.l10n.amazonGoToManualImport),
               style: FilledButton.styleFrom(
-                backgroundColor: MarginaliaColors.accent,
+                backgroundColor: ScriptaColors.accent,
               ),
             ),
           ],
@@ -306,17 +306,17 @@ class _ExtractingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: MarginaliaColors.background,
+      color: ScriptaColors.background,
       padding: const EdgeInsets.all(32),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(color: MarginaliaColors.accent),
+            const CircularProgressIndicator(color: ScriptaColors.accent),
             const SizedBox(height: 20),
             Text(
               context.l10n.kindleReading,
-              style: const TextStyle(color: MarginaliaColors.text, fontSize: 16),
+              style: const TextStyle(color: ScriptaColors.text, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
@@ -324,7 +324,7 @@ class _ExtractingOverlay extends StatelessWidget {
                   ? context.l10n.kindleSoFar(count)
                   : context.l10n.kindleOpeningLibrary,
               style: const TextStyle(
-                  color: MarginaliaColors.textMuted, fontSize: 13),
+                  color: ScriptaColors.textMuted, fontSize: 13),
             ),
             if (book != null && book!.isNotEmpty) ...[
               const SizedBox(height: 4),
@@ -334,7 +334,7 @@ class _ExtractingOverlay extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: MarginaliaColors.textMuted,
+                    color: ScriptaColors.textMuted,
                     fontSize: 12,
                     fontStyle: FontStyle.italic),
               ),
@@ -355,27 +355,27 @@ class _DoneOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: MarginaliaColors.background,
+      color: ScriptaColors.background,
       padding: const EdgeInsets.all(40),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.check_circle_outline,
-                size: 72, color: MarginaliaColors.primaryDark),
+                size: 72, color: ScriptaColors.primaryDark),
             const SizedBox(height: 24),
             Text(
               context.l10n.kindleDone,
               style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.text),
+                  color: ScriptaColors.text),
             ),
             const SizedBox(height: 8),
             Text(
               context.l10n.kindleImported(count),
               style: const TextStyle(
-                  fontSize: 16, color: MarginaliaColors.textMuted),
+                  fontSize: 16, color: ScriptaColors.textMuted),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
@@ -398,28 +398,28 @@ class _ErrorOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: MarginaliaColors.background,
+      color: ScriptaColors.background,
       padding: const EdgeInsets.all(40),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.error_outline,
-                size: 56, color: MarginaliaColors.textMuted),
+                size: 56, color: ScriptaColors.textMuted),
             const SizedBox(height: 20),
             Text(
               context.l10n.kindleSomethingWrong,
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.text),
+                  color: ScriptaColors.text),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: MarginaliaColors.textMuted, fontSize: 13),
+                  color: ScriptaColors.textMuted, fontSize: 13),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(

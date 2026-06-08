@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:marginalia/generated/app_localizations.dart';
+import 'package:scripta/generated/app_localizations.dart';
 
 // ─── BuildContext.l10n extension ─────────────────────────────────────────────
 //

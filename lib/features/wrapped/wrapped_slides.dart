@@ -91,7 +91,7 @@ List<WrappedStorySlide> buildWrappedSlides(
   // ── 1. Intro ──────────────────────────────────────────────────────────────
   slides.add(WrappedStorySlide(
     gradient: wrappedGradientAt(g++),
-    shareCaption: '${l10n.wrappedIntroTitle(periodLabel())} — marginalia.app',
+    shareCaption: '${l10n.wrappedIntroTitle(periodLabel())} — get-scripta.app',
     buildBody: (ctx) => _IntroLayout(
       eyebrow: l10n.wrappedIntroEyebrow,
       title: l10n.wrappedIntroTitle(periodLabel()),
@@ -188,7 +188,7 @@ List<WrappedStorySlide> buildWrappedSlides(
     final quote = data.standoutHighlight!.trim();
     slides.add(WrappedStorySlide(
       gradient: wrappedGradientAt(g++),
-      shareCaption: '“${_truncate(quote, 140)}” — marginalia.app',
+      shareCaption: '“${_truncate(quote, 140)}” — get-scripta.app',
       buildBody: (ctx) => _QuoteLayout(
         eyebrow: l10n.wrappedStandoutEyebrow,
         quote: quote,
@@ -233,7 +233,7 @@ List<WrappedStorySlide> buildWrappedSlides(
   final personaDesc = _personalityDesc(l10n, data.personality);
   slides.add(WrappedStorySlide(
     gradient: wrappedGradientAt(g++),
-    shareCaption: '${l10n.wrappedPersonaShareCaption(persona)} — marginalia.app',
+    shareCaption: '${l10n.wrappedPersonaShareCaption(persona)} — get-scripta.app',
     buildBody: (ctx) => _SummaryLayout(
       eyebrow: l10n.wrappedSummaryEyebrow,
       persona: persona,
@@ -285,8 +285,8 @@ String _weekdayName(dynamic l10n, int weekday) {
 
 String _personalityLabel(dynamic l10n, ReadingPersonality p) {
   switch (p) {
-    case ReadingPersonality.theMarginalia:
-      return l10n.wrappedPersonaMarginalia;
+    case ReadingPersonality.theScripta:
+      return l10n.wrappedPersonaScripta;
     case ReadingPersonality.theDevourer:
       return l10n.wrappedPersonaDevourer;
     case ReadingPersonality.theCollector:
@@ -302,8 +302,8 @@ String _personalityLabel(dynamic l10n, ReadingPersonality p) {
 
 String _personalityDesc(dynamic l10n, ReadingPersonality p) {
   switch (p) {
-    case ReadingPersonality.theMarginalia:
-      return l10n.wrappedPersonaMarginaliaDesc;
+    case ReadingPersonality.theScripta:
+      return l10n.wrappedPersonaScriptaDesc;
     case ReadingPersonality.theDevourer:
       return l10n.wrappedPersonaDevourerDesc;
     case ReadingPersonality.theCollector:

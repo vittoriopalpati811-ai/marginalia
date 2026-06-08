@@ -9,7 +9,7 @@ import '../library/book_cover.dart';
 
 /// Lightweight book-detail screen reached by tapping a book's name from a
 /// highlight ("frase"). Shows the same kind of info as the AI recommendations —
-/// the Marginalia-generated cover, title, author/year, a short overview, the
+/// the Scripta-generated cover, title, author/year, a short overview, the
 /// categories and page count — but for a book the user already has.
 ///
 /// The overview/metadata is fetched live from the Google Books API (keyless,
@@ -181,26 +181,26 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
           padding: const EdgeInsets.only(top: 26, bottom: 10),
           child: Row(children: [
             Text(label.toUpperCase(),
-                style: MarginaliaTextStyles.sectionTitle),
+                style: ScriptaTextStyles.sectionTitle),
             const SizedBox(width: 12),
             const Expanded(
-                child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+                child: Divider(color: ScriptaColors.ruleFaint, height: 1)),
           ]),
         );
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: MarginaliaColors.inkMuted),
+        iconTheme: const IconThemeData(color: ScriptaColors.inkMuted),
         title: Text(
           it ? 'Dettagli libro' : 'Book details',
           style: GoogleFonts.manrope(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
           ),
         ),
       ),
@@ -244,7 +244,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                       fontSize: 24,
                       height: 1.2,
                       fontWeight: FontWeight.w600,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                     ),
                   ),
                   if (meta.isNotEmpty) ...[
@@ -254,7 +254,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                       textAlign: TextAlign.center,
                       style: GoogleFonts.manrope(
                         fontSize: 14,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                       ),
                     ),
                   ],
@@ -266,7 +266,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
               const SizedBox(height: 40),
               const Center(
                 child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna, strokeWidth: 1.5),
+                    color: ScriptaColors.sienna, strokeWidth: 1.5),
               ),
             ] else ...[
               // ── Pages (when known) ─────────────────────────────────────────
@@ -278,7 +278,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                     style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                     ),
                   ),
                 ),
@@ -294,7 +294,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 15.5,
                     height: 1.6,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
               ],
@@ -310,10 +310,10 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 7),
                             decoration: BoxDecoration(
-                              color: MarginaliaColors.surfaceElevated,
+                              color: ScriptaColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                  color: MarginaliaColors.ruleFaint,
+                                  color: ScriptaColors.ruleFaint,
                                   width: 0.8),
                             ),
                             child: Text(
@@ -321,7 +321,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                               style: GoogleFonts.manrope(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
-                                color: MarginaliaColors.inkMuted,
+                                color: ScriptaColors.inkMuted,
                               ),
                             ),
                           ))

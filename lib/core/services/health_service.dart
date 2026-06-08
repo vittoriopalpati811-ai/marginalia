@@ -12,11 +12,11 @@
 //        Xcode → Target → Signing & Capabilities → + HealthKit
 //   4. Add to ios/Runner/Info.plist (GDPR / App Store requirement):
 //        <key>NSHealthShareUsageDescription</key>
-//        <string>Marginalia uses your step count and workout data to
+//        <string>Scripta uses your step count and workout data to
 //        personalize your daily reading highlight. This data is never
 //        uploaded.</string>
 //        <key>NSHealthUpdateUsageDescription</key>
-//        <string>Marginalia does not modify your health data.</string>
+//        <string>Scripta does not modify your health data.</string>
 //   5. (Optional) For Codemagic — add to codemagic.yaml xcode_scheme or
 //      entitlements: com.apple.developer.healthkit = true
 //

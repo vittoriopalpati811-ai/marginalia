@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:marginalia/core/review/sm2.dart';
+import 'package:scripta/core/review/sm2.dart';
 
 void main() {
   final now = DateTime(2026, 6, 8);

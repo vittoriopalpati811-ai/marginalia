@@ -35,7 +35,7 @@ class WrappedScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(wrappedDataProvider(period));
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: MarginaliaDecorations.lightStatusBar,
+      value: ScriptaDecorations.lightStatusBar,
       child: async.when(
         loading: () => const _WrappedFrame(child: _WrappedLoading()),
         error: (_, __) => _WrappedFrame(child: _WrappedEmpty(onClose: () => _close(context))),

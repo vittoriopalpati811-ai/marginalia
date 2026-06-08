@@ -54,7 +54,7 @@ class AmazonSyncService {
 
   /// Name of the JavaScript channel the extractor posts results through. The
   /// screen registers a channel with this exact name on its WebViewController.
-  static const String channelName = 'MarginaliaKindleSync';
+  static const String channelName = 'ScriptaKindleSync';
 
   // In-memory cache of the remote script (cleared on app restart / on mismatch).
   static String? _cachedScript;
@@ -68,7 +68,7 @@ class AmazonSyncService {
   //   {"type":"error","error":"NO_BOOKS"}                   — logged-in but empty
   static const String _fallbackExtractorJs = r"""
 (function () {
-  var CHANNEL = "MarginaliaKindleSync";
+  var CHANNEL = "ScriptaKindleSync";
   function post(obj) {
     try { window[CHANNEL].postMessage(JSON.stringify(obj)); } catch (e) {}
   }

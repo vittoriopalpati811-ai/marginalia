@@ -21,7 +21,7 @@ Future<void> launchApp() async {
         onboardingCompleteProvider.overrideWith((ref) => onboardingComplete),
         genderProvider.overrideWith((ref) => savedGender),
       ],
-      child: const MarginaliaApp(),
+      child: const ScriptaApp(),
     ),
   );
 }

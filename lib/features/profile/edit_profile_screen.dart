@@ -46,7 +46,7 @@ _GP _gpFor(String key) =>
 // Pantone palette includes very light presets (Pastel Yellow, Coconut Milk,
 // Reseda, Powder Blue) where a white check is invisible; for those we use ink.
 Color _onSwatch(Color c) =>
-    c.computeLuminance() > 0.55 ? MarginaliaColors.ink : Colors.white;
+    c.computeLuminance() > 0.55 ? ScriptaColors.ink : Colors.white;
 
 // Render-time localized label for a gradient, keyed by the stable gradient id.
 // The const _kGradients list above cannot use context.l10n, so the display
@@ -325,27 +325,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       // Slim cream app bar replaces the 200px green "preview hero" the user
       // flagged as redundant ("quella è già visibile nella sezione
       // personale dell'account"). The user's profile screen already shows
       // the avatar + cover; this screen now reads as a settings form, not
       // a second presentation of the same card.
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0.3,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
         ),
         title: Text(
           context.l10n.profileEditProfile,
           style: GoogleFonts.ebGaramond(
             fontSize: 19,
             fontWeight: FontWeight.w600,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
             letterSpacing: -0.3,
           ),
         ),
@@ -376,7 +376,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                MarginaliaDecorations.bookCoverColor(name),
+                                ScriptaDecorations.bookCoverColor(name),
                                 gp.b,
                               ],
                               begin: Alignment.topLeft,
@@ -384,7 +384,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             ),
                             borderRadius: BorderRadius.circular(32),
                             border: Border.all(
-                                color: MarginaliaColors.rule, width: 1),
+                                color: ScriptaColors.rule, width: 1),
                           ),
                           child: _uploadingAvatar
                               ? const Center(
@@ -411,7 +411,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: MarginaliaColors.rule, width: 1),
+                                  color: ScriptaColors.rule, width: 1),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(11),
@@ -591,7 +591,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   // preset was selected.
                                   border: Border.all(
                                     color: sel
-                                        ? MarginaliaColors.ink
+                                        ? ScriptaColors.ink
                                         : Colors.transparent,
                                     width: 2.5,
                                   ),
@@ -622,8 +622,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       height: 1.1,
                                       fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                                       color: sel
-                                          ? MarginaliaColors.ink
-                                          : MarginaliaColors.inkFaint,
+                                          ? ScriptaColors.ink
+                                          : ScriptaColors.inkFaint,
                                     )),
                               ),
                             ],
@@ -654,26 +654,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             width: 64,
                             decoration: BoxDecoration(
                               color: sel
-                                  ? MarginaliaColors.primaryFaint
-                                  : MarginaliaColors.surfaceElevated,
+                                  ? ScriptaColors.primaryFaint
+                                  : ScriptaColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: sel
-                                    ? MarginaliaColors.primary
-                                    : MarginaliaColors.rule,
+                                    ? ScriptaColors.primary
+                                    : ScriptaColors.rule,
                                 width: sel ? 1.5 : 1,
                               ),
                             ),
                             child: Center(
                               child: pk == 'none'
                                   ? const Icon(Icons.block,
-                                      size: 18, color: MarginaliaColors.inkFaint)
+                                      size: 18, color: ScriptaColors.inkFaint)
                                   : SizedBox(
                                       width: 28,
                                       height: 28,
                                       child: CustomPaint(
                                         painter: _PatternPainter(pk,
-                                            color: MarginaliaColors.primary
+                                            color: ScriptaColors.primary
                                                 .withAlpha(120)),
                                       ),
                                     ),
@@ -702,8 +702,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               fontSize: 9,
                               fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
                               color: sel
-                                  ? MarginaliaColors.primaryDark
-                                  : MarginaliaColors.inkFaint,
+                                  ? ScriptaColors.primaryDark
+                                  : ScriptaColors.inkFaint,
                             ),
                           ),
                         );
@@ -718,7 +718,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     child: FilledButton(
                       onPressed: _saving ? null : _save,
                       style: FilledButton.styleFrom(
-                        backgroundColor: MarginaliaColors.primary,
+                        backgroundColor: ScriptaColors.primary,
                         foregroundColor: const Color(0xFFF1EEE7),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -849,7 +849,7 @@ class _SectionLabel extends StatelessWidget {
         style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: MarginaliaColors.inkFaint,
+          color: ScriptaColors.inkFaint,
           letterSpacing: 0.8,
         ),
       );
@@ -872,7 +872,7 @@ class _UsernameField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget? suffix;
-    Color borderColor = MarginaliaColors.rule;
+    Color borderColor = ScriptaColors.rule;
 
     if (checking) {
       suffix = const Padding(
@@ -880,7 +880,7 @@ class _UsernameField extends StatelessWidget {
         child: SizedBox(
           width: 16, height: 16,
           child: CircularProgressIndicator(
-              strokeWidth: 1.5, color: MarginaliaColors.inkFaint),
+              strokeWidth: 1.5, color: ScriptaColors.inkFaint),
         ),
       );
     } else if (available == true) {
@@ -903,7 +903,7 @@ class _UsernameField extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: MarginaliaColors.surface,
+            color: ScriptaColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: borderColor),
           ),
@@ -914,14 +914,14 @@ class _UsernameField extends StatelessWidget {
             enableSuggestions: false,
             style: const TextStyle(
               fontSize: 15,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               height: 1.4,
             ),
             decoration: InputDecoration(
               labelText: context.l10n.editProfileUsernameLabel,
               hintText: context.l10n.editProfileUsernameHint,
               prefixIcon: const Icon(Icons.alternate_email,
-                  size: 18, color: MarginaliaColors.inkFaint),
+                  size: 18, color: ScriptaColors.inkFaint),
               suffixIcon: suffix,
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
@@ -929,7 +929,7 @@ class _UsernameField extends StatelessWidget {
               contentPadding:
                   const EdgeInsets.fromLTRB(0, 14, 14, 14),
               labelStyle: const TextStyle(
-                  color: MarginaliaColors.inkMuted, fontSize: 13),
+                  color: ScriptaColors.inkMuted, fontSize: 13),
             ),
           ),
         ),
@@ -980,9 +980,9 @@ class _Field extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: MarginaliaColors.rule),
+        border: Border.all(color: ScriptaColors.rule),
       ),
       child: TextField(
         controller: controller,
@@ -991,19 +991,19 @@ class _Field extends StatelessWidget {
         onChanged: onChanged,
         style: const TextStyle(
           fontSize: 15,
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
           height: 1.4,
         ),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          prefixIcon: Icon(icon, size: 18, color: MarginaliaColors.inkFaint),
+          prefixIcon: Icon(icon, size: 18, color: ScriptaColors.inkFaint),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           contentPadding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
           labelStyle: const TextStyle(
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
             fontSize: 13,
           ),
         ),

@@ -133,9 +133,9 @@ class _ReviewDeckState extends State<ReviewDeck>
   Color _intentColor(Offset offset) {
     final dx = offset.dx;
     final dy = offset.dy;
-    if (dx < -24 && dx.abs() >= dy.abs()) return MarginaliaColors.highlightRose;
-    if (dx > 24 && dx.abs() >= dy.abs()) return MarginaliaColors.siennaLight;
-    if (dy < -24) return MarginaliaColors.highlightAmber;
+    if (dx < -24 && dx.abs() >= dy.abs()) return ScriptaColors.highlightRose;
+    if (dx > 24 && dx.abs() >= dy.abs()) return ScriptaColors.siennaLight;
+    if (dy < -24) return ScriptaColors.highlightAmber;
     return Colors.transparent;
   }
 
@@ -246,7 +246,7 @@ class ReviewCard extends StatelessWidget {
     final hasIntent = intentColor != Colors.transparent;
 
     return DecoratedBox(
-      decoration: MarginaliaDecorations.card(radius: 20).copyWith(
+      decoration: ScriptaDecorations.card(radius: 20).copyWith(
         border: hasIntent
             ? Border.all(color: intentColor.withOpacity(0.9), width: 2)
             : null,
@@ -271,10 +271,10 @@ class ReviewCard extends StatelessWidget {
                 // Literary opening quote mark — a faint watermark, top-left.
                 Text(
                   '“',
-                  style: MarginaliaTextStyles.quoteDecor.copyWith(
+                  style: ScriptaTextStyles.quoteDecor.copyWith(
                     fontSize: 72,
                     height: 0.5,
-                    color: MarginaliaColors.siennaFaint,
+                    color: ScriptaColors.siennaFaint,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -286,7 +286,7 @@ class ReviewCard extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       child: Text(
                         highlight.content,
-                        style: MarginaliaTextStyles.highlightBody.copyWith(
+                        style: ScriptaTextStyles.highlightBody.copyWith(
                           fontSize: _quoteFontSize(highlight.content),
                           height: 1.6,
                         ),
@@ -300,7 +300,7 @@ class ReviewCard extends StatelessWidget {
                   width: 34,
                   height: 2,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.primary.withOpacity(0.55),
+                    color: ScriptaColors.primary.withOpacity(0.55),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -310,7 +310,7 @@ class ReviewCard extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: MarginaliaTextStyles.bookTitle,
+                    style: ScriptaTextStyles.bookTitle,
                   ),
                 if (author.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -318,7 +318,7 @@ class ReviewCard extends StatelessWidget {
                     author.toUpperCase(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: MarginaliaTextStyles.bookAuthor,
+                    style: ScriptaTextStyles.bookAuthor,
                   ),
                 ],
               ],

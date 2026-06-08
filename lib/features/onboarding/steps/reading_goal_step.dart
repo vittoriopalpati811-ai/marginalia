@@ -52,7 +52,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
             style: GoogleFonts.ebGaramond(
               fontSize: 38,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -1.0,
               height: 1.05,
             ),
@@ -62,7 +62,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
             context.l10n.onboardingGoalSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               height: 1.5,
             ),
           ),
@@ -73,7 +73,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
             style: GoogleFonts.manrope(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: 0.2,
             ),
           ),
@@ -86,7 +86,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: MarginaliaColors.rule),
+              border: Border.all(color: ScriptaColors.rule),
             ),
             child: Row(
               children: [
@@ -97,7 +97,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
                     style: GoogleFonts.ebGaramond(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                     ),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
@@ -112,7 +112,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
                   context.l10n.onboardingGoalSuffix,
                   style: GoogleFonts.manrope(
                     fontSize: 14,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -130,7 +130,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
               key: ValueKey(_motivation(context)),
               style: GoogleFonts.manrope(
                 fontSize: 13,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 height: 1.5,
               ),
             ),

@@ -131,9 +131,9 @@ class _JamHighlightDetailScreenState
     final currentUserId = ref.watch(currentUserProvider)?.id;
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(context.l10n.jamDiscussionTitle,
@@ -151,30 +151,30 @@ class _JamHighlightDetailScreenState
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
-                    decoration: MarginaliaDecorations.card(),
+                    decoration: ScriptaDecorations.card(),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (widget.bookTitle.isNotEmpty) ...[
                           Text(widget.bookTitle,
-                              style: MarginaliaTextStyles.bookTitle),
+                              style: ScriptaTextStyles.bookTitle),
                           Text(widget.bookAuthor.toUpperCase(),
-                              style: MarginaliaTextStyles.bookAuthor),
+                              style: ScriptaTextStyles.bookAuthor),
                           const SizedBox(height: 14),
                         ],
-                        Text('"', style: MarginaliaTextStyles.quoteDecor.copyWith(fontSize: 48, height: 0.4)),
+                        Text('"', style: ScriptaTextStyles.quoteDecor.copyWith(fontSize: 48, height: 0.4)),
                         const SizedBox(height: 4),
                         Text(widget.content,
-                            style: MarginaliaTextStyles.highlightBody),
+                            style: ScriptaTextStyles.highlightBody),
                         const SizedBox(height: 12),
                         Row(
                           children: [
                             const Icon(Icons.person_outline,
-                                size: 14, color: MarginaliaColors.inkMuted),
+                                size: 14, color: ScriptaColors.inkMuted),
                             const SizedBox(width: 4),
                             Text(
                               context.l10n.jamSharedBy(widget.sharedBy),
-                              style: MarginaliaTextStyles.label,
+                              style: ScriptaTextStyles.label,
                             ),
                           ],
                         ),
@@ -202,10 +202,10 @@ class _JamHighlightDetailScreenState
                   Row(
                     children: [
                       Text(context.l10n.feedCommentsSection,
-                          style: MarginaliaTextStyles.sectionTitle),
+                          style: ScriptaTextStyles.sectionTitle),
                       const SizedBox(width: 12),
                       const Expanded(
-                          child: Divider(color: MarginaliaColors.rule)),
+                          child: Divider(color: ScriptaColors.rule)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -219,7 +219,7 @@ class _JamHighlightDetailScreenState
                                 context.l10n.feedNoComments,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  color: MarginaliaColors.inkMuted,
+                                  color: ScriptaColors.inkMuted,
                                   fontSize: 13,
                                   height: 1.6,
                                 ),
@@ -251,13 +251,13 @@ class _JamHighlightDetailScreenState
                       child: Padding(
                         padding: EdgeInsets.all(20),
                         child: CircularProgressIndicator(
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                           strokeWidth: 1.5,
                         ),
                       ),
                     ),
                     error: (e, _) => Text(context.l10n.errorPrefix('$e'),
-                        style: const TextStyle(color: MarginaliaColors.inkMuted)),
+                        style: const TextStyle(color: ScriptaColors.inkMuted)),
                   ),
                 ],
               ),
@@ -267,9 +267,9 @@ class _JamHighlightDetailScreenState
           // ── Input commento ────────────────────────────────────────────
           Container(
             decoration: const BoxDecoration(
-              color: MarginaliaColors.surfaceElevated,
+              color: ScriptaColors.surfaceElevated,
               border: Border(
-                top: BorderSide(color: MarginaliaColors.rule),
+                top: BorderSide(color: ScriptaColors.rule),
               ),
             ),
             padding: EdgeInsets.fromLTRB(
@@ -312,11 +312,11 @@ class _JamHighlightDetailScreenState
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.primaryFaint,
+                      color: ScriptaColors.primaryFaint,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.image_outlined, size: 18,
-                        color: MarginaliaColors.primaryDark),
+                        color: ScriptaColors.primaryDark),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -348,7 +348,7 @@ class _JamHighlightDetailScreenState
                         )
                       : const Icon(Icons.arrow_upward, size: 18),
                   style: IconButton.styleFrom(
-                    backgroundColor: MarginaliaColors.primary,
+                    backgroundColor: ScriptaColors.primary,
                     foregroundColor: const Color(0xFFF1EEE7),
                   ),
                 ),
@@ -429,10 +429,10 @@ class _ReactionChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             color:
-                isMine ? MarginaliaColors.primaryFaint : MarginaliaColors.surface,
+                isMine ? ScriptaColors.primaryFaint : ScriptaColors.surface,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: isMine ? MarginaliaColors.primary : MarginaliaColors.rule,
+              color: isMine ? ScriptaColors.primary : ScriptaColors.rule,
               width: isMine ? 1.5 : 1,
             ),
           ),
@@ -448,8 +448,8 @@ class _ReactionChip extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: isMine
-                        ? MarginaliaColors.primaryDark
-                        : MarginaliaColors.inkMuted,
+                        ? ScriptaColors.primaryDark
+                        : ScriptaColors.inkMuted,
                   ),
                 ),
               ],
@@ -490,10 +490,10 @@ class _CommentBubble extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
       decoration: BoxDecoration(
         color: isMine
-            ? MarginaliaColors.primaryFaint
-            : MarginaliaColors.surface,
+            ? ScriptaColors.primaryFaint
+            : ScriptaColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: MarginaliaColors.rule),
+        border: Border.all(color: ScriptaColors.rule),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,20 +506,20 @@ class _CommentBubble extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: MarginaliaColors.primaryDark,
+                    color: ScriptaColors.primaryDark,
                   ),
                 ),
               ),
               if (createdAt != null)
                 Text(_formatTime(context, createdAt),
-                    style: MarginaliaTextStyles.label),
+                    style: ScriptaTextStyles.label),
               if (isMine)
                 GestureDetector(
                   onTap: onDelete,
                   child: const Padding(
                     padding: EdgeInsets.only(left: 8),
                     child: Icon(Icons.delete_outline,
-                        size: 16, color: MarginaliaColors.inkFaint),
+                        size: 16, color: ScriptaColors.inkFaint),
                   ),
                 ),
             ],
@@ -529,7 +529,7 @@ class _CommentBubble extends StatelessWidget {
             Text(content,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                   height: 1.45,
                 )),
           ],

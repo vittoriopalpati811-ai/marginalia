@@ -159,7 +159,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final isMe = me == widget.userId;
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: profileAsync.when(
         data: (profile) {
           if (profile == null) {
@@ -170,7 +170,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           final avatarUrl = profile['avatar_url'] as String?;
           final coverUrl  = profile['cover_url']  as String?;
           final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-          final avatarColor = MarginaliaDecorations.bookCoverColor(name);
+          final avatarColor = ScriptaDecorations.bookCoverColor(name);
 
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
@@ -179,7 +179,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               SliverAppBar(
                 expandedHeight: 260,
                 pinned: true,
-                backgroundColor: MarginaliaColors.primary,
+                backgroundColor: ScriptaColors.primary,
                 foregroundColor: const Color(0xFFF1EEE7),
                 elevation: 0,
                 scrolledUnderElevation: 0,
@@ -210,11 +210,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           coverUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            decoration: MarginaliaDecorations.gradientHeader,
+                            decoration: ScriptaDecorations.gradientHeader,
                           ),
                         )
                       else
-                        Container(decoration: MarginaliaDecorations.gradientHeader),
+                        Container(decoration: ScriptaDecorations.gradientHeader),
                       // Dark scrim so text stays readable over photos
                       Container(color: const Color(0x55000000)),
                       // Content column: avatar + name + reading status
@@ -317,7 +317,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       child: _followLoading
                           ? const Center(
                               child: CircularProgressIndicator(
-                                  color: MarginaliaColors.sienna,
+                                  color: ScriptaColors.sienna,
                                   strokeWidth: 1.5))
                           : isFollowing
                               ? OutlinedButton.icon(
@@ -325,9 +325,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                   icon: const Icon(Icons.check, size: 16),
                                   label: Text(context.l10n.profileFollowingButton),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: MarginaliaColors.inkMuted,
+                                    foregroundColor: ScriptaColors.inkMuted,
                                     side: const BorderSide(
-                                        color: MarginaliaColors.rule),
+                                        color: ScriptaColors.rule),
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12),
                                     shape: RoundedRectangleBorder(
@@ -340,7 +340,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                                   icon: const Icon(Icons.add, size: 16),
                                   label: Text(context.l10n.profileFollowButton),
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: MarginaliaColors.primary,
+                                    backgroundColor: ScriptaColors.primary,
                                     foregroundColor: const Color(0xFFF1EEE7),
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12),
@@ -381,11 +381,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           Row(
                             children: [
                               Text(context.l10n.profileFavouriteBooksSection,
-                                  style: MarginaliaTextStyles.sectionTitle),
+                                  style: ScriptaTextStyles.sectionTitle),
                               const SizedBox(width: 12),
                               const Expanded(
                                   child: Divider(
-                                      color: MarginaliaColors.ruleFaint)),
+                                      color: ScriptaColors.ruleFaint)),
                             ],
                           ),
                           const SizedBox(height: 14),
@@ -403,11 +403,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
                   child: Row(
                     children: [
-                      Text(context.l10n.profilePostsSection, style: MarginaliaTextStyles.sectionTitle),
+                      Text(context.l10n.profilePostsSection, style: ScriptaTextStyles.sectionTitle),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Divider(
-                            color: MarginaliaColors.ruleFaint, height: 1),
+                            color: ScriptaColors.ruleFaint, height: 1),
                       ),
                     ],
                   ),
@@ -423,7 +423,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                           child: Text(
                             context.l10n.feedNoPostsYet,
                             style: GoogleFonts.manrope(
-                                color: MarginaliaColors.inkMuted, fontSize: 13),
+                                color: ScriptaColors.inkMuted, fontSize: 13),
                           ),
                         ),
                       )
@@ -440,7 +440,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     padding: EdgeInsets.all(40),
                     child: Center(
                       child: CircularProgressIndicator(
-                          color: MarginaliaColors.sienna, strokeWidth: 1.5),
+                          color: ScriptaColors.sienna, strokeWidth: 1.5),
                     ),
                   ),
                 ),
@@ -461,11 +461,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         },
         loading: () => const Center(
           child: CircularProgressIndicator(
-              color: MarginaliaColors.sienna, strokeWidth: 1.5),
+              color: ScriptaColors.sienna, strokeWidth: 1.5),
         ),
         error: (_, __) => Center(
           child: Text(context.l10n.profileErrorLoading,
-              style: const TextStyle(color: MarginaliaColors.inkMuted)),
+              style: const TextStyle(color: ScriptaColors.inkMuted)),
         ),
       ),
     );
@@ -483,7 +483,7 @@ class _StatsRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Row(
         children: [
           _StatBox(label: context.l10n.profileHighlightsStat, value: stats['highlights'] ?? 0),
@@ -505,7 +505,7 @@ class _Divider extends StatelessWidget {
     return Container(
       width: 1,
       height: 28,
-      color: MarginaliaColors.ruleFaint,
+      color: ScriptaColors.ruleFaint,
     );
   }
 }
@@ -525,7 +525,7 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.5,
             ),
           ),
@@ -535,7 +535,7 @@ class _StatBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               letterSpacing: 0.5,
             ),
           ),
@@ -564,7 +564,7 @@ class _ProfileOverflowMenu extends StatelessWidget {
     final isBlocked = isBlockedAsync.asData?.value ?? false;
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_horiz, color: Color(0xFFF1EEE7)),
-      color: MarginaliaColors.surface,
+      color: ScriptaColors.surface,
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (v) {
@@ -585,7 +585,7 @@ class _ProfileOverflowMenu extends StatelessWidget {
               Text(
                 isBlocked ? context.l10n.unblockUser : context.l10n.blockUser,
                 style: const TextStyle(
-                    fontSize: 14, color: MarginaliaColors.ink),
+                    fontSize: 14, color: ScriptaColors.ink),
               ),
             ],
           ),
@@ -595,12 +595,12 @@ class _ProfileOverflowMenu extends StatelessWidget {
           child: Row(
             children: [
               const Icon(Icons.flag_outlined,
-                  size: 18, color: MarginaliaColors.inkMuted),
+                  size: 18, color: ScriptaColors.inkMuted),
               const SizedBox(width: 10),
               Text(
                 context.l10n.reportUser,
                 style: const TextStyle(
-                    fontSize: 14, color: MarginaliaColors.ink),
+                    fontSize: 14, color: ScriptaColors.ink),
               ),
             ],
           ),
@@ -639,11 +639,11 @@ class _BlockBox extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: isBlocked
-                  ? MarginaliaColors.surface
+                  ? ScriptaColors.surface
                   : const Color(0x14B54848),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isBlocked ? MarginaliaColors.rule : danger.withAlpha(90),
+                color: isBlocked ? ScriptaColors.rule : danger.withAlpha(90),
                 width: 1,
               ),
             ),
@@ -651,7 +651,7 @@ class _BlockBox extends StatelessWidget {
               children: [
                 Icon(isBlocked ? Icons.lock_open_outlined : Icons.block,
                     size: 20,
-                    color: isBlocked ? MarginaliaColors.inkMuted : danger),
+                    color: isBlocked ? ScriptaColors.inkMuted : danger),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -661,7 +661,7 @@ class _BlockBox extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isBlocked ? MarginaliaColors.inkMuted : danger,
+                      color: isBlocked ? ScriptaColors.inkMuted : danger,
                     ),
                   ),
                 ),
@@ -686,7 +686,7 @@ class _AvatarFallback extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, MarginaliaColors.primaryDark],
+          colors: [color, ScriptaColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

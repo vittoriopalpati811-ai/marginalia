@@ -65,7 +65,7 @@ _GP _gpFor(String key) =>
 
 // ─── Section-title colour (contrast vs. selected background) ──────────────────
 //
-// The shared MarginaliaTextStyles.sectionTitle uses a faint grey (inkFaint)
+// The shared ScriptaTextStyles.sectionTitle uses a faint grey (inkFaint)
 // that, while fine on the plain cream Library/Stats pages, washes out over the
 // tinted profile background — and the tint changes with every gradient preset
 // (sepia, amber, ocean, …). To guarantee a readable title on EVERY preset, the
@@ -75,12 +75,12 @@ _GP _gpFor(String key) =>
 // even for the lightest presets (Amber/Pastel-Yellow). Only the profile uses
 // this — other screens keep the global faint style.
 Color _sectionTitleColor(_GP gp) =>
-    Color.alphaBlend(gp.a.withAlpha(0x40), MarginaliaColors.ink);
+    Color.alphaBlend(gp.a.withAlpha(0x40), ScriptaColors.ink);
 
 // Profile section-title style: the shared section-title shape (size / weight /
 // tracking) with the contrast colour applied.
 TextStyle _profileSectionTitle(_GP gp) =>
-    MarginaliaTextStyles.sectionTitle.copyWith(color: _sectionTitleColor(gp));
+    ScriptaTextStyles.sectionTitle.copyWith(color: _sectionTitleColor(gp));
 
 
 // Render-time localized label for a gradient, keyed by the stable gradient id.
@@ -186,18 +186,18 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   // ── Share profile ─────────────────────────────────────────────────────────
 
   void _shareProfile(Map<String, dynamic>? profile) {
-    final name = profile?['display_name'] as String? ?? 'Marginalia';
+    final name = profile?['display_name'] as String? ?? 'Scripta';
     // Share a WEB invite link (not an in-app deep link): it opens a public
     // landing page that greets the recipient with "Unisciti a <name> su
-    // Marginalia!" and a download CTA. The page (web/u/index.html) reads the
-    // name from the ?u= query param. NOTE: the marginalia.app domain must be
+    // Scripta!" and a download CTA. The page (web/u/index.html) reads the
+    // name from the ?u= query param. NOTE: the get-scripta.app domain must be
     // pointed at GitHub Pages for this to resolve (see launch notes); until
     // then the same page is reachable at the github.io URL.
     final link =
-        'https://marginalia.app/u/?u=${Uri.encodeComponent(name)}';
+        'https://get-scripta.app/u/?u=${Uri.encodeComponent(name)}';
     Share.share(
-      'Unisciti a $name su Marginalia!\n\n$link',
-      subject: 'Marginalia – $name',
+      'Unisciti a $name su Scripta!\n\n$link',
+      subject: 'Scripta – $name',
       sharePositionOrigin: shareOrigin(context),
     );
   }
@@ -261,12 +261,12 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
     // became hard to read. Dialled back to a subtle tint — a touch warmer than
     // the original 28/45 so the colour is still present, but light enough that
     // muted-grey labels stay legible. Text still lives on solid white cards
-    // (MarginaliaDecorations.card) and reads perfectly.
-    final bgTop    = Color.alphaBlend(gp.a.withAlpha(46), MarginaliaColors.background);
-    final bgBottom = Color.alphaBlend(gp.b.withAlpha(80), MarginaliaColors.background);
+    // (ScriptaDecorations.card) and reads perfectly.
+    final bgTop    = Color.alphaBlend(gp.a.withAlpha(46), ScriptaColors.background);
+    final bgBottom = Color.alphaBlend(gp.b.withAlpha(80), ScriptaColors.background);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -289,7 +289,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
 
           // ── Scrollable content ───────────────────────────────────────────
           RefreshIndicator(
-            color: MarginaliaColors.sienna,
+            color: ScriptaColors.sienna,
             onRefresh: () async {
               ref.invalidate(_myProfileProvider);
               ref.invalidate(_myBooksProvider);
@@ -438,7 +438,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 children: [
                   Text(context.l10n.profilePostsSection, style: _profileSectionTitle(gp)),
                   const SizedBox(width: 12),
-                  const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
+                  const Expanded(child: Divider(color: ScriptaColors.ruleFaint)),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => showModalBottomSheet<void>(
@@ -456,10 +456,10 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.primaryFaint,
+                        color: ScriptaColors.primaryFaint,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: MarginaliaColors.primary.withAlpha(50),
+                          color: ScriptaColors.primary.withAlpha(50),
                           width: 0.8,
                         ),
                       ),
@@ -468,7 +468,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -483,7 +483,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
               child: Padding(
                 padding: EdgeInsets.all(32),
                 child: Center(child: CircularProgressIndicator(
-                  color: MarginaliaColors.sienna, strokeWidth: 1.5)),
+                  color: ScriptaColors.sienna, strokeWidth: 1.5)),
               ),
             ),
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
@@ -494,7 +494,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       child: Text(
                         context.l10n.feedMyPostsNoPostsYet,
                         style: GoogleFonts.manrope(
-                          color: MarginaliaColors.inkMuted, fontSize: 13),
+                          color: ScriptaColors.inkMuted, fontSize: 13),
                       ),
                     ),
                   )
@@ -527,7 +527,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                               const SizedBox(width: 12),
                               const Expanded(
                                   child: Divider(
-                                      color: MarginaliaColors.ruleFaint)),
+                                      color: ScriptaColors.ruleFaint)),
                             ],
                           ),
                         ),
@@ -563,7 +563,7 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 padding: EdgeInsets.all(48),
                 child: Center(
                   child: CircularProgressIndicator(
-                      color: MarginaliaColors.sienna, strokeWidth: 1.5),
+                      color: ScriptaColors.sienna, strokeWidth: 1.5),
                 ),
               ),
             ),
@@ -622,7 +622,7 @@ class _ProfileHeader extends StatelessWidget {
     final avatarUrl = p?['avatar_url'] as String?;
     final coverUrl  = p?['cover_url'] as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarTint = MarginaliaDecorations.bookCoverColor(name);
+    final avatarTint = ScriptaDecorations.bookCoverColor(name);
 
     // The hero header is a dark gradient/cover that bleeds under the status
     // bar. A plain Container header (no AppBar) doesn't auto-correct the
@@ -630,7 +630,7 @@ class _ProfileHeader extends StatelessWidget {
     // and read as a graphic overlap at the very top. Force light status-bar
     // icons while this dark header sits at the top of the screen.
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: MarginaliaDecorations.lightStatusBar,
+      value: ScriptaDecorations.lightStatusBar,
       child: SizedBox(
       height: 290 + top,
       child: Stack(
@@ -852,7 +852,7 @@ class _StatsRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Row(
         children: [
           _StatBox(label: context.l10n.profileBooksStat, value: booksCount, onTap: onBooks),
@@ -881,7 +881,7 @@ class _StreakStatBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final active = streak > 0;
-    final color = active ? MarginaliaColors.primaryDark : MarginaliaColors.inkFaint;
+    final color = active ? ScriptaColors.primaryDark : ScriptaColors.inkFaint;
     return Expanded(
       child: Column(
         children: [
@@ -899,7 +899,7 @@ class _StreakStatBox extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: active ? MarginaliaColors.ink : MarginaliaColors.inkFaint,
+                  color: active ? ScriptaColors.ink : ScriptaColors.inkFaint,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -911,7 +911,7 @@ class _StreakStatBox extends StatelessWidget {
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               letterSpacing: 0.5,
             ),
           ),
@@ -924,7 +924,7 @@ class _StreakStatBox extends StatelessWidget {
 class _Div extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      Container(width: 1, height: 28, color: MarginaliaColors.ruleFaint);
+      Container(width: 1, height: 28, color: ScriptaColors.ruleFaint);
 }
 
 class _StatBox extends StatelessWidget {
@@ -947,8 +947,8 @@ class _StatBox extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: onTap != null
-                    ? MarginaliaColors.primaryDark
-                    : MarginaliaColors.ink,
+                    ? ScriptaColors.primaryDark
+                    : ScriptaColors.ink,
                 letterSpacing: -0.5,
               ),
             ),
@@ -959,8 +959,8 @@ class _StatBox extends StatelessWidget {
                 fontSize: 9,
                 fontWeight: FontWeight.w600,
                 color: onTap != null
-                    ? MarginaliaColors.primaryDark
-                    : MarginaliaColors.inkFaint,
+                    ? ScriptaColors.primaryDark
+                    : ScriptaColors.inkFaint,
                 letterSpacing: 0.5,
               ),
             ),
@@ -988,9 +988,9 @@ class _ProfileTabBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 18, 16, 4),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+        border: Border.all(color: ScriptaColors.ruleFaint, width: 0.8),
       ),
       child: Row(
         children: [
@@ -1041,7 +1041,7 @@ class _Segment extends StatelessWidget {
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? MarginaliaColors.surface : Colors.transparent,
+            color: selected ? ScriptaColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: selected
                 ? const [
@@ -1059,8 +1059,8 @@ class _Segment extends StatelessWidget {
                 icon,
                 size: 15,
                 color: selected
-                    ? MarginaliaColors.primaryDark
-                    : MarginaliaColors.inkMuted,
+                    ? ScriptaColors.primaryDark
+                    : ScriptaColors.inkMuted,
               ),
               const SizedBox(width: 6),
               Text(
@@ -1069,8 +1069,8 @@ class _Segment extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: selected
-                      ? MarginaliaColors.ink
-                      : MarginaliaColors.inkMuted,
+                      ? ScriptaColors.ink
+                      : ScriptaColors.inkMuted,
                   letterSpacing: -0.1,
                 ),
               ),
@@ -1096,14 +1096,14 @@ class _CurrentlyReadingCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Container(
-        decoration: MarginaliaDecorations.card(),
+        decoration: ScriptaDecorations.card(),
         // Vertical padding replaces the height the left colour spine
         // previously contributed, so the card keeps its 72px feel.
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
         child: Row(
           children: [
             const Icon(Icons.menu_book_outlined,
-                size: 20, color: MarginaliaColors.primaryDark),
+                size: 20, color: ScriptaColors.primaryDark),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1114,7 +1114,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                       letterSpacing: 0.8,
                     ),
                   ),
@@ -1124,7 +1124,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: -0.2,
                     ),
                     maxLines: 1,
@@ -1133,7 +1133,7 @@ class _CurrentlyReadingCard extends StatelessWidget {
                   if (author != null && author!.isNotEmpty)
                     Text(
                       author!.toUpperCase(),
-                      style: MarginaliaTextStyles.bookAuthor
+                      style: ScriptaTextStyles.bookAuthor
                           .copyWith(fontSize: 10),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1188,7 +1188,7 @@ class _SpotlightCard extends StatelessWidget {
                     style: _profileSectionTitle(gp)),
                 const SizedBox(width: 12),
                 const Expanded(
-                    child: Divider(color: MarginaliaColors.ruleFaint)),
+                    child: Divider(color: ScriptaColors.ruleFaint)),
               ],
             ),
           ),
@@ -1200,7 +1200,7 @@ class _SpotlightCard extends StatelessWidget {
           // spine + the coloured book-title label + a faint decorative quote,
           // and the quote itself is dark ink, so it reads on any accent.
           Container(
-            decoration: MarginaliaDecorations.card(radius: 18),
+            decoration: ScriptaDecorations.card(radius: 18),
             clipBehavior: Clip.antiAlias,
             child: IntrinsicHeight(
               child: Row(
@@ -1251,7 +1251,7 @@ class _SpotlightCard extends StatelessWidget {
                                         ' · ${author.toUpperCase()}',
                                         style: const TextStyle(
                                           fontSize: 9,
-                                          color: MarginaliaColors.inkFaint,
+                                          color: ScriptaColors.inkFaint,
                                           letterSpacing: 0.3,
                                         ),
                                       ),
@@ -1264,7 +1264,7 @@ class _SpotlightCard extends StatelessWidget {
                                 style: GoogleFonts.ebGaramond(
                                   fontSize: 16,
                                   fontStyle: FontStyle.italic,
-                                  color: MarginaliaColors.ink,
+                                  color: ScriptaColors.ink,
                                   height: 1.75,
                                   letterSpacing: 0.1,
                                 ),
@@ -1318,7 +1318,7 @@ class _BookCell extends ConsumerWidget {
         ),
       ),
       child: Container(
-        decoration: MarginaliaDecorations.quietCard(radius: 10),
+        decoration: ScriptaDecorations.quietCard(radius: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1350,7 +1350,7 @@ class _BookCell extends ConsumerWidget {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: MarginaliaTextStyles.bookTitle.copyWith(
+                      style: ScriptaTextStyles.bookTitle.copyWith(
                         fontSize: 10.5,
                         height: 1.2,
                       ),
@@ -1360,7 +1360,7 @@ class _BookCell extends ConsumerWidget {
                       author.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: MarginaliaTextStyles.bookAuthor.copyWith(
+                      style: ScriptaTextStyles.bookAuthor.copyWith(
                         fontSize: 8,
                         letterSpacing: 0.5,
                       ),
@@ -1439,13 +1439,13 @@ class _PostGridTile extends StatelessWidget {
                 imageUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
-                    const ColoredBox(color: MarginaliaColors.surface),
+                    const ColoredBox(color: ScriptaColors.surface),
               )
             : Container(
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.surface,
+                  color: ScriptaColors.surface,
                   border: Border.all(
-                      color: MarginaliaColors.ruleFaint, width: 0.8),
+                      color: ScriptaColors.ruleFaint, width: 0.8),
                 ),
                 padding: const EdgeInsets.all(7),
                 alignment: Alignment.topLeft,
@@ -1455,13 +1455,13 @@ class _PostGridTile extends StatelessWidget {
                       ? GoogleFonts.ebGaramond(
                           fontSize: 11,
                           fontStyle: FontStyle.italic,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           height: 1.4,
                         )
                       : GoogleFonts.manrope(
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           height: 1.4,
                         ),
                   maxLines: 6,
@@ -1484,7 +1484,7 @@ class _PostDetailSheet extends StatelessWidget {
     final bottom = MediaQuery.of(context).padding.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -1495,7 +1495,7 @@ class _PostDetailSheet extends StatelessWidget {
             margin: const EdgeInsets.only(top: 12, bottom: 4),
             width: 36, height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1546,7 +1546,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -1561,7 +1561,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1574,7 +1574,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.3,
               ),
             ),
@@ -1628,7 +1628,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                 style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                   letterSpacing: 0.8,
                 ),
               ),
@@ -1710,8 +1710,8 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                       fontWeight:
                           sel ? FontWeight.w700 : FontWeight.w500,
                       color: sel
-                          ? MarginaliaColors.ink
-                          : MarginaliaColors.inkFaint,
+                          ? ScriptaColors.ink
+                          : ScriptaColors.inkFaint,
                     ),
                   ),
                 );
@@ -1738,7 +1738,7 @@ class _AppearanceSheetState extends State<_AppearanceSheet> {
                         if (mounted) Navigator.of(context).pop();
                       },
                 style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primary,
+                  backgroundColor: ScriptaColors.primary,
                   foregroundColor: const Color(0xFFF1EEE7),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -1844,7 +1844,7 @@ class _NotLoggedIn extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Center(
         child: Padding(
           padding: EdgeInsets.fromLTRB(40, top, 40, 40),
@@ -1855,11 +1855,11 @@ class _NotLoggedIn extends StatelessWidget {
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.siennaFaint,
+                  color: ScriptaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.person_outline,
-                    size: 32, color: MarginaliaColors.siennaLight),
+                    size: 32, color: ScriptaColors.siennaLight),
               ),
               const SizedBox(height: 20),
               Text(
@@ -1867,7 +1867,7 @@ class _NotLoggedIn extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -1876,7 +1876,7 @@ class _NotLoggedIn extends StatelessWidget {
                 context.l10n.profileLoginBody,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                     fontSize: 14,
                     height: 1.6),
               ),
@@ -1929,9 +1929,9 @@ class _ProfilePostCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       child: Container(
         decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+          border: Border.all(color: ScriptaColors.ruleFaint, width: 0.8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1947,7 +1947,7 @@ class _ProfilePostCard extends StatelessWidget {
                       _timeAgo(context, createdAt),
                       style: GoogleFonts.manrope(
                         fontSize: 11,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                     ),
                   // Body text
@@ -1957,7 +1957,7 @@ class _ProfilePostCard extends StatelessWidget {
                       body,
                       style: GoogleFonts.manrope(
                         fontSize: 14.5,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                         height: 1.6,
                       ),
                     ),
@@ -1967,10 +1967,10 @@ class _ProfilePostCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.surfaceElevated,
+                        color: ScriptaColors.surfaceElevated,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: MarginaliaColors.ruleFaint, width: 0.8),
+                            color: ScriptaColors.ruleFaint, width: 0.8),
                       ),
                       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
                       child: Column(
@@ -1982,7 +1982,7 @@ class _ProfilePostCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w700,
-                                color: MarginaliaColors.inkMuted,
+                                color: ScriptaColors.inkMuted,
                                 letterSpacing: 1.1,
                               ),
                             ),
@@ -1993,7 +1993,7 @@ class _ProfilePostCard extends StatelessWidget {
                                 : hlContent,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: MarginaliaColors.ink,
+                              color: ScriptaColors.ink,
                               fontStyle: FontStyle.italic,
                               height: 1.6,
                             ),
@@ -2027,13 +2027,13 @@ class _ProfilePostCard extends StatelessWidget {
               child: Row(
                 children: [
                   const Icon(Icons.favorite_border,
-                      size: 14, color: MarginaliaColors.inkFaint),
+                      size: 14, color: ScriptaColors.inkFaint),
                   const SizedBox(width: 4),
                   Text(
                     '$likes',
                     style: GoogleFonts.manrope(
                       fontSize: 12,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2074,17 +2074,17 @@ class _FavoriteBooksSection extends StatelessWidget {
             children: [
               Text(context.l10n.profileFavouriteBooksSection, style: _profileSectionTitle(gp)),
               const SizedBox(width: 12),
-              const Expanded(child: Divider(color: MarginaliaColors.ruleFaint)),
+              const Expanded(child: Divider(color: ScriptaColors.ruleFaint)),
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: onEdit,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.primaryFaint,
+                    color: ScriptaColors.primaryFaint,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: MarginaliaColors.primary.withAlpha(50),
+                      color: ScriptaColors.primary.withAlpha(50),
                       width: 0.8,
                     ),
                   ),
@@ -2093,7 +2093,7 @@ class _FavoriteBooksSection extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -2212,13 +2212,13 @@ class _FavBookTile extends ConsumerWidget {
     if (title.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: MarginaliaColors.surfaceElevated,
+          color: ScriptaColors.surfaceElevated,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: MarginaliaColors.ruleFaint),
+          border: Border.all(color: ScriptaColors.ruleFaint),
         ),
         child: const Center(
           child: Icon(Icons.add_outlined,
-              size: 22, color: MarginaliaColors.inkFaint),
+              size: 22, color: ScriptaColors.inkFaint),
         ),
       );
     }
@@ -2338,21 +2338,21 @@ class _EmptyFavBooks extends StatelessWidget {
       child: Container(
         height: 92,
         decoration: BoxDecoration(
-          color: MarginaliaColors.surfaceElevated,
+          color: ScriptaColors.surfaceElevated,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarginaliaColors.ruleFaint),
+          border: Border.all(color: ScriptaColors.ruleFaint),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.favorite_border,
-                size: 22, color: MarginaliaColors.inkFaint),
+                size: 22, color: ScriptaColors.inkFaint),
             const SizedBox(height: 8),
             Text(
               context.l10n.profileChooseFavouritesPrompt,
               style: GoogleFonts.manrope(
                 fontSize: 12.5,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -2439,7 +2439,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
       constraints: BoxConstraints(maxHeight: maxH),
       child: Container(
         decoration: const BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -2452,7 +2452,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
               margin: const EdgeInsets.only(top: 12, bottom: 4),
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -2467,7 +2467,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -2481,8 +2481,8 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: _selected.length >= 6
-                            ? MarginaliaColors.primary
-                            : MarginaliaColors.inkMuted,
+                            ? ScriptaColors.primary
+                            : ScriptaColors.inkMuted,
                       ),
                     ),
                   ),
@@ -2490,7 +2490,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
               ),
             ),
 
-            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+            const Divider(color: ScriptaColors.ruleFaint, height: 1),
 
             // ── Book list ─────────────────────────────────────────────────
             Flexible(
@@ -2502,7 +2502,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                         textAlign: TextAlign.center,
                         style: GoogleFonts.manrope(
                           fontSize: 13.5,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           height: 1.6,
                         ),
                       ),
@@ -2545,8 +2545,8 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w600,
                                           color: maxed
-                                              ? MarginaliaColors.inkFaint
-                                              : MarginaliaColors.ink,
+                                              ? ScriptaColors.inkFaint
+                                              : ScriptaColors.ink,
                                           height: 1.3,
                                         ),
                                         maxLines: 2,
@@ -2560,8 +2560,8 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                                             letterSpacing: 0.4,
                                             fontWeight: FontWeight.w500,
                                             color: maxed
-                                                ? MarginaliaColors.inkFaint
-                                                : MarginaliaColors.inkMuted,
+                                                ? ScriptaColors.inkFaint
+                                                : ScriptaColors.inkMuted,
                                           ),
                                         ),
                                     ],
@@ -2575,14 +2575,14 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: sel
-                                        ? MarginaliaColors.primary
+                                        ? ScriptaColors.primary
                                         : Colors.transparent,
                                     border: Border.all(
                                       color: sel
-                                          ? MarginaliaColors.primary
+                                          ? ScriptaColors.primary
                                           : maxed
-                                              ? MarginaliaColors.ruleFaint
-                                              : MarginaliaColors.rule,
+                                              ? ScriptaColors.ruleFaint
+                                              : ScriptaColors.rule,
                                       width: 1.5,
                                     ),
                                   ),
@@ -2599,7 +2599,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                     ),
             ),
 
-            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+            const Divider(color: ScriptaColors.ruleFaint, height: 1),
 
             // ── Save button ───────────────────────────────────────────────
             Padding(
@@ -2615,7 +2615,7 @@ class _FavBooksSheetState extends State<_FavBooksSheet> {
                           if (mounted) Navigator.of(context).pop();
                         },
                   style: FilledButton.styleFrom(
-                    backgroundColor: MarginaliaColors.primary,
+                    backgroundColor: ScriptaColors.primary,
                     foregroundColor: const Color(0xFFF1EEE7),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

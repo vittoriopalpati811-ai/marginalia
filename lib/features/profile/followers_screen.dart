@@ -92,7 +92,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
       builder: (ctx, scrollCtrl) {
         return Container(
           decoration: const BoxDecoration(
-            color: MarginaliaColors.background,
+            color: ScriptaColors.background,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -104,7 +104,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -121,7 +121,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.4,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -129,20 +129,20 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                       '${widget.count}',
                       style: const TextStyle(
                         fontSize: 14,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+              const Divider(color: ScriptaColors.ruleFaint, height: 1),
               // Content
               Expanded(
                 child: _loading
                     ? const Center(
                         child: CircularProgressIndicator(
-                          color: MarginaliaColors.sienna,
+                          color: ScriptaColors.sienna,
                           strokeWidth: 1.5,
                         ),
                       )
@@ -151,7 +151,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                             child: Text(
                               context.l10n.errorPrefix('$_error'),
                               style: const TextStyle(
-                                  color: MarginaliaColors.inkMuted),
+                                  color: ScriptaColors.inkMuted),
                             ),
                           )
                         : (_items?.isEmpty ?? true)
@@ -161,7 +161,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                                 padding: const EdgeInsets.symmetric(vertical: 8),
                                 itemCount: _items!.length,
                                 separatorBuilder: (_, __) => const Divider(
-                                  color: MarginaliaColors.ruleFaint,
+                                  color: ScriptaColors.ruleFaint,
                                   height: 1,
                                   indent: 72,
                                 ),
@@ -216,7 +216,7 @@ class _UserRow extends StatelessWidget {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
         ),
       ),
       subtitle: reading != null && reading.isNotEmpty
@@ -224,14 +224,14 @@ class _UserRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.menu_book_outlined,
-                    size: 12, color: MarginaliaColors.inkFaint),
+                    size: 12, color: ScriptaColors.inkFaint),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     reading,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -242,7 +242,7 @@ class _UserRow extends StatelessWidget {
           : null,
       trailing: const Icon(
         Icons.chevron_right,
-        color: MarginaliaColors.inkFaint,
+        color: ScriptaColors.inkFaint,
         size: 18,
       ),
     )
@@ -263,7 +263,7 @@ class _BookRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = data['title'] as String? ?? context.l10n.bookUntitled;
     final author = data['author'] as String? ?? '';
-    final coverColor = MarginaliaDecorations.bookCoverColor(title);
+    final coverColor = ScriptaDecorations.bookCoverColor(title);
 
     return ListTile(
       leading: Container(
@@ -271,7 +271,7 @@ class _BookRow extends StatelessWidget {
         height: 54,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [coverColor, MarginaliaColors.primaryDark],
+            colors: [coverColor, ScriptaColors.primaryDark],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -294,7 +294,7 @@ class _BookRow extends StatelessWidget {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
@@ -304,7 +304,7 @@ class _BookRow extends StatelessWidget {
               author.toUpperCase(),
               style: const TextStyle(
                 fontSize: 10,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 letterSpacing: 0.4,
                 fontWeight: FontWeight.w500,
               ),
@@ -338,8 +338,8 @@ class _Avatar extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: [
-            MarginaliaDecorations.bookCoverColor(name),
-            MarginaliaColors.primaryDark,
+            ScriptaDecorations.bookCoverColor(name),
+            ScriptaColors.primaryDark,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -393,13 +393,13 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 36, color: MarginaliaColors.inkFaint),
+          Icon(icon, size: 36, color: ScriptaColors.inkFaint),
           const SizedBox(height: 12),
           Text(
             msg,
             style: const TextStyle(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ),
         ],

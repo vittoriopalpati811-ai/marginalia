@@ -1,6 +1,6 @@
 // ─── ActivityHeatmap — a contribution-graph for the trailing ~year ───────────
 //
-// A GitHub/Garmin-style heatmap, re-styled for Marginalia: warm paper ground,
+// A GitHub/Garmin-style heatmap, re-styled for Scripta: warm paper ground,
 // an editorial sienna→amber intensity ramp (NOT neon green), month labels along
 // the top, weekday hints down the left, and a quiet LESS▢▢▢▢ MORE legend.
 //
@@ -162,7 +162,7 @@ class ActivityHeatmap extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 19,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.3,
               height: 1.0,
             ),
@@ -295,7 +295,7 @@ class _WeekdayLabels extends StatelessWidget {
     TextStyle style() => GoogleFonts.manrope(
           fontSize: 9,
           fontWeight: FontWeight.w600,
-          color: MarginaliaColors.inkFaint,
+          color: ScriptaColors.inkFaint,
           height: 1.0,
         );
 
@@ -407,7 +407,7 @@ class _HeatmapPainter extends CustomPainter {
         style: GoogleFonts.manrope(
           fontSize: 9.5,
           fontWeight: FontWeight.w600,
-          color: MarginaliaColors.inkFaint,
+          color: ScriptaColors.inkFaint,
           letterSpacing: 0.2,
         ),
       ),
@@ -453,7 +453,7 @@ class _Legend extends StatelessWidget {
     final labelStyle = GoogleFonts.manrope(
       fontSize: 10,
       fontWeight: FontWeight.w600,
-      color: MarginaliaColors.inkFaint,
+      color: ScriptaColors.inkFaint,
       letterSpacing: 0.2,
     );
 

@@ -99,7 +99,7 @@ class _ThreadPost extends StatelessWidget {
     final username  = profile?['username']  as String?;
     final avatarUrl = profile?['avatar_url'] as String?;
     final initial   = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final tint      = MarginaliaDecorations.bookCoverColor(name);
+    final tint      = ScriptaDecorations.bookCoverColor(name);
     final timeAgo   = _timeAgo(context, post['created_at'] as String?);
 
     return Column(
@@ -136,7 +136,7 @@ class _ThreadPost extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 15,
                             height: 1.42,
-                            color: MarginaliaColors.ink,
+                            color: ScriptaColors.ink,
                             letterSpacing: -0.1,
                           ),
                         ),
@@ -182,7 +182,7 @@ class _ThreadPost extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(left: 60),
             height: 0.5,
-            color: MarginaliaColors.ruleFaint,
+            color: ScriptaColors.ruleFaint,
           ),
       ],
     );
@@ -210,7 +210,7 @@ class _Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [tint, MarginaliaColors.primaryDark],
+          colors: [tint, ScriptaColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -265,7 +265,7 @@ class _Header extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.2,
             ),
           ),
@@ -280,7 +280,7 @@ class _Header extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
               ),
             ),
           ),
@@ -289,7 +289,7 @@ class _Header extends StatelessWidget {
         Text(
           '·',
           style: TextStyle(
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
             fontSize: 12,
           ),
         ),
@@ -298,7 +298,7 @@ class _Header extends StatelessWidget {
           timeAgo,
           style: GoogleFonts.manrope(
             fontSize: 13,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -324,9 +324,9 @@ class _QuoteCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: MarginaliaColors.rule, width: 0.8),
+        border: Border.all(color: ScriptaColors.rule, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +336,7 @@ class _QuoteCard extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 26,
               height: 0.6,
-              color: MarginaliaColors.siennaLight,
+              color: ScriptaColors.siennaLight,
             ),
           ),
           const SizedBox(height: 4),
@@ -346,7 +346,7 @@ class _QuoteCard extends StatelessWidget {
               fontSize: 14.5,
               fontStyle: FontStyle.italic,
               height: 1.55,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: 0.05,
             ),
             maxLines: 6,
@@ -363,7 +363,7 @@ class _QuoteCard extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 9,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
                 letterSpacing: 0.8,
               ),
             ),
@@ -404,7 +404,7 @@ class _ActionIcon extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: MarginaliaColors.inkMuted),
+        Icon(icon, size: 18, color: ScriptaColors.inkMuted),
         if (count > 0) ...[
           const SizedBox(width: 5),
           Text(
@@ -412,7 +412,7 @@ class _ActionIcon extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ),
         ],

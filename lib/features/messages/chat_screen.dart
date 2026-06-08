@@ -397,7 +397,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final currentUserId = svc.userId ?? '';
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: _ChatAppBar(
         conversationId: widget.conversationId,
         fallbackTitle: widget.conversationName,
@@ -433,8 +433,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 }
 
                 return RefreshIndicator(
-                  color: MarginaliaColors.primary,
-                  backgroundColor: MarginaliaColors.surface,
+                  color: ScriptaColors.primary,
+                  backgroundColor: ScriptaColors.surface,
                   onRefresh: () async {
                     ref.invalidate(_messagesProvider(widget.conversationId));
                     await ref.read(
@@ -492,7 +492,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
               },
               loading: () => const Center(
                 child: CircularProgressIndicator(
-                  color: MarginaliaColors.sienna,
+                  color: ScriptaColors.sienna,
                   strokeWidth: 1.5,
                 ),
               ),
@@ -503,12 +503,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.error_outline,
-                          color: MarginaliaColors.inkFaint, size: 40),
+                          color: ScriptaColors.inkFaint, size: 40),
                       const SizedBox(height: 16),
                       Text(
                         context.l10n.chatUnableToLoad,
                         style: GoogleFonts.manrope(
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           fontSize: 15,
                         ),
                       ),
@@ -519,7 +519,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                         child: Text(
                           context.l10n.retry,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.primaryDark,
+                            color: ScriptaColors.primaryDark,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -566,7 +566,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           _MessageMenuAction(
             icon: Icons.flag_outlined,
             label: l10n.reportMessage,
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
             onTap: () async {
               Navigator.pop(ctx);
               if (messageId == null) return;
@@ -679,7 +679,7 @@ class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
     final initial =
         title.isNotEmpty ? title[0].toUpperCase() : '?';
-    final avatarColor = MarginaliaDecorations.bookCoverColor(title);
+    final avatarColor = ScriptaDecorations.bookCoverColor(title);
 
     // Tapping the title renames the group (groups only). 1:1 titles aren't
     // editable — they're the other person's name.
@@ -696,7 +696,7 @@ class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
 
     return AppBar(
-      backgroundColor: MarginaliaColors.primary,
+      backgroundColor: ScriptaColors.primary,
       foregroundColor: _ink,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -900,7 +900,7 @@ class _MessageBubble extends StatelessWidget {
 
     final senderInitial =
         isDeleted ? '·' : senderName[0].toUpperCase();
-    final avatarBg = MarginaliaDecorations.bookCoverColor(senderName);
+    final avatarBg = ScriptaDecorations.bookCoverColor(senderName);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -948,7 +948,7 @@ class _MessageBubble extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -990,7 +990,7 @@ class _MessageBubble extends StatelessWidget {
                       content,
                       style: GoogleFonts.manrope(
                         fontSize: 14,
-                        color: isMe ? Colors.white : MarginaliaColors.ink,
+                        color: isMe ? Colors.white : ScriptaColors.ink,
                         height: 1.45,
                       ),
                     ),
@@ -1004,7 +1004,7 @@ class _MessageBubble extends StatelessWidget {
                       timeLabel,
                       style: GoogleFonts.manrope(
                         fontSize: 10,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                     ),
                     if (isOptimistic) ...[
@@ -1014,7 +1014,7 @@ class _MessageBubble extends StatelessWidget {
                         height: 10,
                         child: CircularProgressIndicator(
                           strokeWidth: 1,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                     ],
@@ -1062,9 +1062,9 @@ class _BubbleContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: isMe
             ? (isOptimistic
-                ? MarginaliaColors.primary.withAlpha(180)
-                : MarginaliaColors.primary)
-            : MarginaliaColors.surfaceElevated,
+                ? ScriptaColors.primary.withAlpha(180)
+                : ScriptaColors.primary)
+            : ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(18),
           topRight: const Radius.circular(18),
@@ -1074,7 +1074,7 @@ class _BubbleContainer extends StatelessWidget {
         ),
         border: isMe
             ? null
-            : Border.all(color: MarginaliaColors.rule, width: 0.5),
+            : Border.all(color: ScriptaColors.rule, width: 0.5),
       ),
       child: child,
     );
@@ -1119,13 +1119,13 @@ class _SharedPostCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: isMe
-                ? MarginaliaColors.primary
-                : MarginaliaColors.surfaceElevated,
+                ? ScriptaColors.primary
+                : ScriptaColors.surfaceElevated,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isMe
-                  ? MarginaliaColors.primaryDark.withAlpha(80)
-                  : MarginaliaColors.rule,
+                  ? ScriptaColors.primaryDark.withAlpha(80)
+                  : ScriptaColors.rule,
               width: 0.5,
             ),
           ),
@@ -1142,13 +1142,13 @@ class _SharedPostCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isMe
                           ? Colors.white.withAlpha(60)
-                          : MarginaliaColors.primaryFaint,
+                          : ScriptaColors.primaryFaint,
                       borderRadius: BorderRadius.circular(9),
                     ),
                     child: Icon(
                       PhosphorIconsRegular.article,
                       size: 17,
-                      color: isMe ? Colors.white : MarginaliaColors.primaryDark,
+                      color: isMe ? Colors.white : ScriptaColors.primaryDark,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1162,7 +1162,7 @@ class _SharedPostCard extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: isMe ? Colors.white : MarginaliaColors.ink,
+                            color: isMe ? Colors.white : ScriptaColors.ink,
                           ),
                         ),
                         Text(
@@ -1171,7 +1171,7 @@ class _SharedPostCard extends StatelessWidget {
                             fontSize: 11,
                             color: isMe
                                 ? Colors.white.withAlpha(210)
-                                : MarginaliaColors.inkFaint,
+                                : ScriptaColors.inkFaint,
                           ),
                         ),
                       ],
@@ -1183,7 +1183,7 @@ class _SharedPostCard extends StatelessWidget {
                     size: 15,
                     color: isMe
                         ? Colors.white.withAlpha(210)
-                        : MarginaliaColors.inkFaint,
+                        : ScriptaColors.inkFaint,
                   ),
                 ],
               ),
@@ -1198,7 +1198,7 @@ class _SharedPostCard extends StatelessWidget {
                     height: 1.4,
                     color: isMe
                         ? Colors.white.withAlpha(235)
-                        : MarginaliaColors.inkMuted,
+                        : ScriptaColors.inkMuted,
                   ),
                 ),
               ],
@@ -1309,7 +1309,7 @@ class _SignedMessageImageState extends ConsumerState<_SignedMessageImage> {
   Widget _box(Widget child) => Container(
         width: widget.width,
         height: 140,
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         child: Center(child: child),
       );
 
@@ -1323,13 +1323,13 @@ class _SignedMessageImageState extends ConsumerState<_SignedMessageImage> {
             width: 18,
             height: 18,
             child: CircularProgressIndicator(
-                strokeWidth: 1.5, color: MarginaliaColors.inkFaint),
+                strokeWidth: 1.5, color: ScriptaColors.inkFaint),
           ));
         }
         final url = snap.data;
         if (url == null || url.isEmpty) {
           return _box(const Icon(Icons.image_not_supported_outlined,
-              color: MarginaliaColors.inkFaint));
+              color: ScriptaColors.inkFaint));
         }
         return Image.network(
           url,
@@ -1337,7 +1337,7 @@ class _SignedMessageImageState extends ConsumerState<_SignedMessageImage> {
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => _box(const Icon(
               Icons.image_not_supported_outlined,
-              color: MarginaliaColors.inkFaint)),
+              color: ScriptaColors.inkFaint)),
         );
       },
     );
@@ -1378,7 +1378,7 @@ class _DateSeparator extends StatelessWidget {
           Expanded(
             child: Container(
               height: 0.5,
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
             ),
           ),
           Padding(
@@ -1387,7 +1387,7 @@ class _DateSeparator extends StatelessWidget {
               label,
               style: GoogleFonts.manrope(
                 fontSize: 11,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.5,
               ),
@@ -1396,7 +1396,7 @@ class _DateSeparator extends StatelessWidget {
           Expanded(
             child: Container(
               height: 0.5,
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
             ),
           ),
         ],
@@ -1422,12 +1422,12 @@ class _EmptyChatState extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: MarginaliaColors.siennaFaint,
+                color: ScriptaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
                 Icons.chat_bubble_outline_rounded,
-                color: MarginaliaColors.sienna,
+                color: ScriptaColors.sienna,
                 size: 30,
               ),
             ),
@@ -1437,7 +1437,7 @@ class _EmptyChatState extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             ),
             const SizedBox(height: 8),
@@ -1446,7 +1446,7 @@ class _EmptyChatState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 13,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 height: 1.6,
               ),
             ),
@@ -1484,9 +1484,9 @@ class _MessageInputBar extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         border: Border(
-          top: BorderSide(color: MarginaliaColors.rule, width: 0.5),
+          top: BorderSide(color: ScriptaColors.rule, width: 0.5),
         ),
       ),
       // The enclosing Scaffold has resizeToAvoidBottomInset: true, so it
@@ -1525,7 +1525,7 @@ class _MessageInputBar extends StatelessWidget {
               textCapitalization: TextCapitalization.sentences,
               style: GoogleFonts.manrope(
                 fontSize: 15,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 height: 1.4,
               ),
               decoration: InputDecoration(
@@ -1533,27 +1533,27 @@ class _MessageInputBar extends StatelessWidget {
                     ? context.l10n.loading
                     : context.l10n.messagesInputHint,
                 hintStyle: GoogleFonts.manrope(
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                   fontSize: 15,
                 ),
                 filled: true,
-                fillColor: MarginaliaColors.surfaceElevated,
+                fillColor: ScriptaColors.surfaceElevated,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(22),
                   borderSide: const BorderSide(
-                      color: MarginaliaColors.rule, width: 0.5),
+                      color: ScriptaColors.rule, width: 0.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(22),
                   borderSide: const BorderSide(
-                      color: MarginaliaColors.rule, width: 0.5),
+                      color: ScriptaColors.rule, width: 0.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(22),
                   borderSide: const BorderSide(
-                      color: MarginaliaColors.primary, width: 1.5),
+                      color: ScriptaColors.primary, width: 1.5),
                 ),
               ),
               onSubmitted: (_) => onSend(),
@@ -1570,8 +1570,8 @@ class _MessageInputBar extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: busy
-                    ? MarginaliaColors.primary.withAlpha(130)
-                    : MarginaliaColors.primary,
+                    ? ScriptaColors.primary.withAlpha(130)
+                    : ScriptaColors.primary,
                 shape: BoxShape.circle,
               ),
               child: busy
@@ -1611,8 +1611,8 @@ class _MediaButton extends StatelessWidget {
           icon,
           size: 24,
           color: onTap != null
-              ? MarginaliaColors.inkMuted
-              : MarginaliaColors.inkFaint,
+              ? ScriptaColors.inkMuted
+              : ScriptaColors.inkFaint,
         ),
       ),
     );
@@ -1653,7 +1653,7 @@ class _MessageMenuSheet extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
-              color: MarginaliaColors.surface.withAlpha(225),
+              color: ScriptaColors.surface.withAlpha(225),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: Colors.white.withAlpha(46), width: 0.6),
             ),
@@ -1666,7 +1666,7 @@ class _MessageMenuSheet extends StatelessWidget {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1685,14 +1685,14 @@ class _MessageMenuSheet extends StatelessWidget {
                             children: [
                               Icon(a.icon,
                                   size: 20,
-                                  color: a.color ?? MarginaliaColors.ink),
+                                  color: a.color ?? ScriptaColors.ink),
                               const SizedBox(width: 14),
                               Text(
                                 a.label,
                                 style: GoogleFonts.manrope(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w500,
-                                  color: a.color ?? MarginaliaColors.ink,
+                                  color: a.color ?? ScriptaColors.ink,
                                 ),
                               ),
                             ],

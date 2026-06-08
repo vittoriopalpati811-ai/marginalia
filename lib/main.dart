@@ -30,7 +30,7 @@ Future<void> main() async {
   // (no main interface → no FlutterViewController → engine never started → black
   // screen, no crash, no Dart). Harmless in production: one log line at launch.
   // ignore: avoid_print
-  print('### MARGINALIA-BOOT-OK ###');
+  print('### SCRIPTA-BOOT-OK ###');
 
   // Sentry owns the error-capturing zone when a DSN is configured; otherwise we
   // skip it entirely — zero overhead, behaviour identical to before.
@@ -217,7 +217,7 @@ class _SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Marginalia',
+      title: 'Scripta',
       home: Scaffold(
         backgroundColor: _cream,
         body: SafeArea(
@@ -226,7 +226,7 @@ class _SplashScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  'MARGINALIA',
+                  'SCRIPTA',
                   style: TextStyle(
                     fontFamily: 'serif',
                     fontSize: 15,

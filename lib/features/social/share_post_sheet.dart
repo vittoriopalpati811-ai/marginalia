@@ -251,7 +251,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
     return Container(
       height: sheetHeight > 0 ? sheetHeight : screenHeight * 0.78,
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -265,7 +265,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -275,7 +275,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                     Icon(
                       PhosphorIconsRegular.paperPlaneTilt,
                       size: 20,
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -283,7 +283,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                       style: GoogleFonts.ebGaramond(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                       ),
                     ),
                   ],
@@ -295,21 +295,21 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                   onChanged: (v) => setState(() => _query = v),
                   style: GoogleFonts.manrope(
                     fontSize: 15,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                   decoration: InputDecoration(
                     hintText: context.l10n.sharePostSearchHint,
                     hintStyle: GoogleFonts.manrope(
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                       fontSize: 15,
                     ),
                     prefixIcon: Icon(
                       PhosphorIconsRegular.magnifyingGlass,
                       size: 20,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                     ),
                     filled: true,
-                    fillColor: MarginaliaColors.surfaceElevated,
+                    fillColor: ScriptaColors.surfaceElevated,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
@@ -321,7 +321,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         width: 1.5,
                       ),
                     ),
@@ -348,7 +348,7 @@ class _SharePostSheetState extends ConsumerState<_SharePostSheet> {
     if (_loading) {
       return const Center(
         child: CircularProgressIndicator(
-          color: MarginaliaColors.sienna,
+          color: ScriptaColors.sienna,
           strokeWidth: 1.5,
         ),
       );
@@ -399,7 +399,7 @@ class _RecipientRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final initial =
         recipient.name.isNotEmpty ? recipient.name[0].toUpperCase() : '?';
-    final avatarBg = MarginaliaDecorations.bookCoverColor(recipient.name);
+    final avatarBg = ScriptaDecorations.bookCoverColor(recipient.name);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -417,7 +417,7 @@ class _RecipientRow extends StatelessWidget {
         style: GoogleFonts.manrope(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: MarginaliaColors.ink,
+          color: ScriptaColors.ink,
         ),
       ),
       subtitle: recipient.subtitle != null
@@ -427,7 +427,7 @@ class _RecipientRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.manrope(
                 fontSize: 12,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
               ),
             )
           : (recipient.conversationId == null
@@ -435,7 +435,7 @@ class _RecipientRow extends StatelessWidget {
                   context.l10n.sharePostStartConvo,
                   style: GoogleFonts.manrope(
                     fontSize: 12,
-                    color: MarginaliaColors.inkFaint,
+                    color: ScriptaColors.inkFaint,
                   ),
                 )
               : null),
@@ -450,7 +450,7 @@ class _RecipientRow extends StatelessWidget {
         height: 22,
         child: CircularProgressIndicator(
           strokeWidth: 1.5,
-          color: MarginaliaColors.sienna,
+          color: ScriptaColors.sienna,
         ),
       );
     }
@@ -458,21 +458,21 @@ class _RecipientRow extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: MarginaliaColors.primaryFaint,
+          color: ScriptaColors.primaryFaint,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(PhosphorIconsBold.check,
-                size: 13, color: MarginaliaColors.primaryDark),
+                size: 13, color: ScriptaColors.primaryDark),
             const SizedBox(width: 4),
             Text(
               context.l10n.sharePostSentLabel,
               style: GoogleFonts.manrope(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
           ],
@@ -482,7 +482,7 @@ class _RecipientRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: MarginaliaColors.primary,
+        color: ScriptaColors.primary,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -558,7 +558,7 @@ class _CenteredHint extends StatelessWidget {
           text,
           textAlign: TextAlign.center,
           style: GoogleFonts.manrope(
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
             fontSize: 14,
             height: 1.5,
           ),

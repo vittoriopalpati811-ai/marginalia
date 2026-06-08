@@ -10,7 +10,7 @@ import 'export_file_writer.dart';
 /// Output format (per book):
 ///
 /// ```markdown
-/// # Marginalia Export — 16 maggio 2026
+/// # Scripta Export — 16 maggio 2026
 ///
 /// 42 highlight da 8 libri
 ///
@@ -93,10 +93,10 @@ class ExportService {
     final buf = StringBuffer();
     final now = DateFormat('d MMMM yyyy', 'en').format(DateTime.now());
 
-    buf.writeln('# Marginalia Export — $now');
+    buf.writeln('# Scripta Export — $now');
     buf.writeln();
     buf.writeln(
-        '> Exported from [Marginalia](https://marginalia.app) — '
+        '> Exported from [Scripta](https://get-scripta.app) — '
         'rediscover your Kindle highlights.');
     buf.writeln();
 
@@ -149,7 +149,7 @@ class ExportService {
     buf.writeln('# $bookTitle');
     if (bookAuthor.isNotEmpty) buf.writeln('## *$bookAuthor*');
     buf.writeln();
-    buf.writeln('> Exported from Marginalia on $now');
+    buf.writeln('> Exported from Scripta on $now');
     buf.writeln();
     buf.writeln('---');
     buf.writeln();
@@ -230,7 +230,7 @@ class ExportService {
     await writeAndShareCsv(
       csv: csv,
       filename: 'marginalia_reading_tracker_$date.csv',
-      subject: 'Marginalia — Reading Tracker (CSV)',
+      subject: 'Scripta — Reading Tracker (CSV)',
       sharePositionOrigin: sharePositionOrigin,
     );
   }
@@ -247,7 +247,7 @@ class ExportService {
     await writeAndShareMarkdown(
       markdown: markdown,
       filename: 'marginalia_export_$date.md',
-      subject: 'Marginalia — Export completo',
+      subject: 'Scripta — Export completo',
       sharePositionOrigin: sharePositionOrigin,
     );
   }

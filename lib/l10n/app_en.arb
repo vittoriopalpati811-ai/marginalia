@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "Marginalia",
+  "appTitle": "Scripta",
   "cancel": "Cancel",
   "save": "Save",
   "delete": "Delete",
@@ -35,7 +35,7 @@
   "searchSubtitle": "readers · authors",
   "searchHint": "Search by name or @username…",
   "searchEmpty": "Find other readers",
-  "searchEmptyBody": "Type a name or @username\nto find readers on Marginalia.",
+  "searchEmptyBody": "Type a name or @username\nto find readers on Scripta.",
   "searchNoResults": "No readers found for {query}",
   "@searchNoResults": {
     "placeholders": { "query": { "type": "String" } }
@@ -85,7 +85,7 @@
   "profileEditProfile": "Edit profile",
   "profileSettings": "Settings",
   "profileLoginRequired": "Sign in to view profile",
-  "profileLoginBody": "A Marginalia account is required to view profiles.",
+  "profileLoginBody": "A Scripta account is required to view profiles.",
   "profileLoginCta": "Sign in",
   "profileNotFound": "Profile not found.",
   "profileErrorLoading": "Error loading profile.",
@@ -126,11 +126,11 @@
   "jamMembers": "Members",
   "jamHighlights": "Shared highlights",
 
-  "paywallTitle": "Marginalia Premium",
+  "paywallTitle": "Scripta Premium",
   "paywallSubtitle": "Unlock the full potential\nof your reading",
   "paywallPrice": "€19.99/year",
   "paywallPriceSub": "Less than a coffee a month",
-  "paywallPurchaseCta": "Unlock Marginalia Premium",
+  "paywallPurchaseCta": "Unlock Scripta Premium",
   "paywallRestore": "Restore purchase",
   "paywallFeatureHighlights": "Unlimited Kindle highlights",
   "paywallFeatureJams": "Create and join unlimited Jams",
@@ -149,7 +149,7 @@
   "onboardingAuthCreateTitle": "Create your account",
   "onboardingAuthLoginTitle": "Sign in",
   "onboardingAuthCreateSubtitle": "Your literary profile awaits.",
-  "onboardingAuthLoginSubtitle": "Welcome back to Marginalia.",
+  "onboardingAuthLoginSubtitle": "Welcome back to Scripta.",
   "onboardingContinue": "Continue →",
   "onboardingSkip": "Skip",
   "onboardingUsernameTitle": "Choose your @username",
@@ -165,11 +165,11 @@
   "onboardingCoverPlaceholder": "Cover photo",
   "onboardingCoverPick": "Choose image",
   "onboardingCompleteTitle": "All set.",
-  "onboardingCompleteBody": "Welcome to Marginalia, {username}",
+  "onboardingCompleteBody": "Welcome to Scripta, {username}",
   "@onboardingCompleteBody": {
     "placeholders": { "username": { "type": "String" } }
   },
-  "onboardingCompleteBodyAnon": "Welcome to Marginalia",
+  "onboardingCompleteBodyAnon": "Welcome to Scripta",
   "onboardingEnter": "Enter your library →",
   "onboardingCheckEmailTitle": "Check your email",
   "onboardingCheckEmailBody": "We sent a confirmation link to {email}.\nClick the link and then come back to sign in.",
@@ -202,7 +202,7 @@
   "share": "Share",
   "copy": "Copy",
 
-  "paywallPurchaseSuccess": "Welcome to Marginalia Premium.",
+  "paywallPurchaseSuccess": "Welcome to Scripta Premium.",
 
   "highlightNotFound": "Highlight not found.",
   "bookNotFound": "Book not found.",
@@ -280,13 +280,13 @@
   "@libraryImportError": { "placeholders": { "message": { "type": "String" } } },
 
   "recsTitle": "RECOMMENDED BOOKS",
-  "recsTagline": "Curated by Marginalia, just for you",
+  "recsTagline": "Curated by Scripta, just for you",
   "recsSubtitle": "Selected based on your highlights.",
   "recsSubtitleWeather": "Selected based on your highlights and today's weather.",
   "recsSubtitleActivity": "Selected based on your highlights and your recent activity.",
   "recsSubtitleBoth": "Selected based on your highlights, today's weather and recent activity.",
   "recsEmpty": "Import your Kindle highlights to get personalised suggestions based on your reading themes.",
-  "recsLoading": "Marginalia is analyzing your highlights…",
+  "recsLoading": "Scripta is analyzing your highlights…",
   "recsFallback": "Recommended based on your reading taste.",
 
   "bookMyNotes": "MY NOTES",
@@ -705,9 +705,9 @@
   "socialNewJamSubtitle": "Create a new reading circle",
   "socialJamNameHint": "e.g. \"20th Century Classics\"",
   "socialJamCreateHint": "You will receive an invite code to share with friends.",
-  "socialShareJamBody": "Join my Jam \"{name}\" on Marginalia.\n\nInvite code: {code}",
+  "socialShareJamBody": "Join my Jam \"{name}\" on Scripta.\n\nInvite code: {code}",
   "@socialShareJamBody": { "placeholders": { "name": { "type": "String" }, "code": { "type": "String" } } },
-  "socialShareJamSubject": "Marginalia Jam – {name}",
+  "socialShareJamSubject": "Scripta Jam – {name}",
   "@socialShareJamSubject": { "placeholders": { "name": { "type": "String" } } },
 
   "feedComposerHint": "What are you reading? Share a thought…",
@@ -738,7 +738,7 @@
   "@jamResultCount": { "placeholders": { "count": { "type": "int" } } },
   "jamMatchCount": "{count, plural, =1{You have 1 quote from this book · Reply} other{You have {count} quotes from this book · Reply}}",
   "@jamMatchCount": { "placeholders": { "count": { "type": "int" } } },
-  "jamShareBody": "Join my Jam on Marginalia.\n\nCode: {code}\n\nDownload the app: https://marginalia.app",
+  "jamShareBody": "Join my Jam on Scripta.\n\nCode: {code}\n\nDownload the app: https://marginalia.app",
   "@jamShareBody": { "placeholders": { "code": { "type": "String" } } },
   "jamShareSubject": "Join the Jam \"{title}\"",
   "@jamShareSubject": { "placeholders": { "title": { "type": "String" } } },
@@ -777,7 +777,7 @@
 
   "settingsInJamsSection": "IN JAMS",
   "settingsSettingsSection": "SETTINGS",
-  "settingsShareInvite": "I read on Marginalia\nCome read with me!\nhttps://marginalia.app",
+  "settingsShareInvite": "I read on Scripta\nCome read with me!\nhttps://marginalia.app",
   "settingsNothingToExport": "No highlights to export. Import My Clippings.txt first.",
   "settingsCurrentlyReading": "CURRENTLY READING",
   "settingsSignInPromoBody": "Track your books,\nhighlights and connections.",
@@ -805,7 +805,7 @@
   "shareCardStatsTitle": "Share stats",
   "shareImagePreparing": "Preparing…",
   "shareImageCta": "Share image",
-  "shareHighlightCallToAction": "Open in Marginalia",
+  "shareHighlightCallToAction": "Open in Scripta",
   "shareStatsStreakLabel": "DAY STREAK",
   "shareStatsMonthLabel": "THIS MONTH",
   "shareStatsReadingOf": "{userName}'s reading",
@@ -1121,8 +1121,8 @@
   "wrappedWeekdaySat": "Saturday",
   "wrappedWeekdaySun": "Sunday",
 
-  "wrappedPersonaMarginalia": "The Marginalist",
-  "wrappedPersonaMarginaliaDesc": "You read with balance and annotate with care — your notes in the margins are the whole point.",
+  "wrappedPersonaScripta": "The Marginalist",
+  "wrappedPersonaScriptaDesc": "You read with balance and annotate with care — your notes in the margins are the whole point.",
   "wrappedPersonaDevourer": "The Devourer",
   "wrappedPersonaDevourerDesc": "When a book grabs you, you don't let go — you underline it cover to cover.",
   "wrappedPersonaCollector": "The Collector",

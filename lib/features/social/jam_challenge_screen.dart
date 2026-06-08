@@ -25,9 +25,9 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
     final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
@@ -36,12 +36,12 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
             fontSize: 20,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: MarginaliaColors.primaryDark),
+            icon: const Icon(Icons.add, color: ScriptaColors.primaryDark),
             onPressed: _showCreateSheet,
             tooltip: context.l10n.jamChallengeCreateTooltip,
           ),
@@ -63,7 +63,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
                 ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
               ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
+          child: CircularProgressIndicator(color: ScriptaColors.primaryDark, strokeWidth: 1.5),
         ),
         error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
@@ -144,16 +144,16 @@ class _ChallengeCardState extends State<_ChallengeCard> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MarginaliaColors.rule, width: 0.8),
+        border: Border.all(color: ScriptaColors.rule, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events_outlined, color: MarginaliaColors.primaryDark, size: 18),
+              const Icon(Icons.emoji_events_outlined, color: ScriptaColors.primaryDark, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -161,7 +161,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
                   style: GoogleFonts.manrope(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
               ),
@@ -171,7 +171,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
             const SizedBox(height: 6),
             Text(
               widget.data['description'] as String,
-              style: GoogleFonts.manrope(fontSize: 13, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 13, color: ScriptaColors.inkMuted),
             ),
           ],
           const SizedBox(height: 14),
@@ -182,8 +182,8 @@ class _ChallengeCardState extends State<_ChallengeCard> {
             child: LinearProgressIndicator(
               value: fraction,
               minHeight: 6,
-              backgroundColor: MarginaliaColors.primaryFaint,
-              color: MarginaliaColors.primary,
+              backgroundColor: ScriptaColors.primaryFaint,
+              color: ScriptaColors.primary,
             ),
           ),
           const SizedBox(height: 6),
@@ -193,7 +193,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
                 context.l10n.jamChallengeProgress(progress, target, _unit),
                 style: GoogleFonts.manrope(
                   fontSize: 12,
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -201,7 +201,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
               if (_deadline != null)
                 Text(
                   context.l10n.jamChallengeDeadline('${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'),
-                  style: GoogleFonts.manrope(fontSize: 11, color: MarginaliaColors.inkFaint),
+                  style: GoogleFonts.manrope(fontSize: 11, color: ScriptaColors.inkFaint),
                 ),
             ],
           ),
@@ -224,7 +224,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
                   style: GoogleFonts.manrope(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
               ),
@@ -256,13 +256,13 @@ class _ProgressButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: onTap != null ? MarginaliaColors.primaryFaint : const Color(0x0F000000),
+          color: onTap != null ? ScriptaColors.primaryFaint : const Color(0x0F000000),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: onTap != null ? MarginaliaColors.primaryDark : MarginaliaColors.inkFaint,
+          color: onTap != null ? ScriptaColors.primaryDark : ScriptaColors.inkFaint,
         ),
       ),
     );
@@ -283,17 +283,17 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.emoji_events_outlined, size: 56, color: MarginaliaColors.inkFaint),
+            const Icon(Icons.emoji_events_outlined, size: 56, color: ScriptaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
               context.l10n.jamChallengeNoChallenges,
-              style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
+              style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: ScriptaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
               context.l10n.jamChallengeNoChallengesBody,
               textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 14, color: ScriptaColors.inkMuted),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -364,7 +364,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottom + 24),
@@ -376,13 +376,13 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             Center(
               child: Container(
                 width: 36, height: 4,
-                decoration: BoxDecoration(color: MarginaliaColors.rule, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(color: ScriptaColors.rule, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               context.l10n.jamChallengeCreateSheetTitle,
-              style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
+              style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: ScriptaColors.ink),
             ),
             const SizedBox(height: 20),
             TextField(
@@ -403,7 +403,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+                  borderSide: const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
                 ),
               ),
               textCapitalization: TextCapitalization.sentences,
@@ -426,7 +426,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+                  borderSide: const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
                 ),
               ),
               maxLines: 2,
@@ -441,7 +441,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(context.l10n.jamChallengeGoalLabel, style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text(context.l10n.jamChallengeGoalLabel, style: GoogleFonts.manrope(fontSize: 12, color: ScriptaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       Row(
                         children: [
@@ -467,7 +467,7 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(context.l10n.jamChallengeUnitLabel, style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkMuted, fontWeight: FontWeight.w600)),
+                      Text(context.l10n.jamChallengeUnitLabel, style: GoogleFonts.manrope(fontSize: 12, color: ScriptaColors.inkMuted, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         value: _unit,

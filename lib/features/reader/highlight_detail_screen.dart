@@ -23,13 +23,13 @@ class HighlightDetailScreen extends ConsumerWidget {
     final highlightAsync = ref.watch(highlightByIdProvider(highlightId));
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         // Back button usa il colore ink
-        iconTheme: const IconThemeData(color: MarginaliaColors.inkMuted),
+        iconTheme: const IconThemeData(color: ScriptaColors.inkMuted),
         actions: [
           highlightAsync.when(
             data: (h) => h != null
@@ -43,8 +43,8 @@ class HighlightDetailScreen extends ConsumerWidget {
                               ? Icons.bookmark_rounded
                               : Icons.bookmark_outline_rounded,
                           color: h.isFavorite
-                              ? MarginaliaColors.primaryDark
-                              : MarginaliaColors.inkFaint,
+                              ? ScriptaColors.primaryDark
+                              : ScriptaColors.inkFaint,
                           size: 22,
                         ),
                         onPressed: () => ref
@@ -57,10 +57,10 @@ class HighlightDetailScreen extends ConsumerWidget {
                       PopupMenuButton<_ShareAction>(
                         icon: const Icon(
                           Icons.ios_share_rounded,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                           size: 20,
                         ),
-                        color: MarginaliaColors.surface,
+                        color: ScriptaColors.surface,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
@@ -116,8 +116,8 @@ class HighlightDetailScreen extends ConsumerWidget {
             return Center(
               child: Text(
                 context.l10n.highlightNotFound,
-                style: MarginaliaTextStyles.label
-                    .copyWith(color: MarginaliaColors.inkFaint),
+                style: ScriptaTextStyles.label
+                    .copyWith(color: ScriptaColors.inkFaint),
               ),
             );
           }
@@ -125,7 +125,7 @@ class HighlightDetailScreen extends ConsumerWidget {
         },
         loading: () => const Center(
           child: CircularProgressIndicator(
-            color: MarginaliaColors.primaryDark,
+            color: ScriptaColors.primaryDark,
             strokeWidth: 1.5,
           ),
         ),
@@ -201,10 +201,10 @@ class _HighlightBody extends ConsumerWidget {
                 // Virgoletta ornamentale
                 Text(
                   '“',
-                  style: MarginaliaTextStyles.quoteDecor.copyWith(
+                  style: ScriptaTextStyles.quoteDecor.copyWith(
                     fontSize: 80,
                     height: 0.65,
-                    color: MarginaliaColors.siennaFaint,
+                    color: ScriptaColors.siennaFaint,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -212,7 +212,7 @@ class _HighlightBody extends ConsumerWidget {
                 // Testo highlight — EB Garamond italic grande, cuore dell'app
                 Text(
                   highlight.content as String,
-                  style: MarginaliaTextStyles.highlightBody.copyWith(
+                  style: ScriptaTextStyles.highlightBody.copyWith(
                     fontSize: 21,
                     height: 1.85,
                   ),
@@ -237,7 +237,7 @@ class _HighlightBody extends ConsumerWidget {
                     ),
                     Expanded(
                       child: Container(
-                          height: 0.8, color: MarginaliaColors.ruleFaint),
+                          height: 0.8, color: ScriptaColors.ruleFaint),
                     ),
                   ],
                 ),
@@ -263,7 +263,7 @@ class _HighlightBody extends ConsumerWidget {
                           fontSize: 15.5, fontWeight: FontWeight.w800),
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: MarginaliaColors.primary,
+                      backgroundColor: ScriptaColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -282,14 +282,14 @@ class _HighlightBody extends ConsumerWidget {
                       const Icon(
                         Icons.edit_outlined,
                         size: 13,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           highlight.note as String,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.inkMuted,
+                            color: ScriptaColors.inkMuted,
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
                             height: 1.65,
@@ -353,7 +353,7 @@ class _HighlightBody extends ConsumerWidget {
         'blue' => const Color(0xFF4A90BF),
         'pink' => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _ => MarginaliaColors.siennaLight,
+        _ => ScriptaColors.siennaLight,
       };
 }
 
@@ -374,9 +374,9 @@ class _BookHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(28, 20, 28, 24),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         border: const Border(
-          bottom: BorderSide(color: MarginaliaColors.ruleFaint, width: 0.8),
+          bottom: BorderSide(color: ScriptaColors.ruleFaint, width: 0.8),
         ),
       ),
       child: Column(
@@ -397,10 +397,10 @@ class _BookHeader extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 context.l10n.highlightFromLabel,
-                style: MarginaliaTextStyles.sectionTitle.copyWith(
+                style: ScriptaTextStyles.sectionTitle.copyWith(
                   fontSize: 9,
                   letterSpacing: 2.5,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                 ),
               ),
             ],
@@ -427,7 +427,7 @@ class _BookHeader extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: MarginaliaTextStyles.bookTitle
+                          style: ScriptaTextStyles.bookTitle
                               .copyWith(fontSize: 16),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -436,7 +436,7 @@ class _BookHeader extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             author.toUpperCase(),
-                            style: MarginaliaTextStyles.bookAuthor,
+                            style: ScriptaTextStyles.bookAuthor,
                           ),
                         ],
                       ],
@@ -445,7 +445,7 @@ class _BookHeader extends StatelessWidget {
                   const Padding(
                     padding: EdgeInsets.only(left: 8, top: 2),
                     child: Icon(Icons.chevron_right,
-                        size: 20, color: MarginaliaColors.inkFaint),
+                        size: 20, color: ScriptaColors.inkFaint),
                   ),
                 ],
               ),
@@ -471,13 +471,13 @@ class _MetaItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 11, color: iconColor ?? MarginaliaColors.inkFaint),
+        Icon(icon, size: 11, color: iconColor ?? ScriptaColors.inkFaint),
         const SizedBox(width: 5),
         Text(
           label,
-          style: MarginaliaTextStyles.label.copyWith(
+          style: ScriptaTextStyles.label.copyWith(
             fontSize: 11,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
           ),
         ),
       ],
@@ -501,14 +501,14 @@ class _ShareMenuRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: MarginaliaColors.inkMuted),
+        Icon(icon, size: 18, color: ScriptaColors.inkMuted),
         const SizedBox(width: 12),
         Text(
           label,
           style: GoogleFonts.manrope(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
       ],

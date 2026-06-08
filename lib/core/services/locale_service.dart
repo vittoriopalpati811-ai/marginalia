@@ -25,7 +25,7 @@ class LocaleService {
   /// Returns the user's explicitly-chosen locale if one was stored; otherwise
   /// resolves the locale from the DEVICE language.
   ///
-  /// Marginalia is English-predominant (international rollout), so a fresh
+  /// Scripta is English-predominant (international rollout), so a fresh
   /// install with no saved choice opens in English for everyone EXCEPT phones
   /// whose primary language is Italian — those open in Italian. Once the user
   /// picks a language (onboarding / settings) that choice is persisted and wins.

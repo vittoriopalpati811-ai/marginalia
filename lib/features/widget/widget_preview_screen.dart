@@ -11,7 +11,7 @@ import '../../core/l10n/l10n_extension.dart';
 
 // ─── WidgetPreviewScreen ──────────────────────────────────────────────────────
 //
-// Simulates an iPhone 15 home screen with the Marginalia widget rendered at
+// Simulates an iPhone 15 home screen with the Scripta widget rendered at
 // all three sizes (small, medium, large).
 //
 // The AI-selected highlight is shown in each size so the user can compare how
@@ -20,7 +20,7 @@ import '../../core/l10n/l10n_extension.dart';
 //
 // This screen is pure Flutter — no native code needed. The actual widget that
 // appears on the real iOS home screen is the Swift WidgetKit extension in
-// ios/Sources/MarginaliaWidgets/.
+// ios/Sources/ScriptaWidgets/.
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 
@@ -192,7 +192,7 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
                         context.l10n.widgetUpdatedOnPhone,
                         style: GoogleFonts.manrope(fontSize: 13),
                       ),
-                      backgroundColor: MarginaliaColors.primary,
+                      backgroundColor: ScriptaColors.primary,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -423,7 +423,7 @@ class _StatusBar extends StatelessWidget {
 // ── Widget renderers (Small / Medium / Large) ─────────────────────────────────
 //
 // These replicate the visual design of the real Swift WidgetKit extension.
-// Keep them visually in sync with MarginaliaWidget.swift.
+// Keep them visually in sync with ScriptaWidget.swift.
 
 class _SmallWidget extends StatelessWidget {
   const _SmallWidget({required this.highlight});

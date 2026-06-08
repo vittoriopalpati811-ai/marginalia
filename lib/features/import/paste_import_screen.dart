@@ -114,18 +114,18 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: MarginaliaColors.ink,
+        foregroundColor: ScriptaColors.ink,
         title: Text(
           l10n.importPasteTitle,
           style: GoogleFonts.manrope(
             fontWeight: FontWeight.w700,
             fontSize: 18,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
       ),
@@ -160,7 +160,7 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
                   icon: const Icon(Icons.content_paste_rounded, size: 18),
                   label: Text(l10n.importPasteFromClipboard),
                   style: TextButton.styleFrom(
-                    foregroundColor: MarginaliaColors.primaryDark,
+                    foregroundColor: ScriptaColors.primaryDark,
                     textStyle: GoogleFonts.manrope(
                         fontWeight: FontWeight.w600, fontSize: 13),
                   ),
@@ -174,13 +174,13 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
               maxLines: 20,
               enabled: !_importing,
               style: GoogleFonts.manrope(
-                  fontSize: 15, color: MarginaliaColors.ink, height: 1.5),
+                  fontSize: 15, color: ScriptaColors.ink, height: 1.5),
               decoration: InputDecoration(
                 hintText: l10n.importPasteTextHint,
                 hintStyle: GoogleFonts.manrope(
-                    fontSize: 15, color: MarginaliaColors.inkFaint),
+                    fontSize: 15, color: ScriptaColors.inkFaint),
                 filled: true,
-                fillColor: MarginaliaColors.surfaceElevated,
+                fillColor: ScriptaColors.surfaceElevated,
                 contentPadding: const EdgeInsets.all(16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -193,7 +193,7 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(
-                      color: MarginaliaColors.primaryDark, width: 1.5),
+                      color: ScriptaColors.primaryDark, width: 1.5),
                 ),
               ),
             ),
@@ -203,7 +203,7 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
               child: FilledButton(
                 onPressed: _importing ? null : _import,
                 style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primaryDark,
+                  backgroundColor: ScriptaColors.primaryDark,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
                 ),
@@ -239,14 +239,14 @@ class _ExplainCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: MarginaliaColors.primaryFaint,
+        color: ScriptaColors.primaryFaint,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.auto_stories_outlined,
-              color: MarginaliaColors.primaryDark, size: 22),
+              color: ScriptaColors.primaryDark, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -254,7 +254,7 @@ class _ExplainCard extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 13.5,
                 height: 1.5,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
               ),
             ),
           ),
@@ -275,7 +275,7 @@ class _FieldLabel extends StatelessWidget {
       style: GoogleFonts.manrope(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: MarginaliaColors.ink,
+        color: ScriptaColors.ink,
       ),
     );
   }
@@ -296,13 +296,13 @@ class _MiniField extends StatelessWidget {
     return TextField(
       controller: controller,
       textInputAction: textInputAction,
-      style: GoogleFonts.manrope(fontSize: 15, color: MarginaliaColors.ink),
+      style: GoogleFonts.manrope(fontSize: 15, color: ScriptaColors.ink),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle:
-            GoogleFonts.manrope(fontSize: 15, color: MarginaliaColors.inkFaint),
+            GoogleFonts.manrope(fontSize: 15, color: ScriptaColors.inkFaint),
         filled: true,
-        fillColor: MarginaliaColors.surfaceElevated,
+        fillColor: ScriptaColors.surfaceElevated,
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -317,7 +317,7 @@ class _MiniField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+              const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
         ),
       ),
     );

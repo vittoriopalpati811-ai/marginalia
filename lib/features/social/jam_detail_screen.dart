@@ -170,7 +170,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             hintText: l10n.jamNameHint,
             counterText: '',
             filled: true,
-            fillColor: MarginaliaColors.surfaceElevated,
+            fillColor: ScriptaColors.surfaceElevated,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
@@ -184,7 +184,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide:
-                  const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+                  const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
             ),
           ),
         ),
@@ -341,7 +341,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
         ownerId != null && ownerId == ref.read(supabaseServiceProvider).userId;
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -350,7 +350,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             expandedHeight: 210,
             pinned: true,
             stretch: true,
-            backgroundColor: MarginaliaColors.primary,
+            backgroundColor: ScriptaColors.primary,
             foregroundColor: const Color(0xFFF1EEE7),
             elevation: 0,
             scrolledUnderElevation: 0,
@@ -381,7 +381,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                           color: const Color(0xFFE64A4A),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: MarginaliaColors.primary,
+                            color: ScriptaColors.primary,
                             width: 1.5,
                           ),
                         ),
@@ -446,7 +446,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       children: [
                         Image.network(jamCoverUrl, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
-                                Container(decoration: MarginaliaDecorations.gradientHeader)),
+                                Container(decoration: ScriptaDecorations.gradientHeader)),
                         // Top scrim — keeps status-bar icons visible over photos.
                         // Bottom scrim — ensures title text is readable.
                         Container(
@@ -466,7 +466,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       ],
                     )
                   : Container(
-                decoration: MarginaliaDecorations.gradientHeader,
+                decoration: ScriptaDecorations.gradientHeader,
                 child: SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -645,10 +645,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               child: Row(
                 children: [
                   Text(context.l10n.jamAllHighlightsSection,
-                      style: MarginaliaTextStyles.sectionTitle),
+                      style: ScriptaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(
-                      child: Divider(color: MarginaliaColors.rule)),
+                      child: Divider(color: ScriptaColors.rule)),
                 ],
               ),
             ),
@@ -688,7 +688,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             loading: () => const SliverFillRemaining(
               child: Center(
                 child: CircularProgressIndicator(
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                   strokeWidth: 1.5,
                 ),
               ),
@@ -701,7 +701,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _shareHighlight(),
-        backgroundColor: MarginaliaColors.primary,
+        backgroundColor: ScriptaColors.primary,
         foregroundColor: const Color(0xFFF1EEE7),
         elevation: 4,
         icon: const Icon(Icons.add_comment_outlined),
@@ -734,7 +734,7 @@ class _TrendingSection extends StatelessWidget {
               const Text('🔥', style: TextStyle(fontSize: 14)),
               const SizedBox(width: 6),
               Text(context.l10n.jamTrendingSection,
-                  style: MarginaliaTextStyles.sectionTitle),
+                  style: ScriptaTextStyles.sectionTitle),
             ],
           ),
         ),
@@ -760,7 +760,7 @@ class _TrendingSection extends StatelessWidget {
                   profile?['display_name'] as String? ?? 'User';
 
               final coverColor =
-                  MarginaliaDecorations.bookCoverColor(
+                  ScriptaDecorations.bookCoverColor(
                       bookTitle.isNotEmpty ? bookTitle : sharedBy);
 
               return GestureDetector(
@@ -886,7 +886,7 @@ class _WeeklyPromptBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: MarginaliaColors.primary,
+          color: ScriptaColors.primary,
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
             BoxShadow(
@@ -953,7 +953,7 @@ class _MembersStrip extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: Text(context.l10n.jamMembers.toUpperCase(),
-              style: MarginaliaTextStyles.sectionTitle),
+              style: ScriptaTextStyles.sectionTitle),
         ),
         SizedBox(
           height: 88,
@@ -974,7 +974,7 @@ class _MembersStrip extends StatelessWidget {
               final isReading =
                   readingTitle != null && readingTitle.isNotEmpty;
               final avatarColor =
-                  MarginaliaDecorations.bookCoverColor(name);
+                  ScriptaDecorations.bookCoverColor(name);
 
               return GestureDetector(
                 onTap: () => onTapMember(m),
@@ -996,7 +996,7 @@ class _MembersStrip extends StatelessWidget {
                               gradient: LinearGradient(
                                 colors: [
                                   avatarColor,
-                                  MarginaliaColors.primaryDark,
+                                  ScriptaColors.primaryDark,
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -1004,7 +1004,7 @@ class _MembersStrip extends StatelessWidget {
                               borderRadius: BorderRadius.circular(26),
                               border: isOwner
                                   ? Border.all(
-                                      color: MarginaliaColors.sienna,
+                                      color: ScriptaColors.sienna,
                                       width: 2.5,
                                     )
                                   : null,
@@ -1029,11 +1029,11 @@ class _MembersStrip extends StatelessWidget {
                                 width: 18,
                                 height: 18,
                                 decoration: BoxDecoration(
-                                  color: MarginaliaColors.primary,
+                                  color: ScriptaColors.primary,
                                   borderRadius:
                                       BorderRadius.circular(9),
                                   border: Border.all(
-                                    color: MarginaliaColors.background,
+                                    color: ScriptaColors.background,
                                     width: 2,
                                   ),
                                 ),
@@ -1056,7 +1056,7 @@ class _MembersStrip extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 10,
-                            color: MarginaliaColors.inkMuted,
+                            color: ScriptaColors.inkMuted,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1100,13 +1100,13 @@ class _EmptyJamHighlights extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: MarginaliaColors.primaryFaint,
+              color: ScriptaColors.primaryFaint,
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(
               Icons.auto_stories_outlined,
               size: 32,
-              color: MarginaliaColors.primaryDark,
+              color: ScriptaColors.primaryDark,
             ),
           ),
           const SizedBox(height: 20),
@@ -1123,7 +1123,7 @@ class _EmptyJamHighlights extends StatelessWidget {
             context.l10n.jamQuietBody,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               fontSize: 14,
               height: 1.65,
             ),
@@ -1141,9 +1141,9 @@ class _EmptyJamHighlights extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: MarginaliaColors.surface,
+                color: ScriptaColors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: MarginaliaColors.rule),
+                border: Border.all(color: ScriptaColors.rule),
               ),
               child: Column(
                 children: [
@@ -1152,7 +1152,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                       letterSpacing: 2.2,
                     ),
                   ),
@@ -1162,7 +1162,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                       letterSpacing: 5,
                     ),
                   ),
@@ -1171,7 +1171,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                     context.l10n.jamShareCode,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1183,9 +1183,9 @@ class _EmptyJamHighlights extends StatelessWidget {
                           icon: const Icon(Icons.copy_outlined, size: 16),
                           label: Text(context.l10n.copy),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: MarginaliaColors.primaryDark,
+                            foregroundColor: ScriptaColors.primaryDark,
                             side: const BorderSide(
-                                color: MarginaliaColors.rule),
+                                color: ScriptaColors.rule),
                           ),
                         ),
                       ),
@@ -1277,7 +1277,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: DraggableScrollableSheet(
@@ -1294,7 +1294,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1321,7 +1321,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                           context.l10n.jamResultCount(filtered.length),
                           style: const TextStyle(
                             fontSize: 12,
-                            color: MarginaliaColors.inkMuted,
+                            color: ScriptaColors.inkMuted,
                           ),
                         ),
                       ],
@@ -1341,7 +1341,7 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                   prefixIcon: const Icon(
                     Icons.search,
                     size: 20,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                   ),
                   suffixIcon: _query.isNotEmpty
                       ? IconButton(
@@ -1355,14 +1355,14 @@ class _SharePickerSheetState extends State<_SharePickerSheet> {
                 ),
               ),
             ),
-            const Divider(height: 1, color: MarginaliaColors.rule),
+            const Divider(height: 1, color: ScriptaColors.rule),
             // ── List ───────────────────────────────────────────────────
             Expanded(
               child: flatItems.isEmpty
                   ? Center(
                       child: Text(
                         context.l10n.jamNoHighlightsFound,
-                        style: const TextStyle(color: MarginaliaColors.inkMuted),
+                        style: const TextStyle(color: ScriptaColors.inkMuted),
                       ),
                     )
                   : ListView.builder(
@@ -1408,7 +1408,7 @@ class _BookGroupHeader extends StatelessWidget {
             width: 3,
             height: 14,
             decoration: BoxDecoration(
-              color: MarginaliaColors.sienna,
+              color: ScriptaColors.sienna,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1419,7 +1419,7 @@ class _BookGroupHeader extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
                 letterSpacing: 0.1,
               ),
               maxLines: 1,
@@ -1431,7 +1431,7 @@ class _BookGroupHeader extends StatelessWidget {
             '$count',
             style: const TextStyle(
               fontSize: 11,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1455,12 +1455,12 @@ class _SharePickerItem extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: Container(
           padding: const EdgeInsets.all(14),
-          decoration: MarginaliaDecorations.card(),
+          decoration: ScriptaDecorations.card(),
           child: Text(
             content.length > 150
                 ? '${content.substring(0, 150)}…'
                 : content,
-            style: MarginaliaTextStyles.highlightBodySmall,
+            style: ScriptaTextStyles.highlightBodySmall,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1516,7 +1516,7 @@ class _JamHighlightCard extends ConsumerWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        decoration: MarginaliaDecorations.card(),
+        decoration: ScriptaDecorations.card(),
         child: IntrinsicHeight(
           child: Row(
             children: [
@@ -1544,7 +1544,7 @@ class _JamHighlightCard extends ConsumerWidget {
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: MarginaliaColors.primaryDark,
+                            color: ScriptaColors.primaryDark,
                             letterSpacing: 0.3,
                           ),
                           maxLines: 1,
@@ -1553,7 +1553,7 @@ class _JamHighlightCard extends ConsumerWidget {
                         if (bookAuthor.isNotEmpty)
                           Text(
                             bookAuthor.toUpperCase(),
-                            style: MarginaliaTextStyles.bookAuthor,
+                            style: ScriptaTextStyles.bookAuthor,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1562,7 +1562,7 @@ class _JamHighlightCard extends ConsumerWidget {
                       // Content
                       Text(
                         content,
-                        style: MarginaliaTextStyles.highlightBodySmall,
+                        style: ScriptaTextStyles.highlightBodySmall,
                         maxLines: 5,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1575,7 +1575,7 @@ class _JamHighlightCard extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: MarginaliaColors.primaryFaint,
+                              color: ScriptaColors.primaryFaint,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -1583,7 +1583,7 @@ class _JamHighlightCard extends ConsumerWidget {
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: MarginaliaColors.primaryDark,
+                                color: ScriptaColors.primaryDark,
                               ),
                             ),
                           ),
@@ -1591,7 +1591,7 @@ class _JamHighlightCard extends ConsumerWidget {
                             const SizedBox(width: 8),
                             Text(
                               _formatDate(sharedAt),
-                              style: MarginaliaTextStyles.label,
+                              style: ScriptaTextStyles.label,
                             ),
                           ],
                           const Spacer(),
@@ -1630,10 +1630,10 @@ class _JamHighlightCard extends ConsumerWidget {
                             padding: const EdgeInsets.fromLTRB(
                                 10, 8, 12, 8),
                             decoration: BoxDecoration(
-                              color: MarginaliaColors.siennaFaint,
+                              color: ScriptaColors.siennaFaint,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: MarginaliaColors.siennaLight
+                                color: ScriptaColors.siennaLight
                                     .withAlpha(80),
                               ),
                             ),
@@ -1643,7 +1643,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                 const Icon(
                                   Icons.auto_awesome_outlined,
                                   size: 14,
-                                  color: MarginaliaColors.primaryDark,
+                                  color: ScriptaColors.primaryDark,
                                 ),
                                 const SizedBox(width: 6),
                                 Flexible(
@@ -1651,7 +1651,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                     context.l10n.jamMatchCount(myMatchCount),
                                     style: const TextStyle(
                                       fontSize: 11,
-                                      color: MarginaliaColors.primaryDark,
+                                      color: ScriptaColors.primaryDark,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1680,7 +1680,7 @@ class _JamHighlightCard extends ConsumerWidget {
         'blue' => const Color(0xFF4A90BF),
         'pink' => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _ => MarginaliaColors.siennaLight,
+        _ => ScriptaColors.siennaLight,
       };
 
   String _formatDate(String iso) {
@@ -1705,14 +1705,14 @@ class _CountChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: MarginaliaColors.inkMuted),
+        Icon(icon, size: 12, color: ScriptaColors.inkMuted),
         const SizedBox(width: 4),
         Text(
           '$count',
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
           ),
         ),
       ],
@@ -1741,13 +1741,13 @@ class _BookOfMonthCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [MarginaliaColors.siennaFaint, MarginaliaColors.surface],
+            colors: [ScriptaColors.siennaFaint, ScriptaColors.surface],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           border:
-              Border.all(color: MarginaliaColors.primary.withAlpha(90), width: 1),
+              Border.all(color: ScriptaColors.primary.withAlpha(90), width: 1),
         ),
         child: Material(
           color: Colors.transparent,
@@ -1762,7 +1762,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                   Row(
                     children: [
                       const Icon(Icons.auto_stories_rounded,
-                          size: 16, color: MarginaliaColors.primaryDark),
+                          size: 16, color: ScriptaColors.primaryDark),
                       const SizedBox(width: 8),
                       Text(
                         it ? 'LIBRO DEL MESE' : 'BOOK OF THE MONTH',
@@ -1770,7 +1770,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.2,
-                            color: MarginaliaColors.primaryDark),
+                            color: ScriptaColors.primaryDark),
                       ),
                       const Spacer(),
                       if (votes > 0)
@@ -1779,7 +1779,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                           style: GoogleFonts.manrope(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: MarginaliaColors.inkMuted),
+                              color: ScriptaColors.inkMuted),
                         ),
                     ],
                   ),
@@ -1790,13 +1790,13 @@ class _BookOfMonthCard extends ConsumerWidget {
                         fontSize: 24,
                         fontWeight: FontWeight.w600,
                         height: 1.15,
-                        color: MarginaliaColors.ink),
+                        color: ScriptaColors.ink),
                   ),
                   if (author.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(author,
                         style: GoogleFonts.manrope(
-                            fontSize: 13.5, color: MarginaliaColors.inkMuted)),
+                            fontSize: 13.5, color: ScriptaColors.inkMuted)),
                   ],
                   const SizedBox(height: 16),
                   FilledButton.icon(
@@ -1806,7 +1806,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                     icon: const Icon(Icons.quiz_outlined, size: 18),
                     label: Text(it ? 'Quiz su questo libro' : 'Quiz this book'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: MarginaliaColors.primaryDark,
+                      backgroundColor: ScriptaColors.primaryDark,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(
@@ -1867,9 +1867,9 @@ class _JamFeaturesRow extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: Row(
             children: [
-              Text(context.l10n.jamActivitySection, style: MarginaliaTextStyles.sectionTitle),
+              Text(context.l10n.jamActivitySection, style: ScriptaTextStyles.sectionTitle),
               const SizedBox(width: 12),
-              const Expanded(child: Divider(color: MarginaliaColors.rule)),
+              const Expanded(child: Divider(color: ScriptaColors.rule)),
             ],
           ),
         ),
@@ -1888,23 +1888,23 @@ class _JamFeaturesRow extends StatelessWidget {
                   margin: const EdgeInsets.only(right: 12),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.surface,
+                    color: ScriptaColors.surface,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color: MarginaliaColors.rule, width: 0.8),
+                        color: ScriptaColors.rule, width: 0.8),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(f.icon,
-                          size: 20, color: MarginaliaColors.primaryDark),
+                          size: 20, color: ScriptaColors.primaryDark),
                       const Spacer(),
                       Text(
                         f.label,
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           height: 1.2,
                         ),
                       ),
@@ -1913,7 +1913,7 @@ class _JamFeaturesRow extends StatelessWidget {
                         f.sub,
                         style: const TextStyle(
                           fontSize: 10,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1950,12 +1950,12 @@ class _MemberProfileSheet extends StatelessWidget {
     final userId = member['user_id'] as String? ??
         profile['id'] as String? ?? '';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarColor = MarginaliaDecorations.bookCoverColor(name);
+    final avatarColor = ScriptaDecorations.bookCoverColor(name);
     final bottom = MediaQuery.of(context).padding.bottom;
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 24),
@@ -1969,7 +1969,7 @@ class _MemberProfileSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1982,14 +1982,14 @@ class _MemberProfileSheet extends StatelessWidget {
             height: 80,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [avatarColor, MarginaliaColors.primaryDark],
+                colors: [avatarColor, ScriptaColors.primaryDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(40),
               border: isOwner
                   ? Border.all(
-                      color: MarginaliaColors.sienna, width: 3)
+                      color: ScriptaColors.sienna, width: 3)
                   : null,
             ),
             child: Center(
@@ -2011,7 +2011,7 @@ class _MemberProfileSheet extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: MarginaliaColors.siennaFaint,
+                color: ScriptaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -2020,7 +2020,7 @@ class _MemberProfileSheet extends StatelessWidget {
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                 ),
               ),
             ),
@@ -2033,7 +2033,7 @@ class _MemberProfileSheet extends StatelessWidget {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ),
@@ -2043,7 +2043,7 @@ class _MemberProfileSheet extends StatelessWidget {
               '@$username',
               style: const TextStyle(
                 fontSize: 14,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
               ),
             ),
           ],
@@ -2055,14 +2055,14 @@ class _MemberProfileSheet extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: MarginaliaColors.surface,
+                color: ScriptaColors.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: MarginaliaColors.rule),
+                border: Border.all(color: ScriptaColors.rule),
               ),
               child: Row(
                 children: [
                   const Icon(Icons.auto_stories,
-                      size: 16, color: MarginaliaColors.primaryDark),
+                      size: 16, color: ScriptaColors.primaryDark),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -2075,7 +2075,7 @@ class _MemberProfileSheet extends StatelessWidget {
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.5,
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -2084,14 +2084,14 @@ class _MemberProfileSheet extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: MarginaliaColors.ink,
+                            color: ScriptaColors.ink,
                           ),
                         ),
                         if (readingAuthor != null &&
                             readingAuthor.isNotEmpty)
                           Text(
                             readingAuthor.toUpperCase(),
-                            style: MarginaliaTextStyles.bookAuthor,
+                            style: ScriptaTextStyles.bookAuthor,
                           ),
                       ],
                     ),
@@ -2114,8 +2114,8 @@ class _MemberProfileSheet extends StatelessWidget {
                 icon: const Icon(Icons.person_outline, size: 16),
                 label: Text(context.l10n.jamViewProfile),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primaryDark,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.primaryDark,
+                  side: const BorderSide(color: ScriptaColors.rule),
                 ),
               ),
             ),

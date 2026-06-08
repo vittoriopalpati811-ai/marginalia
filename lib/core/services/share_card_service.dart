@@ -48,7 +48,7 @@ class ShareCardService {
 
   /// Stats-mode share: a card showing books / streak / minutes + a
   /// short headline, suitable for posting to Instagram stories
-  /// (4:5 aspect ratio, Marginalia branding watermark).
+  /// (4:5 aspect ratio, Scripta branding watermark).
   /// Reuses [_ShareSheet]'s capture+share pipeline; the difference is
   /// only the rendered card content.
   static Future<void> showStats(
@@ -180,7 +180,7 @@ class _ShareSheetState extends State<_ShareSheet> {
     final book =
         widget.bookTitle != null ? '\n— ${widget.bookTitle}' : '';
     final cta = context.l10n.shareHighlightCallToAction;
-    return '❝ $excerpt ❞$book\n\n$cta → https://marginalia.app';
+    return '❝ $excerpt ❞$book\n\n$cta → https://get-scripta.app';
   }
 
   // ── Copy to clipboard ───────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ class _ShareSheetState extends State<_ShareSheet> {
         top: MediaQuery.of(context).size.height * 0.12,
       ),
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
@@ -214,7 +214,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -228,7 +228,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.3,
             ),
           ),
@@ -277,8 +277,8 @@ class _ShareSheetState extends State<_ShareSheet> {
                     icon: const Icon(Icons.copy_outlined, size: 16),
                     label: Text(context.l10n.copy),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: MarginaliaColors.inkMuted,
-                      side: const BorderSide(color: MarginaliaColors.rule),
+                      foregroundColor: ScriptaColors.inkMuted,
+                      side: const BorderSide(color: ScriptaColors.rule),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
@@ -306,7 +306,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                         ? context.l10n.shareImagePreparing
                         : context.l10n.shareImageCta),
                     style: FilledButton.styleFrom(
-                      backgroundColor: MarginaliaColors.primary,
+                      backgroundColor: ScriptaColors.primary,
                       foregroundColor: const Color(0xFFF1EEE7),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -386,12 +386,12 @@ class _ShareCard extends StatelessWidget {
               ),
             ),
 
-            // ── MARGINALIA wordmark ───────────────────────────────────────────
+            // ── SCRIPTA wordmark ───────────────────────────────────────────
             Positioned(
               top: 18,
               right: 18,
               child: Text(
-                'MARGINALIA',
+                'SCRIPTA',
                 style: TextStyle(
                   fontSize: 8,
                   fontWeight: FontWeight.w800,
@@ -432,7 +432,7 @@ class _ShareCard extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Book title + author + "marginalia.app" badge
+                  // Book title + author + "get-scripta.app" badge
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -484,7 +484,7 @@ class _ShareCard extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          'marginalia.app',
+                          'get-scripta.app',
                           style: TextStyle(
                             fontSize: 8,
                             fontWeight: FontWeight.w600,
@@ -574,7 +574,7 @@ class _StatsShareCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'MARGINALIA',
+                    'SCRIPTA',
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
@@ -648,7 +648,7 @@ class _StatsShareCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'marginalia.app',
+                    'get-scripta.app',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,

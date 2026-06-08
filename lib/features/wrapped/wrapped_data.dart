@@ -53,7 +53,7 @@ extension WrappedPeriodX on WrappedPeriod {
 // one-line description. Same data always yields the same persona.
 
 enum ReadingPersonality {
-  theMarginalia, // balanced, the house default
+  theScripta, // balanced, the house default
   theDevourer, // many highlights, few books — tears through a book
   theCollector, // many books, lighter touch each — a broad reader
   theDeepDiver, // one or two books, deeply annotated
@@ -289,7 +289,7 @@ ReadingPersonality _derivePersonality({
   // A gentle handful → still warming up.
   if (highlightCount < 5) return ReadingPersonality.theDabbler;
 
-  return ReadingPersonality.theMarginalia;
+  return ReadingPersonality.theScripta;
 }
 
 // ─── Provider ────────────────────────────────────────────────────────────────

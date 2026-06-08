@@ -51,7 +51,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
       final html = await rootBundle.loadString(_assetPath);
       final controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.disabled)
-        ..setBackgroundColor(MarginaliaColors.background)
+        ..setBackgroundColor(ScriptaColors.background)
         ..loadHtmlString(html);
       if (mounted) setState(() => _controller = controller);
     } catch (_) {
@@ -62,10 +62,10 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
-        foregroundColor: MarginaliaColors.ink,
+        backgroundColor: ScriptaColors.background,
+        foregroundColor: ScriptaColors.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(context.l10n.termsTitle),
@@ -74,7 +74,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
           ? (_controller == null
               ? const Center(
                   child: CircularProgressIndicator(
-                    color: MarginaliaColors.sienna,
+                    color: ScriptaColors.sienna,
                     strokeWidth: 1.5,
                   ),
                 )
@@ -104,7 +104,7 @@ class _BrowserFallback extends StatelessWidget {
             Text(
               context.l10n.privacyPreviewUnavailable,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: MarginaliaColors.inkMuted),
+              style: const TextStyle(color: ScriptaColors.inkMuted),
             ),
             const SizedBox(height: 12),
             TextButton(

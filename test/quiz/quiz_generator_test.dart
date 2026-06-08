@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:marginalia/features/quiz/quiz_generator.dart';
+import 'package:scripta/features/quiz/quiz_generator.dart';
 
 void main() {
   group('generateQuiz', () {

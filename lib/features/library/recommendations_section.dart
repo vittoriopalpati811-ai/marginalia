@@ -575,17 +575,17 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tagline ("Selezionati da Marginalia, solo per te") removed: the
+    // Tagline ("Selezionati da Scripta, solo per te") removed: the
     // section title "LIBRI CONSIGLIATI" already says everything the user
     // needs, and the italic green sub-line was reading as filler the
     // user kept getting flagged in screenshots.
     return Row(
       children: [
         Text(context.l10n.recsTitle,
-            style: MarginaliaTextStyles.sectionTitle),
+            style: ScriptaTextStyles.sectionTitle),
         const SizedBox(width: 12),
         const Expanded(
-          child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
+          child: Divider(color: ScriptaColors.ruleFaint, height: 1),
         ),
       ],
     );
@@ -624,9 +624,9 @@ class _RecommendationCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarginaliaColors.ruleFaint, width: 0.8),
+          border: Border.all(color: ScriptaColors.ruleFaint, width: 0.8),
           boxShadow: const [
             BoxShadow(
                 color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
@@ -671,7 +671,7 @@ class _RecommendationCard extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           height: 1.3,
                           letterSpacing: -0.2,
                         ),
@@ -682,7 +682,7 @@ class _RecommendationCard extends StatelessWidget {
                           meta,
                           style: GoogleFonts.manrope(
                             fontSize: 11,
-                            color: MarginaliaColors.inkMuted,
+                            color: ScriptaColors.inkMuted,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -692,11 +692,11 @@ class _RecommendationCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Icon(Icons.chevron_right_rounded,
-                    size: 18, color: MarginaliaColors.inkFaint),
+                    size: 18, color: ScriptaColors.inkFaint),
               ],
             ),
             const SizedBox(height: 10),
-            Container(height: 0.7, color: MarginaliaColors.ruleFaint),
+            Container(height: 0.7, color: ScriptaColors.ruleFaint),
             const SizedBox(height: 10),
             // Reason is the main body of each card — keep it upright.
             // Italic was reserved for short decorative captions (the green
@@ -709,8 +709,8 @@ class _RecommendationCard extends StatelessWidget {
                 fontSize: 14,
                 height: 1.6,
                 color: rec.reason.isNotEmpty
-                    ? MarginaliaColors.ink
-                    : MarginaliaColors.inkFaint,
+                    ? ScriptaColors.ink
+                    : ScriptaColors.inkFaint,
               ),
             ),
           ],
@@ -865,15 +865,15 @@ class _RecommendationDetailScreenState
           padding: const EdgeInsets.only(top: 26, bottom: 10),
           child: Row(children: [
             Text(label.toUpperCase(),
-                style: MarginaliaTextStyles.sectionTitle),
+                style: ScriptaTextStyles.sectionTitle),
             const SizedBox(width: 12),
             const Expanded(
-                child: Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+                child: Divider(color: ScriptaColors.ruleFaint, height: 1)),
           ]),
         );
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -882,7 +882,7 @@ class _RecommendationDetailScreenState
               child: Row(children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
                 Expanded(
@@ -891,7 +891,7 @@ class _RecommendationDetailScreenState
                     style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.inkMuted,
+                      color: ScriptaColors.inkMuted,
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -933,7 +933,7 @@ class _RecommendationDetailScreenState
                           style: GoogleFonts.ebGaramond(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
-                            color: MarginaliaColors.ink,
+                            color: ScriptaColors.ink,
                             height: 1.2,
                           ),
                         ),
@@ -943,7 +943,7 @@ class _RecommendationDetailScreenState
                             meta,
                             style: GoogleFonts.manrope(
                               fontSize: 13,
-                              color: MarginaliaColors.inkMuted,
+                              color: ScriptaColors.inkMuted,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -961,10 +961,10 @@ class _RecommendationDetailScreenState
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.surface,
+                          color: ScriptaColors.surface,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: MarginaliaColors.ruleFaint, width: 0.8),
+                              color: ScriptaColors.ruleFaint, width: 0.8),
                           boxShadow: const [
                             BoxShadow(
                                 color: Color(0x0A000000),
@@ -978,7 +978,7 @@ class _RecommendationDetailScreenState
                             fontSize: 17,
                             height: 1.55,
                             fontStyle: FontStyle.italic,
-                            color: MarginaliaColors.ink,
+                            color: ScriptaColors.ink,
                           ),
                         ),
                       ),
@@ -1008,7 +1008,7 @@ class _RecommendationDetailScreenState
                         style: GoogleFonts.ebGaramond(
                           fontSize: 15.5,
                           height: 1.6,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                         ),
                       ),
                     ],
@@ -1022,10 +1022,10 @@ class _RecommendationDetailScreenState
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 14, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: MarginaliaColors.surfaceElevated,
+                                    color: ScriptaColors.surfaceElevated,
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                        color: MarginaliaColors.ruleFaint,
+                                        color: ScriptaColors.ruleFaint,
                                         width: 0.8),
                                   ),
                                   child: Text(
@@ -1033,7 +1033,7 @@ class _RecommendationDetailScreenState
                                     style: GoogleFonts.manrope(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
-                                      color: MarginaliaColors.inkMuted,
+                                      color: ScriptaColors.inkMuted,
                                     ),
                                   ),
                                 ))
@@ -1046,14 +1046,14 @@ class _RecommendationDetailScreenState
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.primaryFaint,
+                          color: ScriptaColors.primaryFaint,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(Icons.auto_stories_outlined,
-                                size: 18, color: MarginaliaColors.primaryDark),
+                                size: 18, color: ScriptaColors.primaryDark),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -1061,7 +1061,7 @@ class _RecommendationDetailScreenState
                                 style: GoogleFonts.manrope(
                                   fontSize: 13.5,
                                   height: 1.5,
-                                  color: MarginaliaColors.ink,
+                                  color: ScriptaColors.ink,
                                 ),
                               ),
                             ),
@@ -1115,7 +1115,7 @@ class _RecommendationDetailScreenState
                               height: 18,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: MarginaliaColors.primaryDark),
+                                  color: ScriptaColors.primaryDark),
                             )
                           : Icon(
                               _addedToLibrary
@@ -1132,9 +1132,9 @@ class _RecommendationDetailScreenState
                             fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: MarginaliaColors.primaryDark,
+                        foregroundColor: ScriptaColors.primaryDark,
                         side: const BorderSide(
-                            color: MarginaliaColors.primaryDark, width: 1.2),
+                            color: ScriptaColors.primaryDark, width: 1.2),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
@@ -1145,13 +1145,13 @@ class _RecommendationDetailScreenState
                   // wherever affiliate links are shown.
                   Text(
                     it
-                        ? 'In qualità di Affiliato Amazon, Marginalia riceve un guadagno dagli acquisti idonei.'
-                        : 'As an Amazon Associate, Marginalia earns from qualifying purchases.',
+                        ? 'In qualità di Affiliato Amazon, Scripta riceve un guadagno dagli acquisti idonei.'
+                        : 'As an Amazon Associate, Scripta earns from qualifying purchases.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.manrope(
                       fontSize: 11,
                       height: 1.4,
-                      color: MarginaliaColors.inkFaint,
+                      color: ScriptaColors.inkFaint,
                     ),
                   ),
                 ],
@@ -1179,13 +1179,13 @@ class _RecStat extends StatelessWidget {
               style: GoogleFonts.manrope(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.ink)),
+                  color: ScriptaColors.ink)),
           const SizedBox(height: 2),
           Text(label.toUpperCase(),
               style: GoogleFonts.manrope(
                   fontSize: 10,
                   letterSpacing: 0.5,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                   fontWeight: FontWeight.w600)),
         ],
       );
@@ -1288,7 +1288,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 12, 24, bottom + 32),
@@ -1302,7 +1302,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               child: Container(
                 width: 36, height: 4,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.rule,
+                  color: ScriptaColors.rule,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1315,7 +1315,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               style: GoogleFonts.manrope(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 height: 1.2,
                 letterSpacing: -0.5,
               ),
@@ -1326,7 +1326,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                 meta,
                 style: GoogleFonts.manrope(
                   fontSize: 13,
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1338,7 +1338,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.siennaFaint,
+                  color: ScriptaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1346,7 +1346,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
                   style: GoogleFonts.ebGaramond(
                     fontSize: 15,
                     height: 1.65,
-                    color: MarginaliaColors.sienna,
+                    color: ScriptaColors.sienna,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -1357,11 +1357,11 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
             Row(
               children: [
                 Text(context.l10n.bookMyNotes,
-                    style: MarginaliaTextStyles.sectionTitle),
+                    style: ScriptaTextStyles.sectionTitle),
                 const SizedBox(width: 12),
                 const Expanded(
                     child:
-                        Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+                        Divider(color: ScriptaColors.ruleFaint, height: 1)),
               ],
             ),
             const SizedBox(height: 12),
@@ -1374,30 +1374,30 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               style: GoogleFonts.manrope(
                 fontSize: 14,
                 height: 1.6,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
               decoration: InputDecoration(
                 hintText: context.l10n.bookNotesHint,
                 hintStyle: GoogleFonts.manrope(
                   fontSize: 14,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                 ),
                 filled: true,
-                fillColor: MarginaliaColors.surface,
+                fillColor: ScriptaColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      BorderSide(color: MarginaliaColors.rule, width: 0.8),
+                      BorderSide(color: ScriptaColors.rule, width: 0.8),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      BorderSide(color: MarginaliaColors.rule, width: 0.8),
+                      BorderSide(color: ScriptaColors.rule, width: 0.8),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                      color: MarginaliaColors.primary, width: 1.5),
+                      color: ScriptaColors.primary, width: 1.5),
                 ),
                 contentPadding: const EdgeInsets.all(14),
               ),
@@ -1408,7 +1408,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               child: FilledButton(
                 onPressed: _saving ? null : _saveNote,
                 style: FilledButton.styleFrom(
-                  backgroundColor: MarginaliaColors.primary,
+                  backgroundColor: ScriptaColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -1436,11 +1436,11 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
             Row(
               children: [
                 Text(context.l10n.bookBuyOnAmazon.toUpperCase(),
-                    style: MarginaliaTextStyles.sectionTitle),
+                    style: ScriptaTextStyles.sectionTitle),
                 const SizedBox(width: 12),
                 const Expanded(
                     child:
-                        Divider(color: MarginaliaColors.ruleFaint, height: 1)),
+                        Divider(color: ScriptaColors.ruleFaint, height: 1)),
               ],
             ),
             const SizedBox(height: 12),
@@ -1466,7 +1466,7 @@ class _BookDetailSheetState extends State<_BookDetailSheet> {
               context.l10n.bookAmazonEarningsHint,
               style: GoogleFonts.manrope(
                 fontSize: 11,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1506,7 +1506,7 @@ class _RecommendationsHint extends StatelessWidget {
               overflow: TextOverflow.visible,
               style: GoogleFonts.manrope(
                 fontSize: 12,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
                 height: 1.5,
               ),
             ),
@@ -1524,7 +1524,7 @@ class _RecommendationsHint extends StatelessWidget {
                     const Icon(
                       Icons.refresh_rounded,
                       size: 14,
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -1532,7 +1532,7 @@ class _RecommendationsHint extends StatelessWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -1565,7 +1565,7 @@ class _RecommendationsSkeleton extends StatelessWidget {
             context.l10n.recsLoading,
             style: GoogleFonts.manrope(
               fontSize: 11,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               height: 1.4,
             ),
           ),
@@ -1575,7 +1575,7 @@ class _RecommendationsSkeleton extends StatelessWidget {
               height: 120,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: MarginaliaColors.surfaceElevated,
+                color: ScriptaColors.surfaceElevated,
                 borderRadius: BorderRadius.circular(16),
               ),
             ),

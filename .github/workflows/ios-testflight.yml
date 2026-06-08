@@ -179,6 +179,12 @@ jobs:
           perl -pi -e 's{PRODUCT_BUNDLE_IDENTIFIER = io\.marginalia\.app;}{PRODUCT_BUNDLE_IDENTIFIER = io.marginalia.app;\n\t\t\t\tCODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;}g' ios/Runner.xcodeproj/project.pbxproj
           echo "Entitlements wiring count:"
           grep -c CODE_SIGN_ENTITLEMENTS ios/Runner.xcodeproj/project.pbxproj || echo "  (none)"
+          # Rebrand: force the home-screen app name to "Scripta". flutter create
+          # derives CFBundleDisplayName from the package name; set it explicitly
+          # so it is guaranteed regardless of derivation.
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Scripta" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Scripta" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Scripta" ios/Runner/Info.plist 2>/dev/null || true
+          echo "Home-screen name -> $(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' ios/Runner/Info.plist)"
 
       - name: Inject widget + watch extension targets
         run: |

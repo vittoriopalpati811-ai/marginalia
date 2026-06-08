@@ -77,11 +77,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         : (_showAllBooks ? allBooks : allBooks.take(3).toList());
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: RefreshIndicator(
         onRefresh: () async => _refreshLibrary(),
-        color: MarginaliaColors.primaryDark,
-        backgroundColor: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.primaryDark,
+        backgroundColor: ScriptaColors.surfaceElevated,
         displacement: 60,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -107,20 +107,20 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.surfaceElevated,
+                      color: ScriptaColors.surfaceElevated,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.auto_awesome_outlined,
-                            size: 19, color: MarginaliaColors.primaryDark),
+                            size: 19, color: ScriptaColors.primaryDark),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             context.l10n.searchByMeaningHint,
                             style: GoogleFonts.manrope(
                                 fontSize: 14.5,
-                                color: MarginaliaColors.inkMuted),
+                                color: ScriptaColors.inkMuted),
                           ),
                         ),
                       ],
@@ -146,7 +146,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.surface,
+                      color: ScriptaColors.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -161,10 +161,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                              color: MarginaliaColors.primaryFaint,
+                              color: ScriptaColors.primaryFaint,
                               borderRadius: BorderRadius.circular(12)),
                           child: const Icon(Icons.quiz_outlined,
-                              color: MarginaliaColors.primaryDark, size: 22),
+                              color: ScriptaColors.primaryDark, size: 22),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -175,17 +175,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   style: GoogleFonts.manrope(
                                       fontSize: 15.5,
                                       fontWeight: FontWeight.w700,
-                                      color: MarginaliaColors.ink)),
+                                      color: ScriptaColors.ink)),
                               const SizedBox(height: 2),
                               Text(context.l10n.quizCardSubtitle,
                                   style: GoogleFonts.manrope(
                                       fontSize: 13,
-                                      color: MarginaliaColors.inkMuted)),
+                                      color: ScriptaColors.inkMuted)),
                             ],
                           ),
                         ),
                         const Icon(Icons.chevron_right_rounded,
-                            color: MarginaliaColors.inkFaint),
+                            color: ScriptaColors.inkFaint),
                       ],
                     ),
                   ),
@@ -253,7 +253,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: CircularProgressIndicator(
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                       strokeWidth: 1.5,
                     ),
                   ),
@@ -302,10 +302,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(
-                        color: MarginaliaColors.surface,
+                        color: ScriptaColors.surface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: MarginaliaColors.rule,
+                          color: ScriptaColors.rule,
                           width: 0.8,
                         ),
                       ),
@@ -319,7 +319,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: MarginaliaColors.primaryDark,
+                              color: ScriptaColors.primaryDark,
                               letterSpacing: -0.1,
                             ),
                           ),
@@ -329,7 +329,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                 ? Icons.keyboard_arrow_up_rounded
                                 : Icons.keyboard_arrow_down_rounded,
                             size: 18,
-                            color: MarginaliaColors.primaryDark,
+                            color: ScriptaColors.primaryDark,
                           ),
                         ],
                       ),
@@ -397,7 +397,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: MarginaliaColors.surfaceElevated,
+          backgroundColor: ScriptaColors.surfaceElevated,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20)),
           title: Text(context.l10n.libraryClearReimportTitle,
@@ -406,7 +406,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           content: Text(
             context.l10n.libraryClearReimportBody,
             style: const TextStyle(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
                 height: 1.5),
           ),
@@ -488,7 +488,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         // the user the AI is regenerating their recs. The library
         // recommendations provider was already invalidated above by
         // `_invalidateAfterImport()`, so the next paint shows the
-        // "Marginalia is analyzing your highlights…" skeleton automatically.
+        // "Scripta is analyzing your highlights…" skeleton automatically.
         if (importResult.highlightsAdded > 0) {
           Future.delayed(const Duration(milliseconds: 600), () {
             if (!mounted) return;
@@ -496,7 +496,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               SnackBar(
                 content: Text(context.l10n.libraryImportRecsHint),
                 duration: const Duration(seconds: 4),
-                backgroundColor: MarginaliaColors.primary,
+                backgroundColor: ScriptaColors.primary,
               ),
             );
           });
@@ -702,9 +702,9 @@ class _EditorialHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   greeting,
-                  style: MarginaliaTextStyles.subtitle.copyWith(
+                  style: ScriptaTextStyles.subtitle.copyWith(
                     fontSize: 13,
-                    color: MarginaliaColors.inkMuted,
+                    color: ScriptaColors.inkMuted,
                   ),
                 ),
               ),
@@ -716,7 +716,7 @@ class _EditorialHeader extends StatelessWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 1.5,
-                      color: MarginaliaColors.primaryDark,
+                      color: ScriptaColors.primaryDark,
                     ),
                   ),
                 )
@@ -725,7 +725,7 @@ class _EditorialHeader extends StatelessWidget {
                   onLongPress: onForceReimport,
                   child: IconButton(
                     icon: const Icon(Icons.add_rounded),
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                     iconSize: 24,
                     splashRadius: 22,
                     tooltip: context.l10n.libraryImportTooltip,
@@ -739,7 +739,7 @@ class _EditorialHeader extends StatelessWidget {
           // Hero title — Airbnb-spec 28pt bold
           Text(
             context.l10n.libraryTitle,
-            style: MarginaliaTextStyles.heroTitle,
+            style: ScriptaTextStyles.heroTitle,
           ),
         ],
       ),
@@ -781,42 +781,42 @@ class _DailyCard extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, bottom: 10),
             child: Text(
               context.l10n.libraryPickedForYou,
-              style: MarginaliaTextStyles.sectionTitle,
+              style: ScriptaTextStyles.sectionTitle,
             ),
           ),
           PressableSpring(
             onPressed: onTap,
             child: Container(
               padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
-              decoration: MarginaliaDecorations.quietCard(),
+              decoration: ScriptaDecorations.quietCard(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '"',
-                    style: MarginaliaTextStyles.quoteDecor.copyWith(
+                    style: ScriptaTextStyles.quoteDecor.copyWith(
                       fontSize: 56,
                       height: 0.5,
-                      color: MarginaliaColors.siennaFaint,
+                      color: ScriptaColors.siennaFaint,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     text,
-                    style: MarginaliaTextStyles.highlightBody.copyWith(
+                    style: ScriptaTextStyles.highlightBody.copyWith(
                       fontSize: 18,
                       height: 1.65,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                     ),
                   ),
                   if (subtitle != null && subtitle!.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       subtitle!,
-                      style: MarginaliaTextStyles.subtitle.copyWith(
+                      style: ScriptaTextStyles.subtitle.copyWith(
                         fontSize: 12,
                         height: 1.4,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                       ),
                     ),
                   ],
@@ -828,7 +828,7 @@ class _DailyCard extends StatelessWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: MarginaliaColors.primaryDark,
+                          color: ScriptaColors.primaryDark,
                           letterSpacing: -0.1,
                         ),
                       ),
@@ -836,7 +836,7 @@ class _DailyCard extends StatelessWidget {
                       const Icon(
                         Icons.arrow_forward_rounded,
                         size: 16,
-                        color: MarginaliaColors.primaryDark,
+                        color: ScriptaColors.primaryDark,
                       ),
                     ],
                   ),
@@ -870,7 +870,7 @@ class _RecentHighlightsStrip extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 28, 20, 12),
           child: Text(
             context.l10n.libraryRecent,
-            style: MarginaliaTextStyles.sectionTitle,
+            style: ScriptaTextStyles.sectionTitle,
           ),
         ),
         SizedBox(
@@ -887,7 +887,7 @@ class _RecentHighlightsStrip extends StatelessWidget {
                 child: Container(
                   width: 240,
                   margin: const EdgeInsets.only(right: 10),
-                  decoration: MarginaliaDecorations.quietCard(radius: 16),
+                  decoration: ScriptaDecorations.quietCard(radius: 16),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: Stack(
@@ -917,10 +917,10 @@ class _RecentHighlightsStrip extends StatelessWidget {
                                     h.bookTitle!.toUpperCase(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: MarginaliaTextStyles.bookAuthor
+                                    style: ScriptaTextStyles.bookAuthor
                                         .copyWith(
                                       fontSize: 9,
-                                      color: MarginaliaColors.inkFaint,
+                                      color: ScriptaColors.inkFaint,
                                       letterSpacing: 1.0,
                                     ),
                                   ),
@@ -957,12 +957,12 @@ class _RecentHighlightsStrip extends StatelessWidget {
         'blue'   => const Color(0xFF4A90BF),
         'pink'   => const Color(0xFFBF4A72),
         'orange' => const Color(0xFFBF7A34),
-        _        => MarginaliaColors.siennaLight,
+        _        => ScriptaColors.siennaLight,
       };
 }
 
 class _QuoteStyle {
-  static final strip = MarginaliaTextStyles.highlightBodySmall.copyWith(
+  static final strip = ScriptaTextStyles.highlightBodySmall.copyWith(
     fontSize: 13,
     height: 1.6,
   );
@@ -1021,11 +1021,11 @@ class _Chip extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: active ? MarginaliaColors.primary : Colors.transparent,
+          color: active ? ScriptaColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color:
-                active ? MarginaliaColors.primary : MarginaliaColors.rule,
+                active ? ScriptaColors.primary : ScriptaColors.rule,
             width: 0.8,
           ),
         ),
@@ -1037,15 +1037,15 @@ class _Chip extends StatelessWidget {
               size: 13,
               color: active
                   ? const Color(0xFFF1EEE7)
-                  : MarginaliaColors.inkMuted,
+                  : ScriptaColors.inkMuted,
             ),
             const SizedBox(width: 6),
             Text(
               label.toUpperCase(),
-              style: MarginaliaTextStyles.sectionTitle.copyWith(
+              style: ScriptaTextStyles.sectionTitle.copyWith(
                 color: active
                     ? const Color(0xFFF1EEE7)
-                    : MarginaliaColors.inkMuted,
+                    : ScriptaColors.inkMuted,
                 letterSpacing: 1.5,
                 fontSize: 9,
               ),
@@ -1079,7 +1079,7 @@ class _BookGridCard extends StatelessWidget {
     final card = PressableSpring(
       onPressed: onTap,
       child: Container(
-        decoration: MarginaliaDecorations.quietCard(radius: 16),
+        decoration: ScriptaDecorations.quietCard(radius: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1120,7 +1120,7 @@ class _BookGridCard extends StatelessWidget {
                       book.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: MarginaliaTextStyles.bookTitle.copyWith(
+                      style: ScriptaTextStyles.bookTitle.copyWith(
                         fontSize: 13,
                         height: 1.25,
                       ),
@@ -1130,7 +1130,7 @@ class _BookGridCard extends StatelessWidget {
                       book.author.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: MarginaliaTextStyles.bookAuthor.copyWith(
+                      style: ScriptaTextStyles.bookAuthor.copyWith(
                         fontSize: 9,
                         letterSpacing: 0.6,
                       ),
@@ -1172,13 +1172,13 @@ class _EmptyLibrary extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: MarginaliaColors.siennaFaint,
+                color: ScriptaColors.siennaFaint,
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
                 Icons.auto_stories_outlined,
                 size: 32,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 24),
@@ -1187,7 +1187,7 @@ class _EmptyLibrary extends StatelessWidget {
                   ? context.l10n.libraryNoFavorites
                   : context.l10n.libraryNoBooks,
               style:
-                  MarginaliaTextStyles.bookTitle.copyWith(fontSize: 20),
+                  ScriptaTextStyles.bookTitle.copyWith(fontSize: 20),
             ),
             const SizedBox(height: 10),
             Text(
@@ -1196,7 +1196,7 @@ class _EmptyLibrary extends StatelessWidget {
                   : context.l10n.libraryNoBooksBody,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 height: 1.6,
                 fontSize: 14,
               ),
@@ -1213,11 +1213,11 @@ class _EmptyLibrary extends StatelessWidget {
                 onPressed: onDemo,
                 icon: Icon(Icons.auto_awesome_outlined,
                     size: 16,
-                    color: MarginaliaColors.primaryDark),
+                    color: ScriptaColors.primaryDark),
                 label: Text(
                   context.l10n.libraryTryDemo,
                   style: const TextStyle(
-                      color: MarginaliaColors.primaryDark),
+                      color: ScriptaColors.primaryDark),
                 ),
               ),
             ],

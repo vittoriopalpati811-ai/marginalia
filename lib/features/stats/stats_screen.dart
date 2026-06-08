@@ -81,9 +81,9 @@ class StatsScreen extends ConsumerWidget {
     final year          = DateTime.now().year;
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
@@ -94,13 +94,13 @@ class StatsScreen extends ConsumerWidget {
           style: GoogleFonts.ebGaramond(
             fontSize: 22,
             fontWeight: FontWeight.w600,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
             letterSpacing: -0.4,
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: MarginaliaColors.ink,
+        backgroundColor: ScriptaColors.ink,
         foregroundColor: Colors.white,
         onPressed: () => _showAddSessionSheet(context, ref),
         icon: const Icon(Icons.add, size: 18),
@@ -113,7 +113,7 @@ class StatsScreen extends ConsumerWidget {
         ),
       ),
       body: RefreshIndicator(
-        color: MarginaliaColors.primaryDark,
+        color: ScriptaColors.primaryDark,
         onRefresh: () async {
           ref.invalidate(readingGoalProvider);
           ref.invalidate(readingSessionsProvider);
@@ -204,7 +204,7 @@ class StatsScreen extends ConsumerWidget {
   void _showAddSessionSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -221,7 +221,7 @@ class StatsScreen extends ConsumerWidget {
   void _showGoalEditSheet(BuildContext context, WidgetRef ref, int? current) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -373,13 +373,13 @@ class _SectionHeader extends StatelessWidget {
           style: GoogleFonts.manrope(
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            color: MarginaliaColors.inkMuted,
+            color: ScriptaColors.inkMuted,
             letterSpacing: 1.4,
           ),
         ),
         const SizedBox(width: 10),
         const Expanded(
-          child: Divider(color: MarginaliaColors.ruleFaint, height: 1),
+          child: Divider(color: ScriptaColors.ruleFaint, height: 1),
         ),
       ],
     );
@@ -395,7 +395,7 @@ class _SkeletonCard extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(18),
       ),
     );
@@ -410,13 +410,13 @@ class _EmptyStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Text(
         text,
         textAlign: TextAlign.center,
         style: GoogleFonts.manrope(
           fontSize: 13,
-          color: MarginaliaColors.inkMuted,
+          color: ScriptaColors.inkMuted,
           height: 1.5,
         ),
       ),
@@ -437,7 +437,7 @@ class _GoalCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -447,7 +447,7 @@ class _GoalCard extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 30,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -0.6,
                 height: 1.1,
               ),
@@ -458,8 +458,8 @@ class _GoalCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 10,
-                backgroundColor: MarginaliaColors.surfaceElevated,
-                color: MarginaliaColors.primaryDark,
+                backgroundColor: ScriptaColors.surfaceElevated,
+                color: ScriptaColors.primaryDark,
               ),
             ),
             const SizedBox(height: 14),
@@ -476,7 +476,7 @@ class _GoalCard extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 30,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
               ),
             ),
             const SizedBox(height: 12),
@@ -515,7 +515,7 @@ class _OverviewGrid extends StatelessWidget {
               label: context.l10n.statsStreak,
               value: context.l10n.statsStreakDays(streak),
               big:   streak.toString(),
-              accent: MarginaliaColors.primaryDark,
+              accent: ScriptaColors.primaryDark,
             ),
           ),
         ),
@@ -527,7 +527,7 @@ class _OverviewGrid extends StatelessWidget {
               label: context.l10n.statsThisMonth,
               value: context.l10n.statsThisMonthMinutes(monthMinutes),
               big:   monthMinutes.toString(),
-              accent: MarginaliaColors.primaryDark,
+              accent: ScriptaColors.primaryDark,
             ),
           ),
         ),
@@ -539,7 +539,7 @@ class _OverviewGrid extends StatelessWidget {
               label: context.l10n.statsThisYear,
               value: context.l10n.statsThisYearBooks(yearBooks),
               big:   yearBooks.toString(),
-              accent: MarginaliaColors.primaryDark,
+              accent: ScriptaColors.primaryDark,
             ),
           ),
         ),
@@ -564,7 +564,7 @@ class _OverviewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -573,7 +573,7 @@ class _OverviewTile extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 9,
               fontWeight: FontWeight.w800,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               letterSpacing: 0.8,
             ),
           ),
@@ -598,7 +598,7 @@ class _OverviewTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.manrope(
               fontSize: 11,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               height: 1.3,
             ),
           ),
@@ -668,7 +668,7 @@ class _MonthlyBarChartState extends State<_MonthlyBarChart> {
       onTap: _dismiss,
       child: Container(
         padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
-        decoration: MarginaliaDecorations.card(),
+        decoration: ScriptaDecorations.card(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -757,7 +757,7 @@ class _MonthlyBarChartState extends State<_MonthlyBarChart> {
             const Divider(
               height: 1,
               thickness: 0.6,
-              color: MarginaliaColors.ruleFaint,
+              color: ScriptaColors.ruleFaint,
             ),
             const SizedBox(height: 10),
             _ChartCaption(text: context.l10n.statsMonthlyTapHint),
@@ -798,7 +798,7 @@ class _ChartHeadline extends StatelessWidget {
                   // and the screenshot they shared felt the progress should
                   // read like a tally, not a frontispiece.
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                   letterSpacing: -0.8,
                   height: 1.0,
                 ),
@@ -809,7 +809,7 @@ class _ChartHeadline extends StatelessWidget {
                 style: GoogleFonts.manrope(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                   letterSpacing: 0.6,
                 ),
               ),
@@ -827,7 +827,7 @@ class _ChartHeadline extends StatelessWidget {
                   fontSize: 22,
                   // Roman, matching the headline total above.
                   fontWeight: FontWeight.w600,
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                   letterSpacing: -0.3,
                   height: 1.1,
                 ),
@@ -838,7 +838,7 @@ class _ChartHeadline extends StatelessWidget {
                 style: GoogleFonts.manrope(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                   letterSpacing: 0.6,
                 ),
               ),
@@ -875,11 +875,11 @@ class _BarColumn extends StatelessWidget {
     // selection clearly leads the eye.
     final hasData = bucket.minutes > 0;
     final fillTop = selected
-        ? MarginaliaColors.primaryDark
-        : (dimmed ? const Color(0x66B0B5AE) : MarginaliaColors.sienna);
+        ? ScriptaColors.primaryDark
+        : (dimmed ? const Color(0x66B0B5AE) : ScriptaColors.sienna);
     final fillBottom = selected
-        ? MarginaliaColors.primary
-        : (dimmed ? const Color(0x66B0B5AE) : MarginaliaColors.primary);
+        ? ScriptaColors.primary
+        : (dimmed ? const Color(0x66B0B5AE) : ScriptaColors.primary);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -899,7 +899,7 @@ class _BarColumn extends StatelessWidget {
                       colors: [fillTop, fillBottom],
                     )
                   : null,
-              color: hasData ? null : MarginaliaColors.ruleFaint,
+              color: hasData ? null : ScriptaColors.ruleFaint,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(3),
               ),
@@ -927,10 +927,10 @@ class _BarColumn extends StatelessWidget {
               fontStyle: FontStyle.italic,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               color: selected
-                  ? MarginaliaColors.primaryDark
+                  ? ScriptaColors.primaryDark
                   : (dimmed
-                      ? MarginaliaColors.inkFaint
-                      : MarginaliaColors.inkMuted),
+                      ? ScriptaColors.inkFaint
+                      : ScriptaColors.inkMuted),
               height: 1.0,
             ),
           ),
@@ -1016,7 +1016,7 @@ class _MonthTooltip extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(12, 7, 12, 8),
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.surface,
+                    color: ScriptaColors.surface,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: const Color(0x231B1F1B),
@@ -1042,7 +1042,7 @@ class _MonthTooltip extends StatelessWidget {
                           fontSize: 15,
                           fontStyle: FontStyle.italic,
                           fontWeight: FontWeight.w500,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                           height: 1.05,
                           letterSpacing: -0.2,
                         ),
@@ -1056,8 +1056,8 @@ class _MonthTooltip extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: rawMinutes == 0
-                              ? MarginaliaColors.inkFaint
-                              : MarginaliaColors.primaryDark,
+                              ? ScriptaColors.inkFaint
+                              : ScriptaColors.primaryDark,
                           letterSpacing: 0.4,
                         ),
                       ),
@@ -1092,7 +1092,7 @@ class _TooltipArrowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final fill = Paint()
-      ..color = MarginaliaColors.surface
+      ..color = ScriptaColors.surface
       ..style = PaintingStyle.fill;
     final stroke = Paint()
       ..color = const Color(0x231B1F1B)
@@ -1132,7 +1132,7 @@ class _ChartCaption extends StatelessWidget {
         Icon(
           Icons.touch_app_outlined,
           size: 13,
-          color: MarginaliaColors.inkFaint,
+          color: ScriptaColors.inkFaint,
         ),
         const SizedBox(width: 6),
         Expanded(
@@ -1141,7 +1141,7 @@ class _ChartCaption extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 12.5,
               fontStyle: FontStyle.italic,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               height: 1.3,
             ),
           ),
@@ -1188,14 +1188,14 @@ class _SessionTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Row(
         children: [
           Container(
             width: 44,
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: MarginaliaColors.siennaFaint,
+              color: ScriptaColors.siennaFaint,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -1204,7 +1204,7 @@ class _SessionTile extends StatelessWidget {
                 style: GoogleFonts.manrope(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                 ),
               ),
             ),
@@ -1221,7 +1221,7 @@ class _SessionTile extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1231,7 +1231,7 @@ class _SessionTile extends StatelessWidget {
                       pages != null ? '$minutes min · $pages pg' : '$minutes min',
                       style: GoogleFonts.manrope(
                         fontSize: 11,
-                        color: MarginaliaColors.inkMuted,
+                        color: ScriptaColors.inkMuted,
                       ),
                     ),
                     if (inferred) ...[
@@ -1240,7 +1240,7 @@ class _SessionTile extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.siennaFaint,
+                          color: ScriptaColors.siennaFaint,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -1248,7 +1248,7 @@ class _SessionTile extends StatelessWidget {
                           style: GoogleFonts.manrope(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
-                            color: MarginaliaColors.primaryDark,
+                            color: ScriptaColors.primaryDark,
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -1275,10 +1275,10 @@ class _MethodologyFooter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surfaceElevated,
+        color: ScriptaColors.surfaceElevated,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: MarginaliaColors.ruleFaint,
+          color: ScriptaColors.ruleFaint,
           width: 0.8,
         ),
       ),
@@ -1288,7 +1288,7 @@ class _MethodologyFooter extends StatelessWidget {
           const Icon(
             Icons.info_outline_rounded,
             size: 14,
-            color: MarginaliaColors.inkFaint,
+            color: ScriptaColors.inkFaint,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1296,7 +1296,7 @@ class _MethodologyFooter extends StatelessWidget {
               context.l10n.statsMethodologyNote,
               style: GoogleFonts.manrope(
                 fontSize: 11,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 height: 1.5,
               ),
             ),
@@ -1372,7 +1372,7 @@ class _AddSessionSheetState extends ConsumerState<_AddSessionSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1383,7 +1383,7 @@ class _AddSessionSheetState extends ConsumerState<_AddSessionSheet> {
             style: GoogleFonts.ebGaramond(
               fontSize: 22,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ),
@@ -1394,7 +1394,7 @@ class _AddSessionSheetState extends ConsumerState<_AddSessionSheet> {
             context.l10n.statsAddHint,
             style: GoogleFonts.manrope(
               fontSize: 12,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
               height: 1.45,
             ),
           ),
@@ -1532,7 +1532,7 @@ class _GoalEditSheetState extends ConsumerState<_GoalEditSheet> {
             child: Container(
               width: 40, height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1543,7 +1543,7 @@ class _GoalEditSheetState extends ConsumerState<_GoalEditSheet> {
             style: GoogleFonts.ebGaramond(
               fontSize: 22,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ),

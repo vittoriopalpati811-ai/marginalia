@@ -432,7 +432,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.surface,
+      backgroundColor: ScriptaColors.surface,
       body: SafeArea(
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
@@ -594,11 +594,11 @@ class _LanguageStepState extends State<_LanguageStep> {
 
           // ── Wordmark ──────────────────────────────────────────────────────
           Text(
-            'Marginalia',
+            'Scripta',
             style: GoogleFonts.ebGaramond(
               fontSize: 44,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -1.0,
               height: 1,
             ),
@@ -613,7 +613,7 @@ class _LanguageStepState extends State<_LanguageStep> {
           Container(
             height: 0.8,
             width: 160,
-            color: MarginaliaColors.ruleFaint,
+            color: ScriptaColors.ruleFaint,
           )
               .animate()
               .fadeIn(delay: 150.ms, duration: 500.ms),
@@ -625,7 +625,7 @@ class _LanguageStepState extends State<_LanguageStep> {
             context.l10n.onboardingLangChoose,
             style: GoogleFonts.manrope(
               fontSize: 13,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
               letterSpacing: 1.8,
               fontWeight: FontWeight.w500,
             ),
@@ -673,7 +673,7 @@ class _LanguageStepState extends State<_LanguageStep> {
             context.l10n.onboardingLangChangeLater,
             style: GoogleFonts.manrope(
               fontSize: 12,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
             ),
             textAlign: TextAlign.center,
           )
@@ -720,19 +720,19 @@ class _LangCard extends StatelessWidget {
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected
-              ? MarginaliaColors.primaryFaint
-              : MarginaliaColors.surface,
+              ? ScriptaColors.primaryFaint
+              : ScriptaColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? MarginaliaColors.primary
-                : MarginaliaColors.rule,
+                ? ScriptaColors.primary
+                : ScriptaColors.rule,
             width: isSelected ? 1.5 : 0.8,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: MarginaliaColors.primary.withAlpha(30),
+                    color: ScriptaColors.primary.withAlpha(30),
                     blurRadius: 20,
                     offset: const Offset(0, 6),
                   ),
@@ -762,8 +762,8 @@ class _LangCard extends StatelessWidget {
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                     color: isSelected
-                        ? MarginaliaColors.primaryDark
-                        : MarginaliaColors.ink,
+                        ? ScriptaColors.primaryDark
+                        : ScriptaColors.ink,
                     letterSpacing: -0.3,
                     height: 1,
                   ),
@@ -774,7 +774,7 @@ class _LangCard extends StatelessWidget {
                   sublabel,
                   style: GoogleFonts.manrope(
                     fontSize: 12,
-                    color: MarginaliaColors.inkFaint,
+                    color: ScriptaColors.inkFaint,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -819,8 +819,8 @@ class _ProgressDots extends StatelessWidget {
             height: 7,
             decoration: BoxDecoration(
               color: active
-                  ? MarginaliaColors.primary
-                  : MarginaliaColors.primary.withAlpha(50),
+                  ? ScriptaColors.primary
+                  : ScriptaColors.primary.withAlpha(50),
               borderRadius: BorderRadius.circular(4),
             ),
           );
@@ -854,17 +854,17 @@ class _WelcomeStep extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
+                color: ScriptaColors.primaryFaint,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: MarginaliaColors.primary.withAlpha(40),
+                  color: ScriptaColors.primary.withAlpha(40),
                   width: 1.5,
                 ),
               ),
               child: const Icon(
                 Icons.auto_stories,
                 size: 48,
-                color: MarginaliaColors.primary,
+                color: ScriptaColors.primary,
               ),
             ),
           ),
@@ -874,11 +874,11 @@ class _WelcomeStep extends StatelessWidget {
           StaggeredListItem(
             index: 1,
             child: Text(
-              'Marginalia',
+              'Scripta',
               style: GoogleFonts.ebGaramond(
                 fontSize: 48,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
                 letterSpacing: -1.0,
                 height: 1,
               ),
@@ -894,7 +894,7 @@ class _WelcomeStep extends StatelessWidget {
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
                 fontSize: 15,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -911,7 +911,7 @@ class _WelcomeStep extends StatelessWidget {
                 height: 54,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.primary,
+                  color: ScriptaColors.primary,
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: Text(
@@ -936,7 +936,7 @@ class _WelcomeStep extends StatelessWidget {
                 context.l10n.onboardingHaveAccount,
                 style: GoogleFonts.manrope(
                   fontSize: 14,
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1063,7 +1063,7 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
             style: GoogleFonts.ebGaramond(
               fontSize: 30,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.5,
             ),
           ).animate().fadeIn(duration: AirbnbMotion.standard, curve: AirbnbMotion.enter),
@@ -1076,7 +1076,7 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
                 : context.l10n.onboardingAuthCreateSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ).animate().fadeIn(delay: 60.ms, duration: AirbnbMotion.standard),
 
@@ -1099,7 +1099,7 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
           // ── "oppure" divider ─────────────────────────────────────────────
           Row(
             children: [
-              const Expanded(child: Divider(color: MarginaliaColors.rule, height: 1)),
+              const Expanded(child: Divider(color: ScriptaColors.rule, height: 1)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
@@ -1107,12 +1107,12 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
                   style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: MarginaliaColors.inkFaint,
+                    color: ScriptaColors.inkFaint,
                     letterSpacing: 0.6,
                   ),
                 ),
               ),
-              const Expanded(child: Divider(color: MarginaliaColors.rule, height: 1)),
+              const Expanded(child: Divider(color: ScriptaColors.rule, height: 1)),
             ],
           ).animate().fadeIn(delay: 220.ms, duration: AirbnbMotion.standard),
 
@@ -1138,7 +1138,7 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
                       icon: const Icon(Icons.email_outlined, size: 18),
                       label: Text(context.l10n.authContinueWithEmail),
                       style: TextButton.styleFrom(
-                        foregroundColor: MarginaliaColors.ink,
+                        foregroundColor: ScriptaColors.ink,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () => setState(() => _emailExpanded = true),
@@ -1185,7 +1185,7 @@ class _EmailForm extends StatelessWidget {
             hintText: context.l10n.authEmail,
             prefixIcon: const Icon(Icons.email_outlined),
             filled: true,
-            fillColor: MarginaliaColors.surfaceElevated,
+            fillColor: ScriptaColors.surfaceElevated,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
@@ -1199,7 +1199,7 @@ class _EmailForm extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(
-                  color: MarginaliaColors.primaryDark, width: 1.5),
+                  color: ScriptaColors.primaryDark, width: 1.5),
             ),
           ),
         ),
@@ -1221,7 +1221,7 @@ class _EmailForm extends StatelessWidget {
               onPressed: onToggleObscure,
             ),
             filled: true,
-            fillColor: MarginaliaColors.surfaceElevated,
+            fillColor: ScriptaColors.surfaceElevated,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
@@ -1235,7 +1235,7 @@ class _EmailForm extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(
-                  color: MarginaliaColors.primaryDark, width: 1.5),
+                  color: ScriptaColors.primaryDark, width: 1.5),
             ),
           ),
         ),
@@ -1327,7 +1327,7 @@ class _UsernameStep extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ).animate().fadeIn(duration: 250.ms),
@@ -1337,7 +1337,7 @@ class _UsernameStep extends StatelessWidget {
             context.l10n.onboardingUsernameSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ).animate().fadeIn(delay: 40.ms, duration: 250.ms),
 
@@ -1353,11 +1353,11 @@ class _UsernameStep extends StatelessWidget {
               prefixText: '@',
               prefixStyle: GoogleFonts.manrope(
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
               suffixIcon: _suffixIcon(),
               filled: true,
-              fillColor: MarginaliaColors.surfaceElevated,
+              fillColor: ScriptaColors.surfaceElevated,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
@@ -1371,7 +1371,7 @@ class _UsernameStep extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(
-                    color: MarginaliaColors.primaryDark, width: 1.5),
+                    color: ScriptaColors.primaryDark, width: 1.5),
               ),
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
@@ -1410,7 +1410,7 @@ class _UsernameStep extends StatelessWidget {
             child: Text(
               context.l10n.onboardingSkip,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
               ),
             ),
@@ -1450,7 +1450,7 @@ class _NameStep extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ).animate().fadeIn(duration: 250.ms),
@@ -1460,7 +1460,7 @@ class _NameStep extends StatelessWidget {
             context.l10n.onboardingNameSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ).animate().fadeIn(delay: 40.ms, duration: 250.ms),
 
@@ -1500,7 +1500,7 @@ class _NameStep extends StatelessWidget {
             child: Text(
               context.l10n.onboardingSkip,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
               ),
             ),
@@ -1544,7 +1544,7 @@ class _AvatarStep extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ).animate().fadeIn(duration: 250.ms),
@@ -1554,7 +1554,7 @@ class _AvatarStep extends StatelessWidget {
             context.l10n.onboardingAvatarSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ).animate().fadeIn(delay: 40.ms, duration: 250.ms),
 
@@ -1572,9 +1572,9 @@ class _AvatarStep extends StatelessWidget {
                     height: 160,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: MarginaliaColors.primaryFaint,
+                      color: ScriptaColors.primaryFaint,
                       border: Border.all(
-                        color: MarginaliaColors.primary,
+                        color: ScriptaColors.primary,
                         width: 2,
                       ),
                       image: avatarBytes != null
@@ -1588,7 +1588,7 @@ class _AvatarStep extends StatelessWidget {
                         ? const Icon(
                             Icons.person,
                             size: 64,
-                            color: MarginaliaColors.primary,
+                            color: ScriptaColors.primary,
                           )
                         : null,
                   ),
@@ -1636,8 +1636,8 @@ class _AvatarStep extends StatelessWidget {
                 style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.primaryDark,
-                side: const BorderSide(color: MarginaliaColors.primaryDark),
+                foregroundColor: ScriptaColors.primaryDark,
+                side: const BorderSide(color: ScriptaColors.primaryDark),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1670,7 +1670,7 @@ class _AvatarStep extends StatelessWidget {
             child: Text(
               context.l10n.onboardingSkip,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
               ),
             ),
@@ -1714,7 +1714,7 @@ class _CoverStep extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.4,
             ),
           ).animate().fadeIn(duration: 250.ms),
@@ -1724,7 +1724,7 @@ class _CoverStep extends StatelessWidget {
             context.l10n.onboardingCoverSubtitle,
             style: GoogleFonts.manrope(
               fontSize: 14,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ).animate().fadeIn(delay: 40.ms, duration: 250.ms),
 
@@ -1739,10 +1739,10 @@ class _CoverStep extends StatelessWidget {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: MarginaliaColors.primaryFaint,
+                      color: ScriptaColors.primaryFaint,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: MarginaliaColors.primary,
+                        color: ScriptaColors.primary,
                         width: 1.5,
                       ),
                       image: coverBytes != null
@@ -1760,14 +1760,14 @@ class _CoverStep extends StatelessWidget {
                                 Icon(
                                   Icons.image_outlined,
                                   size: 36,
-                                  color: MarginaliaColors.primary.withAlpha(160),
+                                  color: ScriptaColors.primary.withAlpha(160),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
                                   context.l10n.onboardingCoverPlaceholder,
                                   style: GoogleFonts.manrope(
                                     fontSize: 13,
-                                    color: MarginaliaColors.primary.withAlpha(160),
+                                    color: ScriptaColors.primary.withAlpha(160),
                                   ),
                                 ),
                               ],
@@ -1810,8 +1810,8 @@ class _CoverStep extends StatelessWidget {
                 style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.primaryDark,
-                side: const BorderSide(color: MarginaliaColors.primaryDark),
+                foregroundColor: ScriptaColors.primaryDark,
+                side: const BorderSide(color: ScriptaColors.primaryDark),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1844,7 +1844,7 @@ class _CoverStep extends StatelessWidget {
             child: Text(
               context.l10n.onboardingSkip,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
               ),
             ),
@@ -1883,8 +1883,8 @@ class _PermissionsStep extends StatelessWidget {
         ? 'Una frase cucita\nsul tuo momento'
         : 'A highlight tuned\nto your moment';
     final body = isIt
-        ? 'Col tuo permesso, Marginalia usa i passi di oggi (Salute) e gli impegni in calendario per scegliere la citazione giusta per l’ora, il meteo e il ritmo della tua giornata.'
-        : 'With your permission, Marginalia uses today’s steps (Health) and your calendar to pick the right quote for the time, weather and rhythm of your day.';
+        ? 'Col tuo permesso, Scripta usa i passi di oggi (Salute) e gli impegni in calendario per scegliere la citazione giusta per l’ora, il meteo e il ritmo della tua giornata.'
+        : 'With your permission, Scripta uses today’s steps (Health) and your calendar to pick the right quote for the time, weather and rhythm of your day.';
     final note = isIt
         ? 'Tutto resta sul tuo iPhone. Niente viene caricato.'
         : 'Everything stays on your iPhone. Nothing is uploaded.';
@@ -1915,7 +1915,7 @@ class _PermissionsStep extends StatelessWidget {
               fontSize: 30,
               fontWeight: FontWeight.w600,
               height: 1.12,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
             ),
           ),
           const SizedBox(height: 16),
@@ -1925,7 +1925,7 @@ class _PermissionsStep extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 15,
               height: 1.6,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ),
           const SizedBox(height: 12),
@@ -1934,7 +1934,7 @@ class _PermissionsStep extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               fontSize: 12.5,
-              color: MarginaliaColors.inkFaint,
+              color: ScriptaColors.inkFaint,
             ),
           ),
           const Spacer(),
@@ -1943,7 +1943,7 @@ class _PermissionsStep extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: MarginaliaColors.primary,
+                color: ScriptaColors.primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
@@ -1964,7 +1964,7 @@ class _PermissionsStep extends StatelessWidget {
             child: Text(
               later,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -1984,10 +1984,10 @@ class _PermIcon extends StatelessWidget {
         width: 64,
         height: 64,
         decoration: BoxDecoration(
-          color: MarginaliaColors.siennaFaint,
+          color: ScriptaColors.siennaFaint,
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Icon(icon, size: 30, color: MarginaliaColors.sienna),
+        child: Icon(icon, size: 30, color: ScriptaColors.sienna),
       );
 }
 
@@ -2033,7 +2033,7 @@ class _GenderStep extends StatelessWidget {
               fontSize: 30,
               fontWeight: FontWeight.w600,
               height: 1.12,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
             ),
           ),
           const SizedBox(height: 16),
@@ -2043,7 +2043,7 @@ class _GenderStep extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 13.5,
               height: 1.6,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ),
           const SizedBox(height: 36),
@@ -2098,11 +2098,11 @@ class _GenderOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
           color: isSelected
-              ? MarginaliaColors.primaryFaint
-              : MarginaliaColors.surface,
+              ? ScriptaColors.primaryFaint
+              : ScriptaColors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? MarginaliaColors.primary : MarginaliaColors.rule,
+            color: isSelected ? ScriptaColors.primary : ScriptaColors.rule,
             width: isSelected ? 1.5 : 0.8,
           ),
         ),
@@ -2112,7 +2112,7 @@ class _GenderOption extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: isSelected ? MarginaliaColors.primaryDark : MarginaliaColors.ink,
+              color: isSelected ? ScriptaColors.primaryDark : ScriptaColors.ink,
             ),
           ),
         ),
@@ -2183,17 +2183,17 @@ class _CompleteStepState extends State<_CompleteStep>
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.primaryFaint,
+                  color: ScriptaColors.primaryFaint,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: MarginaliaColors.primary.withAlpha(60),
+                    color: ScriptaColors.primary.withAlpha(60),
                     width: 2,
                   ),
                 ),
                 child: const Icon(
                   Icons.check_rounded,
                   size: 52,
-                  color: MarginaliaColors.primary,
+                  color: ScriptaColors.primary,
                 ),
               ),
             ),
@@ -2207,7 +2207,7 @@ class _CompleteStepState extends State<_CompleteStep>
             style: GoogleFonts.ebGaramond(
               fontSize: 32,
               fontWeight: FontWeight.w600,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.5,
             ),
           ).animate().fadeIn(delay: 400.ms, duration: 350.ms),
@@ -2221,7 +2221,7 @@ class _CompleteStepState extends State<_CompleteStep>
             textAlign: TextAlign.center,
             style: GoogleFonts.manrope(
               fontSize: 15,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ).animate().fadeIn(delay: 500.ms, duration: 350.ms),
 

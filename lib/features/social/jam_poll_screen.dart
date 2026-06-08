@@ -26,9 +26,9 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
     final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
@@ -37,12 +37,12 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
             fontSize: 20,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: MarginaliaColors.ink,
+            color: ScriptaColors.ink,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: MarginaliaColors.primaryDark),
+            icon: const Icon(Icons.add, color: ScriptaColors.primaryDark),
             onPressed: _showCreatePollSheet,
             tooltip: context.l10n.jamPollNewPollTooltip,
           ),
@@ -62,7 +62,7 @@ class _JamPollScreenState extends ConsumerState<JamPollScreen> {
                 ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
               ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
+          child: CircularProgressIndicator(color: ScriptaColors.primaryDark, strokeWidth: 1.5),
         ),
         error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
       ),
@@ -173,9 +173,9 @@ class _PollCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: MarginaliaColors.rule, width: 0.8),
+        border: Border.all(color: ScriptaColors.rule, width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +185,7 @@ class _PollCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
             child: Row(
               children: [
-                const Icon(Icons.how_to_vote_outlined, color: MarginaliaColors.primaryDark, size: 18),
+                const Icon(Icons.how_to_vote_outlined, color: ScriptaColors.primaryDark, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -193,14 +193,14 @@ class _PollCard extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                     ),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: closed ? MarginaliaColors.surfaceElevated : MarginaliaColors.primaryFaint,
+                    color: closed ? ScriptaColors.surfaceElevated : ScriptaColors.primaryFaint,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -208,7 +208,7 @@ class _PollCard extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: closed ? MarginaliaColors.inkMuted : MarginaliaColors.primaryDark,
+                      color: closed ? ScriptaColors.inkMuted : ScriptaColors.primaryDark,
                     ),
                   ),
                 ),
@@ -222,10 +222,10 @@ class _PollCard extends StatelessWidget {
                 closed
                     ? context.l10n.jamPollEndedOn('${endsAt.day}/${endsAt.month}/${endsAt.year}')
                     : context.l10n.jamPollEndsOn('${endsAt.day}/${endsAt.month}/${endsAt.year}'),
-                style: GoogleFonts.manrope(fontSize: 12, color: MarginaliaColors.inkFaint),
+                style: GoogleFonts.manrope(fontSize: 12, color: ScriptaColors.inkFaint),
               ),
             ),
-          const Divider(height: 1, color: MarginaliaColors.rule),
+          const Divider(height: 1, color: ScriptaColors.rule),
 
           // Candidates
           if (candidates.isEmpty)
@@ -233,7 +233,7 @@ class _PollCard extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               child: Text(
                 context.l10n.jamPollNoCandidates,
-                style: GoogleFonts.manrope(fontSize: 13, color: MarginaliaColors.inkMuted),
+                style: GoogleFonts.manrope(fontSize: 13, color: ScriptaColors.inkMuted),
               ),
             )
           else
@@ -260,7 +260,7 @@ class _PollCard extends StatelessWidget {
                               style: GoogleFonts.ebGaramond(
                                 fontSize: 14,
                                 fontStyle: FontStyle.italic,
-                                color: MarginaliaColors.ink,
+                                color: ScriptaColors.ink,
                                 height: 1.55,
                               ),
                               maxLines: 3,
@@ -274,8 +274,8 @@ class _PollCard extends StatelessWidget {
                             height: 36,
                             decoration: BoxDecoration(
                               color: myVote
-                                  ? MarginaliaColors.primary
-                                  : MarginaliaColors.primaryFaint,
+                                  ? ScriptaColors.primary
+                                  : ScriptaColors.primaryFaint,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Column(
@@ -284,14 +284,14 @@ class _PollCard extends StatelessWidget {
                                 Icon(
                                   Icons.favorite_rounded,
                                   size: 12,
-                                  color: myVote ? Colors.white : MarginaliaColors.primaryDark,
+                                  color: myVote ? Colors.white : ScriptaColors.primaryDark,
                                 ),
                                 Text(
                                   '$voteCount',
                                   style: GoogleFonts.manrope(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: myVote ? Colors.white : MarginaliaColors.primaryDark,
+                                    color: myVote ? Colors.white : ScriptaColors.primaryDark,
                                   ),
                                 ),
                               ],
@@ -303,7 +303,7 @@ class _PollCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           (c['book_title'] as String).toUpperCase(),
-                          style: MarginaliaTextStyles.bookAuthor.copyWith(fontSize: 10),
+                          style: ScriptaTextStyles.bookAuthor.copyWith(fontSize: 10),
                         ),
                       ],
                       // Vote bar
@@ -313,8 +313,8 @@ class _PollCard extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: fraction,
                           minHeight: 4,
-                          backgroundColor: MarginaliaColors.primaryFaint,
-                          color: myVote ? MarginaliaColors.primary : MarginaliaColors.sienna,
+                          backgroundColor: ScriptaColors.primaryFaint,
+                          color: myVote ? ScriptaColors.primary : ScriptaColors.sienna,
                         ),
                       ),
                     ],
@@ -332,8 +332,8 @@ class _PollCard extends StatelessWidget {
                 icon: const Icon(Icons.add, size: 16),
                 label: Text(context.l10n.jamAddYourHighlight),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: MarginaliaColors.primaryDark,
-                  side: const BorderSide(color: MarginaliaColors.rule),
+                  foregroundColor: ScriptaColors.primaryDark,
+                  side: const BorderSide(color: ScriptaColors.rule),
                 ),
               ),
             ),
@@ -357,17 +357,17 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.how_to_vote_outlined, size: 56, color: MarginaliaColors.inkFaint),
+            const Icon(Icons.how_to_vote_outlined, size: 56, color: ScriptaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
               context.l10n.jamPollNoPolls,
-              style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: MarginaliaColors.ink),
+              style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: ScriptaColors.ink),
             ),
             const SizedBox(height: 8),
             Text(
               context.l10n.jamPollNoPollsBody,
               textAlign: TextAlign.center,
-              style: GoogleFonts.manrope(fontSize: 14, color: MarginaliaColors.inkMuted),
+              style: GoogleFonts.manrope(fontSize: 14, color: ScriptaColors.inkMuted),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -443,7 +443,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottom + 24),
@@ -454,13 +454,13 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
           Center(
             child: Container(
               width: 36, height: 4,
-              decoration: BoxDecoration(color: MarginaliaColors.rule, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: ScriptaColors.rule, borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: 20),
           Text(
             context.l10n.jamPollNewPollSheetTitle,
-            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
+            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: ScriptaColors.ink),
           ),
           const SizedBox(height: 20),
           TextField(
@@ -481,7 +481,7 @@ class _CreatePollSheetState extends ConsumerState<_CreatePollSheet> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: MarginaliaColors.primaryDark, width: 1.5),
+                borderSide: const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
               ),
             ),
             textCapitalization: TextCapitalization.sentences,
@@ -543,7 +543,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: MarginaliaColors.background,
+        color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(24, 24, 24, bottom + 24),
@@ -554,20 +554,20 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
           Center(
             child: Container(
               width: 36, height: 4,
-              decoration: BoxDecoration(color: MarginaliaColors.rule, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(color: ScriptaColors.rule, borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: 20),
           Text(
             context.l10n.jamPollChooseHighlightTitle,
-            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: MarginaliaColors.ink),
+            style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: ScriptaColors.ink),
           ),
           const SizedBox(height: 16),
           SizedBox(
             height: 280,
             child: highlightsAsync.when(
               data: (highlights) => highlights.isEmpty
-                  ? Center(child: Text(context.l10n.jamNoHighlightsAvailable, style: GoogleFonts.manrope(color: MarginaliaColors.inkMuted)))
+                  ? Center(child: Text(context.l10n.jamNoHighlightsAvailable, style: GoogleFonts.manrope(color: ScriptaColors.inkMuted)))
                   : ListView.builder(
                       itemCount: highlights.length,
                       itemBuilder: (_, i) {
@@ -576,7 +576,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                         final selected = _selectedHighlightContent == content;
                         return ListTile(
                           selected: selected,
-                          selectedTileColor: MarginaliaColors.primaryFaint,
+                          selectedTileColor: ScriptaColors.primaryFaint,
                           title: Text(
                             '"$content"',
                             style: GoogleFonts.ebGaramond(fontSize: 14, fontStyle: FontStyle.italic),
@@ -584,7 +584,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: h.bookTitle != null
-                              ? Text(h.bookTitle as String, style: GoogleFonts.manrope(fontSize: 11, color: MarginaliaColors.inkMuted))
+                              ? Text(h.bookTitle as String, style: GoogleFonts.manrope(fontSize: 11, color: ScriptaColors.inkMuted))
                               : null,
                           onTap: () => setState(() {
                             _selectedHighlightContent = content;
@@ -594,7 +594,7 @@ class _SubmitCandidateSheetState extends ConsumerState<_SubmitCandidateSheet> {
                         );
                       },
                     ),
-              loading: () => const Center(child: CircularProgressIndicator(color: MarginaliaColors.primaryDark, strokeWidth: 1.5)),
+              loading: () => const Center(child: CircularProgressIndicator(color: ScriptaColors.primaryDark, strokeWidth: 1.5)),
               error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
             ),
           ),

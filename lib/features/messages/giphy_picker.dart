@@ -150,7 +150,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
     return Container(
       height: sheetHeight,
       decoration: const BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -161,7 +161,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
             width: 36,
             height: 4,
             decoration: BoxDecoration(
-              color: MarginaliaColors.rule,
+              color: ScriptaColors.rule,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -177,16 +177,16 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
               textInputAction: TextInputAction.search,
               style: GoogleFonts.manrope(
                 fontSize: 15,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
               decoration: InputDecoration(
                 hintText: context.l10n.giphySearchHint,
                 hintStyle: GoogleFonts.manrope(
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                   fontSize: 15,
                 ),
                 prefixIcon: const Icon(Icons.gif_box_outlined,
-                    color: MarginaliaColors.inkFaint, size: 22),
+                    color: ScriptaColors.inkFaint, size: 22),
                 suffixIcon: _loading
                     ? const Padding(
                         padding: EdgeInsets.all(12),
@@ -195,17 +195,17 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
-                            color: MarginaliaColors.sienna,
+                            color: ScriptaColors.sienna,
                           ),
                         ),
                       )
                     : IconButton(
                         icon: const Icon(Icons.search_rounded,
-                            color: MarginaliaColors.inkFaint, size: 20),
+                            color: ScriptaColors.inkFaint, size: 20),
                         onPressed: () => _search(_searchController.text),
                       ),
                 filled: true,
-                fillColor: MarginaliaColors.surfaceElevated,
+                fillColor: ScriptaColors.surfaceElevated,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 border: OutlineInputBorder(
@@ -219,7 +219,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(22),
                   borderSide: const BorderSide(
-                      color: MarginaliaColors.primary, width: 1.5),
+                      color: ScriptaColors.primary, width: 1.5),
                 ),
               ),
             ),
@@ -235,7 +235,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                 'Via Tenor',
                 style: GoogleFonts.manrope(
                   fontSize: 10,
-                  color: MarginaliaColors.inkFaint,
+                  color: ScriptaColors.inkFaint,
                   letterSpacing: 0.3,
                 ),
               ),
@@ -250,12 +250,12 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.wifi_off_rounded,
-                            size: 32, color: MarginaliaColors.inkFaint),
+                            size: 32, color: ScriptaColors.inkFaint),
                         const SizedBox(height: 10),
                         Text(
                           _error!,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                             fontSize: 14,
                           ),
                         ),
@@ -274,7 +274,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                         child: Text(
                           _hasSearched ? context.l10n.giphyNoResults : context.l10n.giphyLoading,
                           style: GoogleFonts.manrope(
-                            color: MarginaliaColors.inkFaint,
+                            color: ScriptaColors.inkFaint,
                             fontSize: 14,
                           ),
                         ),
@@ -301,9 +301,9 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                                 fit: BoxFit.cover,
                                 gaplessPlayback: true,
                                 errorBuilder: (_, __, ___) => Container(
-                                  color: MarginaliaColors.surfaceElevated,
+                                  color: ScriptaColors.surfaceElevated,
                                   child: const Icon(Icons.gif,
-                                      color: MarginaliaColors.inkFaint,
+                                      color: ScriptaColors.inkFaint,
                                       size: 32),
                                 ),
                               ),

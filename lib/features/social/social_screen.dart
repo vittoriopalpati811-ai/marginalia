@@ -55,7 +55,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
     }
 
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       floatingActionButton: _tabController.index == 0
           ? _CreateJamFab(onTap: _showCreateJamSheet)
           : null,
@@ -109,7 +109,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
     final created = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.surfaceElevated,
+      backgroundColor: ScriptaColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -146,7 +146,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
       // UNDER the floating navbar and the "Entra" button would be untappable.
       useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: MarginaliaColors.surfaceElevated,
+      backgroundColor: ScriptaColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -205,7 +205,7 @@ class _SocialHeader extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Container(
-      color: MarginaliaColors.background,
+      color: ScriptaColors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -220,7 +220,7 @@ class _SocialHeader extends StatelessWidget {
                   onTap: onSearch,
                   child: Icon(
                     PhosphorIconsRegular.magnifyingGlass,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                     size: 24,
                   ),
                 ),
@@ -235,7 +235,7 @@ class _SocialHeader extends StatelessWidget {
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.6,
-                          color: MarginaliaColors.ink,
+                          color: ScriptaColors.ink,
                         ),
                       ),
                     ],
@@ -248,7 +248,7 @@ class _SocialHeader extends StatelessWidget {
                   child: const Icon(
                     PhosphorIconsRegular.hash,
                     size: 26,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                   ),
                 ),
               ],
@@ -258,9 +258,9 @@ class _SocialHeader extends StatelessWidget {
           // ── TabBar ────────────────────────────────────────────────────
           TabBar(
             controller: tabController,
-            labelColor: MarginaliaColors.ink,
-            unselectedLabelColor: MarginaliaColors.inkFaint,
-            indicatorColor: MarginaliaColors.primaryDark,
+            labelColor: ScriptaColors.ink,
+            unselectedLabelColor: ScriptaColors.inkFaint,
+            indicatorColor: ScriptaColors.primaryDark,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 2.5,
             dividerColor: Colors.transparent,
@@ -422,7 +422,7 @@ class _JamTabContent extends ConsumerWidget {
             ),
       loading: () => const Center(
         child: CircularProgressIndicator(
-            color: MarginaliaColors.primaryDark, strokeWidth: 1.5),
+            color: ScriptaColors.primaryDark, strokeWidth: 1.5),
       ),
       error: (e, _) => Center(child: Text(context.l10n.errorPrefix('$e'))),
     );
@@ -492,7 +492,7 @@ class _JamGridCard extends StatelessWidget {
               children: [
                 Text(
                   initial,
-                  style: MarginaliaTextStyles.bookTitleLarge.copyWith(
+                  style: ScriptaTextStyles.bookTitleLarge.copyWith(
                     fontSize: 46,
                     color: Colors.white,
                     height: 1,
@@ -509,7 +509,7 @@ class _JamGridCard extends StatelessWidget {
                   ),
                   child: Text(
                     context.l10n.jamBadge,
-                    style: MarginaliaTextStyles.sectionTitle.copyWith(
+                    style: ScriptaTextStyles.sectionTitle.copyWith(
                       color: Colors.white.withAlpha(200),
                       fontSize: 8,
                       letterSpacing: 2.0,
@@ -527,9 +527,9 @@ class _JamGridCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarginaliaColors.rule),
+          border: Border.all(color: ScriptaColors.rule),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0E261E1D),
@@ -581,7 +581,7 @@ class _JamGridCard extends StatelessWidget {
                                 ),
                                 child: Text(
                                   context.l10n.jamBadge,
-                                  style: MarginaliaTextStyles.sectionTitle
+                                  style: ScriptaTextStyles.sectionTitle
                                       .copyWith(
                                     color: Colors.white.withAlpha(220),
                                     fontSize: 8,
@@ -612,15 +612,15 @@ class _JamGridCard extends StatelessWidget {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: MarginaliaTextStyles.bookTitle
+                            style: ScriptaTextStyles.bookTitle
                                 .copyWith(fontSize: 13),
                           ),
                           if (code.isNotEmpty)
                             Text(
                               '# $code',
-                              style: MarginaliaTextStyles.label.copyWith(
+                              style: ScriptaTextStyles.label.copyWith(
                                 fontSize: 9.5,
-                                color: MarginaliaColors.inkFaint,
+                                color: ScriptaColors.inkFaint,
                                 letterSpacing: 0.8,
                               ),
                             ),
@@ -635,7 +635,7 @@ class _JamGridCard extends StatelessWidget {
                         child: Icon(
                           Icons.ios_share_outlined,
                           size: 16,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                       ),
                     ),
@@ -664,7 +664,7 @@ class _CreateJamFab extends StatelessWidget {
     // No bottom padding — nav bar is now a flat bar, not a floating pill.
     return FloatingActionButton.extended(
       onPressed: onTap,
-      backgroundColor: MarginaliaColors.primary,
+      backgroundColor: ScriptaColors.primary,
       foregroundColor: const Color(0xFFF1EEE7),
       elevation: 6,
       icon: const Icon(Icons.add, size: 20),
@@ -718,7 +718,7 @@ class _CreateJamSheet extends StatelessWidget {
                           fontSize: 18, fontWeight: FontWeight.w700)),
                   Text(context.l10n.socialNewJamSubtitle,
                       style: const TextStyle(
-                          fontSize: 12, color: MarginaliaColors.inkMuted)),
+                          fontSize: 12, color: ScriptaColors.inkMuted)),
                 ],
               ),
             ],
@@ -737,7 +737,7 @@ class _CreateJamSheet extends StatelessWidget {
           Text(
             context.l10n.socialJamCreateHint,
             style: const TextStyle(
-                fontSize: 12, color: MarginaliaColors.inkMuted, height: 1.5),
+                fontSize: 12, color: ScriptaColors.inkMuted, height: 1.5),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -796,7 +796,7 @@ class _JoinJamSheet extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -806,13 +806,13 @@ class _JoinJamSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: MarginaliaColors.siennaFaint,
+                  color: ScriptaColors.siennaFaint,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   PhosphorIconsRegular.hash,
                   size: 20,
-                  color: MarginaliaColors.primaryDark,
+                  color: ScriptaColors.primaryDark,
                 ),
               ),
               const SizedBox(width: 12),
@@ -820,7 +820,7 @@ class _JoinJamSheet extends StatelessWidget {
                   style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.ink)),
+                      color: ScriptaColors.ink)),
             ],
           ),
           const SizedBox(height: 24),
@@ -891,7 +891,7 @@ class _EmptyJams extends StatelessWidget {
               context.l10n.jamNoJamsBody,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: MarginaliaColors.inkMuted,
+                  color: ScriptaColors.inkMuted,
                   height: 1.6,
                   fontSize: 14),
             ),
@@ -907,12 +907,12 @@ class _EmptyJams extends StatelessWidget {
               icon: const Icon(
                 PhosphorIconsRegular.hash,
                 size: 18,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
               label: Text(context.l10n.jamJoinWithCode),
               style: OutlinedButton.styleFrom(
-                foregroundColor: MarginaliaColors.primaryDark,
-                side: const BorderSide(color: MarginaliaColors.primaryDark),
+                foregroundColor: ScriptaColors.primaryDark,
+                side: const BorderSide(color: ScriptaColors.primaryDark),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(
@@ -934,12 +934,12 @@ class _UnauthenticatedState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
           Container(
             width: double.infinity,
-            decoration: MarginaliaDecorations.gradientHeader,
+            decoration: ScriptaDecorations.gradientHeader,
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -964,10 +964,10 @@ class _UnauthenticatedState extends StatelessWidget {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                          color: MarginaliaColors.siennaFaint,
+                          color: ScriptaColors.siennaFaint,
                           borderRadius: BorderRadius.circular(20)),
                       child: const Icon(Icons.lock_outline,
-                          size: 32, color: MarginaliaColors.primaryDark),
+                          size: 32, color: ScriptaColors.primaryDark),
                     ),
                     const SizedBox(height: 24),
                     Text(context.l10n.profileLoginRequired,
@@ -980,7 +980,7 @@ class _UnauthenticatedState extends StatelessWidget {
                       context.l10n.profileLoginBody,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           height: 1.6,
                           fontSize: 14),
                     ),

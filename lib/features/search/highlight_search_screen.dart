@@ -150,16 +150,16 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
   Widget build(BuildContext context) {
     final it = _it;
     return Scaffold(
-      backgroundColor: MarginaliaColors.background,
+      backgroundColor: ScriptaColors.background,
       appBar: AppBar(
-        backgroundColor: MarginaliaColors.background,
+        backgroundColor: ScriptaColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: MarginaliaColors.ink,
+        foregroundColor: ScriptaColors.ink,
         title: Text(
           it ? 'Cerca per significato' : 'Search by meaning',
           style: GoogleFonts.manrope(
-              fontWeight: FontWeight.w700, fontSize: 18, color: MarginaliaColors.ink),
+              fontWeight: FontWeight.w700, fontSize: 18, color: ScriptaColors.ink),
         ),
       ),
       body: SafeArea(
@@ -174,27 +174,27 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
                 onChanged: _onChanged,
                 textInputAction: TextInputAction.search,
                 onSubmitted: _runSearch,
-                style: GoogleFonts.manrope(fontSize: 16, color: MarginaliaColors.ink),
+                style: GoogleFonts.manrope(fontSize: 16, color: ScriptaColors.ink),
                 decoration: InputDecoration(
                   hintText: it
                       ? 'Es. "lasciar andare", "il coraggio di iniziare"…'
                       : 'e.g. "letting go", "the courage to begin"…',
                   hintStyle: GoogleFonts.manrope(
-                      fontSize: 15, color: MarginaliaColors.inkFaint),
+                      fontSize: 15, color: ScriptaColors.inkFaint),
                   prefixIcon: const Icon(Icons.auto_awesome_outlined,
-                      color: MarginaliaColors.primaryDark, size: 20),
+                      color: ScriptaColors.primaryDark, size: 20),
                   suffixIcon: _query.isEmpty
                       ? null
                       : IconButton(
                           icon: const Icon(Icons.close_rounded, size: 18),
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           onPressed: () {
                             _ctrl.clear();
                             _onChanged('');
                           },
                         ),
                   filled: true,
-                  fillColor: MarginaliaColors.surfaceElevated,
+                  fillColor: ScriptaColors.surfaceElevated,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   border: OutlineInputBorder(
@@ -208,7 +208,7 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(
-                        color: MarginaliaColors.primaryDark, width: 1.5),
+                        color: ScriptaColors.primaryDark, width: 1.5),
                   ),
                 ),
               ),
@@ -224,7 +224,7 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
                       width: 13,
                       height: 13,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: MarginaliaColors.primaryDark),
+                          strokeWidth: 2, color: ScriptaColors.primaryDark),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -233,7 +233,7 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
                             ? 'Preparazione ricerca intelligente… ($_remaining rimanenti)'
                             : 'Preparing smart search… ($_remaining left)',
                         style: GoogleFonts.manrope(
-                            fontSize: 12.5, color: MarginaliaColors.inkMuted),
+                            fontSize: 12.5, color: ScriptaColors.inkMuted),
                       ),
                     ),
                   ],
@@ -252,7 +252,7 @@ class _HighlightSearchScreenState extends ConsumerState<HighlightSearchScreen> {
     if (_loading && _results.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
-            color: MarginaliaColors.primaryDark, strokeWidth: 1.6),
+            color: ScriptaColors.primaryDark, strokeWidth: 1.6),
       );
     }
     if (!_searched) {
@@ -295,7 +295,7 @@ class _ResultCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: MarginaliaColors.surface,
+        color: ScriptaColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -313,7 +313,7 @@ class _ResultCard extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 17,
               height: 1.45,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
             ),
           ),
           if (attribution.isNotEmpty) ...[
@@ -323,7 +323,7 @@ class _ResultCard extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
               ),
             ),
           ],
@@ -347,7 +347,7 @@ class _Hint extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 46, color: MarginaliaColors.primaryDark),
+            Icon(icon, size: 46, color: ScriptaColors.primaryDark),
             const SizedBox(height: 18),
             Text(
               title,
@@ -355,7 +355,7 @@ class _Hint extends StatelessWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             ),
             const SizedBox(height: 10),
@@ -365,7 +365,7 @@ class _Hint extends StatelessWidget {
               style: GoogleFonts.manrope(
                 fontSize: 14,
                 height: 1.5,
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
               ),
             ),
           ],

@@ -14,7 +14,7 @@
 //   • _bookHighlightsProvider    — highlights for a chosen book (fetchHighlights)
 //
 // Aesthetics: warm whites, EB Garamond serif for the review body + attached
-// highlight, sage (MarginaliaColors.primary/primaryDark) accents, soft cards —
+// highlight, sage (ScriptaColors.primary/primaryDark) accents, soft cards —
 // matching the rest of the profile screen and recommendations_section.dart.
 
 import 'package:flutter/material.dart';
@@ -72,7 +72,7 @@ class ReviewsTab extends ConsumerWidget {
         padding: EdgeInsets.all(48),
         child: Center(
           child: CircularProgressIndicator(
-              color: MarginaliaColors.sienna, strokeWidth: 1.5),
+              color: ScriptaColors.sienna, strokeWidth: 1.5),
         ),
       ),
       error: (_, __) => _ReviewsEmpty(
@@ -93,10 +93,10 @@ class ReviewsTab extends ConsumerWidget {
               child: Row(
                 children: [
                   Text(context.l10n.reviewsSectionTitle,
-                      style: MarginaliaTextStyles.sectionTitle),
+                      style: ScriptaTextStyles.sectionTitle),
                   const SizedBox(width: 12),
                   const Expanded(
-                      child: Divider(color: MarginaliaColors.ruleFaint)),
+                      child: Divider(color: ScriptaColors.ruleFaint)),
                   const SizedBox(width: 8),
                   _ComposeChip(onTap: () => openReviewComposer(context, ref)),
                 ],
@@ -126,24 +126,24 @@ class _ComposeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: MarginaliaColors.primaryFaint,
+          color: ScriptaColors.primaryFaint,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: MarginaliaColors.primary.withAlpha(50),
+            color: ScriptaColors.primary.withAlpha(50),
             width: 0.8,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.add, size: 12, color: MarginaliaColors.primaryDark),
+            const Icon(Icons.add, size: 12, color: ScriptaColors.primaryDark),
             const SizedBox(width: 3),
             Text(
               context.l10n.reviewsWriteCta,
               style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: MarginaliaColors.primaryDark,
+                color: ScriptaColors.primaryDark,
                 letterSpacing: 0.3,
               ),
             ),
@@ -172,8 +172,8 @@ class _Stars extends StatelessWidget {
               i <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
               size: 16,
               color: i <= rating
-                  ? MarginaliaColors.primaryDark
-                  : MarginaliaColors.inkFaint,
+                  ? ScriptaColors.primaryDark
+                  : ScriptaColors.inkFaint,
             ),
           ),
       ],
@@ -195,7 +195,7 @@ class _ReviewCard extends ConsumerWidget {
     final card = Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(16),
-      decoration: MarginaliaDecorations.card(),
+      decoration: ScriptaDecorations.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -224,7 +224,7 @@ class _ReviewCard extends ConsumerWidget {
                       style: GoogleFonts.manrope(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                         height: 1.25,
                         letterSpacing: -0.2,
                       ),
@@ -238,7 +238,7 @@ class _ReviewCard extends ConsumerWidget {
                         style: GoogleFonts.manrope(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                           letterSpacing: 0.5,
                         ),
                         maxLines: 1,
@@ -278,7 +278,7 @@ class _ReviewCard extends ConsumerWidget {
               style: GoogleFonts.ebGaramond(
                 fontSize: 15.5,
                 height: 1.6,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             ),
           ],
@@ -291,11 +291,11 @@ class _ReviewCard extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
+                color: ScriptaColors.primaryFaint,
                 borderRadius: BorderRadius.circular(12),
                 border: Border(
                   left: BorderSide(
-                      color: MarginaliaColors.primaryDark.withAlpha(140),
+                      color: ScriptaColors.primaryDark.withAlpha(140),
                       width: 3),
                 ),
               ),
@@ -305,7 +305,7 @@ class _ReviewCard extends ConsumerWidget {
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
                   height: 1.6,
-                  color: MarginaliaColors.ink,
+                  color: ScriptaColors.ink,
                 ),
               ),
             ),
@@ -335,10 +335,10 @@ class _ReviewMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_horiz,
-          size: 18, color: MarginaliaColors.inkFaint),
+          size: 18, color: ScriptaColors.inkFaint),
       padding: EdgeInsets.zero,
       splashRadius: 18,
-      color: MarginaliaColors.surface,
+      color: ScriptaColors.surface,
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (v) {
@@ -356,7 +356,7 @@ class _ReviewMenu extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(context.l10n.delete,
                         style: const TextStyle(
-                            fontSize: 13.5, color: MarginaliaColors.ink)),
+                            fontSize: 13.5, color: ScriptaColors.ink)),
                   ],
                 ),
               ),
@@ -367,11 +367,11 @@ class _ReviewMenu extends StatelessWidget {
                 child: Row(
                   children: [
                     const Icon(Icons.flag_outlined,
-                        size: 17, color: MarginaliaColors.inkMuted),
+                        size: 17, color: ScriptaColors.inkMuted),
                     const SizedBox(width: 8),
                     Text(context.l10n.reportAction,
                         style: const TextStyle(
-                            fontSize: 13.5, color: MarginaliaColors.ink)),
+                            fontSize: 13.5, color: ScriptaColors.ink)),
                   ],
                 ),
               ),
@@ -396,11 +396,11 @@ class _ReviewsEmpty extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: MarginaliaColors.primaryFaint,
+              color: ScriptaColors.primaryFaint,
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(Icons.rate_review_outlined,
-                size: 28, color: MarginaliaColors.primaryDark),
+                size: 28, color: ScriptaColors.primaryDark),
           ),
           const SizedBox(height: 18),
           Text(
@@ -408,7 +408,7 @@ class _ReviewsEmpty extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: MarginaliaColors.ink,
+              color: ScriptaColors.ink,
               letterSpacing: -0.3,
             ),
           ),
@@ -419,7 +419,7 @@ class _ReviewsEmpty extends StatelessWidget {
             style: GoogleFonts.ebGaramond(
               fontSize: 15,
               height: 1.6,
-              color: MarginaliaColors.inkMuted,
+              color: ScriptaColors.inkMuted,
             ),
           ),
           const SizedBox(height: 22),
@@ -432,7 +432,7 @@ class _ReviewsEmpty extends StatelessWidget {
                   fontSize: 14, fontWeight: FontWeight.w700),
             ),
             style: FilledButton.styleFrom(
-              backgroundColor: MarginaliaColors.primary,
+              backgroundColor: ScriptaColors.primary,
               foregroundColor: const Color(0xFF1B1F1B),
               padding:
                   const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
@@ -589,7 +589,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
       constraints: BoxConstraints(maxHeight: maxH),
       child: Container(
         decoration: const BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -601,7 +601,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -616,7 +616,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                     style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -624,13 +624,13 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).maybePop(),
                     child: const Icon(Icons.close_rounded,
-                        size: 22, color: MarginaliaColors.inkMuted),
+                        size: 22, color: ScriptaColors.inkMuted),
                   ),
                 ],
               ),
             ),
 
-            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+            const Divider(color: ScriptaColors.ruleFaint, height: 1),
 
             // ── Scrollable form ───────────────────────────────────────────
             Flexible(
@@ -648,10 +648,10 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                         padding:
                             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: MarginaliaColors.surfaceElevated,
+                          color: ScriptaColors.surfaceElevated,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: MarginaliaColors.rule, width: 0.8),
+                              color: ScriptaColors.rule, width: 0.8),
                         ),
                         child: Row(
                           children: [
@@ -677,7 +677,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                       style: GoogleFonts.manrope(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w700,
-                                        color: MarginaliaColors.ink,
+                                        color: ScriptaColors.ink,
                                         height: 1.25,
                                       ),
                                       maxLines: 2,
@@ -689,7 +689,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                         style: GoogleFonts.manrope(
                                           fontSize: 9,
                                           fontWeight: FontWeight.w600,
-                                          color: MarginaliaColors.inkMuted,
+                                          color: ScriptaColors.inkMuted,
                                           letterSpacing: 0.4,
                                         ),
                                         maxLines: 1,
@@ -699,23 +699,23 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                 ),
                               ),
                               const Icon(Icons.swap_horiz_rounded,
-                                  size: 18, color: MarginaliaColors.inkMuted),
+                                  size: 18, color: ScriptaColors.inkMuted),
                             ] else ...[
                               const Icon(Icons.menu_book_outlined,
-                                  size: 18, color: MarginaliaColors.primaryDark),
+                                  size: 18, color: ScriptaColors.primaryDark),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
                                   context.l10n.reviewsPickBook,
                                   style: GoogleFonts.manrope(
                                     fontSize: 13.5,
-                                    color: MarginaliaColors.inkMuted,
+                                    color: ScriptaColors.inkMuted,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
                               const Icon(Icons.chevron_right_rounded,
-                                  size: 20, color: MarginaliaColors.inkFaint),
+                                  size: 20, color: ScriptaColors.inkFaint),
                             ],
                           ],
                         ),
@@ -742,8 +742,8 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                     : Icons.star_outline_rounded,
                                 size: 34,
                                 color: i <= _rating
-                                    ? MarginaliaColors.primaryDark
-                                    : MarginaliaColors.inkFaint,
+                                    ? ScriptaColors.primaryDark
+                                    : ScriptaColors.inkFaint,
                               ),
                             ),
                           ),
@@ -763,30 +763,30 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                       style: GoogleFonts.ebGaramond(
                         fontSize: 16,
                         height: 1.6,
-                        color: MarginaliaColors.ink,
+                        color: ScriptaColors.ink,
                       ),
                       decoration: InputDecoration(
                         hintText: context.l10n.reviewsHint,
                         hintStyle: GoogleFonts.ebGaramond(
                           fontSize: 16,
-                          color: MarginaliaColors.inkFaint,
+                          color: ScriptaColors.inkFaint,
                         ),
                         filled: true,
-                        fillColor: MarginaliaColors.surfaceElevated,
+                        fillColor: ScriptaColors.surfaceElevated,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                              color: MarginaliaColors.rule, width: 0.8),
+                              color: ScriptaColors.rule, width: 0.8),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                              color: MarginaliaColors.rule, width: 0.8),
+                              color: ScriptaColors.rule, width: 0.8),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: MarginaliaColors.primaryDark, width: 1.5),
+                              color: ScriptaColors.primaryDark, width: 1.5),
                         ),
                         contentPadding: const EdgeInsets.all(14),
                       ),
@@ -807,29 +807,29 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: MarginaliaColors.surfaceElevated,
+                              color: ScriptaColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: MarginaliaColors.rule, width: 0.8),
+                                  color: ScriptaColors.rule, width: 0.8),
                             ),
                             child: Row(
                               children: [
                                 const Icon(Icons.format_quote_rounded,
                                     size: 18,
-                                    color: MarginaliaColors.primaryDark),
+                                    color: ScriptaColors.primaryDark),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     context.l10n.reviewsAttachHighlight,
                                     style: GoogleFonts.manrope(
                                       fontSize: 13.5,
-                                      color: MarginaliaColors.inkMuted,
+                                      color: ScriptaColors.inkMuted,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
                                 const Icon(Icons.chevron_right_rounded,
-                                    size: 20, color: MarginaliaColors.inkFaint),
+                                    size: 20, color: ScriptaColors.inkFaint),
                               ],
                             ),
                           ),
@@ -839,11 +839,11 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                           width: double.infinity,
                           padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
                           decoration: BoxDecoration(
-                            color: MarginaliaColors.primaryFaint,
+                            color: ScriptaColors.primaryFaint,
                             borderRadius: BorderRadius.circular(12),
                             border: Border(
                               left: BorderSide(
-                                  color: MarginaliaColors.primaryDark
+                                  color: ScriptaColors.primaryDark
                                       .withAlpha(140),
                                   width: 3),
                             ),
@@ -858,7 +858,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                     fontSize: 14,
                                     fontStyle: FontStyle.italic,
                                     height: 1.55,
-                                    color: MarginaliaColors.ink,
+                                    color: ScriptaColors.ink,
                                   ),
                                   maxLines: 4,
                                   overflow: TextOverflow.ellipsis,
@@ -872,7 +872,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                         () => _attachedHighlight = null),
                                 child: const Icon(Icons.close_rounded,
                                     size: 18,
-                                    color: MarginaliaColors.inkMuted),
+                                    color: ScriptaColors.inkMuted),
                               ),
                             ],
                           ),
@@ -884,7 +884,7 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
               ),
             ),
 
-            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+            const Divider(color: ScriptaColors.ruleFaint, height: 1),
 
             // ── Save button ───────────────────────────────────────────────
             // `bottom` already encodes max(keyboard, home-indicator); the +16
@@ -897,10 +897,10 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                 child: FilledButton(
                   onPressed: _canSave ? _save : null,
                   style: FilledButton.styleFrom(
-                    backgroundColor: MarginaliaColors.primary,
+                    backgroundColor: ScriptaColors.primary,
                     foregroundColor: const Color(0xFF1B1F1B),
-                    disabledBackgroundColor: MarginaliaColors.surfaceElevated,
-                    disabledForegroundColor: MarginaliaColors.inkFaint,
+                    disabledBackgroundColor: ScriptaColors.surfaceElevated,
+                    disabledForegroundColor: ScriptaColors.inkFaint,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -936,7 +936,7 @@ class _FieldLabel extends StatelessWidget {
         style: const TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: MarginaliaColors.inkFaint,
+          color: ScriptaColors.inkFaint,
           letterSpacing: 0.8,
         ),
       );
@@ -957,7 +957,7 @@ class _BookPickerSheet extends StatelessWidget {
       constraints: BoxConstraints(maxHeight: maxH),
       child: Container(
         decoration: const BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -968,7 +968,7 @@ class _BookPickerSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -981,13 +981,13 @@ class _BookPickerSheet extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                     letterSpacing: -0.3,
                   ),
                 ),
               ),
             ),
-            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+            const Divider(color: ScriptaColors.ruleFaint, height: 1),
             Flexible(
               child: books.isEmpty
                   ? Padding(
@@ -998,7 +998,7 @@ class _BookPickerSheet extends StatelessWidget {
                         style: GoogleFonts.ebGaramond(
                           fontSize: 15,
                           height: 1.6,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                         ),
                       ),
                     )
@@ -1038,7 +1038,7 @@ class _BookPickerSheet extends StatelessWidget {
                                         style: GoogleFonts.manrope(
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w600,
-                                          color: MarginaliaColors.ink,
+                                          color: ScriptaColors.ink,
                                           height: 1.3,
                                         ),
                                         maxLines: 2,
@@ -1051,7 +1051,7 @@ class _BookPickerSheet extends StatelessWidget {
                                             fontSize: 9,
                                             letterSpacing: 0.4,
                                             fontWeight: FontWeight.w500,
-                                            color: MarginaliaColors.inkMuted,
+                                            color: ScriptaColors.inkMuted,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -1061,7 +1061,7 @@ class _BookPickerSheet extends StatelessWidget {
                                 ),
                                 const Icon(Icons.chevron_right_rounded,
                                     size: 18,
-                                    color: MarginaliaColors.inkFaint),
+                                    color: ScriptaColors.inkFaint),
                               ],
                             ),
                           ),
@@ -1091,7 +1091,7 @@ class _HighlightPickerSheet extends StatelessWidget {
       constraints: BoxConstraints(maxHeight: maxH),
       child: Container(
         decoration: const BoxDecoration(
-          color: MarginaliaColors.surface,
+          color: ScriptaColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -1102,7 +1102,7 @@ class _HighlightPickerSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: MarginaliaColors.rule,
+                color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1115,13 +1115,13 @@ class _HighlightPickerSheet extends StatelessWidget {
                   style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: MarginaliaColors.ink,
+                    color: ScriptaColors.ink,
                     letterSpacing: -0.3,
                   ),
                 ),
               ),
             ),
-            const Divider(color: MarginaliaColors.ruleFaint, height: 1),
+            const Divider(color: ScriptaColors.ruleFaint, height: 1),
             Flexible(
               child: highlights.isEmpty
                   ? Padding(
@@ -1132,7 +1132,7 @@ class _HighlightPickerSheet extends StatelessWidget {
                         style: GoogleFonts.ebGaramond(
                           fontSize: 15,
                           height: 1.6,
-                          color: MarginaliaColors.inkMuted,
+                          color: ScriptaColors.inkMuted,
                         ),
                       ),
                     )
@@ -1153,10 +1153,10 @@ class _HighlightPickerSheet extends StatelessWidget {
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                             decoration: BoxDecoration(
-                              color: MarginaliaColors.surfaceElevated,
+                              color: ScriptaColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: MarginaliaColors.ruleFaint,
+                                  color: ScriptaColors.ruleFaint,
                                   width: 0.8),
                             ),
                             child: Text(
@@ -1165,7 +1165,7 @@ class _HighlightPickerSheet extends StatelessWidget {
                                 fontSize: 14.5,
                                 fontStyle: FontStyle.italic,
                                 height: 1.6,
-                                color: MarginaliaColors.ink,
+                                color: ScriptaColors.ink,
                               ),
                               maxLines: 6,
                               overflow: TextOverflow.ellipsis,

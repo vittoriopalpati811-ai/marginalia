@@ -194,14 +194,14 @@ class _SectionHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
         children: [
-          Text(title, style: MarginaliaTextStyles.sectionTitle),
+          Text(title, style: ScriptaTextStyles.sectionTitle),
           if (count != null) ...[
             const SizedBox(width: 8),
             Text(
               '$count',
               style: const TextStyle(
                 fontSize: 11,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -212,7 +212,7 @@ class _SectionHeader extends StatelessWidget {
               subtitle!,
               style: const TextStyle(
                 fontSize: 11,
-                color: MarginaliaColors.inkFaint,
+                color: ScriptaColors.inkFaint,
               ),
             ),
           ],
@@ -249,7 +249,7 @@ class _UserRow extends StatelessWidget {
     final uid = user['id'] as String?;
     final avatarUrl = user['avatar_url'] as String?;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarColor = MarginaliaDecorations.bookCoverColor(name);
+    final avatarColor = ScriptaDecorations.bookCoverColor(name);
     final isReading = readingTitle != null && readingTitle.isNotEmpty;
 
     return Padding(
@@ -258,7 +258,7 @@ class _UserRow extends StatelessWidget {
         onTap: uid != null ? () => context.push('/user/$uid') : null,
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-          decoration: MarginaliaDecorations.card(),
+          decoration: ScriptaDecorations.card(),
           child: Row(
           children: [
             // ── Avatar ─────────────────────────────────────────────────
@@ -280,7 +280,7 @@ class _UserRow extends StatelessWidget {
                     style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: MarginaliaColors.ink,
+                      color: ScriptaColors.ink,
                       letterSpacing: -0.1,
                     ),
                   ),
@@ -289,14 +289,14 @@ class _UserRow extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(Icons.menu_book_outlined,
-                            size: 12, color: MarginaliaColors.sienna),
+                            size: 12, color: ScriptaColors.sienna),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             readingTitle!,
-                            style: MarginaliaTextStyles.bookTitle.copyWith(
+                            style: ScriptaTextStyles.bookTitle.copyWith(
                               fontSize: 12,
-                              color: MarginaliaColors.sienna,
+                              color: ScriptaColors.sienna,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -308,7 +308,7 @@ class _UserRow extends StatelessWidget {
                     if (readingAuthor != null && readingAuthor.isNotEmpty)
                       Text(
                         readingAuthor.toUpperCase(),
-                        style: MarginaliaTextStyles.bookAuthor
+                        style: ScriptaTextStyles.bookAuthor
                             .copyWith(fontSize: 10),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -318,7 +318,7 @@ class _UserRow extends StatelessWidget {
                       context.l10n.amiciNotReading,
                       style: GoogleFonts.manrope(
                         fontSize: 12,
-                        color: MarginaliaColors.inkFaint,
+                        color: ScriptaColors.inkFaint,
                       ),
                     ),
                 ],
@@ -336,7 +336,7 @@ class _UserRow extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 1.5,
-                          color: MarginaliaColors.primary,
+                          color: ScriptaColors.primary,
                         ),
                       ),
                     )
@@ -344,9 +344,9 @@ class _UserRow extends StatelessWidget {
                       ? OutlinedButton(
                           onPressed: onToggle,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: MarginaliaColors.inkMuted,
+                            foregroundColor: ScriptaColors.inkMuted,
                             side: const BorderSide(
-                                color: MarginaliaColors.rule),
+                                color: ScriptaColors.rule),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 6),
                             shape: RoundedRectangleBorder(
@@ -359,7 +359,7 @@ class _UserRow extends StatelessWidget {
                       : FilledButton(
                           onPressed: onToggle,
                           style: FilledButton.styleFrom(
-                            backgroundColor: MarginaliaColors.primary,
+                            backgroundColor: ScriptaColors.primary,
                             foregroundColor: const Color(0xFFF1EEE7),
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 6),
@@ -440,7 +440,7 @@ class _Fallback extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, MarginaliaColors.primaryDark],
+          colors: [color, ScriptaColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -470,7 +470,7 @@ class _LoadingSection extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 32),
       child: Center(
         child: CircularProgressIndicator(
-          color: MarginaliaColors.primary,
+          color: ScriptaColors.primary,
           strokeWidth: 1.5,
         ),
       ),
@@ -493,11 +493,11 @@ class _EmptyFriends extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: MarginaliaColors.primaryFaint,
+                color: ScriptaColors.primaryFaint,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(Icons.people_outline,
-                  size: 32, color: MarginaliaColors.primary),
+                  size: 32, color: ScriptaColors.primary),
             ),
             const SizedBox(height: 20),
             Text(
@@ -506,7 +506,7 @@ class _EmptyFriends extends StatelessWidget {
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.3,
-                color: MarginaliaColors.ink,
+                color: ScriptaColors.ink,
               ),
             ),
             const SizedBox(height: 8),
@@ -514,7 +514,7 @@ class _EmptyFriends extends StatelessWidget {
               context.l10n.amiciNoFriendsBody,
               textAlign: TextAlign.center,
               style: GoogleFonts.manrope(
-                color: MarginaliaColors.inkMuted,
+                color: ScriptaColors.inkMuted,
                 fontSize: 14,
                 height: 1.65,
               ),

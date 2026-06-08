@@ -194,7 +194,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
-              color: MarginaliaColors.surface.withAlpha(225),
+              color: ScriptaColors.surface.withAlpha(225),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: Colors.white.withAlpha(46), width: 0.6),
             ),
@@ -208,7 +208,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: MarginaliaColors.rule,
+                    color: ScriptaColors.rule,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -218,7 +218,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                   child: Row(
                     children: [
                       const Icon(Icons.flag_outlined,
-                          size: 18, color: MarginaliaColors.inkMuted),
+                          size: 18, color: ScriptaColors.inkMuted),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -226,7 +226,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                           style: GoogleFonts.manrope(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
-                            color: MarginaliaColors.ink,
+                            color: ScriptaColors.ink,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -237,14 +237,14 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
-                            color: MarginaliaColors.sienna,
+                            color: ScriptaColors.sienna,
                           ),
                         ),
                     ],
                   ),
                 ),
                 const Divider(
-                    color: MarginaliaColors.ruleFaint, height: 1, thickness: 1),
+                    color: ScriptaColors.ruleFaint, height: 1, thickness: 1),
                 ...reasons.map(
                   (r) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 1),
@@ -259,7 +259,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                           child: Row(
                             children: [
                               Icon(r.icon,
-                                  size: 19, color: MarginaliaColors.inkMuted),
+                                  size: 19, color: ScriptaColors.inkMuted),
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Text(
@@ -267,7 +267,7 @@ class _ReportSheetState extends ConsumerState<_ReportSheet> {
                                   style: GoogleFonts.manrope(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w500,
-                                    color: MarginaliaColors.ink,
+                                    color: ScriptaColors.ink,
                                   ),
                                 ),
                               ),
