@@ -484,7 +484,7 @@ class WrappedShareCard extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'M',
+                      'S',
                       style: GoogleFonts.ebGaramond(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,

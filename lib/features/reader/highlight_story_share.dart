@@ -621,7 +621,7 @@ class HighlightStoryCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 9),
-                  // Small rounded-square gradient brand mark with an "M".
+                  // Small rounded-square gradient brand mark with an "S".
                   Container(
                     width: 26,
                     height: 26,
@@ -642,7 +642,7 @@ class HighlightStoryCard extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'M',
+                      'S',
                       style: GoogleFonts.ebGaramond(
                         fontSize: 17,
                         fontWeight: FontWeight.w600,

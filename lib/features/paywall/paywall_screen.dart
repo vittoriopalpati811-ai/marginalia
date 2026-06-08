@@ -193,7 +193,7 @@ class _PaywallBody extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'M',
+                              'S',
                               style: GoogleFonts.playfairDisplay(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w700,

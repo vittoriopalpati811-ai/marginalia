@@ -682,7 +682,7 @@ class _WidgetBrand extends StatelessWidget {
           ),
           child: const Center(
             child: Text(
-              'M',
+              'S',
               style: TextStyle(
                 color: Color(0xFFF5F2EC),
                 fontSize: 12,

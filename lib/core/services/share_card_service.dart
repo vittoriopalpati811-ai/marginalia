@@ -550,12 +550,12 @@ class _StatsShareCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // ── Decorative big M ───────────────────────────────────────
+            // ── Decorative big S ───────────────────────────────────────
             Positioned(
               top: -30,
               right: -20,
               child: Text(
-                'M',
+                'S',
                 style: GoogleFonts.ebGaramond(
                   fontSize: 300,
                   height: 0.8,
@@ -665,7 +665,7 @@ class _StatsShareCard extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'M',
+                      'S',
                       style: GoogleFonts.ebGaramond(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
