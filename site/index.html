@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Scripta — Remember. Share. Live it.</title>
+<meta name="description" content="Scripta brings your Kindle highlights back to life — resurfaced daily, remembered through spaced repetition, and shared with people who read like you." />
+<meta property="og:title" content="Scripta — the words worth keeping" />
+<meta property="og:description" content="Your Kindle highlights, resurfaced, remembered, and shared. Verba volant, scripta manent." />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#C0CFB2" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAFAF8; --surface:#FFFFFF; --ink:#1B1F1B; --ink-muted:#6F756E;
+    --sage:#C0CFB2; --sage-deep:#8AA178; --sage-faint:#ECF1E6; --rule:#E6E6E1;
+    --cream:#F4F1E8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;overflow-x:hidden}
+  body{overflow-x:hidden;overflow-wrap:break-word;background:var(--paper);color:var(--ink);
+    font-family:'Manrope',system-ui,-apple-system,Segoe UI,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .serif{font-family:'EB Garamond',Georgia,serif}
+  .wrap{width:100%;max-width:1080px;margin:0 auto;padding:0 24px}
+  a{color:inherit}
+
+  /* ── Top bar ── */
+  header{position:sticky;top:0;z-index:10;background:rgba(250,250,248,.82);
+    backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--rule)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:19px;letter-spacing:-.01em}
+  .mark{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+    background:linear-gradient(157deg,#4E8A3E,#3C5E2E);color:var(--cream);
+    font-family:'EB Garamond',Georgia,serif;font-weight:600;font-size:23px;line-height:1;padding-bottom:2px}
+  .nav a.cta{font-size:14px;font-weight:700;text-decoration:none;color:#fff;
+    background:var(--sage-deep);padding:10px 18px;border-radius:999px}
+
+  /* ── Hero ── */
+  .hero{padding:88px 0 64px;text-align:center}
+  .latin{font-style:italic;font-size:18px;color:var(--sage-deep);font-weight:500;margin-bottom:22px;letter-spacing:.01em}
+  h1{font-family:'EB Garamond',Georgia,serif;font-weight:600;
+    font-size:clamp(40px,8vw,76px);line-height:1.05;letter-spacing:-.01em;margin-bottom:22px}
+  h1 .accent{color:var(--sage-deep)}
+  .lede{font-size:clamp(17px,2.4vw,20px);color:var(--ink-muted);max-width:620px;margin:0 auto 34px}
+  .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:16px;
+    text-decoration:none;padding:15px 26px;border-radius:999px;transition:transform .15s ease}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--sage-deep);color:#fff;box-shadow:0 10px 24px rgba(138,161,120,.32)}
+  .btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--rule)}
+
+  /* ── Showcase strip ── */
+  .strip{margin:36px auto 0;max-width:760px;background:linear-gradient(160deg,var(--sage),#A9BD98);
+    border-radius:28px;padding:46px 30px;color:var(--ink)}
+  .strip .q{font-family:'EB Garamond',Georgia,serif;font-size:clamp(22px,4vw,30px);line-height:1.4}
+  .strip .q .g{color:#3C5E2E}
+  .strip .by{margin-top:16px;font-size:13px;font-weight:600;color:#3C5E2E;letter-spacing:.02em}
+
+  /* ── Features ── */
+  section.features{padding:84px 0 30px}
+  .eyebrow{text-align:center;font-size:13px;font-weight:800;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--sage-deep);margin-bottom:14px}
+  .h2{text-align:center;font-family:'EB Garamond',Georgia,serif;font-weight:600;
+    font-size:clamp(28px,5vw,42px);line-height:1.12;margin-bottom:54px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:20px;padding:30px;
+    box-shadow:0 1px 0 rgba(27,31,27,.02)}
+  .ic{width:44px;height:44px;border-radius:12px;background:var(--sage-faint);
+    display:grid;place-items:center;margin-bottom:18px;font-size:22px}
+  .card h3{font-family:'EB Garamond',Georgia,serif;font-weight:600;font-size:23px;margin-bottom:8px}
+  .card p{color:var(--ink-muted);font-size:15.5px}
+
+  /* ── Closing ── */
+  .closing{text-align:center;padding:90px 0 70px}
+  .closing h2{font-family:'EB Garamond',Georgia,serif;font-weight:600;font-size:clamp(30px,6vw,48px);
+    line-height:1.1;margin-bottom:18px}
+  .closing p{color:var(--ink-muted);font-size:18px;max-width:520px;margin:0 auto 30px}
+
+  /* ── Footer ── */
+  footer{border-top:1px solid var(--rule);padding:40px 0;color:var(--ink-muted);font-size:14px}
+  .foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+  .foot a{text-decoration:none;color:var(--ink-muted)}
+  .foot a:hover{color:var(--ink)}
+  .foot .links{display:flex;gap:22px;flex-wrap:wrap}
+
+  @media (max-width:680px){
+    .grid{grid-template-columns:1fr}
+    .hero{padding:60px 0 48px}
+    .nav a.cta{display:none}
+    section.features{padding:64px 0 20px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="brand"><span class="mark">S</span>Scripta</div>
+    <a class="cta" href="#beta">Join the beta</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <div class="wrap hero">
+    <p class="latin serif">Verba volant, scripta manent.</p>
+    <h1 class="serif">The words<br>worth <span class="accent">keeping.</span></h1>
+    <p class="lede">You highlighted them for a reason. Scripta brings your Kindle highlights back to life —
+      resurfaced when they matter, remembered for good, and shared with people who read like you.</p>
+    <div class="ctas" id="beta">
+      <a class="btn btn-primary" href="mailto:support@get-scripta.app?subject=Scripta%20beta">Join the beta →</a>
+      <a class="btn btn-ghost" href="#how">See how it works</a>
+    </div>
+
+    <div class="strip">
+      <div class="q serif">“We do not remember days, we remember <span class="g">moments</span>.”</div>
+      <div class="by">RESURFACED FROM YOUR LIBRARY · CESARE PAVESE</div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features" id="how">
+    <div class="wrap">
+      <p class="eyebrow">What Scripta does</p>
+      <h2 class="h2 serif">Read once. Remember always.</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="ic">📖</div>
+          <h3>Resurfaced daily</h3>
+          <p>A home-screen widget and a daily passage, chosen for your moment — so the best of what you've read keeps finding you.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🔁</div>
+          <h3>Actually remembered</h3>
+          <p>Ripasso spaced-repetition and quizzes turn highlights into memory. What you miss comes back tomorrow, not never.</p>
+        </div>
+        <div class="card">
+          <div class="ic">✦</div>
+          <h3>Search by meaning</h3>
+          <p>Look for an idea, not a keyword. Scripta finds the passages closest in meaning — even when they share no words.</p>
+        </div>
+        <div class="card">
+          <div class="ic">❒</div>
+          <h3>Read together</h3>
+          <p>Join a Jam — a small reading circle. Share highlights, vote the book of the month, and quiz it together.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <div class="wrap closing">
+    <h2 class="serif">Remember. Share. Live it.</h2>
+    <p>Scripta is in private beta on iOS, with Android close behind. Want in?</p>
+    <a class="btn btn-primary" href="mailto:support@get-scripta.app?subject=Scripta%20beta">Request an invite</a>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="brand" style="font-size:16px"><span class="mark" style="width:28px;height:28px;font-size:19px;border-radius:7px">S</span>Scripta</div>
+    <div class="links">
+      <a href="mailto:support@get-scripta.app">support@get-scripta.app</a>
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <span>© 2026 Scripta</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
