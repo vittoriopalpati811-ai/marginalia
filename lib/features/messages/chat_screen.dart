@@ -293,7 +293,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       'sender_id': userId,
       'content': text,
       'image_url': null,
-      'created_at': DateTime.now().toIso8601String(),
+      // UTC + 'Z' so it matches the server's timestamptz format; _formatTime
+      // then .toLocal()s it to the device time exactly like a fetched message
+      // (an unmarked local string would be ambiguous and could drift).
+      'created_at': DateTime.now().toUtc().toIso8601String(),
       'sender': {
         'id': userId,
         'display_name': 'Tu',

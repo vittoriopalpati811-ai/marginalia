@@ -28,7 +28,15 @@ class RipassoEntryCard extends ConsumerWidget {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final reviewedToday = reviewState?.lastReviewedOn == today;
+    // Compare by LOCAL calendar day, not raw DateTime ==. Isar can return
+    // lastReviewedOn as a UTC DateTime, so `== today` (a local-midnight value)
+    // is false even right after a review → the card never locked. Normalise to
+    // local + compare y/m/d.
+    final last = reviewState?.lastReviewedOn?.toLocal();
+    final reviewedToday = last != null &&
+        last.year == today.year &&
+        last.month == today.month &&
+        last.day == today.day;
 
     // Once today's review is done, the card LOCKS to a non-tappable "completato"
     // state until tomorrow's slot — a ripasso is a once-a-day ritual, so even if

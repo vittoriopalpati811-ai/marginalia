@@ -33,6 +33,7 @@ import '../../core/services/instagram_share.dart';
 import '../../core/services/share_file_helper.dart';
 import '../../core/theme.dart';
 import '../../core/utils/share_helper.dart';
+import '../library/book_cover.dart';
 import 'activity_heatmap.dart';
 
 // Warm cream used on the share card's dark gradient header.
@@ -76,9 +77,10 @@ class ActivityTab extends ConsumerWidget {
     final ramp = activityRampFromSeed(seedColor);
 
     final readToday = (reading[today] ?? 0) > 0;
-    final reviewedToday =
-        reviewState?.lastReviewedOn != null &&
-            _dateOnly(reviewState!.lastReviewedOn!) == today;
+    // .toLocal() before _dateOnly — Isar may hand back lastReviewedOn in UTC, so
+    // its raw y/m/d can be the wrong calendar day.
+    final reviewedToday = reviewState?.lastReviewedOn != null &&
+        _dateOnly(reviewState!.lastReviewedOn!.toLocal()) == today;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
@@ -538,8 +540,11 @@ class _HeatmapSkeleton extends StatelessWidget {
 // (mirrors highlight_story_share.dart's capture flow)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Logical design size; rendered at pixelRatio 3 → 1080×1080 (1:1, instagrammable).
-const double _kCardSize = 360;
+// Logical design size; rendered at pixelRatio 3 → 1080×1920 (9:16), so it FILLS
+// Instagram Stories with no black bars — same full-bleed format as the highlight
+// story share.
+const double _kCardWidth = 360;
+const double _kCardHeight = 640;
 const double _kCardPixelRatio = 3.0;
 
 class _ActivityShareSheet extends StatefulWidget {
@@ -700,7 +705,8 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final media = MediaQuery.of(context);
-    final displayWidth = (media.size.width * 0.7).clamp(220.0, 300.0).toDouble();
+    final displayWidth = (media.size.width * 0.62).clamp(190.0, 260.0).toDouble();
+    final displayHeight = displayWidth * (_kCardHeight / _kCardWidth);
 
     return SafeArea(
       top: false,
@@ -744,14 +750,14 @@ class _ActivityShareSheetState extends State<_ActivityShareSheet> {
               borderRadius: BorderRadius.circular(20),
               child: SizedBox(
                 width: displayWidth,
-                height: displayWidth, // 1:1
+                height: displayHeight, // 9:16
                 child: FittedBox(
                   fit: BoxFit.contain,
                   child: RepaintBoundary(
                     key: _boundaryKey,
                     child: SizedBox(
-                      width: _kCardSize,
-                      height: _kCardSize,
+                      width: _kCardWidth,
+                      height: _kCardHeight,
                       child: ActivityShareCard(
                         kind: widget.kind,
                         title: widget.title,
@@ -893,177 +899,184 @@ class ActivityShareCard extends StatelessWidget {
   final String? displayName;
   final String? localeTag;
 
-  /// Cream when the header is dark, near-ink when it's light — so the header text
-  /// stays legible on EVERY profile preset (Pastel Yellow + Coconut Milk through
-  /// Navy + Vintage Wine).
-  Color get _onHeader =>
-      _headerMid.computeLuminance() > 0.55 ? const Color(0xFF2A2620) : _cream;
-
-  /// The gradient's representative colour for the contrast decision (the mid
-  /// stop of a 3-stop gradient, else the first).
-  Color get _headerMid =>
-      headerColors.length >= 2 ? headerColors[headerColors.length ~/ 2]
-                               : headerColors.first;
-
   @override
   Widget build(BuildContext context) {
     final name = (displayName ?? '').trim();
-    final onHeader = _onHeader;
+    // A varied editorial cover as the backdrop (seeded by the user's name so it
+    // is stable per person), exactly like the highlight story share — then a
+    // dark scrim for legibility. Full-bleed 9:16, SQUARE corners → fills
+    // Instagram Stories with NO black bars.
+    final coverSeed = name.isNotEmpty ? name : 'Marginalia';
 
     return SizedBox(
-      width: _kCardSize,
-      height: _kCardSize,
-      // Clip with a save-layer so the rounded corners are a clean alpha cut with
-      // NO dark fringe ("bordini strani negli angoli"): the corners are fully
-      // transparent in the exported PNG, the rest is the card.
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAliasWithSaveLayer,
-        child: ColoredBox(
-          color: MarginaliaColors.background,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Gradient header — the profile's own gradient, so the shared
-              //    image matches the profile it links back to ────────────────
-              Container(
-                height: 96,
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      width: _kCardWidth,
+      height: _kCardHeight,
+      child: ClipRect(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1) Editorial cover background (sharp, like the highlight story).
+            Positioned.fill(
+              child: BookEditorialCover(title: coverSeed, author: title),
+            ),
+            // 2) Dark scrim so the content reads over any cover.
+            Positioned.fill(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: headerColors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withAlpha(205),
+                      Colors.black.withAlpha(140),
+                      Colors.black.withAlpha(220),
+                    ],
+                    stops: const [0.0, 0.45, 1.0],
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          title.toUpperCase(),
-                          style: GoogleFonts.manrope(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: onHeader.withAlpha(210),
-                            letterSpacing: 2.0,
-                          ),
+              ),
+            ),
+            // 3) Content.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(30, 66, 30, 44),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title.toUpperCase(),
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: _cream.withAlpha(220),
+                          letterSpacing: 2.4,
                         ),
-                        const Spacer(),
-                        if (name.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.right,
-                              style: GoogleFonts.manrope(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: onHeader.withAlpha(180),
-                                letterSpacing: 0.2,
-                              ),
+                      ),
+                      const Spacer(),
+                      if (name.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _cream.withAlpha(190),
                             ),
                           ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    headline,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.ebGaramond(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w600,
+                      color: _cream,
+                      height: 1.08,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  // Heatmap on a warm-paper card so it reads over the cover.
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.background.withAlpha(244),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x55000000),
+                          blurRadius: 24,
+                          offset: Offset(0, 10),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      headline,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.ebGaramond(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
-                        color: onHeader,
-                        letterSpacing: -0.4,
-                        height: 1.05,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ActivityHeatmap(
+                          data: data,
+                          title: title,
+                          showTitle: false,
+                          showLegend: true,
+                          cellSize: 4.2,
+                          cellGap: 1.3,
+                          ramp: ramp,
+                          localeTag: localeTag,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          summary,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.manrope(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: MarginaliaColors.inkMuted,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-
-              // ── Heatmap on paper ──────────────────────────────────────────
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 22, 24, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                  const SizedBox(height: 22),
+                  // Brand footer.
+                  Row(
                     children: [
-                      // A smaller cell so the full year fits the square without
-                      // horizontal scroll inside the captured frame.
-                      ActivityHeatmap(
-                        data: data,
-                        title: title,
-                        showTitle: false,
-                        showLegend: true,
-                        cellSize: 4.4,
-                        cellGap: 1.4,
-                        ramp: ramp,
-                        localeTag: localeTag,
+                      Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF4A7A35), Color(0xFF254D16)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'M',
+                          style: GoogleFonts.ebGaramond(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: _cream,
+                            height: 1,
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(width: 10),
                       Text(
-                        summary,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        'MARGINALIA',
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: _cream,
+                          letterSpacing: 2.4,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'marginalia.app',
                         style: GoogleFonts.manrope(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: MarginaliaColors.inkMuted,
-                          height: 1.4,
+                          color: _cream.withAlpha(160),
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-
-              // ── Brand footer ──────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF4A7A35), Color(0xFF254D16)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'M',
-                        style: GoogleFonts.ebGaramond(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: _cream,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Text(
-                      'MARGINALIA',
-                      style: GoogleFonts.manrope(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: MarginaliaColors.ink,
-                        letterSpacing: 2.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

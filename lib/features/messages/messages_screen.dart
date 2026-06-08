@@ -522,13 +522,17 @@ class _ConversationCard extends ConsumerWidget {
   String _formatTime(BuildContext context, DateTime? dt) {
     if (dt == null) return '';
     final l10n = context.l10n;
+    // Convert the UTC timestamp to the DEVICE's local time ONCE, then use it for
+    // both the elapsed-time math and the dd/mm fallback (the old code read
+    // dt.day/dt.month off the still-UTC value → wrong calendar day near midnight).
+    final local = dt.toLocal();
     final now = DateTime.now();
-    final diff = now.difference(dt.toLocal());
+    final diff = now.difference(local);
     if (diff.inMinutes < 1) return l10n.timeNow;
     if (diff.inMinutes < 60) return l10n.timeMinutesAgo(diff.inMinutes);
     if (diff.inHours < 24) return l10n.timeHoursAgo(diff.inHours);
     if (diff.inDays < 7) return l10n.timeDaysAgo(diff.inDays);
-    return '${dt.day}/${dt.month}';
+    return '${local.day}/${local.month}';
   }
 }
 
