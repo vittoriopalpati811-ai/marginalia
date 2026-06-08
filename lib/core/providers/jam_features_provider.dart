@@ -14,6 +14,25 @@ final bookProposalsProvider =
       ref.read(supabaseServiceProvider).fetchBookProposals(jamId),
 );
 
+/// The Jam's "Libro del mese": the proposal with the most votes (the leading
+/// pick). Returns null while loading or when there are no proposals. Derived
+/// from [bookProposalsProvider] so it stays in sync with voting.
+final jamCurrentBookProvider =
+    Provider.autoDispose.family<Map<String, dynamic>?, String>((ref, jamId) {
+  final list = ref.watch(bookProposalsProvider(jamId)).asData?.value;
+  if (list == null || list.isEmpty) return null;
+  Map<String, dynamic>? best;
+  var bestVotes = -1;
+  for (final p in list) {
+    final votes = (p['jam_book_votes'] as List?)?.length ?? 0;
+    if (votes > bestVotes) {
+      bestVotes = votes;
+      best = p;
+    }
+  }
+  return best;
+});
+
 // ─── Reading Challenges ───────────────────────────────────────────────────────
 
 final jamChallengesProvider =

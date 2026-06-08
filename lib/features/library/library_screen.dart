@@ -20,6 +20,7 @@ import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
 import '../search/highlight_search_screen.dart';
+import '../quiz/quiz_screen.dart';
 import '../review/review_entry_card.dart';
 import '../../core/providers/daily_highlight_provider.dart';
 import '../../core/providers/daily_subtitle_provider.dart';
@@ -134,6 +135,63 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             // streak flame. Hidden when nothing is due and unreviewed; collapses
             // to a quiet "done" pill once today's session is complete.
             const SliverToBoxAdapter(child: RipassoEntryCard()),
+
+            // ── Quiz — active recall over your highlights ──────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const QuizScreen())),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: MarginaliaColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withAlpha(10),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                              color: MarginaliaColors.primaryFaint,
+                              borderRadius: BorderRadius.circular(12)),
+                          child: const Icon(Icons.quiz_outlined,
+                              color: MarginaliaColors.primaryDark, size: 22),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(context.l10n.quizCardTitle,
+                                  style: GoogleFonts.manrope(
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: MarginaliaColors.ink)),
+                              const SizedBox(height: 2),
+                              Text(context.l10n.quizCardSubtitle,
+                                  style: GoogleFonts.manrope(
+                                      fontSize: 13,
+                                      color: MarginaliaColors.inkMuted)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded,
+                            color: MarginaliaColors.inkFaint),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
             // ── Hero pull-quote: highlight del giorno ──────────────────────
             randomAsync.when(

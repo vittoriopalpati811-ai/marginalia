@@ -17,6 +17,8 @@ import 'jam_highlight_detail_screen.dart'
     show reactionsProvider, commentsProvider, JamHighlightDetailScreen;
 import 'weekly_prompt.dart';
 import 'social_screen.dart' show jamsProvider;
+import 'package:google_fonts/google_fonts.dart';
+import '../quiz/quiz_screen.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -596,6 +598,11 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           // ── Prompt settimanale ─────────────────────────────────────────
           SliverToBoxAdapter(
             child: _WeeklyPromptBanner(prompt: prompt),
+          ),
+
+          // ── Libro del mese (top-voted book + quiz it together) ─────────
+          SliverToBoxAdapter(
+            child: _BookOfMonthCard(jamId: widget.jamId),
           ),
 
           // ── Feature cards ──────────────────────────────────────────────
@@ -1709,6 +1716,111 @@ class _CountChip extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Libro del mese — top-voted book, with a "quiz it together" CTA ───────────
+
+class _BookOfMonthCard extends ConsumerWidget {
+  const _BookOfMonthCard({required this.jamId});
+  final String jamId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final book = ref.watch(jamCurrentBookProvider(jamId));
+    if (book == null) return const SizedBox.shrink();
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final title = (book['title'] as String?)?.trim() ?? '';
+    final author = (book['author'] as String?)?.trim() ?? '';
+    final votes = (book['jam_book_votes'] as List?)?.length ?? 0;
+    if (title.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [MarginaliaColors.siennaFaint, MarginaliaColors.surface],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border:
+              Border.all(color: MarginaliaColors.primary.withAlpha(90), width: 1),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => context.push('/jam/$jamId/voting'),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_stories_rounded,
+                          size: 16, color: MarginaliaColors.primaryDark),
+                      const SizedBox(width: 8),
+                      Text(
+                        it ? 'LIBRO DEL MESE' : 'BOOK OF THE MONTH',
+                        style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                            color: MarginaliaColors.primaryDark),
+                      ),
+                      const Spacer(),
+                      if (votes > 0)
+                        Text(
+                          it ? '$votes voti' : '$votes votes',
+                          style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: MarginaliaColors.inkMuted),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: GoogleFonts.ebGaramond(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        height: 1.15,
+                        color: MarginaliaColors.ink),
+                  ),
+                  if (author.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(author,
+                        style: GoogleFonts.manrope(
+                            fontSize: 13.5, color: MarginaliaColors.inkMuted)),
+                  ],
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) =>
+                            QuizScreen(bookTitle: title, appBarTitle: title))),
+                    icon: const Icon(Icons.quiz_outlined, size: 18),
+                    label: Text(it ? 'Quiz su questo libro' : 'Quiz this book'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: MarginaliaColors.primaryDark,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 18),
+                      textStyle: GoogleFonts.manrope(
+                          fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

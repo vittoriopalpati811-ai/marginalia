@@ -439,6 +439,8 @@
   "importPasteAction": "Importa evidenziazioni",
   "importPasteEmpty": "Niente da importare: incolla prima del testo.",
   "searchByMeaningHint": "Cerca nei tuoi highlight per significato…",
+  "quizCardTitle": "Mettiti alla prova",
+  "quizCardSubtitle": "Quiz a memoria sui tuoi highlight",
   "importSuccess": "Importati {highlights} highlight da {books} libri",
   "kindleWatchdog": "La lettura degli highlight non risponde. Assicurati di essere sulla pagina «I tuoi appunti e segnalibri» del tuo account Amazon e riprova.",
   "kindleNoBooks": "Sei connesso ad Amazon ma non vediamo nessun libro con highlight. Assicurati di usare lo stesso account Amazon (e la stessa regione, es. Amazon.it) collegato al tuo Kindle.",
