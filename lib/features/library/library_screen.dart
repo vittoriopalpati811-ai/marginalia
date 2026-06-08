@@ -19,6 +19,7 @@ import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'recommendations_section.dart';
+import '../../core/services/recs_cache.dart';
 import '../search/highlight_search_screen.dart';
 import '../quiz/quiz_screen.dart';
 import '../review/review_entry_card.dart';
@@ -43,9 +44,39 @@ class LibraryScreen extends ConsumerStatefulWidget {
   ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+class _LibraryScreenState extends ConsumerState<LibraryScreen>
+    with WidgetsBindingObserver {
   bool _isImporting  = false;
   bool _showAllBooks = false; // toggles the "La tua libreria" grid
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Daily rollover of the AI recommendations. The disk cache is date-stamped,
+  // but the recs provider is kept alive in memory — so an app left open or
+  // backgrounded across midnight would keep serving yesterday's picks until a
+  // cold start. When the app is resumed on a NEW day, force one fresh fetch so
+  // the recommendations (and their match %) change exactly once a day. The
+  // staleness check is cheap (one tiny file read) and self-limiting: after the
+  // refetch stamps today's date, later resumes the same day are no-ops.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    RecsCache.isStaleForToday().then((stale) {
+      if (stale && mounted) {
+        ref.invalidate(libraryRecommendationsProvider);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

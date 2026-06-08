@@ -40,6 +40,23 @@ class RecsCache {
     }
   }
 
+  /// True when a cached set exists but it was stamped on a PREVIOUS day, so the
+  /// daily picks are due to roll over. The library screen calls this when the
+  /// app is resumed to force ONE fresh fetch the first time it is opened on a
+  /// new day — the in-memory recs provider would otherwise keep serving
+  /// yesterday's picks until a cold start. Returns false when there is no cache
+  /// (the provider fetches anyway) or it is already today's.
+  static Future<bool> isStaleForToday() async {
+    try {
+      final f = await _path();
+      if (!await f.exists()) return false;
+      final data = jsonDecode(await f.readAsString()) as Map<String, dynamic>;
+      return data['date'] != _today();
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Persists [recs] (raw maps) for today under [signature].
   ///
   /// Caller contract: ONLY a successful, non-empty recommendation list is ever

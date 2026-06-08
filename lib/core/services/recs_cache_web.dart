@@ -13,4 +13,7 @@ class RecsCache {
 
   /// No-op on web (no persistent cache to clear).
   static Future<void> clear() async {}
+
+  /// No-op on web (no persistent cache; the provider always fetches live).
+  static Future<bool> isStaleForToday() async => false;
 }
