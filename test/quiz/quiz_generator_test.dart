@@ -9,19 +9,45 @@ void main() {
       expect(generateQuiz([const QuizSource('   ', 'B', 'A')]), isEmpty);
     });
 
-    test('cloze blanks a meaningful word that is the answer', () {
+    test('cloze is multiple-choice: blank + options that include the answer', () {
       final qs = generateQuiz(
-        [const QuizSource('The unexamined life is not worth living', 'Apology', 'Plato')],
+        [
+          const QuizSource(
+              'The unexamined life is not worth living', 'Apology', 'Plato'),
+          const QuizSource(
+              'Knowledge begins through wonder and patient questioning',
+              'Apology',
+              'Plato'),
+        ],
         rng: Random(1),
       );
-      expect(qs, hasLength(1));
-      final q = qs.first;
-      // only one book → must be a cloze (no distractors for whichBook)
-      expect(q.kind, QuizKind.cloze);
+      expect(qs, isNotEmpty);
+      final q = qs.firstWhere((x) => x.kind == QuizKind.cloze);
       expect(q.prompt, contains('_____'));
       expect(q.answer.length, greaterThanOrEqualTo(5));
-      // the answer word is removed from the prompt
       expect(q.prompt.contains(q.answer), isFalse);
+      // now answerable: options include the right word + at least one distractor
+      expect(q.options, contains(q.answer));
+      expect(q.options.length, inInclusiveRange(2, 4));
+      expect(q.options.toSet().length, q.options.length);
+      expect(q.clozeWord, q.answer);
+    });
+
+    test('whichAuthor offers the correct author among the options', () {
+      final sources = [
+        const QuizSource('Passage one about the sea', 'Book One', 'Author Alpha'),
+        const QuizSource('Passage two about the sky', 'Book Two', 'Author Beta'),
+        const QuizSource('Passage three about the sun', 'Book Three', 'Author Gamma'),
+        const QuizSource('Passage four about the moon', 'Book Four', 'Author Delta'),
+      ];
+      final qs = generateQuiz(sources, count: 9, rng: Random(5));
+      final wa = qs.where((q) => q.kind == QuizKind.whichAuthor).toList();
+      expect(wa, isNotEmpty);
+      for (final q in wa) {
+        expect(q.options, contains(q.answer));
+        expect(q.options.length, inInclusiveRange(2, 4));
+        expect(q.options.toSet().length, q.options.length);
+      }
     });
 
     test('whichBook offers the correct title among the options', () {

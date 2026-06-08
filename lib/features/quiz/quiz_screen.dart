@@ -1,8 +1,9 @@
 // ─── Quiz — active recall over your highlights ───────────────────────────────
 //
 // A short, gamified recall session: 10 questions generated locally from the
-// reader's own highlights (cloze fill-in-the-blank + "which book?" multiple
-// choice). No AI, no network. Self-graded for cloze; auto-graded for choice.
+// reader's own highlights. Every question is ANSWERABLE by tapping one of up to
+// four options — cloze (pick the missing word), which-book, which-author. No AI,
+// no network.
 
 import 'dart:math';
 
@@ -37,9 +38,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   int _score = 0;
 
   // per-question transient state
-  bool _revealed = false;       // cloze: answer shown
-  String? _picked;              // whichBook: chosen option
-  bool _answered = false;       // question resolved (moving on enabled)
+  String? _picked;
+  bool _answered = false;
 
   bool get _it => Localizations.localeOf(context).languageCode == 'it';
 
@@ -74,7 +74,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     setState(() {
       _index = 0;
       _score = 0;
-      _revealed = false;
       _picked = null;
       _answered = false;
       _loading = true;
@@ -89,13 +88,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     }
     setState(() {
       _index++;
-      _revealed = false;
       _picked = null;
       _answered = false;
     });
   }
 
-  void _answerWhichBook(QuizQuestion q, String option) {
+  void _answer(QuizQuestion q, String option) {
     if (_answered) return;
     HapticFeedback.selectionClick();
     setState(() {
@@ -105,18 +103,22 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     });
   }
 
-  void _gradeCloze(bool knew) {
-    if (_answered) return;
-    HapticFeedback.selectionClick();
-    setState(() {
-      _answered = true;
-      if (knew) _score++;
-    });
+  String _label(bool it, QuizKind kind) {
+    switch (kind) {
+      case QuizKind.cloze:
+        return it ? 'Completa il passaggio' : 'Complete the passage';
+      case QuizKind.whichBook:
+        return it ? 'Da quale libro?' : 'Which book?';
+      case QuizKind.whichAuthor:
+        return it ? 'Chi è l’autore?' : 'Who is the author?';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final it = _it;
+    final inQuestion =
+        !_loading && _questions.isNotEmpty && _index < _questions.length;
     return Scaffold(
       backgroundColor: MarginaliaColors.background,
       appBar: AppBar(
@@ -127,14 +129,43 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
         title: Text(widget.appBarTitle ?? 'Quiz',
             style: GoogleFonts.manrope(
                 fontWeight: FontWeight.w700, fontSize: 18, color: MarginaliaColors.ink)),
-        bottom: (!_loading && _questions.isNotEmpty && _index < _questions.length)
+        actions: [
+          if (inQuestion)
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: MarginaliaColors.primaryFaint,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle,
+                          size: 15, color: MarginaliaColors.primaryDark),
+                      const SizedBox(width: 5),
+                      Text('$_score',
+                          style: GoogleFonts.manrope(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                              color: MarginaliaColors.primaryDark)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+        bottom: inQuestion
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(4),
                 child: LinearProgressIndicator(
                   value: (_index + 1) / _questions.length,
                   minHeight: 4,
                   backgroundColor: MarginaliaColors.surfaceElevated,
-                  valueColor: const AlwaysStoppedAnimation(MarginaliaColors.primaryDark),
+                  valueColor:
+                      const AlwaysStoppedAnimation(MarginaliaColors.primaryDark),
                 ),
               )
             : null,
@@ -164,206 +195,147 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
     final q = _questions[_index];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: q.kind == QuizKind.whichBook ? _whichBook(it, q) : _cloze(it, q),
+      child: _question(it, q),
     );
   }
 
-  // ── which-book multiple choice ─────────────────────────────────────────────
-  Widget _whichBook(bool it, QuizQuestion q) {
+  Widget _question(bool it, QuizQuestion q) {
     return Column(
-      key: ValueKey('wb$_index'),
+      key: ValueKey('q$_index'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(it ? 'Da quale libro?' : 'Which book?',
+        Text(_label(it, q.kind),
             style: GoogleFonts.manrope(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
                 color: MarginaliaColors.primaryDark)),
         const SizedBox(height: 14),
-        _PassageCard(text: q.prompt),
-        const SizedBox(height: 20),
-        ...q.options.map((opt) {
-          final isCorrect = opt == q.answer;
-          final isPicked = opt == _picked;
-          Color bg = MarginaliaColors.surface;
-          Color border = MarginaliaColors.rule;
-          if (_answered) {
-            if (isCorrect) {
-              bg = const Color(0xFFE7F0E0);
-              border = MarginaliaColors.primaryDark;
-            } else if (isPicked) {
-              bg = const Color(0xFFF6E4E4);
-              border = const Color(0xFFB54848);
-            }
-          }
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: GestureDetector(
-              onTap: () => _answerWhichBook(q, opt),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: border, width: 1.4),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(opt,
-                          style: GoogleFonts.manrope(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: MarginaliaColors.ink)),
-                    ),
-                    if (_answered && isCorrect)
-                      const Icon(Icons.check_circle, color: MarginaliaColors.primaryDark, size: 20),
-                    if (_answered && isPicked && !isCorrect)
-                      const Icon(Icons.cancel, color: Color(0xFFB54848), size: 20),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        const Spacer(),
-        if (_answered) _nextButton(it),
-      ],
-    );
-  }
-
-  // ── cloze (fill in the blank, self-graded) ─────────────────────────────────
-  Widget _cloze(bool it, QuizQuestion q) {
-    return Column(
-      key: ValueKey('cz$_index'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(it ? 'Completa il passaggio' : 'Complete the passage',
-            style: GoogleFonts.manrope(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.4,
-                color: MarginaliaColors.primaryDark)),
-        const SizedBox(height: 14),
-        _PassageCard(text: q.prompt),
-        const SizedBox(height: 18),
-        if (_revealed)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              color: MarginaliaColors.primaryFaint,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Column(
-              children: [
-                Text(it ? 'La parola era' : 'The word was',
-                    style: GoogleFonts.manrope(
-                        fontSize: 12.5, color: MarginaliaColors.inkMuted)),
-                const SizedBox(height: 6),
-                Text(q.answer,
-                    style: GoogleFonts.ebGaramond(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w600,
-                        color: MarginaliaColors.primaryDark)),
-              ],
-            ),
-          ).animate().fadeIn(duration: 220.ms).scaleXY(begin: 0.96, end: 1),
-        if (q.bookTitle != null && (q.bookTitle ?? '').trim().isNotEmpty) ...[
-          const SizedBox(height: 14),
+        _PassageCard(question: q, answered: _answered),
+        if (q.kind != QuizKind.cloze &&
+            (q.bookTitle ?? '').trim().isNotEmpty &&
+            _answered) ...[
+          const SizedBox(height: 10),
           Text(
-            [q.bookTitle, q.bookAuthor].where((s) => (s ?? '').trim().isNotEmpty).join(' · '),
-            textAlign: TextAlign.center,
+            [q.bookTitle, q.bookAuthor]
+                .where((s) => (s ?? '').trim().isNotEmpty)
+                .join(' · '),
             style: GoogleFonts.manrope(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: MarginaliaColors.inkFaint),
           ),
         ],
+        const SizedBox(height: 18),
+        ...q.options.map((opt) => _optionTile(q, opt)),
         const Spacer(),
-        if (!_revealed)
-          _bigButton(
-            label: it ? 'Rivela risposta' : 'Reveal answer',
-            filled: false,
-            onTap: () => setState(() => _revealed = true),
-          )
-        else if (!_answered)
-          Row(
-            children: [
-              Expanded(
-                child: _bigButton(
-                  label: it ? 'No' : 'Missed',
-                  filled: false,
-                  danger: true,
-                  onTap: () => _gradeCloze(false),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _bigButton(
-                  label: it ? 'La sapevo' : 'I knew it',
-                  filled: true,
-                  onTap: () => _gradeCloze(true),
-                ),
-              ),
-            ],
-          )
-        else
-          _nextButton(it),
+        if (_answered) _nextButton(it),
       ],
     );
   }
 
-  Widget _nextButton(bool it) => _bigButton(
-        label: _index >= _questions.length - 1
-            ? (it ? 'Vedi risultato' : 'See result')
-            : (it ? 'Avanti' : 'Next'),
-        filled: true,
-        onTap: _next,
-      );
+  Widget _optionTile(QuizQuestion q, String opt) {
+    final isCorrect = opt == q.answer;
+    final isPicked = opt == _picked;
+    Color bg = MarginaliaColors.surface;
+    Color border = MarginaliaColors.rule;
+    if (_answered) {
+      if (isCorrect) {
+        bg = const Color(0xFFE7F0E0);
+        border = MarginaliaColors.primaryDark;
+      } else if (isPicked) {
+        bg = const Color(0xFFF6E4E4);
+        border = const Color(0xFFB54848);
+      }
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
+        onTap: () => _answer(q, opt),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border, width: 1.4),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(opt,
+                    style: GoogleFonts.manrope(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: MarginaliaColors.ink)),
+              ),
+              if (_answered && isCorrect)
+                const Icon(Icons.check_circle,
+                    color: MarginaliaColors.primaryDark, size: 20),
+              if (_answered && isPicked && !isCorrect)
+                const Icon(Icons.cancel, color: Color(0xFFB54848), size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  Widget _bigButton({
-    required String label,
-    required bool filled,
-    bool danger = false,
-    required VoidCallback onTap,
-  }) {
-    final color = danger ? const Color(0xFFB54848) : MarginaliaColors.primaryDark;
+  Widget _nextButton(bool it) {
+    final label = _index >= _questions.length - 1
+        ? (it ? 'Vedi risultato' : 'See result')
+        : (it ? 'Avanti' : 'Next');
     return SizedBox(
       height: 52,
-      child: filled
-          ? FilledButton(
-              onPressed: onTap,
-              style: FilledButton.styleFrom(
-                backgroundColor: color,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(label,
-                  style: GoogleFonts.manrope(
-                      fontWeight: FontWeight.w700, fontSize: 16, color: Colors.white)),
-            )
-          : OutlinedButton(
-              onPressed: onTap,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: color,
-                side: BorderSide(color: color, width: 1.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(label,
-                  style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 16)),
-            ),
+      child: FilledButton(
+        onPressed: _next,
+        style: FilledButton.styleFrom(
+          backgroundColor: MarginaliaColors.primaryDark,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        child: Text(label,
+            style: GoogleFonts.manrope(
+                fontWeight: FontWeight.w700, fontSize: 16, color: Colors.white)),
+      ),
     );
   }
 }
 
 class _PassageCard extends StatelessWidget {
-  const _PassageCard({required this.text});
-  final String text;
+  const _PassageCard({required this.question, required this.answered});
+  final QuizQuestion question;
+  final bool answered;
 
   @override
   Widget build(BuildContext context) {
+    final style = GoogleFonts.ebGaramond(
+        fontSize: 20, height: 1.5, color: MarginaliaColors.ink);
+
+    Widget child;
+    // After answering a cloze, fill the blank with the correct word in green.
+    if (question.kind == QuizKind.cloze &&
+        answered &&
+        (question.clozeWord ?? '').isNotEmpty) {
+      final parts = question.prompt.split('_____');
+      child = Text.rich(
+        TextSpan(
+          style: style,
+          children: [
+            TextSpan(text: parts.first),
+            TextSpan(
+              text: question.clozeWord,
+              style: style.copyWith(
+                  color: MarginaliaColors.primaryDark,
+                  fontWeight: FontWeight.w700),
+            ),
+            if (parts.length > 1) TextSpan(text: parts.sublist(1).join('_____')),
+          ],
+        ),
+      );
+    } else {
+      child = Text(question.prompt, style: style);
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -371,13 +343,13 @@ class _PassageCard extends StatelessWidget {
         color: MarginaliaColors.surface,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 16, offset: const Offset(0, 5)),
+          BoxShadow(
+              color: Colors.black.withAlpha(12),
+              blurRadius: 16,
+              offset: const Offset(0, 5)),
         ],
       ),
-      child: Text(
-        text,
-        style: GoogleFonts.ebGaramond(fontSize: 20, height: 1.5, color: MarginaliaColors.ink),
-      ),
+      child: child,
     );
   }
 }

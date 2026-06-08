@@ -1,17 +1,18 @@
 // ─── Quiz generator (pure Dart, offline, deterministic-with-seed) ────────────
 //
-// Active recall over the user's own highlights — no AI, no network. Two kinds:
+// Active recall over the user's own highlights — no AI, no network. Every
+// question is ANSWERABLE by tapping one of up to four options:
 //
-//   • cloze     — a passage with one meaningful word blanked out; the reader
-//                 recalls it, then self-grades (knew it / missed).
-//   • whichBook — a passage shown with 4 book choices; pick the source book.
+//   • cloze       — a passage with one meaningful word blanked; pick the word.
+//   • whichBook   — a passage; pick the source book.
+//   • whichAuthor — a passage; pick the author.
 //
 // All generation is local + reproducible when you pass a seeded [Random], so it
 // is unit-testable and never "AI slop".
 
 import 'dart:math';
 
-enum QuizKind { cloze, whichBook }
+enum QuizKind { cloze, whichBook, whichAuthor }
 
 class QuizSource {
   const QuizSource(this.content, this.bookTitle, this.bookAuthor);
@@ -26,17 +27,27 @@ class QuizQuestion {
     required this.prompt,
     required this.answer,
     required this.options,
+    this.clozeWord,
     this.bookTitle,
     this.bookAuthor,
   });
 
   final QuizKind kind;
+
   /// The passage shown (with a blank for cloze).
   final String prompt;
-  /// Correct answer: the blanked word (cloze) or the book title (whichBook).
+
+  /// Correct answer: the blanked word (cloze), the book title (whichBook) or
+  /// the author (whichAuthor). Always one of [options].
   final String answer;
-  /// Multiple-choice options (whichBook). Empty for cloze.
+
+  /// Multiple-choice options (2–4). Always non-empty now — every kind is tap-to-
+  /// answer.
   final List<String> options;
+
+  /// For cloze: the original word, so the UI can fill the blank back in.
+  final String? clozeWord;
+
   final String? bookTitle;
   final String? bookAuthor;
 }
@@ -52,10 +63,13 @@ const _stopwords = <String>{
   'che', 'non', 'per', 'come', 'sono', 'questo', 'questa', 'quello', 'quella',
   'della', 'dello', 'degli', 'delle', 'nella', 'nello', 'negli', 'nelle', 'anche',
   'quando', 'perche', 'perché', 'piu', 'più', 'molto', 'tutto', 'tutti', 'essere',
-  'avere', 'sempre', 'ancora', 'senza', 'dove', 'loro', 'noi', 'voi',
+  'avere', 'sempre', 'ancora', 'senza', 'dove', 'loro', 'noi', 'voi', 'gli',
 };
 
 final _wordRe = RegExp(r"[A-Za-zÀ-ÿ']+");
+
+bool _isMeaningfulWord(String w) =>
+    w.length >= 5 && !_stopwords.contains(w.toLowerCase());
 
 /// Builds up to [count] quiz questions from [sources]. Sources with empty
 /// content are skipped. Pass a seeded [rng] for reproducible output.
@@ -65,60 +79,101 @@ List<QuizQuestion> generateQuiz(
   Random? rng,
 }) {
   final r = rng ?? Random();
-  final pool = sources
-      .where((s) => s.content.trim().isNotEmpty)
-      .toList();
+  final pool = sources.where((s) => s.content.trim().isNotEmpty).toList();
   if (pool.isEmpty) return const [];
 
-  // Distinct, non-empty book titles for multiple-choice distractors.
   final titles = <String>{
     for (final s in pool)
       if ((s.bookTitle ?? '').trim().isNotEmpty) s.bookTitle!.trim(),
   }.toList();
+  final authors = <String>{
+    for (final s in pool)
+      if ((s.bookAuthor ?? '').trim().isNotEmpty) s.bookAuthor!.trim(),
+  }.toList();
+
+  // Distinct meaningful words across the whole corpus — cloze distractors.
+  final wordPool = <String>{};
+  for (final s in pool) {
+    for (final m in _wordRe.allMatches(s.content)) {
+      final w = m.group(0)!;
+      if (_isMeaningfulWord(w)) wordPool.add(w);
+    }
+  }
+  final words = wordPool.toList();
 
   final shuffled = [...pool]..shuffle(r);
+
+  final canWhichBook = titles.length >= 3;
+  final canWhichAuthor = authors.length >= 3;
 
   final out = <QuizQuestion>[];
   for (final s in shuffled) {
     if (out.length >= count) break;
 
-    // Prefer whichBook when we have enough distinct books AND this source has a
-    // title; otherwise fall back to a cloze. Alternate to keep variety.
-    final canWhichBook =
-        titles.length >= 3 && (s.bookTitle ?? '').trim().isNotEmpty;
-    final preferWhichBook = canWhichBook && out.length.isEven;
-
-    QuizQuestion? q;
-    if (preferWhichBook) {
-      q = _whichBook(s, titles, r) ?? _cloze(s, r);
+    // Rotate kinds for variety, falling back to whatever is available.
+    final slot = out.length % 3;
+    final attempts = <QuizQuestion? Function()>[];
+    if (slot == 0) {
+      attempts.add(() => _cloze(s, words, r));
+      if (canWhichBook) attempts.add(() => _whichBook(s, titles, r));
+      if (canWhichAuthor) attempts.add(() => _whichAuthor(s, authors, r));
+    } else if (slot == 1 && canWhichBook) {
+      attempts.add(() => _whichBook(s, titles, r));
+      attempts.add(() => _cloze(s, words, r));
+      if (canWhichAuthor) attempts.add(() => _whichAuthor(s, authors, r));
+    } else if (slot == 2 && canWhichAuthor) {
+      attempts.add(() => _whichAuthor(s, authors, r));
+      attempts.add(() => _cloze(s, words, r));
+      if (canWhichBook) attempts.add(() => _whichBook(s, titles, r));
     } else {
-      q = _cloze(s, r) ?? (canWhichBook ? _whichBook(s, titles, r) : null);
+      attempts.add(() => _cloze(s, words, r));
+      if (canWhichBook) attempts.add(() => _whichBook(s, titles, r));
+      if (canWhichAuthor) attempts.add(() => _whichAuthor(s, authors, r));
     }
-    if (q != null) out.add(q);
+
+    for (final make in attempts) {
+      final q = make();
+      if (q != null) {
+        out.add(q);
+        break;
+      }
+    }
   }
   return out;
 }
 
-QuizQuestion? _cloze(QuizSource s, Random r) {
+QuizQuestion? _cloze(QuizSource s, List<String> wordPool, Random r) {
   final content = s.content.trim();
   final matches = _wordRe.allMatches(content).toList();
-  // candidate words: length >= 5, not a stopword
-  final candidates = matches.where((m) {
-    final w = m.group(0)!;
-    return w.length >= 5 && !_stopwords.contains(w.toLowerCase());
-  }).toList();
+  final candidates = matches.where((m) => _isMeaningfulWord(m.group(0)!)).toList();
   if (candidates.isEmpty) return null;
 
   final pick = candidates[r.nextInt(candidates.length)];
   final word = pick.group(0)!;
+  final lowerAns = word.toLowerCase();
   final blanked =
-      content.substring(0, pick.start) + ' _____ ' + content.substring(pick.end);
+      content.substring(0, pick.start) + ' _____ ' + content.substring(pick.end);
 
+  // Distractor words: prefer ones close in length, drawn from the corpus.
+  final others = wordPool.where((w) => w.toLowerCase() != lowerAns).toList()
+    ..sort((a, b) =>
+        (a.length - word.length).abs().compareTo((b.length - word.length).abs()));
+  final near = others.take(14).toList()..shuffle(r);
+  final distractors = <String>[];
+  final usedLower = <String>{lowerAns};
+  for (final w in near) {
+    if (usedLower.add(w.toLowerCase())) distractors.add(w);
+    if (distractors.length >= 3) break;
+  }
+  if (distractors.isEmpty) return null; // need at least one alternative
+
+  final options = [word, ...distractors]..shuffle(r);
   return QuizQuestion(
     kind: QuizKind.cloze,
     prompt: blanked,
     answer: word,
-    options: const [],
+    options: options,
+    clozeWord: word,
     bookTitle: s.bookTitle,
     bookAuthor: s.bookAuthor,
   );
@@ -129,11 +184,29 @@ QuizQuestion? _whichBook(QuizSource s, List<String> allTitles, Random r) {
   if (correct.isEmpty) return null;
   final others = allTitles.where((t) => t != correct).toList()..shuffle(r);
   final distractors = others.take(3).toList();
-  if (distractors.isEmpty) return null; // need at least one alternative
+  if (distractors.isEmpty) return null;
 
   final options = [correct, ...distractors]..shuffle(r);
   return QuizQuestion(
     kind: QuizKind.whichBook,
+    prompt: s.content.trim(),
+    answer: correct,
+    options: options,
+    bookTitle: s.bookTitle,
+    bookAuthor: s.bookAuthor,
+  );
+}
+
+QuizQuestion? _whichAuthor(QuizSource s, List<String> allAuthors, Random r) {
+  final correct = (s.bookAuthor ?? '').trim();
+  if (correct.isEmpty) return null;
+  final others = allAuthors.where((a) => a != correct).toList()..shuffle(r);
+  final distractors = others.take(3).toList();
+  if (distractors.isEmpty) return null;
+
+  final options = [correct, ...distractors]..shuffle(r);
+  return QuizQuestion(
+    kind: QuizKind.whichAuthor,
     prompt: s.content.trim(),
     answer: correct,
     options: options,
