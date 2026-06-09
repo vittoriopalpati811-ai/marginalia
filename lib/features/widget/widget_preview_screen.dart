@@ -6,6 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/branding/scripta_mark.dart';
+import '../../core/models/highlight.dart';
+import '../../core/providers/daily_highlight_provider.dart';
+import '../../core/providers/highlights_provider.dart';
 import '../../core/services/widget_service.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -27,25 +30,37 @@ import '../../core/l10n/l10n_extension.dart';
 
 final _widgetHighlightProvider =
     FutureProvider.autoDispose<WidgetHighlight?>((ref) async {
-  // Pull mock highlights from the social feed provider if available,
-  // or return a placeholder for preview.
+  // Preview the REAL phrase the widget shows: the app's chosen daily
+  // highlight (the same single source of truth the background sync pushes).
+  // The curated mock below is only the empty-library fallback.
+  try {
+    final chosen = await ref.watch(dailyHighlightProvider.future);
+    if (chosen != null && chosen.content.trim().isNotEmpty) {
+      final hour = DateTime.now().hour;
+      return WidgetHighlight(
+        text: chosen.content,
+        bookTitle: chosen.bookTitle ?? '',
+        author: chosen.bookAuthor ?? '',
+        timeGreeting: _greetingMarker(hour),
+        weatherMood: _guessWeatherByHour(hour),
+      );
+    }
+  } catch (_) {}
   return _mockHighlight();
 });
+
+String _greetingMarker(int hour) {
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Good night';
+}
 
 WidgetHighlight _mockHighlight() {
   final now = DateTime.now();
   final hour = now.hour;
 
-  String greeting;
-  if (hour >= 5 && hour < 12) {
-    greeting = 'Good morning';
-  } else if (hour >= 12 && hour < 17) {
-    greeting = 'Good afternoon';
-  } else if (hour >= 17 && hour < 21) {
-    greeting = 'Good evening';
-  } else {
-    greeting = 'Good night';
-  }
+  final greeting = _greetingMarker(hour);
 
   // A curated set of placeholder highlights that look great in the preview
   const previews = [
@@ -184,23 +199,56 @@ class _WidgetPreviewScreenState extends ConsumerState<WidgetPreviewScreen> {
               highlight: highlight,
               pushed: _pushed,
               onPush: () async {
-                // In a real build this would call WidgetService.update(...)
-                setState(() => _pushed = true);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        context.l10n.widgetUpdatedOnPhone,
-                        style: GoogleFonts.manrope(fontSize: 13),
-                      ),
-                      backgroundColor: ScriptaColors.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      duration: const Duration(seconds: 3),
+                // REALLY push to the home-screen widget (this used to be a
+                // stub that showed "updated" without writing anything — the
+                // reported "non si aggiorna nemmeno manualmente"). Same data
+                // pipeline as the background sync; the snackbar then reports
+                // the REAL outcome, including the actual error on failure.
+                final messenger = ScaffoldMessenger.of(context);
+                final okText = context.l10n.widgetUpdatedOnPhone;
+                List<Map<String, dynamic>> maps = const [];
+                try {
+                  final highlights =
+                      await ref.read(allHighlightsProvider.future);
+                  maps = highlights
+                      .map((h) => <String, dynamic>{
+                            'body': h.content,
+                            'book_title': h.bookTitle ?? '',
+                            'author': h.bookAuthor ?? '',
+                          })
+                      .toList();
+                } catch (_) {}
+                Highlight? chosen;
+                try {
+                  chosen = await ref.read(dailyHighlightProvider.future);
+                } catch (_) {}
+                final pushed = await WidgetService.update(
+                  maps,
+                  chosenText: chosen?.content,
+                  chosenBook: chosen?.bookTitle,
+                  chosenAuthor: chosen?.bookAuthor,
+                );
+                if (!mounted) return;
+                final error = WidgetService.lastPushError;
+                final ok = pushed != null && error == null;
+                setState(() => _pushed = ok);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      ok
+                          ? okText
+                          : 'Widget: ${error ?? "nessun highlight da inviare"}',
+                      style: GoogleFonts.manrope(fontSize: 13),
                     ),
-                  );
-                }
+                    backgroundColor: ok
+                        ? ScriptaColors.primary
+                        : const Color(0xFFB94A41),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    duration: Duration(seconds: ok ? 3 : 7),
+                  ),
+                );
               },
               onRefresh: () {
                 setState(() => _pushed = false);

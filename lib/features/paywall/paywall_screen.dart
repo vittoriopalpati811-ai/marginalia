@@ -12,10 +12,12 @@ import '../../core/l10n/l10n_extension.dart';
 // ─── PaywallScreen ────────────────────────────────────────────────────────────
 //
 // Shown when the user tries to access a premium-only feature.
-// Can be pushed as a full-screen route (/paywall) or displayed as a modal.
 //
-// Usage (route push):
-//   context.push('/paywall');
+// ⚠️ CURRENTLY UNREFERENCED: the /paywall route was REMOVED from app.dart for
+// App Store review safety (purchases are stubbed in the MVP; Guideline 3.1.1
+// rejects visible-but-non-functional payment UI). When RevenueCat is properly
+// re-enabled, re-add the GoRoute in app.dart (see the NOTE where the route
+// used to be) before pointing anything at this screen.
 //
 // Usage (modal):
 //   showModalBottomSheet(

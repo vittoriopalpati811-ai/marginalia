@@ -50,11 +50,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
-          // ── Gradient header ─────────────────────────────────────────────────
+          // ── Flat cream header (matches the de-greened main tabs) ───────────
           AnnotatedRegion<SystemUiOverlayStyle>(
-            value: ScriptaDecorations.lightStatusBar,
+            value: SystemUiOverlayStyle.dark,
             child: Container(
-            decoration: ScriptaDecorations.gradientHeader,
+            color: ScriptaColors.background,
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -72,17 +72,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             height: 36,
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(22),
+                              color: ScriptaColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.white.withAlpha(35),
+                                color: ScriptaColors.rule,
                                 width: 1,
                               ),
                             ),
                             child: const Icon(
                               Icons.arrow_back_ios_new_rounded,
                               size: 15,
-                              color: Color(0xFFF2F5EA),
+                              color: ScriptaColors.ink,
                             ),
                           ),
                         ),
@@ -91,7 +91,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFFF2F5EA),
+                            color: ScriptaColors.ink,
                             letterSpacing: -0.8,
                             height: 1,
                           ),
@@ -101,14 +101,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(18),
+                            color: ScriptaColors.surfaceElevated,
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color: ScriptaColors.rule, width: 0.5),
                           ),
                           child: Text(
                             context.l10n.searchSubtitle,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10,
-                              color: Colors.white.withAlpha(100),
+                              color: ScriptaColors.inkMuted,
                               letterSpacing: 0.3,
                               fontWeight: FontWeight.w500,
                             ),
@@ -126,11 +128,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       decoration: BoxDecoration(
                         color: ScriptaColors.surfaceElevated,
                         borderRadius: BorderRadius.circular(16),
+                        border:
+                            Border.all(color: ScriptaColors.rule, width: 1),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x16000000),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
+                            color: Color(0x14000000),
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
                           ),
                         ],
                       ),
@@ -143,7 +147,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           color: ScriptaColors.ink,
                           height: 1.4,
                         ),
-                        cursorColor: ScriptaColors.primary,
+                        cursorColor: ScriptaColors.primaryDark,
                         decoration: InputDecoration(
                           hintText: context.l10n.searchHint,
                           hintStyle: const TextStyle(

@@ -882,6 +882,21 @@ class SupabaseService {
     } catch (_) {/* best-effort */}
   }
 
+  /// Server-side ripasso completion: one atomic RPC that (a) bumps the
+  /// caller's review streak on profiles — the columns the jam "Ripasso"
+  /// leaderboard actually reads — and (b) records today's completion in
+  /// EVERY jam the caller belongs to (members AND owners). Idempotent per
+  /// day, so calling it on every graded card just keeps the card count
+  /// fresh. This replaces the fragile client-side mirrors that left
+  /// profiles.review_streak at 0 (the leaderboard then showed "ancora
+  /// nessuna serie" even after a completed ripasso).
+  Future<void> markReviewCompleted(int cardsReviewed) async {
+    if (!isAuthenticated || userId == null) return;
+    await _client.rpc('mark_review_completed', params: {
+      'p_cards': cardsReviewed,
+    });
+  }
+
   /// Persist today's ripasso session into every jam the caller belongs to.
   Future<void> logRipassoResultsToJams(int cardsReviewed) async {
     try {
@@ -1434,27 +1449,9 @@ class SupabaseService {
     }).eq('id', userId!);
   }
 
-  /// Best-effort mirror of the LOCAL Ripasso streak to the user's profile so it
-  /// can become social later (leaderboards, profile badge). The local Isar
-  /// ReviewState is authoritative; this is a fire-and-forget publish. Requires
-  /// migration 050 (review_streak / review_best_streak / last_reviewed_on) —
-  /// the caller wraps this in try/catch, so it degrades silently until applied.
-  Future<void> updateReviewStreak({
-    required int streak,
-    required int bestStreak,
-    required DateTime lastReviewedOn,
-  }) async {
-    if (!isAuthenticated || userId == null) return;
-    // `last_reviewed_on` is a Postgres `date` — send a plain YYYY-MM-DD string.
-    final d = lastReviewedOn;
-    final dateStr =
-        '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    await _client.from('profiles').update({
-      'review_streak': streak,
-      'review_best_streak': bestStreak,
-      'last_reviewed_on': dateStr,
-    }).eq('id', userId!);
-  }
+  // NOTE: the old client-side streak mirror (updateReviewStreak) was removed —
+  // the mark_review_completed RPC (markReviewCompleted above) now updates the
+  // profile streak columns atomically server-side.
 
   // ─── Realtime ─────────────────────────────────────────────────────────────
 

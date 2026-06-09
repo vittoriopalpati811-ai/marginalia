@@ -33,11 +33,20 @@ class ReviewSessionState {
     required this.deck,
     required this.index,
     required this.streakIncremented,
+    this.forgotCount = 0,
+    this.hardCount = 0,
+    this.goodCount = 0,
   });
 
   final List<Highlight> deck;
   final int index;
   final bool streakIncremented;
+
+  /// Per-grade tallies — mirror the native state so the shared recap UI
+  /// compiles on web (always 0 here: the loop is a no-op without Isar).
+  final int forgotCount;
+  final int hardCount;
+  final int goodCount;
 
   bool get isFinished => index >= deck.length;
   int get total => deck.length;
@@ -48,11 +57,17 @@ class ReviewSessionState {
     List<Highlight>? deck,
     int? index,
     bool? streakIncremented,
+    int? forgotCount,
+    int? hardCount,
+    int? goodCount,
   }) =>
       ReviewSessionState(
         deck: deck ?? this.deck,
         index: index ?? this.index,
         streakIncremented: streakIncremented ?? this.streakIncremented,
+        forgotCount: forgotCount ?? this.forgotCount,
+        hardCount: hardCount ?? this.hardCount,
+        goodCount: goodCount ?? this.goodCount,
       );
 }
 

@@ -19,6 +19,8 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import '../../core/providers/books_provider.dart';
 import '../profile/profile_shared_widgets.dart' show favCoversProvider;
+import '../../core/services/supabase_service.dart'
+    show ImageModerationException;
 import '../../core/l10n/l10n_extension.dart';
 import 'book_cover.dart';
 
@@ -603,6 +605,29 @@ void editBookCover(BuildContext context, WidgetRef ref, Book book) {
   );
 }
 
+/// Human-readable cover-update failure. The generic "impossibile aggiornare la
+/// copertina" hid the real cause (moderation rejection vs storage/RLS vs
+/// network), making the bug undiagnosable from the device — now the snackbar
+/// names the step that failed and the log carries the full error.
+String _coverErrorText(Object error, bool it) {
+  debugPrint('[Cover] update failed: $error');
+  if (error is ImageModerationException) {
+    return it
+        ? 'Immagine non consentita: la moderazione l’ha rifiutata'
+        : 'Image not allowed: rejected by moderation';
+  }
+  final raw = error.toString().replaceAll('\n', ' ').trim();
+  final detail = raw.length > 110 ? '${raw.substring(0, 110)}…' : raw;
+  if (detail.isEmpty) {
+    return it
+        ? 'Impossibile aggiornare la copertina'
+        : "Couldn't update the cover";
+  }
+  return it
+      ? 'Impossibile aggiornare la copertina — $detail'
+      : "Couldn't update the cover — $detail";
+}
+
 Future<void> _pickAndUploadCover(
     BuildContext context, WidgetRef ref, Book book) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
@@ -631,12 +656,11 @@ Future<void> _pickAndUploadCover(
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
-  } catch (_) {
+  } catch (error) {
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
-        content: Text(it
-            ? 'Impossibile aggiornare la copertina'
-            : "Couldn't update the cover")));
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
   }
 }
 
@@ -673,12 +697,11 @@ Future<void> _pickFromCameraAndUpload(
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
-  } catch (_) {
+  } catch (error) {
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
-        content: Text(it
-            ? 'Impossibile aggiornare la copertina'
-            : "Couldn't update the cover")));
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
   }
 }
 
@@ -843,38 +866,60 @@ Future<void> _applyCoverByKey(BuildContext context, WidgetRef ref, String title,
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
-  } catch (_) {
+  } catch (error) {
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
-        content: Text(it
-            ? 'Impossibile aggiornare la copertina'
-            : "Couldn't update the cover")));
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
   }
 }
 
 Future<void> _pickAndUploadCoverByKey(
     BuildContext context, WidgetRef ref, String title, String author) async {
-  final res = await FilePicker.platform
-      .pickFiles(type: FileType.image, withData: true);
-  if (res == null || res.files.isEmpty) return;
-  final bytes = res.files.first.bytes;
-  if (bytes == null) return;
-  var ext = (res.files.first.extension ?? 'jpg').toLowerCase();
-  if (ext == 'jpeg') ext = 'jpg';
-  if (context.mounted) await _applyCoverByKey(context, ref, title, author, bytes, ext);
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    final res = await FilePicker.platform
+        .pickFiles(type: FileType.image, withData: true);
+    if (res == null || res.files.isEmpty) return;
+    final bytes = res.files.first.bytes;
+    if (bytes == null) return;
+    var ext = (res.files.first.extension ?? 'jpg').toLowerCase();
+    if (ext == 'jpeg') ext = 'jpg';
+    if (context.mounted) {
+      await _applyCoverByKey(context, ref, title, author, bytes, ext);
+    }
+  } catch (error) {
+    // Picker failure (e.g. permission denied) — surface like any cover error.
+    messenger?.showSnackBar(SnackBar(
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
+  }
 }
 
 Future<void> _pickFromCameraByKey(
     BuildContext context, WidgetRef ref, String title, String author) async {
-  final shot = await ImagePicker()
-      .pickImage(source: ImageSource.camera, maxWidth: 1400, imageQuality: 88);
-  if (shot == null) return;
-  final bytes = await shot.readAsBytes();
-  var ext =
-      shot.name.contains('.') ? shot.name.split('.').last.toLowerCase() : 'jpg';
-  if (ext == 'jpeg') ext = 'jpg';
-  if (ext.isEmpty || ext.length > 4) ext = 'jpg';
-  if (context.mounted) await _applyCoverByKey(context, ref, title, author, bytes, ext);
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    final shot = await ImagePicker().pickImage(
+        source: ImageSource.camera, maxWidth: 1400, imageQuality: 88);
+    if (shot == null) return;
+    final bytes = await shot.readAsBytes();
+    var ext = shot.name.contains('.')
+        ? shot.name.split('.').last.toLowerCase()
+        : 'jpg';
+    if (ext == 'jpeg') ext = 'jpg';
+    if (ext.isEmpty || ext.length > 4) ext = 'jpg';
+    if (context.mounted) {
+      await _applyCoverByKey(context, ref, title, author, bytes, ext);
+    }
+  } catch (error) {
+    // Camera failure (e.g. permission denied) — surface like any cover error.
+    messenger?.showSnackBar(SnackBar(
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
+  }
 }
 
 Future<void> _searchCoverOnGoogleQuery(String title, String author) async {

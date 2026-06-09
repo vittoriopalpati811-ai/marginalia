@@ -8,7 +8,8 @@ import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/motion/airbnb_motion.dart';
 import '../../core/providers/review_provider.dart';
-import '../quiz/quiz_lock.dart' show ripassoLockProvider;
+import '../quiz/quiz_lock.dart'
+    show ripassoLockProvider, ripassoResultsProvider, RipassoResults;
 
 // ─── "Ripasso del giorno" — Library entry point ──────────────────────────────
 //
@@ -51,7 +52,10 @@ class RipassoEntryCard extends ConsumerWidget {
     // tappable due card, or (nothing due, nothing done) hide so it never nags.
     final Widget card;
     if (ripassoLocked || reviewedToday) {
-      card = _CompletedCard(streak: streak);
+      // Today's persisted recap (cards + grade tallies) rides on the locked
+      // card so the results stay visible until the next 08:00 reset.
+      final results = ref.watch(ripassoResultsProvider).asData?.value;
+      card = _CompletedCard(streak: streak, results: results);
     } else if (dueCount > 0) {
       card = _DueCard(dueCount: dueCount, streak: streak);
     } else {
@@ -166,15 +170,23 @@ class _Subtitle extends StatelessWidget {
 /// is done and NOT tappable until tomorrow's slot. A calm check-circle pops in
 /// (elastic) for a small sense of accomplishment; the streak flame rides along.
 class _CompletedCard extends StatelessWidget {
-  const _CompletedCard({required this.streak});
+  const _CompletedCard({required this.streak, this.results});
 
   final int streak;
+  final RipassoResults? results;
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = streak > 0
-        ? '${context.l10n.ripassoComeBackTomorrow}  ·  ${context.l10n.ripassoStreak(streak)}'
+    // With a persisted recap, the second line becomes today's results
+    // ("N carte · ricordate/difficili/da rivedere"); otherwise the usual
+    // "come back tomorrow". The streak rides along in both cases.
+    final base = results != null
+        ? context.l10n.ripassoRecapLine(
+            results!.cards, results!.good, results!.hard, results!.forgot)
         : context.l10n.ripassoComeBackTomorrow;
+    final subtitle = streak > 0
+        ? '$base  ·  ${context.l10n.ripassoStreak(streak)}'
+        : base;
 
     return Container(
       padding: const EdgeInsets.all(16),

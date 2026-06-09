@@ -183,8 +183,11 @@ jobs:
           # derives CFBundleDisplayName from the package name; set it explicitly
           # so it is guaranteed regardless of derivation.
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Scripta" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Scripta" ios/Runner/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleName Scripta" ios/Runner/Info.plist 2>/dev/null || true
-          echo "Home-screen name -> $(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' ios/Runner/Info.plist)"
+          # CFBundleName too: Notification Center / Settings fall back to it,
+          # and the committed plist used to carry "marginalia" — set BOTH so
+          # every system surface says "Scripta".
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Scripta" ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Scripta" ios/Runner/Info.plist
+          echo "Home-screen name -> $(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' ios/Runner/Info.plist) / $(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' ios/Runner/Info.plist)"
           # Camera + photo-library usage strings (image_picker, for snapping or
           # picking a custom book cover). Without these iOS hard-crashes the
           # first time the camera/photo library is opened.
@@ -196,7 +199,10 @@ jobs:
           gem install xcodeproj --no-document 2>/dev/null || sudo gem install xcodeproj --no-document 2>/dev/null || true
           ruby ios/scripts/add_widgets_extension.rb
           echo "Widget extension references:"
-          grep -c "MarginaliaWidgetsExtension" ios/Runner.xcodeproj/project.pbxproj || echo "  (widget NOT found — injection failed!)"
+          # FATAL when absent: an IPA without the widget extension ships fine
+          # but every widget on users' home screens freezes forever ("non si
+          # aggiornano né automaticamente né manualmente"). Fail loudly instead.
+          grep -c "MarginaliaWidgetsExtension" ios/Runner.xcodeproj/project.pbxproj || { echo "::error title=Widget injection failed::MarginaliaWidgetsExtension not referenced in project.pbxproj after add_widgets_extension.rb"; exit 1; }
           ruby ios/scripts/add_watch_targets.rb
           echo "Watch target references:"
           grep -c "MarginaliaWatch" ios/Runner.xcodeproj/project.pbxproj || echo "  (watch NOT found — injection failed!)"
@@ -339,6 +345,22 @@ jobs:
             MSG=$(printf '%s' "$ERR" | tr '\n\r\t' '   ' | tail -c 1700)
             echo "::error title=Build IPA error::${MSG:-see logs (no pattern matched)}"
             exit "$rc"
+          fi
+
+      - name: Verify widget extension is inside the IPA
+        # Hard guarantee BEFORE upload: the .appex must be embedded in the app
+        # bundle, otherwise home-screen widgets show frozen/placeholder content
+        # on every device. Cheap (unzip -l) and catches any silent regression
+        # in target injection or the embed phase.
+        run: |
+          IPA=$(ls build/ios/ipa/*.ipa | head -1)
+          echo "Inspecting $IPA"
+          if unzip -l "$IPA" | grep -q "PlugIns/MarginaliaWidgetsExtension.appex/"; then
+            echo "Widget extension .appex present in the IPA ✔"
+          else
+            unzip -l "$IPA" | grep -i -E "appex|PlugIns" || true
+            echo "::error title=Widget missing from IPA::MarginaliaWidgetsExtension.appex is NOT embedded — widgets would never update. Refusing to publish."
+            exit 1
           fi
 
       - name: Publish to TestFlight (internal)

@@ -20,7 +20,6 @@ import 'core/providers/auth_provider.dart';
 import 'core/providers/review_provider.dart';
 import 'core/services/push_service.dart';
 import 'core/services/local_notif_service.dart';
-import 'features/paywall/paywall_screen.dart';
 import 'core/providers/onboarding_provider.dart';
 import 'core/providers/widget_sync_provider.dart';
 import 'features/social/home_tab.dart';
@@ -320,11 +319,11 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _modalPage(const ResetPasswordScreen(), state),
     ),
-    GoRoute(
-      path: '/paywall',
-      parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (_, state) => _modalPage(const PaywallScreen(), state),
-    ),
+    // NOTE: the /paywall route was removed for App Store review safety — the
+    // subscription flow is stubbed in the MVP (purchases disabled), and Apple
+    // Guideline 3.1.1 rejects visible-but-non-functional payment UI. Nothing
+    // navigated to it. Restore the route together with a real RevenueCat
+    // integration (see paywall_screen.dart, kept for that moment).
   ],
 );
 
@@ -609,31 +608,32 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                 ),
                 transitionBuilder:
                     (child, primaryAnimation, secondaryAnimation) {
-                  final dir = _direction.toDouble();
-                  // Incoming page: starts one full width off, on the side we are
-                  // moving FROM, and settles to centre.
-                  final enter = Tween<Offset>(
-                    begin: Offset(dir, 0.0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: primaryAnimation,
-                    curve: Curves.easeOutCubic,
-                  ));
-                  // Outgoing page: leaves centre toward the opposite side, in
-                  // lock-step with the incoming one.
-                  final leave = Tween<Offset>(
-                    begin: Offset.zero,
-                    end: Offset(-dir, 0.0),
-                  ).animate(CurvedAnimation(
-                    parent: secondaryAnimation,
-                    curve: Curves.easeInCubic,
-                  ));
-                  return SlideTransition(
-                    position: enter,
-                    child: SlideTransition(
-                      position: leave,
-                      child: child,
-                    ),
+                  // Compute the offset at ANIMATION TIME, reading the CURRENT
+                  // `_direction`. The old version baked the direction into the
+                  // tweens when each page's transition was first built — so the
+                  // OUTGOING page kept the direction from when it ENTERED, and
+                  // switching to a tab on the LEFT after one on the RIGHT made
+                  // the outgoing page exit the wrong way (both pages piling up
+                  // on the left). Reading `_direction` per-frame keeps the two
+                  // pages in lock-step for BOTH directions.
+                  return AnimatedBuilder(
+                    animation: Listenable.merge(
+                        [primaryAnimation, secondaryAnimation]),
+                    child: child,
+                    builder: (context, animatedChild) {
+                      final dir = _direction.toDouble();
+                      final enterT = Curves.easeOutCubic
+                          .transform(primaryAnimation.value);
+                      final leaveT = Curves.easeInCubic
+                          .transform(secondaryAnimation.value);
+                      // Enter: from one full width on the side we move FROM
+                      // (dir) to centre. Leave: from centre toward -dir.
+                      final dx = dir * (1.0 - enterT) - dir * leaveT;
+                      return FractionalTranslation(
+                        translation: Offset(dx, 0),
+                        child: animatedChild,
+                      );
+                    },
                   );
                 },
                 child: KeyedSubtree(
@@ -819,16 +819,64 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
             borderRadius: BorderRadius.circular(radius),
             child: BackdropFilter(
               // Frost the content scrolling behind the bar.
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
               child: Container(
-                // Translucent fill so the blurred backdrop shows through.
-                color: Colors.white.withOpacity(0.60),
-                // A touch thicker now that labels are gone, so the icon-only
-                // pill still feels substantial and intentional.
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-                child: Row(
-                  children: List.generate(widget.tabs.length, (i) {
+                // Translucent glossy fill — brighter at the top so the bar
+                // reads as iOS "liquid glass" (lit from above), still letting
+                // the blurred backdrop show through.
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withOpacity(0.62),
+                      Colors.white.withOpacity(0.40),
+                    ],
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: SizedBox(
+                  height: 50,
+                  child: Stack(
+                    children: [
+                      // ── Sliding indicator ──────────────────────────────
+                      // A soft sage pill that GLIDES to the selected tab's
+                      // slot when the tab changes (one slot = 1/n of the
+                      // row). Sits UNDER the icons.
+                      Positioned.fill(
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 340),
+                          curve: Curves.easeOutBack,
+                          // Alignment.x maps over the FREE space (bar width −
+                          // pill width), so with a pill 1/n wide the slots sit
+                          // at -1, -0.5, 0, 0.5, 1 — i.e. divide by (n−1), not
+                          // n (dividing by n mis-centres every non-middle tab).
+                          alignment: Alignment(
+                            -1 +
+                                2 *
+                                    widget.selectedIndex /
+                                    (widget.tabs.length - 1),
+                            0,
+                          ),
+                          child: FractionallySizedBox(
+                            widthFactor: 1 / widget.tabs.length,
+                            heightFactor: 1,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 6),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: ScriptaColors.primaryDark
+                                      .withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: List.generate(widget.tabs.length, (i) {
                     final active = i == widget.selectedIndex;
                     final tab    = widget.tabs[i];
                     final color  = active ? selectedColor : unselectedColor;
@@ -902,6 +950,9 @@ class _LiquidGlassNavBarState extends ConsumerState<_LiquidGlassNavBar>
                       ),
                     );
                   }),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

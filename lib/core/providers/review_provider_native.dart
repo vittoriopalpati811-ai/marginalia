@@ -12,7 +12,11 @@ import '../services/local_notif_service.dart';
 import 'isar_provider_native.dart';
 import 'auth_provider.dart';
 import '../../features/quiz/quiz_lock.dart'
-    show markRipassoCompletedNow, ripassoLockProvider;
+    show
+        markRipassoCompletedNow,
+        ripassoLockProvider,
+        saveRipassoResults,
+        ripassoResultsProvider;
 
 // ─── Ripasso (spaced-repetition) providers — native / offline-first ──────────
 //
@@ -178,6 +182,9 @@ class ReviewSessionState {
     required this.deck,
     required this.index,
     required this.streakIncremented,
+    this.forgotCount = 0,
+    this.hardCount = 0,
+    this.goodCount = 0,
   });
 
   /// The cards for this session, in order. Stable for the session's lifetime.
@@ -191,6 +198,11 @@ class ReviewSessionState {
   /// the finished state play the one-time flame bounce / "+1".
   final bool streakIncremented;
 
+  /// Per-grade tallies for this session — feed the end-of-session recap.
+  final int forgotCount;
+  final int hardCount;
+  final int goodCount;
+
   bool get isFinished => index >= deck.length;
   int get total => deck.length;
   int get reviewed => index;
@@ -200,11 +212,17 @@ class ReviewSessionState {
     List<Highlight>? deck,
     int? index,
     bool? streakIncremented,
+    int? forgotCount,
+    int? hardCount,
+    int? goodCount,
   }) =>
       ReviewSessionState(
         deck: deck ?? this.deck,
         index: index ?? this.index,
         streakIncremented: streakIncremented ?? this.streakIncremented,
+        forgotCount: forgotCount ?? this.forgotCount,
+        hardCount: hardCount ?? this.hardCount,
+        goodCount: goodCount ?? this.goodCount,
       );
 }
 
@@ -259,8 +277,6 @@ class ReviewSessionController
 
     // Filled inside the transaction, read back out after it commits.
     var advanced = false;
-    var streak = 0;
-    var best = 0;
     var persisted = false;
 
     // The review ritual must NEVER crash the UI. The single write below is the
@@ -336,8 +352,6 @@ class ReviewSessionController
             advanced = true;
           }
 
-          streak = rs.currentStreak;
-          best = rs.bestStreak;
           await isar.reviewStates.put(rs);
         }
       });
@@ -356,43 +370,68 @@ class ReviewSessionController
       // "did you do your review today?" nudge so it can't fire later.
       unawaited(LocalNotifService.cancelEveningReviewReminder());
       if (advanced) {
-        // Best-effort, fire-and-forget Supabase mirrors — they never block or
-        // break the offline loop and silently degrade if migration 050/051
-        // isn't applied yet. Guarded by `advanced`, so each fires at most once
-        // per day (when the streak rolls to a new day).
-        unawaited(_mirrorStreak(streak, best, today));
         unawaited(_notifyJamMates());
       }
     }
 
-    // Advance the deck regardless, so a grade tap is never a dead end.
+    // Advance the deck regardless, so a grade tap is never a dead end. The
+    // recap counters deliberately count EVERY graded tap (even one whose Isar
+    // write failed and will resurface tomorrow): the recap reflects what the
+    // user did today, not what the store managed to persist.
     state = state.copyWith(
       index: state.index + 1,
       streakIncremented: incremented,
+      forgotCount: state.forgotCount + (grade == ReviewGrade.forgot ? 1 : 0),
+      hardCount: state.hardCount + (grade == ReviewGrade.hard ? 1 : 0),
+      goodCount: state.goodCount + (grade == ReviewGrade.good ? 1 : 0),
     );
 
     // The streak + activity log changed; refresh the streak + heatmap sources.
     if (persisted) {
       ref.invalidate(reviewStateProvider);
       ref.invalidate(reviewedDaysProvider);
-      // Flow today's running card count into the Jam results feed (an upsert
-      // keyed by day keeps the latest), so jam-mates see Ripasso activity — both
-      // the user's own and everyone else's.
-      unawaited(_logRipassoToJams(state.index));
+      // ONE atomic server call (mark_review_completed RPC): bumps
+      // profiles.review_streak — the columns the jam "Ripasso" leaderboard
+      // actually reads — AND records today's completion in every jam the user
+      // belongs to (members and owners). Idempotent per day; calling it per
+      // grade just keeps the running card count fresh. This replaced the old
+      // pair of client mirrors that left profiles at streak 0, so the jam
+      // section showed "ancora nessuna serie" even after a finished ripasso.
+      unawaited(_syncReviewToServer(state.index));
       // Lock the daily ripasso until 08:00 tomorrow (once-a-day ritual), then
-      // refresh the entry-card lock state so it flips to "completato".
-      unawaited(markRipassoCompletedNow()
-          .then((_) => ref.invalidate(ripassoLockProvider)));
+      // refresh the entry-card lock state so it flips to "completato". The
+      // invalidate runs after an await gap on an autoDispose notifier — guard
+      // it so popping the screen mid-write can't surface a StateError.
+      unawaited(markRipassoCompletedNow().then((_) {
+        try {
+          ref.invalidate(ripassoLockProvider);
+        } catch (_) {/* provider disposed — nothing to refresh */}
+      }));
+    }
+
+    // Session over → persist today's recap so the finished screen AND the
+    // locked entry card can show the results until the next 08:00 reset.
+    if (state.isFinished && state.deck.isNotEmpty) {
+      unawaited(saveRipassoResults(
+        cards: state.total,
+        forgot: state.forgotCount,
+        hard: state.hardCount,
+        good: state.goodCount,
+      ).then((_) {
+        try {
+          ref.invalidate(ripassoResultsProvider);
+        } catch (_) {/* provider disposed — nothing to refresh */}
+      }));
     }
   }
 
-  Future<void> _logRipassoToJams(int cardsReviewed) async {
+  Future<void> _syncReviewToServer(int cardsReviewed) async {
     try {
       await ref
           .read(supabaseServiceProvider)
-          .logRipassoResultsToJams(cardsReviewed);
+          .markReviewCompleted(cardsReviewed);
     } catch (error) {
-      debugPrint('[Ripasso] jam result log skipped: $error');
+      debugPrint('[Ripasso] server sync skipped: $error');
     }
   }
 
@@ -404,19 +443,6 @@ class ReviewSessionController
     }
   }
 
-  Future<void> _mirrorStreak(int streak, int best, DateTime lastReviewedOn) async {
-    try {
-      await ref
-          .read(supabaseServiceProvider)
-          .updateReviewStreak(
-            streak: streak,
-            bestStreak: best,
-            lastReviewedOn: lastReviewedOn,
-          );
-    } catch (error) {
-      debugPrint('[Ripasso] streak mirror skipped: $error');
-    }
-  }
 }
 
 final reviewSessionControllerProvider = AutoDisposeNotifierProvider<

@@ -36,6 +36,12 @@ class WidgetService {
   static const _appGroupId = 'group.marginalia.widget';
   static const _iOSWidgetName = 'MarginaliaWidget';
 
+  /// The error of the most recent push, or null when it succeeded. The
+  /// background sync stays fire-and-forget, but the MANUAL "update widget"
+  /// button reads this to tell the user what actually happened instead of
+  /// claiming success while the push silently failed.
+  static Object? lastPushError;
+
   // ── Initialise ────────────────────────────────────────────────────────────
 
   static Future<void> init() async {
@@ -129,7 +135,9 @@ class WidgetService {
       await HomeWidget.saveWidgetData<String>('w_weather', h.weatherMood);
       await HomeWidget.saveWidgetData<String>('w_updated', now.toIso8601String());
       await HomeWidget.updateWidget(iOSName: _iOSWidgetName);
+      lastPushError = null;
     } catch (e) {
+      lastPushError = e;
       debugPrint('[WidgetService] push failed: $e');
     }
   }

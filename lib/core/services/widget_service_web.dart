@@ -18,6 +18,9 @@ class WidgetHighlight {
 }
 
 class WidgetService {
+  /// Mirrors the native API: always null on web (no widget, no push).
+  static Object? lastPushError;
+
   static Future<void> init() async {}
 
   static Future<WidgetHighlight?> update(

@@ -9,6 +9,8 @@
 // day's 08:00 — so finishing at 23:00 and at 02:00 both unlock the following
 // 08:00.
 
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -60,3 +62,75 @@ Future<DateTime?> ripassoLockedUntil() => _lockedUntil('ripasso');
 /// after a review so entry points re-evaluate.
 final ripassoLockProvider =
     FutureProvider<DateTime?>((ref) => ripassoLockedUntil());
+
+// ── Ripasso session results (today's recap) ──────────────────────────────────
+//
+// When the once-a-day session finishes we persist its grade tallies, so both
+// the finished screen and the locked entry card can show "your results for
+// today" until the next 08:00 reset (same window as the lock itself).
+
+const _ripassoResultsKey = 'ripasso_results_v1';
+
+/// Today's session results — valid only while the daily lock window from the
+/// completion moment is still active (i.e. until the next 08:00).
+class RipassoResults {
+  const RipassoResults({
+    required this.cards,
+    required this.forgot,
+    required this.hard,
+    required this.good,
+    required this.completedAt,
+  });
+
+  final int cards;
+  final int forgot;
+  final int hard;
+  final int good;
+  final DateTime completedAt;
+}
+
+Future<void> saveRipassoResults({
+  required int cards,
+  required int forgot,
+  required int hard,
+  required int good,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(
+      _ripassoResultsKey,
+      jsonEncode({
+        'cards': cards,
+        'forgot': forgot,
+        'hard': hard,
+        'good': good,
+        'at': DateTime.now().toIso8601String(),
+      }));
+}
+
+Future<RipassoResults?> todayRipassoResults() async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString(_ripassoResultsKey);
+  if (raw == null) return null;
+  try {
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final atIso = decoded['at'] as String?;
+    final at = atIso == null ? null : DateTime.tryParse(atIso);
+    if (at == null) return null;
+    // Stale once the lock window from that completion has passed (next 08:00).
+    if (lockedUntilFrom(atIso) == null) return null;
+    return RipassoResults(
+      cards: (decoded['cards'] as num?)?.toInt() ?? 0,
+      forgot: (decoded['forgot'] as num?)?.toInt() ?? 0,
+      hard: (decoded['hard'] as num?)?.toInt() ?? 0,
+      good: (decoded['good'] as num?)?.toInt() ?? 0,
+      completedAt: at,
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Today's ripasso recap, or null when none (not done yet / past the reset).
+/// Invalidate after a session completes so entry points refresh.
+final ripassoResultsProvider =
+    FutureProvider<RipassoResults?>((ref) => todayRipassoResults());

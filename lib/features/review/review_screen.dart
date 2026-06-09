@@ -418,10 +418,18 @@ class _StreakFinished extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final streak =
         ref.watch(reviewStateProvider).asData?.value.currentStreak ?? 0;
+    // The just-finished session still holds its grade tallies in memory —
+    // feed them straight into the recap (the locked entry card reads the
+    // persisted copy instead).
+    final session = ref.watch(reviewSessionControllerProvider);
     return _FinishedState(
       streak: streak,
       isEmpty: isEmpty,
       streakIncremented: streakIncremented,
+      cards: isEmpty ? 0 : session.total,
+      good: session.goodCount,
+      hard: session.hardCount,
+      forgot: session.forgotCount,
     );
   }
 }
@@ -431,16 +439,27 @@ class _FinishedState extends StatelessWidget {
     required this.streak,
     required this.isEmpty,
     required this.streakIncremented,
+    this.cards = 0,
+    this.good = 0,
+    this.hard = 0,
+    this.forgot = 0,
   });
 
   final int streak;
   final bool isEmpty;
   final bool streakIncremented;
+  final int cards;
+  final int good;
+  final int hard;
+  final int forgot;
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
+      // Scrollable: with the recap card the finished stack can exceed the
+      // available height on SE-class screens — never overflow, just scroll.
+      child: SingleChildScrollView(
+        child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -474,6 +493,15 @@ class _FinishedState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: ScriptaTextStyles.subtitle,
             ),
+            if (!isEmpty && cards > 0) ...[
+              const SizedBox(height: 24),
+              _SessionRecap(
+                cards: cards,
+                good: good,
+                hard: hard,
+                forgot: forgot,
+              ),
+            ],
             const SizedBox(height: 28),
             const _NextReviewCountdown(),
             const SizedBox(height: 32),
@@ -483,7 +511,112 @@ class _FinishedState extends StatelessWidget {
             ),
           ],
         ),
+        ),
       ),
+    );
+  }
+}
+
+// ─── End-of-session recap ─────────────────────────────────────────────────────
+//
+// The founder's "schermata riepilogativa dei propri risultati": after the one
+// daily session, show how the cards went — remembered / tricky / to revisit.
+
+class _SessionRecap extends StatelessWidget {
+  const _SessionRecap({
+    required this.cards,
+    required this.good,
+    required this.hard,
+    required this.forgot,
+  });
+
+  final int cards;
+  final int good;
+  final int hard;
+  final int forgot;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      decoration: ScriptaDecorations.card(radius: 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            context.l10n.ripassoRecapCards(cards),
+            style: ScriptaTextStyles.sectionTitleClean,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _RecapStat(
+                count: good,
+                label: context.l10n.ripassoRecapGood,
+                icon: PhosphorIconsFill.checkCircle,
+                color: ScriptaColors.primaryDark,
+              ),
+              const SizedBox(width: 22),
+              _RecapStat(
+                count: hard,
+                label: context.l10n.ripassoRecapHard,
+                icon: PhosphorIconsFill.circleHalf,
+                color: ScriptaColors.sienna,
+              ),
+              const SizedBox(width: 22),
+              _RecapStat(
+                count: forgot,
+                label: context.l10n.ripassoRecapForgot,
+                icon: PhosphorIconsFill.arrowCounterClockwise,
+                color: ScriptaColors.inkMuted,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.06, end: 0);
+  }
+}
+
+class _RecapStat extends StatelessWidget {
+  const _RecapStat({
+    required this.count,
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final int count;
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(height: 6),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: ScriptaColors.ink,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: ScriptaColors.inkMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
