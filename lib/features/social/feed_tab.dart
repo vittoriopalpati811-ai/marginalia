@@ -1439,7 +1439,23 @@ class _PostCardState extends ConsumerState<_PostCard> {
             maxLength: 1000,
             decoration: InputDecoration(
               hintText: context.l10n.feedWritePost,
-              border: const OutlineInputBorder(),
+              filled: true,
+              fillColor: ScriptaColors.surfaceElevated,
+              contentPadding: const EdgeInsets.all(14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide:
+                    const BorderSide(color: ScriptaColors.rule, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide:
+                    const BorderSide(color: ScriptaColors.primary, width: 1.5),
+              ),
             ),
           ),
           actions: [
