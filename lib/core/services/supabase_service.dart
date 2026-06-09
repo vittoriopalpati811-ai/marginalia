@@ -2726,7 +2726,7 @@ class SupabaseService {
     await _client.from('jam_poll_votes').upsert({
       'candidate_id': candidateId,
       'user_id': userId,
-    });
+    }, onConflict: 'candidate_id,user_id');
   }
 
   Future<void> unvoteOnPollCandidate(String candidateId) async {

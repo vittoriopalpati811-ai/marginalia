@@ -2415,12 +2415,31 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
 
   Future<void> _pickGif() async {
     final url = await showGifPicker(context);
-    if (url != null && mounted) {
+    if (url == null || !mounted) return;
+    // Tapping a GIF posts it IMMEDIATELY as a comment — no staging, no text
+    // step. Mirror _submit()'s addPostComment call (gif rides on gifUrl).
+    setState(() => _submitting = true);
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      await svc.addPostComment(
+        widget.postId,
+        content:         null,
+        imageUrl:        null,
+        gifUrl:          url,
+        parentCommentId: _replyingToId,
+      );
       setState(() {
-        _gifUrl     = url;
-        _imageBytes = null;
-        _imageExt   = null;
+        _submitting     = false;
+        _replyingToId   = null;
+        _replyingToName = null;
       });
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+        setState(() => _submitting = false);
+      }
     }
   }
 
@@ -3114,56 +3133,62 @@ class _CommentBubbleState extends ConsumerState<_CommentBubble> {
                           (content != null && content.isNotEmpty))
                         const SizedBox(height: 6),
                       if (imageUrl != null && imageUrl.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            imageUrl,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (_, child, progress) =>
-                                progress == null
-                                    ? child
-                                    : Container(
-                                        height: 120,
-                                        color: ScriptaColors.ruleFaint,
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 1.5,
-                                            color: ScriptaColors.sienna,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrl,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (_, child, progress) =>
+                                  progress == null
+                                      ? child
+                                      : Container(
+                                          height: 120,
+                                          color: ScriptaColors.ruleFaint,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 1.5,
+                                              color: ScriptaColors.sienna,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: ScriptaColors.ruleFaint,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Center(
-                                child: Icon(Icons.broken_image_outlined,
-                                    size: 20,
-                                    color: ScriptaColors.inkFaint),
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: ScriptaColors.ruleFaint,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.broken_image_outlined,
+                                      size: 20,
+                                      color: ScriptaColors.inkFaint),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       if (gifUrl != null && gifUrl.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            gifUrl,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: ScriptaColors.ruleFaint,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Center(
-                                child: Icon(Icons.gif,
-                                    size: 24,
-                                    color: ScriptaColors.inkFaint),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              gifUrl,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: ScriptaColors.ruleFaint,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.gif,
+                                      size: 24,
+                                      color: ScriptaColors.inkFaint),
+                                ),
                               ),
                             ),
                           ),

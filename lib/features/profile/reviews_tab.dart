@@ -28,6 +28,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/services/reviews_service.dart';
 import '../social/report_sheet.dart';
 import '../library/book_cover.dart';
+import 'profile_shared_widgets.dart' show favCoversProvider, favCoverKey;
 
 // ─── Providers used only by the composer ──────────────────────────────────────
 
@@ -211,6 +212,13 @@ class _ReviewCard extends ConsumerWidget {
                   child: BookEditorialCover(
                     title: review.bookTitle,
                     author: review.bookAuthor,
+                    // The review author's custom cover (per-user), so it matches
+                    // what they set in their library/favourites.
+                    coverUrl: ref
+                        .watch(favCoversProvider(review.userId))
+                        .asData
+                        ?.value[favCoverKey(
+                            review.bookTitle, review.bookAuthor)],
                   ),
                 ),
               ),
@@ -664,6 +672,11 @@ class _ReviewComposerSheetState extends ConsumerState<_ReviewComposerSheet> {
                                   child: BookEditorialCover(
                                     title: _bookTitle,
                                     author: _bookAuthor,
+                                    coverUrl: ref
+                                        .watch(favCoversProvider(null))
+                                        .asData
+                                        ?.value[favCoverKey(
+                                            _bookTitle, _bookAuthor)],
                                   ),
                                 ),
                               ),

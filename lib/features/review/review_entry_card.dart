@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/motion/airbnb_motion.dart';
 import '../../core/providers/review_provider.dart';
+import '../quiz/quiz_lock.dart' show ripassoLockProvider;
 
 // ─── "Ripasso del giorno" — Library entry point ──────────────────────────────
 //
@@ -38,12 +39,18 @@ class RipassoEntryCard extends ConsumerWidget {
         last.month == today.month &&
         last.day == today.day;
 
+    // Hard once-a-day lock that resets at 08:00 the next morning (not midnight),
+    // matching the Quiz. Set when a review is graded (SharedPreferences), so the
+    // card stays "completato" until 08:00 even if more cards are technically due.
+    final ripassoLocked =
+        ref.watch(ripassoLockProvider).asData?.value != null;
+
     // Once today's review is done, the card LOCKS to a non-tappable "completato"
     // state until tomorrow's slot — a ripasso is a once-a-day ritual, so even if
     // more cards are technically due it won't reopen today. Otherwise: the
     // tappable due card, or (nothing due, nothing done) hide so it never nags.
     final Widget card;
-    if (reviewedToday) {
+    if (ripassoLocked || reviewedToday) {
       card = _CompletedCard(streak: streak);
     } else if (dueCount > 0) {
       card = _DueCard(dueCount: dueCount, streak: streak);

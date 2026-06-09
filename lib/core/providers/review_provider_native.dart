@@ -11,6 +11,8 @@ import '../review/sm2.dart';
 import '../services/local_notif_service.dart';
 import 'isar_provider_native.dart';
 import 'auth_provider.dart';
+import '../../features/quiz/quiz_lock.dart'
+    show markRipassoCompletedNow, ripassoLockProvider;
 
 // ─── Ripasso (spaced-repetition) providers — native / offline-first ──────────
 //
@@ -377,6 +379,10 @@ class ReviewSessionController
       // keyed by day keeps the latest), so jam-mates see Ripasso activity — both
       // the user's own and everyone else's.
       unawaited(_logRipassoToJams(state.index));
+      // Lock the daily ripasso until 08:00 tomorrow (once-a-day ritual), then
+      // refresh the entry-card lock state so it flips to "completato".
+      unawaited(markRipassoCompletedNow()
+          .then((_) => ref.invalidate(ripassoLockProvider)));
     }
   }
 

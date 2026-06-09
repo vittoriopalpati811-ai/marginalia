@@ -86,12 +86,27 @@ class _JamHighlightDetailScreenState
 
   Future<void> _pickGif() async {
     final url = await showGifPicker(context);
-    if (url != null && mounted) {
-      setState(() {
-        _gifUrl     = url;
-        _imageBytes = null; // image and gif are mutually exclusive attachments
-        _imageExt   = null;
-      });
+    if (url == null || !mounted) return;
+    // Tapping a GIF posts it IMMEDIATELY as a comment — no staging, no text
+    // step. Mirror _postComment()'s send path: the Tenor URL rides along on the
+    // image_url column and renders through Image.network in _CommentBubble.
+    setState(() => _posting = true);
+    try {
+      final svc = ref.read(supabaseServiceProvider);
+      await svc.addComment(
+        widget.jamHighlightId,
+        '📷', // jam_highlight_comments requires non-empty content
+        imageUrl: url,
+      );
+      ref.invalidate(commentsProvider(widget.jamHighlightId));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _posting = false);
     }
   }
 

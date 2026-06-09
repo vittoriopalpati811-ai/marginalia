@@ -1,27 +1,27 @@
-// ─── Daily-quiz 08:00 lock ───────────────────────────────────────────────────
+// ─── Daily-ritual 08:00 lock (Quiz + Ripasso) ────────────────────────────────
 //
-// The daily quiz is a once-a-day ritual: after you finish it, the entry stays
-// locked until 08:00 the next morning — mirroring Ripasso (see review_screen's
-// 08:00 countdown). We persist only a single completion timestamp in
-// SharedPreferences, deliberately avoiding a new Isar model (which would force a
+// The daily Quiz and the daily Ripasso are once-a-day rituals: after you finish
+// one, it stays locked until 08:00 the NEXT morning. We persist a single
+// completion timestamp per activity in SharedPreferences (no Isar model, no
 // build_runner regen).
+//
+// 08:00 reset: completing at any time of day T locks until the next calendar
+// day's 08:00 — so finishing at 23:00 and at 02:00 both unlock the following
+// 08:00.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _kQuizCompletedKey = 'quiz_last_completed_at';
+String _prefKey(String activity) => '${activity}_last_completed_at';
 
-/// Records that the daily quiz was completed now (local time).
-Future<void> markQuizCompletedNow() async {
+Future<void> _markDone(String activity) async {
   final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(_kQuizCompletedKey, DateTime.now().toIso8601String());
+  await prefs.setString(_prefKey(activity), DateTime.now().toIso8601String());
 }
 
-/// Pure helper: given the stored completion ISO string, returns the moment the
-/// quiz unlocks (08:00 the morning AFTER completion) if it's still locked, else
-/// null. Completing at any time of day T locks until the next calendar day's
-/// 08:00, so finishing at 23:00 and at 02:00 both unlock the following 08:00.
-DateTime? quizLockedUntilFrom(String? completedIso, {DateTime? now}) {
+/// Pure helper: given the stored completion ISO string, returns the unlock
+/// moment (08:00 the morning AFTER completion) if still locked, else null.
+DateTime? lockedUntilFrom(String? completedIso, {DateTime? now}) {
   if (completedIso == null) return null;
   final completed = DateTime.tryParse(completedIso);
   if (completed == null) return null;
@@ -31,14 +31,32 @@ DateTime? quizLockedUntilFrom(String? completedIso, {DateTime? now}) {
   return reference.isBefore(unlockAt) ? unlockAt : null;
 }
 
-/// Returns the unlock time if the daily quiz is currently locked, else null.
-Future<DateTime?> quizLockedUntil() async {
+Future<DateTime?> _lockedUntil(String activity) async {
   final prefs = await SharedPreferences.getInstance();
-  return quizLockedUntilFrom(prefs.getString(_kQuizCompletedKey));
+  return lockedUntilFrom(prefs.getString(_prefKey(activity)));
 }
 
-/// Locked-until time for the daily quiz, or null when it's available. Invalidate
-/// this after completing a quiz so entry points re-evaluate.
-final quizLockProvider = FutureProvider<DateTime?>((ref) async {
-  return quizLockedUntil();
-});
+// ── Quiz ─────────────────────────────────────────────────────────────────────
+
+Future<void> markQuizCompletedNow() => _markDone('quiz');
+
+/// Back-compat alias kept for existing call sites.
+DateTime? quizLockedUntilFrom(String? completedIso, {DateTime? now}) =>
+    lockedUntilFrom(completedIso, now: now);
+
+Future<DateTime?> quizLockedUntil() => _lockedUntil('quiz');
+
+/// Locked-until time for the daily quiz, or null when available. Invalidate
+/// after completing a quiz so entry points re-evaluate.
+final quizLockProvider = FutureProvider<DateTime?>((ref) => quizLockedUntil());
+
+// ── Ripasso ──────────────────────────────────────────────────────────────────
+
+Future<void> markRipassoCompletedNow() => _markDone('ripasso');
+
+Future<DateTime?> ripassoLockedUntil() => _lockedUntil('ripasso');
+
+/// Locked-until time for the daily ripasso, or null when available. Invalidate
+/// after a review so entry points re-evaluate.
+final ripassoLockProvider =
+    FutureProvider<DateTime?>((ref) => ripassoLockedUntil());

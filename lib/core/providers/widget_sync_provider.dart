@@ -76,9 +76,12 @@ final widgetSyncProvider = Provider<void>((ref) {
   // the widget is never left blank. This runs on every data change (via the
   // listener below) and on a bare app-resume / day-rollover, where the chosen
   // phrase may have rolled to a new 3h bucket even though no provider re-emits.
-  void pushPhrase() {
-    final highlights = ref.read(allHighlightsProvider).value;
-    final maps = (highlights ?? const <Highlight>[])
+  Future<void> pushPhrase() async {
+    List<Highlight> highlights = const [];
+    try {
+      highlights = await ref.read(allHighlightsProvider.future);
+    } catch (_) {}
+    final maps = highlights
         .map((h) => <String, dynamic>{
               'body': h.content,
               'book_title': h.bookTitle ?? '',
@@ -86,38 +89,27 @@ final widgetSyncProvider = Provider<void>((ref) {
             })
         .toList();
 
-    // Resolve the app's chosen highlight, then push its exact fields. Reading
-    // the future (rather than the cached value) ensures the very first push —
-    // before the Library tab is ever opened — still reflects the real pick.
-    ref.read(dailyHighlightProvider.future).then((chosen) {
-      // Nothing chosen AND no fallback list → nothing to push.
-      if (chosen == null && maps.isEmpty) return;
-      WidgetService.update(
-        maps,
-        chosenText: chosen?.content,
-        chosenBook: chosen?.bookTitle,
-        chosenAuthor: chosen?.bookAuthor,
-      ).then((wh) {
-        if (wh != null) {
-          _watchText = wh.text;
-          _watchBook = wh.bookTitle;
-          _watchAuthor = wh.author;
-          _pushWatch();
-        }
-      });
-    }).catchError((_) {
-      // If the chosen-highlight future fails, still push the fallback list so
-      // the widget shows something rather than staying stale.
-      if (maps.isEmpty) return;
-      WidgetService.update(maps).then((wh) {
-        if (wh != null) {
-          _watchText = wh.text;
-          _watchBook = wh.bookTitle;
-          _watchAuthor = wh.author;
-          _pushWatch();
-        }
-      });
-    });
+    // Resolve the app's chosen highlight, then push its exact fields. Awaiting
+    // the future (rather than reading the cached .value, which is null when the
+    // autoDispose provider has been disposed on resume) ensures the push always
+    // reflects the real pick instead of pushing stale/empty data.
+    Highlight? chosen;
+    try {
+      chosen = await ref.read(dailyHighlightProvider.future);
+    } catch (_) {}
+    if (chosen == null && maps.isEmpty) return;
+    final wh = await WidgetService.update(
+      maps,
+      chosenText: chosen?.content,
+      chosenBook: chosen?.bookTitle,
+      chosenAuthor: chosen?.bookAuthor,
+    );
+    if (wh != null) {
+      _watchText = wh.text;
+      _watchBook = wh.bookTitle;
+      _watchAuthor = wh.author;
+      _pushWatch();
+    }
   }
 
   ref.listen<AsyncValue<List<Highlight>>>(
@@ -131,10 +123,16 @@ final widgetSyncProvider = Provider<void>((ref) {
   // Recomputes streak / month-minutes against DateTime.now() each call, so a
   // resume or day-rollover re-push reflects the new day even when the session
   // data itself is unchanged.
-  void pushStats() {
-    final sessions = ref.read(readingSessionsProvider).value;
+  Future<void> pushStats() async {
+    List<Map<String, dynamic>>? sessions;
+    try {
+      sessions = await ref.read(readingSessionsProvider.future);
+    } catch (_) {}
     if (sessions == null) return;
-    final goal = ref.read(readingGoalProvider).value;
+    int? goal;
+    try {
+      goal = await ref.read(readingGoalProvider.future);
+    } catch (_) {}
     final streak = _streakDays(sessions);
     final monthMinutes = _totalMinutesThisMonth(sessions);
     WidgetService.updateStats(

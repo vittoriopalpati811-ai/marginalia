@@ -34,7 +34,7 @@ class WidgetHighlight {
 
 class WidgetService {
   static const _appGroupId = 'group.marginalia.widget';
-  static const _iOSWidgetName = 'ScriptaWidget';
+  static const _iOSWidgetName = 'MarginaliaWidget';
 
   // ── Initialise ────────────────────────────────────────────────────────────
 
@@ -98,7 +98,7 @@ class WidgetService {
     return snapshot;
   }
 
-  /// Push reading statistics to the iOS stats widget ("ScriptaStats").
+  /// Push reading statistics to the iOS stats widget ("MarginaliaStats").
   /// Values are written as integers into the shared App Group container and the
   /// widget timeline is reloaded so the home screen reflects them.
   static Future<void> updateStats({
@@ -112,7 +112,7 @@ class WidgetService {
       await HomeWidget.saveWidgetData<int>('w_month_min', monthMinutes);
       await HomeWidget.saveWidgetData<int>('w_year_books', yearBooks);
       await HomeWidget.saveWidgetData<int>('w_year_goal', yearGoal);
-      await HomeWidget.updateWidget(iOSName: 'ScriptaStats');
+      await HomeWidget.updateWidget(iOSName: 'MarginaliaStats');
     } catch (e) {
       debugPrint('[WidgetService] updateStats failed: $e');
     }

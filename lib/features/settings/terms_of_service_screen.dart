@@ -31,6 +31,12 @@ class TermsOfServiceScreen extends StatefulWidget {
 class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
   WebViewController? _controller;
 
+  // Language is mutable so the in-app EN/IT toggle actually swaps the rendered
+  // document. The bundled HTML's own language links can't navigate (JS is
+  // disabled and the page is injected via loadHtmlString, not a real URL), so
+  // the toggle has to live in the app chrome and reload the other asset.
+  late bool _isItalian;
+
   // webview_flutter only ships mobile implementations (iOS/Android).
   bool get _webViewSupported =>
       !kIsWeb &&
@@ -38,21 +44,42 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
           defaultTargetPlatform == TargetPlatform.android);
 
   String get _assetPath =>
-      widget.isItalian ? 'docs/terms/it/index.html' : 'docs/terms/index.html';
+      _isItalian ? 'docs/terms/it/index.html' : 'docs/terms/index.html';
 
   @override
   void initState() {
     super.initState();
+    _isItalian = widget.isItalian;
+    if (_webViewSupported) _initWebView();
+  }
+
+  void _toggleLanguage() {
+    setState(() {
+      _isItalian = !_isItalian;
+      _controller = null; // show the spinner while the other asset loads
+    });
     if (_webViewSupported) _initWebView();
   }
 
   Future<void> _initWebView() async {
     try {
       final html = await rootBundle.loadString(_assetPath);
+      // Strip favicon/apple-touch and Open Graph/Twitter image tags: they
+      // point at /assets/ paths that can't resolve in a data-URI WebView
+      // (the page is injected via loadHtmlString, not served from a host).
+      final cleaned = html
+          .replaceAll(
+              RegExp(r'\s*<link[^>]*rel="(icon|apple-touch-icon)"[^>]*>',
+                  caseSensitive: false),
+              '')
+          .replaceAll(
+              RegExp(r'\s*<meta[^>]*(og:image|twitter:image|twitter:card)[^>]*>',
+                  caseSensitive: false),
+              '');
       final controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.disabled)
         ..setBackgroundColor(ScriptaColors.background)
-        ..loadHtmlString(html);
+        ..loadHtmlString(cleaned);
       if (mounted) setState(() => _controller = controller);
     } catch (_) {
       // Leaves _controller null → the loading spinner stays; harmless.
@@ -69,6 +96,21 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(context.l10n.termsTitle),
+        actions: [
+          // The label shows the language you'll switch TO.
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: _toggleLanguage,
+              style: TextButton.styleFrom(
+                foregroundColor: ScriptaColors.sienna,
+                textStyle: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              child: Text(_isItalian ? 'EN' : 'IT'),
+            ),
+          ),
+        ],
       ),
       body: _webViewSupported
           ? (_controller == null
@@ -80,7 +122,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                 )
               : WebViewWidget(controller: _controller!))
           : _BrowserFallback(
-              url: widget.isItalian
+              url: _isItalian
                   ? TermsOfServiceScreen._itUrl
                   : TermsOfServiceScreen._enUrl,
             ),

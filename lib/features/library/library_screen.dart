@@ -165,20 +165,55 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
               ),
             ),
 
-            // ── Ripasso del giorno — daily recall entry point ──────────────
-            // The first action of the day: a warm card with the due count +
-            // streak flame. Hidden when nothing is due and unreviewed; collapses
-            // to a quiet "done" pill once today's session is complete.
-            const SliverToBoxAdapter(child: RipassoEntryCard()),
+            // ── Hero pull-quote: highlight del giorno ──────────────────────
+            randomAsync.when(
+              data: (h) => h != null
+                  ? SliverToBoxAdapter(
+                      child: _DailyCard(
+                        content: h.content,
+                        subtitle: subtitle,
+                        onTap: () => context.push('/highlight/${h.id}'),
+                      )
+                          .animate()
+                          .fadeIn(duration: 500.ms, curve: Curves.easeOut)
+                          .slideY(begin: 0.05, end: 0, duration: 500.ms),
+                    )
+                  : const SliverToBoxAdapter(child: SizedBox.shrink()),
+              loading: () =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (_, __) =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
 
-            // ── Quiz — active recall over your highlights ──────────────────
+            // ── Strip highlights recenti ───────────────────────────────────
+            allHighlightsAsync.when(
+              data: (highlights) {
+                if (highlights.isEmpty) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                }
+                return SliverToBoxAdapter(
+                  child: _RecentHighlightsStrip(
+                    highlights: highlights.take(8).toList(),
+                    onTap: (h) => context.push('/highlight/${h.id}'),
+                  ),
+                );
+              },
+              loading: () =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (_, __) =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+
+            // ── Ripasso del giorno + Quiz ──────────────────────────────────
+            // Positioned here (between "Recenti" and "Libri consigliati") per
+            // the founder. Both are once-a-day rituals that lock until 08:00 the
+            // next morning.
+            const SliverToBoxAdapter(child: RipassoEntryCard()),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: GestureDetector(
                   onTap: () {
-                    // Daily quiz is a once-a-day ritual: once finished it's
-                    // locked until 08:00 the next morning (Ripasso-style).
                     if (quizLockedUntil != null) {
                       final isIt =
                           Localizations.localeOf(context).languageCode == 'it';
@@ -240,45 +275,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   ),
                 ),
               ),
-            ),
-
-            // ── Hero pull-quote: highlight del giorno ──────────────────────
-            randomAsync.when(
-              data: (h) => h != null
-                  ? SliverToBoxAdapter(
-                      child: _DailyCard(
-                        content: h.content,
-                        subtitle: subtitle,
-                        onTap: () => context.push('/highlight/${h.id}'),
-                      )
-                          .animate()
-                          .fadeIn(duration: 500.ms, curve: Curves.easeOut)
-                          .slideY(begin: 0.05, end: 0, duration: 500.ms),
-                    )
-                  : const SliverToBoxAdapter(child: SizedBox.shrink()),
-              loading: () =>
-                  const SliverToBoxAdapter(child: SizedBox.shrink()),
-              error: (_, __) =>
-                  const SliverToBoxAdapter(child: SizedBox.shrink()),
-            ),
-
-            // ── Strip highlights recenti ───────────────────────────────────
-            allHighlightsAsync.when(
-              data: (highlights) {
-                if (highlights.isEmpty) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
-                return SliverToBoxAdapter(
-                  child: _RecentHighlightsStrip(
-                    highlights: highlights.take(8).toList(),
-                    onTap: (h) => context.push('/highlight/${h.id}'),
-                  ),
-                );
-              },
-              loading: () =>
-                  const SliverToBoxAdapter(child: SizedBox.shrink()),
-              error: (_, __) =>
-                  const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
 
             // ── Filter chips (Airbnb-clean: no section header here, the

@@ -65,10 +65,22 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   Future<void> _initWebView() async {
     try {
       final html = await rootBundle.loadString(_assetPath);
+      // Strip favicon/apple-touch and Open Graph/Twitter image tags: they
+      // point at /assets/ paths that can't resolve in a data-URI WebView
+      // (the page is injected via loadHtmlString, not served from a host).
+      final cleaned = html
+          .replaceAll(
+              RegExp(r'\s*<link[^>]*rel="(icon|apple-touch-icon)"[^>]*>',
+                  caseSensitive: false),
+              '')
+          .replaceAll(
+              RegExp(r'\s*<meta[^>]*(og:image|twitter:image|twitter:card)[^>]*>',
+                  caseSensitive: false),
+              '');
       final controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.disabled)
         ..setBackgroundColor(ScriptaColors.background)
-        ..loadHtmlString(html);
+        ..loadHtmlString(cleaned);
       if (mounted) setState(() => _controller = controller);
     } catch (_) {
       // Leaves _controller null → the loading spinner stays; harmless.
