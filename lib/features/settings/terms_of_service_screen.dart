@@ -29,12 +29,13 @@ class TermsOfServiceScreen extends StatefulWidget {
 }
 
 class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
+  // ONE controller for the screen's lifetime; the EN/IT toggle reloads the other
+  // language's HTML into the SAME controller (recreating it left the WebView on
+  // the previous page when the setStates batched in one frame → "EN did
+  // nothing"). Reloading the live controller always re-renders.
   WebViewController? _controller;
+  bool _loaded = false;
 
-  // Language is mutable so the in-app EN/IT toggle actually swaps the rendered
-  // document. The bundled HTML's own language links can't navigate (JS is
-  // disabled and the page is injected via loadHtmlString, not a real URL), so
-  // the toggle has to live in the app chrome and reload the other asset.
   late bool _isItalian;
 
   // webview_flutter only ships mobile implementations (iOS/Android).
@@ -50,23 +51,26 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
   void initState() {
     super.initState();
     _isItalian = widget.isItalian;
-    if (_webViewSupported) _initWebView();
+    if (_webViewSupported) {
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.disabled)
+        ..setBackgroundColor(ScriptaColors.background);
+      _loadAsset();
+    }
   }
 
   void _toggleLanguage() {
-    setState(() {
-      _isItalian = !_isItalian;
-      _controller = null; // show the spinner while the other asset loads
-    });
-    if (_webViewSupported) _initWebView();
+    setState(() => _isItalian = !_isItalian);
+    if (_webViewSupported) _loadAsset(); // reload the SAME controller
   }
 
-  Future<void> _initWebView() async {
+  Future<void> _loadAsset() async {
+    final controller = _controller;
+    if (controller == null) return;
     try {
       final html = await rootBundle.loadString(_assetPath);
-      // Strip favicon/apple-touch and Open Graph/Twitter image tags: they
-      // point at /assets/ paths that can't resolve in a data-URI WebView
-      // (the page is injected via loadHtmlString, not served from a host).
+      // Strip favicon/apple-touch + Open Graph/Twitter image tags: they point
+      // at /assets/ paths that can't resolve in a data-URI WebView.
       final cleaned = html
           .replaceAll(
               RegExp(r'\s*<link[^>]*rel="(icon|apple-touch-icon)"[^>]*>',
@@ -76,13 +80,10 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
               RegExp(r'\s*<meta[^>]*(og:image|twitter:image|twitter:card)[^>]*>',
                   caseSensitive: false),
               '');
-      final controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.disabled)
-        ..setBackgroundColor(ScriptaColors.background)
-        ..loadHtmlString(cleaned);
-      if (mounted) setState(() => _controller = controller);
+      await controller.loadHtmlString(cleaned);
+      if (mounted) setState(() => _loaded = true);
     } catch (_) {
-      // Leaves _controller null → the loading spinner stays; harmless.
+      // Keep the spinner on failure; harmless.
     }
   }
 
@@ -113,7 +114,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
         ],
       ),
       body: _webViewSupported
-          ? (_controller == null
+          ? (_controller == null || !_loaded
               ? const Center(
                   child: CircularProgressIndicator(
                     color: ScriptaColors.sienna,
