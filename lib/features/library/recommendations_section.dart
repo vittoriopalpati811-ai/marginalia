@@ -132,6 +132,50 @@ List<BookRecommendation> _spreadMatches(List<BookRecommendation> recs) {
   ];
 }
 
+/// Maps the % match to confidence-BANDED wording (IT + EN), so the sentence
+/// scales with the number: a 98% reads "certain", a 72% reads "we think". The
+/// founder asked that the phrasing reflect how sure we are, not a fixed line.
+String _confidenceText(int match, {required bool isItalian}) {
+  if (match >= 92) {
+    return isItalian
+        ? 'Questo libro ti conquisterà. Ne siamo certi al $match%.'
+        : "You'll love this book — we're certain at $match%.";
+  } else if (match >= 84) {
+    return isItalian
+        ? 'Questo libro ti piacerà. Ne siamo sicuri al $match%.'
+        : "You'll like this book — we're confident at $match%.";
+  } else if (match >= 78) {
+    return isItalian
+        ? 'Questo libro potrebbe piacerti. Siamo abbastanza sicuri ($match%).'
+        : "You might like this book — we're fairly confident ($match%).";
+  } else {
+    return isItalian
+        ? 'Pensiamo che questo libro possa piacerti ($match%).'
+        : "We think you'll like this book ($match%).";
+  }
+}
+
+/// Compact card-chip version (the % is shown separately on the chip).
+String _confidenceTextCompact(int match, {required bool isItalian}) {
+  if (match >= 92) {
+    return isItalian
+        ? 'Siamo certi che ti conquisterà.'
+        : "We're certain you'll love it.";
+  } else if (match >= 84) {
+    return isItalian
+        ? 'Siamo sicuri che ti piacerà.'
+        : "We're confident you'll like it.";
+  } else if (match >= 78) {
+    return isItalian
+        ? 'Siamo abbastanza sicuri che ti piacerà.'
+        : "We're fairly confident you'll like it.";
+  } else {
+    return isItalian
+        ? 'Pensiamo che possa piacerti.'
+        : "We think you'll like it.";
+  }
+}
+
 /// Why the recommendation list is empty (when it is). Used to render an
 /// actionable empty-state copy ("come back tomorrow" vs "import your
 /// highlights" vs "service unavailable") instead of one generic line that
@@ -1043,9 +1087,7 @@ class _RecommendationDetailScreenState
                             const SizedBox(width: 14),
                             Expanded(
                               child: Text(
-                                it
-                                    ? 'Questo libro potrebbe piacerti. Ne siamo sicuri al ${rec.match}%.'
-                                    : 'You might love this book — we’re ${rec.match}% sure.',
+                                _confidenceText(rec.match, isItalian: it),
                                 style: GoogleFonts.manrope(
                                   fontSize: 14.5,
                                   height: 1.45,
@@ -1340,9 +1382,7 @@ class _MatchBox extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              it
-                  ? 'Questo libro potrebbe piacerti. Ne siamo sicuri.'
-                  : "You might love this book — we're confident.",
+              _confidenceTextCompact(match, isItalian: it),
               style: GoogleFonts.manrope(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,

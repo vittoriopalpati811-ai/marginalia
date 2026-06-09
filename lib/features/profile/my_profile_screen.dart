@@ -21,11 +21,11 @@ import 'reviews_tab.dart';
 import 'activity_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
-import '../library/book_detail_screen.dart' show editBookCover;
+import '../library/book_detail_screen.dart' show editBookCoverByKey;
 import '../reader/book_info_screen.dart';
 import '../stats/reading_stats_card.dart';
-import '../../core/providers/books_provider.dart';
 import 'profile_shared_widgets.dart' show favCoversProvider, favCoverKey;
+import 'highlights_peek_sheet.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
@@ -692,8 +692,18 @@ class _ProfileHeader extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // ── Avatar ─────────────────────────────────────────────────
-                Container(
+                // ── Avatar (long-press → peek your recent highlights) ───────
+                Consumer(
+                  builder: (context, ref, _) => GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onLongPress: () => HighlightsPeekSheet.show(
+                      context,
+                      title:
+                          Localizations.localeOf(context).languageCode == 'it'
+                              ? 'I tuoi highlight recenti'
+                              : 'Your recent highlights',
+                    ),
+                    child: Container(
                         width: 78,
                         height: 78,
                         decoration: BoxDecoration(
@@ -738,6 +748,8 @@ class _ProfileHeader extends StatelessWidget {
                                         )),
                                   ),
                         ),
+                  ),
+                ),
                 const SizedBox(width: 16),
 
                 // Name + bio
@@ -2219,43 +2231,11 @@ class _FavBookTile extends ConsumerWidget {
             .asData
             ?.value[favCoverKey(title, author)];
 
-    // Pencil action: resolve this favourite to the matching library book, then
-    // open the standard cover-edit sheet (gallery / camera / Google / remove).
-    // Most favourites ARE in the user's library; if not, we nudge them.
-    void editCover() {
-      final list = ref.read(booksProvider).asData?.value.cast<dynamic>();
-      final tnorm = title.toLowerCase().trim();
-      final anorm = author.toLowerCase().trim();
-      dynamic match;
-      if (list != null) {
-        for (final b in list) {
-          final bt = (b.title as String? ?? '').toLowerCase().trim();
-          final ba = (b.author as String? ?? '').toLowerCase().trim();
-          if (bt == tnorm && ba == anorm) {
-            match = b;
-            break;
-          }
-        }
-        if (match == null) {
-          for (final b in list) {
-            if ((b.title as String? ?? '').toLowerCase().trim() == tnorm) {
-              match = b;
-              break;
-            }
-          }
-        }
-      }
-      if (match != null) {
-        editBookCover(context, ref, match);
-      } else {
-        final it = Localizations.localeOf(context).languageCode == 'it';
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-          content: Text(it
-              ? 'Aggiungi il libro alla libreria per cambiarne la copertina'
-              : 'Add this book to your library first to change its cover'),
-        ));
-      }
-    }
+    // Pencil action: edit this favourite's cover by title/author. Works even
+    // when the book isn't an exact library row; writes the per-user cover store
+    // (shown on favourites, reviews, library and to anyone visiting the profile)
+    // and mirrors to the local library book when one matches.
+    void editCover() => editBookCoverByKey(context, ref, title, author);
 
     // Empty placeholder
     if (title.isEmpty) {
@@ -2306,6 +2286,9 @@ class _FavBookTile extends ConsumerWidget {
           builder: (_) => BookInfoScreen(title: title, author: author),
         ),
       ),
+      // Long-press → peek this book's highlights (like the library book sheet).
+      onLongPress: () => HighlightsPeekSheet.show(context,
+          bookTitle: title, title: title, subtitle: author),
       child: ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Stack(

@@ -927,26 +927,58 @@ class SupabaseService {
   /// "title|author" (lowercased) → cover_url for [targetUserId]'s books that
   /// carry a custom cover. Lets favorite-book tiles (own + visited profiles)
   /// render the cover that user set. Best-effort; empty on error.
+  /// Per-user custom book covers, keyed by 'title|author' (lowercased). Reads
+  /// the dedicated `user_book_covers` store — the single source of truth read
+  /// everywhere (library, favourites, reviews) and visible to anyone visiting
+  /// the [targetUserId]'s profile (public-read RLS).
   Future<Map<String, String>> fetchBookCovers(String targetUserId) async {
     try {
       final res = await _client
-          .from('books')
-          .select('title, author, cover_url')
-          .eq('user_id', targetUserId)
-          .not('cover_url', 'is', null) as List;
+          .from('user_book_covers')
+          .select('book_key, cover_url')
+          .eq('user_id', targetUserId) as List;
       final map = <String, String>{};
       for (final r in res) {
         final m = r as Map<String, dynamic>;
+        final key = (m['book_key'] ?? '').toString();
         final url = (m['cover_url'] as String?) ?? '';
-        if (url.isEmpty) continue;
-        final t = (m['title'] ?? '').toString().toLowerCase().trim();
-        final a = (m['author'] ?? '').toString().toLowerCase().trim();
-        map['$t|$a'] = url;
+        if (key.isEmpty || url.isEmpty) continue;
+        map[key] = url;
       }
       return map;
     } catch (_) {
       return {};
     }
+  }
+
+  /// Sets/updates the caller's custom cover for a book (keyed by title|author).
+  /// Written by BOTH the library and the profile-favourites edit flows, so a
+  /// changed cover syncs everywhere for this user (and shows to visitors).
+  Future<void> setUserBookCover(
+      String title, String author, String coverUrl) async {
+    if (!isAuthenticated || userId == null) return;
+    final key =
+        '${title.toLowerCase().trim()}|${author.toLowerCase().trim()}';
+    await _client.from('user_book_covers').upsert({
+      'user_id': userId,
+      'book_key': key,
+      'title': title,
+      'author': author,
+      'cover_url': coverUrl,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id,book_key');
+  }
+
+  /// Removes the caller's custom cover for a book (reverts to the procedural one).
+  Future<void> removeUserBookCover(String title, String author) async {
+    if (!isAuthenticated || userId == null) return;
+    final key =
+        '${title.toLowerCase().trim()}|${author.toLowerCase().trim()}';
+    await _client
+        .from('user_book_covers')
+        .delete()
+        .eq('user_id', userId!)
+        .eq('book_key', key);
   }
 
   // ─── Follows ──────────────────────────────────────────────────────────────

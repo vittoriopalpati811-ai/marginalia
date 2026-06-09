@@ -14,6 +14,9 @@ import '../../core/motion/airbnb_motion.dart';
 import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/auth_provider.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
 import '../../core/providers/books_provider.dart';
 import '../profile/profile_shared_widgets.dart' show favCoversProvider;
 import '../../core/l10n/l10n_extension.dart';
@@ -587,6 +590,9 @@ void editBookCover(BuildContext context, WidgetRef ref, Book book) {
                 await ref
                     .read(bookCoverControllerProvider)
                     .setCover(book.id, null);
+                await ref
+                    .read(supabaseServiceProvider)
+                    .removeUserBookCover(book.title, book.author);
                 ref.invalidate(favCoversProvider);
               },
             ),
@@ -616,6 +622,11 @@ Future<void> _pickAndUploadCover(
         .read(supabaseServiceProvider)
         .uploadBookCover(bytes, ext, book.supabaseId);
     await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+    // Single source of truth: mirror to the per-user cover store so the cover
+    // shows on favourites, reviews and to anyone visiting the profile.
+    await ref
+        .read(supabaseServiceProvider)
+        .setUserBookCover(book.title, book.author, url);
     ref.invalidate(favCoversProvider); // refresh profile favourite covers
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
@@ -653,6 +664,11 @@ Future<void> _pickFromCameraAndUpload(
         .read(supabaseServiceProvider)
         .uploadBookCover(bytes, ext, book.supabaseId);
     await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+    // Single source of truth: mirror to the per-user cover store so the cover
+    // shows on favourites, reviews and to anyone visiting the profile.
+    await ref
+        .read(supabaseServiceProvider)
+        .setUserBookCover(book.title, book.author, url);
     ref.invalidate(favCoversProvider); // refresh profile favourite covers
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
@@ -668,6 +684,201 @@ Future<void> _pickFromCameraAndUpload(
 
 Future<void> _searchCoverOnGoogle(Book book) async {
   final q = Uri.encodeComponent('${book.title} ${book.author} book cover');
+  final uri = Uri.parse('https://www.google.com/search?tbm=isch&q=$q');
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    // ignore — nothing to open
+  }
+}
+
+// ─── Cover editing BY TITLE/AUTHOR (profile favourites) ──────────────────────
+//
+// The profile favourites store only {title, author} (no book id). This variant
+// lets the pencil there edit a cover for ANY favourite — it writes the per-user
+// cover store (the single source of truth shown everywhere + to visitors) and
+// also mirrors to the local Isar book when one matches (so the library updates
+// offline too). The storage filename is a stable hash of title|author.
+
+String _coverStorageKey(String title, String author) {
+  final k = '${title.toLowerCase().trim()}|${author.toLowerCase().trim()}';
+  return sha1.convert(utf8.encode(k)).toString();
+}
+
+Book? _findLibraryBook(WidgetRef ref, String title, String author) {
+  final list = ref.read(booksProvider).asData?.value;
+  if (list == null) return null;
+  final t = title.toLowerCase().trim();
+  final a = author.toLowerCase().trim();
+  for (final b in list) {
+    if (b.title.toLowerCase().trim() == t &&
+        b.author.toLowerCase().trim() == a) {
+      return b;
+    }
+  }
+  for (final b in list) {
+    if (b.title.toLowerCase().trim() == t) return b;
+  }
+  return null;
+}
+
+void editBookCoverByKey(
+    BuildContext context, WidgetRef ref, String title, String author) {
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  final key = '${title.toLowerCase().trim()}|${author.toLowerCase().trim()}';
+  final hasCustom =
+      ((ref.read(favCoversProvider(null)).asData?.value ?? const {})[key] ?? '')
+          .isNotEmpty;
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: ScriptaColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (sheetCtx) => SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 38,
+            height: 4,
+            decoration: BoxDecoration(
+              color: ScriptaColors.rule,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 2),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                it ? 'Copertina del libro' : 'Book cover',
+                style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: ScriptaColors.ink),
+              ),
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined,
+                color: ScriptaColors.primaryDark),
+            title: Text(it ? 'Scegli dalla galleria' : 'Choose from gallery'),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _pickAndUploadCoverByKey(context, ref, title, author);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_camera_outlined,
+                color: ScriptaColors.primaryDark),
+            title: Text(it ? 'Scatta una foto' : 'Take a photo'),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _pickFromCameraByKey(context, ref, title, author);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.search_rounded,
+                color: ScriptaColors.primaryDark),
+            title: Text(it ? 'Cerca su Google' : 'Search on Google'),
+            subtitle: Text(
+              it
+                  ? 'Trova e scarica, poi scegline dalla galleria'
+                  : 'Find one, save it, then pick from gallery',
+              style:
+                  const TextStyle(fontSize: 12, color: ScriptaColors.inkFaint),
+            ),
+            onTap: () {
+              Navigator.of(sheetCtx).pop();
+              _searchCoverOnGoogleQuery(title, author);
+            },
+          ),
+          if (hasCustom)
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded,
+                  color: ScriptaColors.highlightRose),
+              title: Text(it ? 'Rimuovi copertina' : 'Remove cover'),
+              onTap: () async {
+                Navigator.of(sheetCtx).pop();
+                await ref
+                    .read(supabaseServiceProvider)
+                    .removeUserBookCover(title, author);
+                final b = _findLibraryBook(ref, title, author);
+                if (b != null) {
+                  await ref
+                      .read(bookCoverControllerProvider)
+                      .setCover(b.id, null);
+                }
+                ref.invalidate(favCoversProvider);
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<void> _applyCoverByKey(BuildContext context, WidgetRef ref, String title,
+    String author, Uint8List bytes, String ext) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
+    final url = await ref
+        .read(supabaseServiceProvider)
+        .uploadBookCover(bytes, ext, _coverStorageKey(title, author));
+    await ref
+        .read(supabaseServiceProvider)
+        .setUserBookCover(title, author, url);
+    final b = _findLibraryBook(ref, title, author);
+    if (b != null) {
+      await ref.read(bookCoverControllerProvider).setCover(b.id, url);
+    }
+    ref.invalidate(favCoversProvider);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
+  } catch (_) {
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it
+            ? 'Impossibile aggiornare la copertina'
+            : "Couldn't update the cover")));
+  }
+}
+
+Future<void> _pickAndUploadCoverByKey(
+    BuildContext context, WidgetRef ref, String title, String author) async {
+  final res = await FilePicker.platform
+      .pickFiles(type: FileType.image, withData: true);
+  if (res == null || res.files.isEmpty) return;
+  final bytes = res.files.first.bytes;
+  if (bytes == null) return;
+  var ext = (res.files.first.extension ?? 'jpg').toLowerCase();
+  if (ext == 'jpeg') ext = 'jpg';
+  if (context.mounted) await _applyCoverByKey(context, ref, title, author, bytes, ext);
+}
+
+Future<void> _pickFromCameraByKey(
+    BuildContext context, WidgetRef ref, String title, String author) async {
+  final shot = await ImagePicker()
+      .pickImage(source: ImageSource.camera, maxWidth: 1400, imageQuality: 88);
+  if (shot == null) return;
+  final bytes = await shot.readAsBytes();
+  var ext =
+      shot.name.contains('.') ? shot.name.split('.').last.toLowerCase() : 'jpg';
+  if (ext == 'jpeg') ext = 'jpg';
+  if (ext.isEmpty || ext.length > 4) ext = 'jpg';
+  if (context.mounted) await _applyCoverByKey(context, ref, title, author, bytes, ext);
+}
+
+Future<void> _searchCoverOnGoogleQuery(String title, String author) async {
+  final q = Uri.encodeComponent('$title $author book cover');
   final uri = Uri.parse('https://www.google.com/search?tbm=isch&q=$q');
   try {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
