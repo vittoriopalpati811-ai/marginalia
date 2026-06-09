@@ -118,13 +118,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Search bar
+                    // Search bar — clean solid rounded pill matching the app's
+                    // new filled fields (was a translucent frosted box that
+                    // didn't match the rest of the app's style).
                     Container(
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: Colors.white.withAlpha(30), width: 0.5),
+                        color: ScriptaColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x16000000),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: TextField(
                         controller: _controller,
@@ -132,23 +140,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         autofocus: false,
                         style: const TextStyle(
                           fontSize: 15,
-                          color: Color(0xFFF2F5EA),
+                          color: ScriptaColors.ink,
                           height: 1.4,
                         ),
-                        cursorColor: const Color(0xFFF2F5EA),
+                        cursorColor: ScriptaColors.primary,
                         decoration: InputDecoration(
                           hintText: context.l10n.searchHint,
-                          hintStyle: TextStyle(
-                            color: Colors.white.withAlpha(70),
+                          hintStyle: const TextStyle(
+                            color: ScriptaColors.inkMuted,
                             fontSize: 15,
                           ),
-                          prefixIcon: Icon(Icons.person_search_outlined,
-                              color: Colors.white.withAlpha(80), size: 20),
+                          prefixIcon: const Icon(Icons.search_outlined,
+                              color: ScriptaColors.inkMuted, size: 20),
                           suffixIcon: query.isNotEmpty
                               ? IconButton(
-                                  icon: Icon(Icons.clear,
-                                      color: Colors.white.withAlpha(80),
-                                      size: 18),
+                                  icon: const Icon(Icons.clear,
+                                      color: ScriptaColors.inkMuted, size: 18),
                                   onPressed: () {
                                     _controller.clear();
                                     ref
@@ -157,22 +164,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   },
                                 )
                               : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          border: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(16)),
                             borderSide: BorderSide.none,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          enabledBorder: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(16)),
                             borderSide: BorderSide.none,
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          focusedBorder: const OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(16)),
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.14),
+                          fillColor: ScriptaColors.surfaceElevated,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 14),
+                              horizontal: 14, vertical: 14),
                         ),
                         onChanged: (v) =>
                             ref.read(_userSearchQueryProvider.notifier).state =

@@ -640,9 +640,10 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           // bottom, even with the keyboard up.
           Container(
             constraints: const BoxConstraints(maxHeight: 200),
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: ScriptaColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(color: ScriptaColors.rule, width: 1),
             ),
             child: TextField(
@@ -685,9 +686,10 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           if (_showMentions && _mentionSuggestions.isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: ScriptaColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: ScriptaColors.rule, width: 1),
               ),
               child: Column(

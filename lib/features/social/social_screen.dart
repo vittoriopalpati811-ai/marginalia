@@ -108,6 +108,11 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
     final nameController = TextEditingController();
     final created = await showModalBottomSheet<bool>(
       context: context,
+      // Present on the ROOT navigator so the sheet floats above the shell's
+      // floating bottom navbar. Opened on the shell navigator it renders UNDER
+      // the navbar overlay (the navbar appeared in the middle of the sheet and
+      // the "Crea" button could be obscured).
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: ScriptaColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
@@ -683,16 +688,37 @@ class _CreateJamSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
+    // Reserve the floating navbar height (64) + the device safe-area bottom so
+    // the "Crea" button always clears the navbar overlay. Keep the sheet
+    // bottom-anchored and calm: with no autofocus it opens low and only lifts
+    // via `viewInsets` once the user taps the field (previously it auto-focused
+    // and climbed up toward the notch, making the section unusable).
+    const navBarHeight = 64.0;
+    final navInset = navBarHeight + safeBottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-          24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 32),
-      // Scrollable so the autofocused field + header + hint + button stay fully
-      // visible above the keyboard (and the top can't clip on short screens).
+      padding:
+          EdgeInsets.fromLTRB(24, 28, 24, math.max(viewInsets, navInset) + 28),
+      // Scrollable so the field + header + hint + button stay fully visible
+      // above the keyboard (and the top can't clip on short screens).
       child: SingleChildScrollView(
         child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Grab handle for a clearly bottom-anchored, non-fullscreen sheet.
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: ScriptaColors.rule,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Row(
             children: [
               Container(
@@ -726,7 +752,7 @@ class _CreateJamSheet extends StatelessWidget {
           const SizedBox(height: 24),
           TextField(
             controller: controller,
-            autofocus: true,
+            autofocus: false,
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               hintText: context.l10n.socialJamNameHint,
