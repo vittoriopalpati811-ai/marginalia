@@ -3,6 +3,7 @@ import Photos
 import UIKit
 import UserNotifications
 import WatchConnectivity
+import WidgetKit
 
 // Committed deliberately (like Info.plist) so `flutter create` on the Codemagic
 // runner leaves it untouched. Adds, on top of the default Flutter app delegate:
@@ -218,6 +219,17 @@ import WatchConnectivity
   override func applicationDidBecomeActive(_ application: UIApplication) {
     super.applicationDidBecomeActive(application)
     UIApplication.shared.applicationIconBadgeNumber = 0
+
+    // Force WidgetKit to rebuild EVERY widget's timeline whenever the app comes
+    // to the foreground. The Dart side (widgetSyncProvider) re-writes the shared
+    // App Group payload on resume and calls home_widget's updateWidget per kind,
+    // but a belt-and-braces reloadAllTimelines() here guarantees both the home
+    // and lock-screen widgets (ScriptaWidget + ScriptaStats, and any future
+    // kind) actually re-render against the freshly saved data — the fix for
+    // "widgets stay stale even after reopening the app".
+    if #available(iOS 14.0, *) {
+      WidgetCenter.shared.reloadAllTimelines()
+    }
   }
 
   // ── Watch bridge ─────────────────────────────────────────────────────────────

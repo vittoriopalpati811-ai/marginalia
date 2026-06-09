@@ -31,19 +31,34 @@ class PrivacyPolicyScreen extends StatefulWidget {
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   WebViewController? _controller;
 
+  // Language is mutable so the in-app EN/IT toggle actually swaps the rendered
+  // document. The bundled HTML's own language links can't navigate (JS is
+  // disabled and the page is injected via loadHtmlString, not a real URL), so
+  // the toggle has to live in the app chrome and reload the other asset.
+  late bool _isItalian;
+
   // webview_flutter only ships mobile implementations (iOS/Android).
   bool get _webViewSupported =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.iOS ||
           defaultTargetPlatform == TargetPlatform.android);
 
-  String get _assetPath => widget.isItalian
+  String get _assetPath => _isItalian
       ? 'docs/privacy/it/index.html'
       : 'docs/privacy/index.html';
 
   @override
   void initState() {
     super.initState();
+    _isItalian = widget.isItalian;
+    if (_webViewSupported) _initWebView();
+  }
+
+  void _toggleLanguage() {
+    setState(() {
+      _isItalian = !_isItalian;
+      _controller = null; // show the spinner while the other asset loads
+    });
     if (_webViewSupported) _initWebView();
   }
 
@@ -70,6 +85,21 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(context.l10n.privacyTitle),
+        actions: [
+          // The label shows the language you'll switch TO.
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: _toggleLanguage,
+              style: TextButton.styleFrom(
+                foregroundColor: ScriptaColors.sienna,
+                textStyle: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.w700),
+              ),
+              child: Text(_isItalian ? 'EN' : 'IT'),
+            ),
+          ),
+        ],
       ),
       body: _webViewSupported
           ? (_controller == null
@@ -81,7 +111,7 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                 )
               : WebViewWidget(controller: _controller!))
           : _BrowserFallback(
-              url: widget.isItalian
+              url: _isItalian
                   ? PrivacyPolicyScreen._itUrl
                   : PrivacyPolicyScreen._enUrl,
             ),

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Marginalia — iOS app metadata.
+  Scripta — iOS app metadata.
 
   This file is committed BEFORE running `flutter create`, so the
   command will see it exists and leave it alone. After
@@ -34,7 +34,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Marginalia</string>
+	<string>Scripta</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -135,19 +135,19 @@
 		</dict>
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Marginalia needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
+	<string>Scripta needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Marginalia saves your highlight story image to your photo library when you tap “Save photo”.</string>
+	<string>Scripta saves your highlight story image to your photo library when you tap “Save photo”.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Marginalia reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
+	<string>Scripta reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Marginalia reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
+	<string>Scripta reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Marginalia reads your step count and cycle phase on your device to gently tailor your daily reading highlight. Your health data stays on your device — only a coarse mood hint, with no health details, informs your phrase.</string>
+	<string>Scripta reads your step count and cycle phase on your device to gently tailor your daily reading highlight. Your health data stays on your device — only a coarse mood hint, with no health details, informs your phrase.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Marginalia does not write any data to Apple Health. This key is required because the linked Health framework references write APIs; the app requests read access only.</string>
+	<string>Scripta does not write any data to Apple Health. This key is required because the linked Health framework references write APIs; the app requests read access only.</string>
 	<!--
-	  Export-compliance declaration. Marginalia uses only Apple's stock
+	  Export-compliance declaration. Scripta uses only Apple's stock
 	  HTTPS/TLS (Supabase, the `http` package) — i.e. standard encryption
 	  that is EXEMPT from US export rules. Declaring this here auto-answers
 	  the "Missing Compliance" question in TestFlight/App Store Connect, so

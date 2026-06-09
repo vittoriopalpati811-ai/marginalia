@@ -22,8 +22,17 @@ import '../import/paste_import_screen.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/services/gender_service.dart';
 import '../widget/widget_preview_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
+
+/// Real app version + build number from the platform bundle (shown in Settings
+/// instead of the old hardcoded "1.0.0"). Cached for the app's lifetime.
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  final build = info.buildNumber;
+  return build.isEmpty ? 'v${info.version}' : 'v${info.version} ($build)';
+});
 
 final myProfileProvider =
     FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
@@ -467,10 +476,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _SettingsTile(
                 icon: Icons.info_outline,
                 label: context.l10n.settingsVersion,
-                trailing: const Text(
-                  '1.0.0',
-                  style: TextStyle(
-                      color: ScriptaColors.inkFaint, fontSize: 13),
+                trailing: Consumer(
+                  builder: (context, ref, _) {
+                    final v = ref.watch(appVersionProvider);
+                    return Text(
+                      v.asData?.value ?? '…',
+                      style: const TextStyle(
+                          color: ScriptaColors.inkFaint, fontSize: 13),
+                    );
+                  },
                 ),
               ),
 
@@ -704,12 +718,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               body: ctx.l10n.settingsDataWeatherBody,
             ),
             const SizedBox(height: 8),
-            Text(
-              ctx.l10n.settingsDataPledge,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: ScriptaColors.sienna,
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                ctx.l10n.settingsDataPledge,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: ScriptaColors.sienna,
+                ),
               ),
             ),
           ],

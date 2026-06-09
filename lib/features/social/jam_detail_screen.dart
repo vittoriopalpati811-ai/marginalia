@@ -28,6 +28,20 @@ final jamDetailProvider =
   (ref, jamId) => ref.watch(supabaseServiceProvider).fetchJam(jamId),
 );
 
+/// Quiz results logged by this jam's members (each carries the member's
+/// display_name + completion date). Feeds the in-jam results board.
+final jamQuizResultsProvider =
+    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
+  (ref, jamId) => ref.watch(supabaseServiceProvider).fetchJamQuizResults(jamId),
+);
+
+/// Ripasso results logged by this jam's members.
+final jamRipassoResultsProvider =
+    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
+  (ref, jamId) =>
+      ref.watch(supabaseServiceProvider).fetchJamRipassoResults(jamId),
+);
+
 /// Highlights shared in this jam, ordered by most-recent.
 final jamHighlightsProvider =
     FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>(
@@ -608,6 +622,11 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           // ── Feature cards ──────────────────────────────────────────────
           SliverToBoxAdapter(
             child: _JamFeaturesRow(jamId: widget.jamId),
+          ),
+
+          // ── Risultati (Quiz + Ripasso dei membri della Jam) ────────────
+          SliverToBoxAdapter(
+            child: _JamResultsSection(jamId: widget.jamId),
           ),
 
           // ── Membri ─────────────────────────────────────────────────────
@@ -1820,6 +1839,176 @@ class _BookOfMonthCard extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Jam results board (Quiz + Ripasso flowing in from members) ───────────────
+
+class _MemberResult {
+  _MemberResult({required this.name});
+  String name;
+  String? quizDate;
+  int? quizScore;
+  int? quizTotal;
+  String? ripassoDate;
+  int? ripassoCards;
+
+  bool get hasAny =>
+      (quizScore != null && quizTotal != null) ||
+      (ripassoCards != null && ripassoCards! > 0);
+}
+
+/// Shows each member's latest Quiz + Ripasso result, so everyone in the Jam
+/// sees both their own and others' activity (the results "flow into" the Jam
+/// automatically as quizzes / reviews are completed). Hidden until there's at
+/// least one result to show.
+class _JamResultsSection extends ConsumerWidget {
+  const _JamResultsSection({required this.jamId});
+  final String jamId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final quiz =
+        ref.watch(jamQuizResultsProvider(jamId)).asData?.value ?? const [];
+    final ripasso =
+        ref.watch(jamRipassoResultsProvider(jamId)).asData?.value ?? const [];
+
+    String dateOf(Map<String, dynamic> r) =>
+        (r['completed_on'] ?? '').toString();
+    String nameOf(Map<String, dynamic> r) {
+      final prof = r['profiles'] as Map<String, dynamic>?;
+      return (prof?['display_name'] ?? '').toString();
+    }
+
+    final byUser = <String, _MemberResult>{};
+    _MemberResult slot(String uid, String name) {
+      final m = byUser.putIfAbsent(uid, () => _MemberResult(name: name));
+      if (m.name.isEmpty && name.isNotEmpty) m.name = name;
+      return m;
+    }
+
+    // Keep the most recent result per member in each category.
+    for (final r in quiz) {
+      final uid = (r['user_id'] ?? '').toString();
+      if (uid.isEmpty) continue;
+      final m = slot(uid, nameOf(r));
+      final d = dateOf(r);
+      if (m.quizDate == null || d.compareTo(m.quizDate!) >= 0) {
+        m.quizDate = d;
+        m.quizScore = (r['score'] as num?)?.toInt();
+        m.quizTotal = (r['total'] as num?)?.toInt();
+      }
+    }
+    for (final r in ripasso) {
+      final uid = (r['user_id'] ?? '').toString();
+      if (uid.isEmpty) continue;
+      final m = slot(uid, nameOf(r));
+      final d = dateOf(r);
+      if (m.ripassoDate == null || d.compareTo(m.ripassoDate!) >= 0) {
+        m.ripassoDate = d;
+        m.ripassoCards = (r['cards_reviewed'] as num?)?.toInt();
+      }
+    }
+
+    final members = byUser.values.where((m) => m.hasAny).toList();
+    if (members.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ScriptaColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: ScriptaColors.ruleFaint, width: 0.8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.emoji_events_outlined,
+                    size: 16, color: ScriptaColors.primaryDark),
+                const SizedBox(width: 8),
+                Text(
+                  it ? 'RISULTATI' : 'RESULTS',
+                  style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: ScriptaColors.primaryDark),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            for (final m in members)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        m.name.isEmpty ? (it ? 'Lettore' : 'Reader') : m.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: ScriptaColors.ink),
+                      ),
+                    ),
+                    if (m.quizScore != null && m.quizTotal != null) ...[
+                      _ResultPill(
+                          icon: Icons.quiz_outlined,
+                          label: 'Quiz ${m.quizScore}/${m.quizTotal}'),
+                      const SizedBox(width: 6),
+                    ],
+                    if (m.ripassoCards != null && m.ripassoCards! > 0)
+                      _ResultPill(
+                        icon: Icons.local_fire_department_rounded,
+                        label: it
+                            ? 'Ripasso ${m.ripassoCards}'
+                            : 'Review ${m.ripassoCards}',
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResultPill extends StatelessWidget {
+  const _ResultPill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: ScriptaColors.primaryFaint,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: ScriptaColors.primaryDark),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.manrope(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: ScriptaColors.primaryDark),
+          ),
+        ],
       ),
     );
   }

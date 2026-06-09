@@ -21,8 +21,11 @@ import 'reviews_tab.dart';
 import 'activity_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
+import '../library/book_detail_screen.dart' show editBookCover;
 import '../reader/book_info_screen.dart';
 import '../stats/reading_stats_card.dart';
+import '../../core/providers/books_provider.dart';
+import 'profile_shared_widgets.dart' show favCoversProvider, favCoverKey;
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
 
@@ -2208,6 +2211,52 @@ class _FavBookTile extends ConsumerWidget {
     final title  = book['title']  ?? '';
     final author = book['author'] ?? '';
 
+    // Custom per-user cover (also shown to anyone who visits this profile).
+    final coverUrl = title.isEmpty
+        ? null
+        : ref
+            .watch(favCoversProvider(null))
+            .asData
+            ?.value[favCoverKey(title, author)];
+
+    // Pencil action: resolve this favourite to the matching library book, then
+    // open the standard cover-edit sheet (gallery / camera / Google / remove).
+    // Most favourites ARE in the user's library; if not, we nudge them.
+    void editCover() {
+      final list = ref.read(booksProvider).asData?.value.cast<dynamic>();
+      final tnorm = title.toLowerCase().trim();
+      final anorm = author.toLowerCase().trim();
+      dynamic match;
+      if (list != null) {
+        for (final b in list) {
+          final bt = (b.title as String? ?? '').toLowerCase().trim();
+          final ba = (b.author as String? ?? '').toLowerCase().trim();
+          if (bt == tnorm && ba == anorm) {
+            match = b;
+            break;
+          }
+        }
+        if (match == null) {
+          for (final b in list) {
+            if ((b.title as String? ?? '').toLowerCase().trim() == tnorm) {
+              match = b;
+              break;
+            }
+          }
+        }
+      }
+      if (match != null) {
+        editBookCover(context, ref, match);
+      } else {
+        final it = Localizations.localeOf(context).languageCode == 'it';
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+          content: Text(it
+              ? 'Aggiungi il libro alla libreria per cambiarne la copertina'
+              : 'Add this book to your library first to change its cover'),
+        ));
+      }
+    }
+
     // Empty placeholder
     if (title.isEmpty) {
       return Container(
@@ -2263,7 +2312,7 @@ class _FavBookTile extends ConsumerWidget {
         fit: StackFit.expand,
         children: [
           // ── Editorial cover ─────────────────────────────────────────────
-          BookEditorialCover(title: title, author: author),
+          BookEditorialCover(title: title, author: author, coverUrl: coverUrl),
 
           // ── Gradient for text legibility ────────────────────────────────
           Positioned(
@@ -2316,6 +2365,25 @@ class _FavBookTile extends ConsumerWidget {
                   ),
                 ],
               ],
+            ),
+          ),
+
+          // ── Edit-cover pencil (own favourites only) ─────────────────────
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: editCover,
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(102),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.edit_outlined,
+                    size: 13, color: Color(0xFFEDE5D5)),
+              ),
             ),
           ),
         ],

@@ -44,7 +44,7 @@ class MainActivity : FlutterActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     put(
                         MediaStore.Images.Media.RELATIVE_PATH,
-                        Environment.DIRECTORY_PICTURES + "/Marginalia"
+                        Environment.DIRECTORY_PICTURES + "/Scripta"
                     )
                     put(MediaStore.Images.Media.IS_PENDING, 1)
                 }

@@ -18,6 +18,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/review_provider.dart';
 import '../../core/theme.dart';
 import 'quiz_generator.dart';
+import 'quiz_lock.dart';
 
 class QuizScreen extends ConsumerStatefulWidget {
   const QuizScreen({super.key, this.bookTitle, this.appBarTitle});
@@ -47,6 +48,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   final Set<int> _wrongIds = {};
   int _scheduled = 0;
 
+  // Daily-quiz 08:00 lock (general quiz only; a per-book quiz launched from a
+  // Jam is not throttled). When locked, the screen shows a "come back at 08:00"
+  // state instead of loading questions.
+  bool _locked = false;
+
   bool get _it => Localizations.localeOf(context).languageCode == 'it';
 
   @override
@@ -57,6 +63,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
   Future<void> _load() async {
     try {
+      // Daily-quiz lock: only the general quiz (no specific book) is a once-a-
+      // day ritual. While it's locked, show the completed state.
+      if (widget.bookTitle == null) {
+        final lockedUntil = await quizLockedUntil();
+        if (lockedUntil != null) {
+          if (!mounted) return;
+          setState(() {
+            _locked = true;
+            _loading = false;
+          });
+          return;
+        }
+      }
       final highlights = await ref.read(allHighlightsProvider.future);
       final filter = widget.bookTitle?.trim().toLowerCase();
       final sources = highlights
@@ -95,6 +114,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       setState(() => _index = _questions.length); // → results
       _feedRipasso();
       _shareQuizToJams();
+      _markCompleted();
       return;
     }
     setState(() {
@@ -129,10 +149,79 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   // jam-mates (mirrors the Ripasso completion share). Never blocks the UI.
   Future<void> _shareQuizToJams() async {
     try {
-      await ref
-          .read(supabaseServiceProvider)
-          .notifyJamMatesQuizDone(_score, _questions.length);
+      final svc = ref.read(supabaseServiceProvider);
+      await svc.notifyJamMatesQuizDone(_score, _questions.length);
+      // Structured result so it surfaces in the Jam results feed (not just a
+      // notification) — visible to the user AND every Jam they belong to.
+      await svc.logQuizResultsToJams(_score, _questions.length);
     } catch (_) {/* best-effort */}
+  }
+
+  // Lock the general daily quiz until 08:00 tomorrow once it's finished.
+  Future<void> _markCompleted() async {
+    if (widget.bookTitle != null) return; // per-book quizzes aren't throttled
+    await markQuizCompletedNow();
+    ref.invalidate(quizLockProvider);
+  }
+
+  // Shown when the daily quiz has already been done — locked until 08:00 the
+  // next morning (mirrors Ripasso's once-a-day rhythm).
+  Widget _buildLocked(bool it) {
+    return Scaffold(
+      backgroundColor: ScriptaColors.background,
+      appBar: AppBar(
+        backgroundColor: ScriptaColors.background,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: ScriptaColors.ink,
+        title: Text(widget.appBarTitle ?? 'Quiz',
+            style: GoogleFonts.manrope(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                color: ScriptaColors.ink)),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 76,
+                height: 76,
+                decoration: const BoxDecoration(
+                  color: ScriptaColors.primaryFaint,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded,
+                    size: 40, color: ScriptaColors.primaryDark),
+              ),
+              const SizedBox(height: 22),
+              Text(
+                it ? 'Quiz completato' : 'Quiz complete',
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: ScriptaColors.ink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                it
+                    ? 'Torna domani alle 08:00 per il prossimo quiz.'
+                    : 'Come back tomorrow at 08:00 for the next quiz.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.manrope(
+                  fontSize: 14.5,
+                  height: 1.5,
+                  color: ScriptaColors.inkMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _label(bool it, QuizKind kind) {
@@ -149,6 +238,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     final it = _it;
+    if (_locked) return _buildLocked(it);
     final inQuestion =
         !_loading && _questions.isNotEmpty && _index < _questions.length;
     return Scaffold(

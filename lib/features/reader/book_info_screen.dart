@@ -29,6 +29,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
   bool _loading = true;
   String? _plot;
   List<String> _categories = const [];
+  List<String> _genres = const [];
   String? _year;
   int? _pages;
 
@@ -78,6 +79,40 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
     return null;
   }
 
+  /// Normalise Google Books `volumeInfo.categories` (e.g.
+  /// ["Fiction / Science Fiction", "Fiction"]) into a clean, de-duplicated list
+  /// of human-readable category strings, preserving discovery order.
+  List<String> _parseCategories(dynamic v) {
+    if (v is! List) return const [];
+    final out = <String>[];
+    final seen = <String>{};
+    for (final raw in v) {
+      final c = raw.toString().trim();
+      if (c.isEmpty) continue;
+      final key = c.toLowerCase();
+      if (seen.add(key)) out.add(c);
+    }
+    return out;
+  }
+
+  /// Derive primary genres from the categories. Google paths look like
+  /// "Fiction / Science Fiction / Space Opera"; the leaf token ("Space Opera")
+  /// is the most specific, useful genre. We take the leaf of each category,
+  /// de-duplicate case-insensitively, and cap the count to keep the row tidy.
+  List<String> _deriveGenres(List<String> categories) {
+    final out = <String>[];
+    final seen = <String>{};
+    for (final c in categories) {
+      final parts =
+          c.split('/').map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+      if (parts.isEmpty) continue;
+      final leaf = parts.last;
+      final key = leaf.toLowerCase();
+      if (seen.add(key)) out.add(leaf);
+    }
+    return out.take(6).toList();
+  }
+
   Future<void> _fetch() async {
     final coreTitle = _coreTitle(widget.title);
     final normAuthor = _normAuthor(widget.author);
@@ -117,10 +152,27 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
             // Reject any non-Italian edition — no foreign-language plots.
             final lang = (vi['language'] ?? '').toString().toLowerCase();
             if (lang != 'it') continue;
+            // Categories are language-agnostic shelving labels: take them from
+            // the first Italian edition that carries any, even if it has no
+            // synopsis, so the Categorie/Generi sections can still render.
+            if (_categories.isEmpty) {
+              final cats = _parseCategories(vi['categories']);
+              if (cats.isNotEmpty) {
+                _categories = cats;
+                _genres = _deriveGenres(cats);
+              }
+            }
             final desc = _coerceText(vi['description']);
             if (desc == null) continue;
             // First ITALIAN item with a real description (synopsis) wins.
             _plot = desc;
+            // Prefer the categories that ship with the winning (described)
+            // edition when it has its own.
+            final descCats = _parseCategories(vi['categories']);
+            if (descCats.isNotEmpty) {
+              _categories = descCats;
+              _genres = _deriveGenres(descCats);
+            }
             final pub = vi['publishedDate'];
             if (pub is String && pub.length >= 4) _year = pub.substring(0, 4);
             final pc = vi['pageCount'];
@@ -284,11 +336,11 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                 ),
               ],
 
-              // ── Overview (Italian synopsis only; whole section hidden when
-              //    no Italian plot is available — no placeholder, dynamic for
-              //    any user-added book) ─────────────────────────────────────────
+              // ── Trama / Plot (Italian synopsis only; whole section hidden
+              //    when no Italian plot is available — no placeholder, dynamic
+              //    for any user-added book) ──────────────────────────────────────
               if (_plot != null) ...[
-                sectionHeader(it ? 'Trama' : 'Overview'),
+                sectionHeader(it ? 'Trama' : 'Plot'),
                 Text(
                   _plot!,
                   style: GoogleFonts.ebGaramond(
@@ -299,7 +351,39 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                 ),
               ],
 
-              // ── Categories ──────────────────────────────────────────────────
+              // ── Generi / Genres (most-specific leaf of each category;
+              //    accented sage chips. Hidden when none can be derived). ───────
+              if (_genres.isNotEmpty) ...[
+                sectionHeader(it ? 'Generi' : 'Genres'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _genres
+                      .map((g) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: ScriptaColors.siennaFaint,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: ScriptaColors.siennaLight,
+                                  width: 0.8),
+                            ),
+                            child: Text(
+                              g,
+                              style: GoogleFonts.manrope(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: ScriptaColors.primaryDark,
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+
+              // ── Categorie / Categories (full Google shelving paths;
+              //    neutral chips. Hidden when none are available). ──────────────
               if (_categories.isNotEmpty) ...[
                 sectionHeader(it ? 'Categorie' : 'Categories'),
                 Wrap(

@@ -1,6 +1,6 @@
 name: scripta
 description: Riscopri i tuoi highlight Kindle attraverso widget intelligenti e cerchie di lettura.
-version: 1.0.54+1
+version: 1.1.0+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -38,6 +38,12 @@ dependencies:
   file_picker: ^8.1.2
   # Camera + gallery for custom book covers (camera path needs image_picker).
   image_picker: ^1.1.2
+  # Real app version/build shown in Settings (was hardcoded "1.0.0").
+  package_info_plus: ^8.0.0
+  # Lightweight key/value store for the daily-quiz 08:00 lock (avoids adding an
+  # Isar model + build_runner regen). Already present transitively via
+  # supabase_flutter, pinned here so the import is an explicit dependency.
+  shared_preferences: ^2.2.2
 
   # Kobo import — reads the user's KoboReader.sqlite (Bookmark + content tables)
   # to import highlights. sqlite3_flutter_libs bundles the native sqlite3 for iOS.

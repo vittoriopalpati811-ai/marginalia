@@ -4,9 +4,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
+import '../../core/models/book.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/books_provider.dart';
 import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../library/book_cover.dart';
 
 // ─── Jam Book Voting Screen ───────────────────────────────────────────────────
 
@@ -326,6 +329,12 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ─── Propose sheet ────────────────────────────────────────────────────────────
+//
+// The user proposes the book of the month by picking one from their OWN
+// library (booksProvider) instead of free-typing title/author. The selected
+// book is submitted with the exact same fields the old typed form used —
+// proposeBook(jamId, title, author) — so the proposal table is unchanged.
+// A search field filters the list by title/author once the library is long.
 
 class _ProposeSheet extends ConsumerStatefulWidget {
   const _ProposeSheet({required this.jamId, required this.onProposed});
@@ -337,39 +346,58 @@ class _ProposeSheet extends ConsumerStatefulWidget {
 }
 
 class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
-  final _titleCtrl = TextEditingController();
-  final _authorCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
+  final _searchCtrl = TextEditingController();
+  String _query = '';
   bool _loading = false;
 
   @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(() {
+      final q = _searchCtrl.text.trim().toLowerCase();
+      if (q != _query) setState(() => _query = q);
+    });
+  }
+
+  @override
   void dispose() {
-    _titleCtrl.dispose();
-    _authorCtrl.dispose();
-    _descCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (_titleCtrl.text.trim().isEmpty) return;
+  Future<void> _propose(Book book) async {
+    if (_loading) return;
     setState(() => _loading = true);
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
     try {
+      // Mirror the original typed-form call exactly: proposeBook only takes
+      // jamId/title/author/description. The library book supplies a clean
+      // title + author; description stays null (the form's "why" was optional).
       await ref.read(supabaseServiceProvider).proposeBook(
             jamId: widget.jamId,
-            title: _titleCtrl.text.trim(),
-            author: _authorCtrl.text.trim().isEmpty
-                ? null
-                : _authorCtrl.text.trim(),
-            description: _descCtrl.text.trim().isEmpty
-                ? null
-                : _descCtrl.text.trim(),
+            title: book.title.trim(),
+            author: book.author.trim().isEmpty ? null : book.author.trim(),
+            description: null,
           );
       widget.onProposed();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isIt
+                ? '"${book.title}" proposto come libro del mese.'
+                : '"${book.title}" proposed as book of the month.'),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${context.l10n.errorPrefix(e.toString())}')),
+          SnackBar(
+            content: Text(isIt
+                ? 'Impossibile proporre il libro. Riprova.'
+                : 'Could not propose the book. Please try again.'),
+          ),
         );
       }
     } finally {
@@ -379,31 +407,34 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    final booksAsync = ref.watch(booksProvider);
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final maxHeight = MediaQuery.of(context).size.height * 0.78;
+
     return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: const BoxDecoration(
         color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 24, 24, bottom + 24),
-      // Scrollable so the three stacked fields (title/author/why) are never
-      // clipped at the top when the keyboard pushes the sheet up.
-      child: SingleChildScrollView(
-        child: Column(
+      padding: EdgeInsets.fromLTRB(24, 16, 24, bottom + 16),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Handle
           Center(
             child: Container(
-              width: 36, height: 4,
+              width: 36,
+              height: 4,
               decoration: BoxDecoration(
                 color: ScriptaColors.rule,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Text(
             context.l10n.jamVoteProposeBook,
             style: GoogleFonts.manrope(
@@ -413,36 +444,211 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
               color: ScriptaColors.ink,
             ),
           ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: _titleCtrl,
-            decoration: InputDecoration(hintText: context.l10n.jamVoteTitleFieldHint, prefixIcon: const Icon(Icons.book_outlined)),
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _authorCtrl,
-            decoration: InputDecoration(hintText: context.l10n.jamVoteAuthorFieldHint, prefixIcon: const Icon(Icons.person_outline)),
-            textCapitalization: TextCapitalization.words,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _descCtrl,
-            decoration: InputDecoration(hintText: context.l10n.jamVoteWhyFieldHint),
-            maxLines: 3,
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 52,
-            child: FilledButton(
-              onPressed: _loading ? null : _submit,
-              child: _loading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(context.l10n.jamVoteProposeCta),
+          const SizedBox(height: 4),
+          Text(
+            isIt
+                ? 'Scegli un libro dalla tua libreria.'
+                : 'Pick a book from your library.',
+            style: GoogleFonts.manrope(
+              fontSize: 13,
+              color: ScriptaColors.inkMuted,
             ),
           ),
+          const SizedBox(height: 16),
+          booksAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(
+                child: CircularProgressIndicator(
+                    color: ScriptaColors.primaryDark, strokeWidth: 1.5),
+              ),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Text(
+                isIt
+                    ? 'Impossibile caricare la libreria.'
+                    : 'Could not load your library.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.manrope(
+                    fontSize: 14, color: ScriptaColors.inkMuted),
+              ),
+            ),
+            data: (books) {
+              if (books.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 36),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.menu_book_outlined,
+                          size: 44, color: ScriptaColors.inkFaint),
+                      const SizedBox(height: 14),
+                      Text(
+                        isIt
+                            ? 'La tua libreria è vuota.'
+                            : 'Your library is empty.',
+                        style: GoogleFonts.manrope(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: ScriptaColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isIt
+                            ? 'Importa o aggiungi un libro per poterlo proporre.'
+                            : 'Import or add a book before you can propose one.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.manrope(
+                          fontSize: 13,
+                          color: ScriptaColors.inkMuted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final filtered = _query.isEmpty
+                  ? books
+                  : books
+                      .where((b) =>
+                          b.title.toLowerCase().contains(_query) ||
+                          b.author.toLowerCase().contains(_query))
+                      .toList();
+
+              return Flexible(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Search filter — shown once the library is non-trivial.
+                    if (books.length > 6) ...[
+                      TextField(
+                        controller: _searchCtrl,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          hintText: isIt
+                              ? 'Cerca per titolo o autore'
+                              : 'Search by title or author',
+                          prefixIcon: const Icon(Icons.search),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (filtered.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Text(
+                          isIt
+                              ? 'Nessun libro corrisponde alla ricerca.'
+                              : 'No book matches your search.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.manrope(
+                              fontSize: 14, color: ScriptaColors.inkMuted),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(bottom: 8),
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (_, i) => _LibraryBookRow(
+                            book: filtered[i],
+                            enabled: !_loading,
+                            onTap: () => _propose(filtered[i]),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Library book row ─────────────────────────────────────────────────────────
+
+class _LibraryBookRow extends StatelessWidget {
+  const _LibraryBookRow({
+    required this.book,
+    required this.onTap,
+    required this.enabled,
+  });
+
+  final Book book;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Material(
+        color: ScriptaColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: ScriptaColors.rule, width: 0.8),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 40,
+                  height: 56,
+                  child: BookEditorialCover(
+                    title: book.title,
+                    author: book.author,
+                    coverUrl: book.coverUrl,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        book.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: ScriptaColors.ink,
+                        ),
+                      ),
+                      if (book.author.trim().isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          book.author.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ScriptaTextStyles.bookAuthor,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.add_circle_outline,
+                    size: 22, color: ScriptaColors.primaryDark),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -7,6 +7,10 @@ import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
+import 'jam_detail_screen.dart' show jamDetailProvider;
+
+/// Error red used across the app's input/error styling (see [ScriptaTheme]).
+const _kDangerColor = Color(0xFF8B2E2E);
 
 // ─── Jam Challenge Screen ─────────────────────────────────────────────────────
 
@@ -23,6 +27,13 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
   Widget build(BuildContext context) {
     final challengesAsync = ref.watch(jamChallengesProvider(widget.jamId));
     final currentUser = ref.watch(currentUserProvider);
+    // The Jam owner may manage every challenge; a challenge creator may manage
+    // their own. owner_id comes from the single-jam row.
+    final jamOwnerId = ref.watch(jamDetailProvider(widget.jamId)).maybeWhen(
+          data: (j) => j?['owner_id'] as String?,
+          orElse: () => null,
+        );
+    final currentUserId = currentUser?.id ?? '';
 
     return Scaffold(
       backgroundColor: ScriptaColors.background,
@@ -53,14 +64,24 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                 itemCount: challenges.length,
-                itemBuilder: (_, i) => _ChallengeCard(
-                  data: challenges[i],
-                  currentUserId: currentUser?.id ?? '',
-                  onProgressUpdate: (count) => _updateProgress(
-                    challenges[i]['id'] as String,
-                    count,
-                  ),
-                ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0),
+                itemBuilder: (_, i) {
+                  final challenge = challenges[i];
+                  final createdBy = challenge['created_by'] as String?;
+                  final canManage = currentUserId.isNotEmpty &&
+                      (createdBy == currentUserId ||
+                          (jamOwnerId != null && jamOwnerId == currentUserId));
+                  return _ChallengeCard(
+                    data: challenge,
+                    currentUserId: currentUserId,
+                    canManage: canManage,
+                    onProgressUpdate: (count) => _updateProgress(
+                      challenge['id'] as String,
+                      count,
+                    ),
+                    onEdit: () => _showEditSheet(challenge),
+                    onDelete: () => _confirmDelete(challenge),
+                  ).animate(delay: (i * 40).ms).fadeIn(duration: 280.ms).slideY(begin: 0.04, end: 0);
+                },
               ),
         loading: () => const Center(
           child: CircularProgressIndicator(color: ScriptaColors.primaryDark, strokeWidth: 1.5),
@@ -92,11 +113,87 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
       isScrollControlled: true,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CreateChallengeSheet(
+      builder: (_) => _ChallengeFormSheet(
         jamId: widget.jamId,
-        onCreated: () => ref.invalidate(jamChallengesProvider(widget.jamId)),
+        onSaved: () => ref.invalidate(jamChallengesProvider(widget.jamId)),
       ),
     );
+  }
+
+  void _showEditSheet(Map<String, dynamic> challenge) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ChallengeFormSheet(
+        jamId: widget.jamId,
+        existing: challenge,
+        onSaved: () => ref.invalidate(jamChallengesProvider(widget.jamId)),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> challenge) async {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    final title = challenge['title'] as String? ?? '';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ScriptaColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isIt ? 'Eliminare la sfida?' : 'Delete challenge?',
+          style: GoogleFonts.manrope(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+            color: ScriptaColors.ink,
+          ),
+        ),
+        content: Text(
+          isIt
+              ? 'La sfida "$title" e tutti i progressi associati verranno eliminati definitivamente.'
+              : 'The challenge "$title" and all related progress will be permanently deleted.',
+          style: GoogleFonts.manrope(fontSize: 14, color: ScriptaColors.inkMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              isIt ? 'Annulla' : 'Cancel',
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w600, color: ScriptaColors.inkMuted),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: _kDangerColor),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              isIt ? 'Elimina' : 'Delete',
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w700, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(supabaseServiceProvider).deleteChallenge(challenge['id'] as String);
+      ref.invalidate(jamChallengesProvider(widget.jamId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isIt ? 'Sfida eliminata' : 'Challenge deleted')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.l10n.errorPrefix(e.toString())}')),
+        );
+      }
+    }
   }
 }
 
@@ -106,12 +203,18 @@ class _ChallengeCard extends StatefulWidget {
   const _ChallengeCard({
     required this.data,
     required this.currentUserId,
+    required this.canManage,
     required this.onProgressUpdate,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final Map<String, dynamic> data;
   final String currentUserId;
+  final bool canManage;
   final void Function(int) onProgressUpdate;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   State<_ChallengeCard> createState() => _ChallengeCardState();
@@ -132,6 +235,53 @@ class _ChallengeCardState extends State<_ChallengeCard> {
   DateTime? get _deadline {
     final s = widget.data['deadline'] as String?;
     return s != null ? DateTime.tryParse(s) : null;
+  }
+
+  Widget _buildManageMenu(BuildContext context) {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, size: 20, color: ScriptaColors.inkFaint),
+      tooltip: isIt ? 'Opzioni' : 'Options',
+      padding: EdgeInsets.zero,
+      splashRadius: 18,
+      color: ScriptaColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onSelected: (value) {
+        if (value == 'edit') {
+          widget.onEdit();
+        } else if (value == 'delete') {
+          widget.onDelete();
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              const Icon(Icons.edit_outlined, size: 18, color: ScriptaColors.ink),
+              const SizedBox(width: 12),
+              Text(
+                isIt ? 'Modifica' : 'Edit',
+                style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: ScriptaColors.ink),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              const Icon(Icons.delete_outline, size: 18, color: _kDangerColor),
+              const SizedBox(width: 12),
+              Text(
+                isIt ? 'Elimina' : 'Delete',
+                style: GoogleFonts.manrope(fontSize: 14, fontWeight: FontWeight.w600, color: _kDangerColor),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -165,6 +315,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
                   ),
                 ),
               ),
+              if (widget.canManage) _buildManageMenu(context),
             ],
           ),
           if ((widget.data['description'] as String?) != null) ...[
@@ -308,24 +459,47 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ─── Create challenge sheet ───────────────────────────────────────────────────
+// ─── Create / edit challenge sheet ────────────────────────────────────────────
 
-class _CreateChallengeSheet extends ConsumerStatefulWidget {
-  const _CreateChallengeSheet({required this.jamId, required this.onCreated});
+/// Bottom sheet used to both create a new challenge and edit an existing one.
+/// When [existing] is non-null the form is pre-filled with its values and Save
+/// calls updateChallenge; otherwise it calls createChallenge.
+class _ChallengeFormSheet extends ConsumerStatefulWidget {
+  const _ChallengeFormSheet({
+    required this.jamId,
+    required this.onSaved,
+    this.existing,
+  });
   final String jamId;
-  final VoidCallback onCreated;
+  final VoidCallback onSaved;
+  final Map<String, dynamic>? existing;
 
   @override
-  ConsumerState<_CreateChallengeSheet> createState() => _CreateChallengeSheetState();
+  ConsumerState<_ChallengeFormSheet> createState() => _ChallengeFormSheetState();
 }
 
-class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  int _target = 1;
-  String _unit = 'books';
+class _ChallengeFormSheetState extends ConsumerState<_ChallengeFormSheet> {
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _descCtrl;
+  late int _target;
+  late String _unit;
   DateTime? _deadline;
   bool _loading = false;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    _titleCtrl = TextEditingController(text: e?['title'] as String? ?? '');
+    _descCtrl = TextEditingController(text: e?['description'] as String? ?? '');
+    _target = (e?['target_count'] as int?) ?? 1;
+    if (_target < 1) _target = 1;
+    _unit = e?['unit'] as String? ?? 'books';
+    final deadlineStr = e?['deadline'] as String?;
+    _deadline = deadlineStr != null ? DateTime.tryParse(deadlineStr) : null;
+  }
 
   @override
   void dispose() {
@@ -338,15 +512,31 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
     if (_titleCtrl.text.trim().isEmpty) return;
     setState(() => _loading = true);
     try {
-      await ref.read(supabaseServiceProvider).createChallenge(
-            jamId: widget.jamId,
-            title: _titleCtrl.text.trim(),
-            description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-            targetCount: _target,
-            unit: _unit,
-            deadline: _deadline,
-          );
-      widget.onCreated();
+      final service = ref.read(supabaseServiceProvider);
+      final description =
+          _descCtrl.text.trim().isEmpty ? '' : _descCtrl.text.trim();
+      if (_isEdit) {
+        // Pass empty-string (not null) for description so clearing it persists,
+        // since updateChallenge only patches non-null fields.
+        await service.updateChallenge(
+          challengeId: widget.existing!['id'] as String,
+          title: _titleCtrl.text.trim(),
+          description: description,
+          targetCount: _target,
+          unit: _unit,
+          deadline: _deadline,
+        );
+      } else {
+        await service.createChallenge(
+          jamId: widget.jamId,
+          title: _titleCtrl.text.trim(),
+          description: description.isEmpty ? null : description,
+          targetCount: _target,
+          unit: _unit,
+          deadline: _deadline,
+        );
+      }
+      widget.onSaved();
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
@@ -381,7 +571,11 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              context.l10n.jamChallengeCreateSheetTitle,
+              _isEdit
+                  ? (Localizations.localeOf(context).languageCode == 'it'
+                      ? 'Modifica sfida'
+                      : 'Edit challenge')
+                  : context.l10n.jamChallengeCreateSheetTitle,
               style: GoogleFonts.manrope(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.4, color: ScriptaColors.ink),
             ),
             const SizedBox(height: 20),
@@ -512,7 +706,13 @@ class _CreateChallengeSheetState extends ConsumerState<_CreateChallengeSheet> {
                 onPressed: _loading ? null : _submit,
                 child: _loading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(context.l10n.jamChallengeCreateCta),
+                    : Text(
+                        _isEdit
+                            ? (Localizations.localeOf(context).languageCode == 'it'
+                                ? 'Salva modifiche'
+                                : 'Save changes')
+                            : context.l10n.jamChallengeCreateCta,
+                      ),
               ),
             ),
           ],

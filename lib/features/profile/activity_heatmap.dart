@@ -23,6 +23,10 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme.dart';
 
+// Full-year span: 52 complete weeks + 1 column for the current (partial) week,
+// GitHub/Garmin-style. Column 0 is ~one year ago, the last column is this week.
+const int kHeatmapWeeksPerYear = 53;
+
 // ─── Intensity ramp ──────────────────────────────────────────────────────────
 //
 // Five steps from "no activity" (a faint paper-tinted cell, so the empty grid
@@ -108,7 +112,7 @@ class ActivityHeatmap extends StatelessWidget {
     super.key,
     required this.data,
     required this.title,
-    this.weeks = 53,
+    this.weeks = kHeatmapWeeksPerYear,
     this.cellSize = 13,
     this.cellGap = 3,
     this.showLegend = true,
@@ -360,21 +364,28 @@ class _HeatmapPainter extends CustomPainter {
 
     final cellPaint = Paint()..isAntiAlias = true;
 
+    // Minimum horizontal room a month label needs before the next one may draw.
+    // Across a full year (12 month boundaries) adjacent labels would otherwise
+    // collide at small cell sizes (e.g. the share card), so we suppress a label
+    // whose left edge sits within this many logical px of the last one drawn.
+    const double minLabelGap = 26;
+
     int? lastMonthDrawn;
+    double? lastLabelDx;
     for (var col = 0; col < weeks; col++) {
       final weekStart = firstMonday.add(Duration(days: 7 * col));
 
       // Month label: drawn at the top of a column when the month of that
       // column's Monday differs from the previously-labelled month, and there's
-      // room before the next column (so labels don't collide on the last week).
+      // room before the previous label (so labels don't overlap across 12
+      // months on a narrow grid).
       if (weekStart.month != lastMonthDrawn) {
         lastMonthDrawn = weekStart.month;
-        // Only label if this Monday is in the first week of the month-ish (avoid
-        // a label every single column when a month spans week boundaries — the
-        // change-detection above already handles that, this guards the very
-        // first column from a stray mid-month label).
         final dx = col * step;
-        _paintMonthLabel(canvas, weekStart, dx);
+        if (lastLabelDx == null || dx - lastLabelDx >= minLabelGap) {
+          _paintMonthLabel(canvas, weekStart, dx);
+          lastLabelDx = dx;
+        }
       }
 
       for (var row = 0; row < 7; row++) {

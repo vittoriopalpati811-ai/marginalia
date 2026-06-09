@@ -415,8 +415,11 @@ class WrappedShareCard extends StatelessWidget {
             ),
 
             // ── Top wordmark ─────────────────────────────────────────────
+            // Pushed below the phone notch / status-bar safe zone: when the
+            // 9:16 image is posted full-bleed to Instagram Stories the top
+            // ~5% is overlaid by the notch, which used to clip this wordmark.
             Positioned(
-              top: 44,
+              top: 92,
               left: 0,
               right: 0,
               child: Center(

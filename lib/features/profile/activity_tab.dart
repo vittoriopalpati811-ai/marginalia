@@ -44,7 +44,7 @@ DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 // Activity tab
 // ═══════════════════════════════════════════════════════════════════════════
 
-class ActivityTab extends ConsumerWidget {
+class ActivityTab extends ConsumerStatefulWidget {
   const ActivityTab({
     super.key,
     this.displayName,
@@ -65,7 +65,41 @@ class ActivityTab extends ConsumerWidget {
   final List<Color> headerColors;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ActivityTab> createState() => _ActivityTabState();
+}
+
+class _ActivityTabState extends ConsumerState<ActivityTab>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Keep the "Lettura" and "Ripasso" sections live: when the app returns to
+    // the foreground (e.g. after reading on Kindle or doing a review elsewhere),
+    // re-read the activity from Isar so the heatmaps, today-strip and streaks
+    // reflect anything logged while we were backgrounded.
+    if (state == AppLifecycleState.resumed) {
+      // Lettura — reading days heatmap + summary + "Read today" pill.
+      ref.invalidate(readingDaysProvider);
+      // Ripasso — review activity heatmap + review state (streaks, lastReviewedOn).
+      ref.invalidate(reviewActivityProvider);
+      ref.invalidate(reviewStateProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final readingAsync = ref.watch(readingDaysProvider);
     final reviewAsync = ref.watch(reviewActivityProvider);
     final reviewState = ref.watch(reviewStateProvider).asData?.value;
@@ -73,7 +107,7 @@ class ActivityTab extends ConsumerWidget {
     final reading = readingAsync.asData?.value ?? const <DateTime, int>{};
     final review = reviewAsync.asData?.value ?? const <DateTime, int>{};
     final today = _dateOnly(DateTime.now());
-    final ramp = activityRampFromSeed(seedColor);
+    final ramp = activityRampFromSeed(widget.seedColor);
 
     final readToday = (reading[today] ?? 0) > 0;
     // .toLocal() before _dateOnly — Isar may hand back lastReviewedOn in UTC, so
@@ -87,7 +121,7 @@ class ActivityTab extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Reading Wrapped entry ───────────────────────────────────────
-          _WrappedBanner(headerColors: headerColors)
+          _WrappedBanner(headerColors: widget.headerColors)
               .animate()
               .fadeIn(duration: 320.ms)
               .slideY(begin: 0.06, end: 0, duration: 320.ms),
@@ -109,11 +143,11 @@ class ActivityTab extends ConsumerWidget {
             data: reading,
             loading: readingAsync.isLoading,
             summary: _readingSummary(context, reading),
-            displayName: displayName,
+            displayName: widget.displayName,
             shareKind: _ActivityKind.reading,
             ramp: ramp,
-            seedColor: seedColor,
-            headerColors: headerColors,
+            seedColor: widget.seedColor,
+            headerColors: widget.headerColors,
           ).animate().fadeIn(duration: 360.ms, delay: 60.ms).slideY(
               begin: 0.04, end: 0, duration: 360.ms),
 
@@ -126,11 +160,11 @@ class ActivityTab extends ConsumerWidget {
             data: review,
             loading: reviewAsync.isLoading,
             summary: _reviewSummary(context, review, reviewState),
-            displayName: displayName,
+            displayName: widget.displayName,
             shareKind: _ActivityKind.review,
             ramp: ramp,
-            seedColor: seedColor,
-            headerColors: headerColors,
+            seedColor: widget.seedColor,
+            headerColors: widget.headerColors,
           ).animate().fadeIn(duration: 400.ms, delay: 120.ms).slideY(
               begin: 0.04, end: 0, duration: 400.ms),
 
@@ -444,6 +478,7 @@ class _ActivityCard extends StatelessWidget {
               data: data,
               title: title,
               showTitle: false,
+              weeks: kHeatmapWeeksPerYear,
               ramp: ramp,
             ),
 
@@ -1021,6 +1056,7 @@ class ActivityShareCard extends StatelessWidget {
                           title: title,
                           showTitle: false,
                           showLegend: true,
+                          weeks: kHeatmapWeeksPerYear,
                           cellSize: 4.2,
                           cellGap: 1.3,
                           ramp: ramp,

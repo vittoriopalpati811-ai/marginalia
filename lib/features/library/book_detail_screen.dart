@@ -15,6 +15,7 @@ import '../../core/models/book.dart';
 import '../../core/models/highlight.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/books_provider.dart';
+import '../profile/profile_shared_widgets.dart' show favCoversProvider;
 import '../../core/l10n/l10n_extension.dart';
 import 'book_cover.dart';
 
@@ -581,9 +582,12 @@ void editBookCover(BuildContext context, WidgetRef ref, Book book) {
               leading: const Icon(Icons.delete_outline_rounded,
                   color: ScriptaColors.highlightRose),
               title: Text(it ? 'Rimuovi copertina' : 'Remove cover'),
-              onTap: () {
+              onTap: () async {
                 Navigator.of(sheetCtx).pop();
-                ref.read(bookCoverControllerProvider).setCover(book.id, null);
+                await ref
+                    .read(bookCoverControllerProvider)
+                    .setCover(book.id, null);
+                ref.invalidate(favCoversProvider);
               },
             ),
           const SizedBox(height: 8),
@@ -612,6 +616,7 @@ Future<void> _pickAndUploadCover(
         .read(supabaseServiceProvider)
         .uploadBookCover(bytes, ext, book.supabaseId);
     await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+    ref.invalidate(favCoversProvider); // refresh profile favourite covers
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
@@ -648,6 +653,7 @@ Future<void> _pickFromCameraAndUpload(
         .read(supabaseServiceProvider)
         .uploadBookCover(bytes, ext, book.supabaseId);
     await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+    ref.invalidate(favCoversProvider); // refresh profile favourite covers
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));

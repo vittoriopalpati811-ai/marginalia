@@ -82,6 +82,18 @@ class BookRecommendation {
   final String pages; // page count (string — may be a range/estimate)
   final String whyRead; // "because you read X by Y"
   final int match; // Netflix-style AI confidence 0-99 (0 = absent → hidden)
+
+  BookRecommendation copyWith({int? match}) => BookRecommendation(
+        title: title,
+        author: author,
+        year: year,
+        reason: reason,
+        plot: plot,
+        categories: categories,
+        pages: pages,
+        whyRead: whyRead,
+        match: match ?? this.match,
+      );
 }
 
 /// Parse a categories field that may arrive as a list or comma-joined string.
@@ -93,6 +105,31 @@ List<String> _parseCategories(dynamic v) {
     return v.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
   }
   return const [];
+}
+
+/// Spreads the AI "% match" across a recommendation set so every book shows a
+/// value AND the numbers read as clearly distinct. The founder asked for two
+/// things: a book must NEVER appear without a %, and 98% vs 88% must feel far
+/// apart. We keep the model's ranking (best-first) but re-space the values onto
+/// a wide ladder (97 / 91 / 85 / 79 / 73 …) so the gaps look intentional rather
+/// than clustered. Deterministic and idempotent — re-spreading an already
+/// spread list is a no-op — so it's safe to run on both fresh and cached sets.
+List<BookRecommendation> _spreadMatches(List<BookRecommendation> recs) {
+  if (recs.isEmpty) return recs;
+  // Rank by the model's raw confidence (desc); ties keep the original order.
+  final order = List<int>.generate(recs.length, (i) => i)
+    ..sort((a, b) {
+      final byMatch = recs[b].match.compareTo(recs[a].match);
+      return byMatch != 0 ? byMatch : a.compareTo(b);
+    });
+  final assigned = List<int>.filled(recs.length, 0);
+  for (var rank = 0; rank < order.length; rank++) {
+    final v = 97 - rank * 6;
+    assigned[order[rank]] = v < 70 ? 70 : (v > 98 ? 98 : v);
+  }
+  return [
+    for (var i = 0; i < recs.length; i++) recs[i].copyWith(match: assigned[i]),
+  ];
 }
 
 /// Why the recommendation list is empty (when it is). Used to render an
@@ -318,7 +355,7 @@ final libraryRecommendationsProvider =
   final cachedRecs = forceFresh ? null : await RecsCache.read(cacheSig);
   if (cachedRecs != null) {
     debugPrint('[Recs] cache hit ($cacheSig) — skipping AI call');
-    final list = cachedRecs
+    final list = _spreadMatches(cachedRecs
         .map((r) => BookRecommendation(
               title: (r['title'] as String? ?? '').trim(),
               author: (r['author'] as String? ?? '').trim(),
@@ -331,7 +368,7 @@ final libraryRecommendationsProvider =
               match: (r['match'] as num?)?.toInt() ?? 0,
             ))
         .where((r) => r.title.isNotEmpty)
-        .toList();
+        .toList());
     if (list.isNotEmpty) {
       return RecsResult(list: list, reason: RecsEmptyReason.ok);
     }
@@ -428,7 +465,7 @@ final libraryRecommendationsProvider =
     );
   }
 
-  final recommendations = rawList.map((raw) {
+  final recommendations = _spreadMatches(rawList.map((raw) {
     final r = raw as Map<String, dynamic>;
     return BookRecommendation(
       title:  (r['title']  as String? ?? '').trim(),
@@ -441,7 +478,7 @@ final libraryRecommendationsProvider =
       whyRead: (r['why']   as String? ?? '').trim(),
       match:  (r['match'] as num?)?.toInt() ?? 0,
     );
-  }).where((r) => r.title.isNotEmpty).toList();
+  }).where((r) => r.title.isNotEmpty).toList());
 
   debugPrint('[Recs] received ${recommendations.length} recommendations');
 

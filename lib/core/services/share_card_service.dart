@@ -565,13 +565,16 @@ class _StatsShareCard extends StatelessWidget {
               ),
             ),
 
-            // ── Wordmark + user ───────────────────────────────────────
+            // ── Wordmark (left) + username (top-right, right-aligned) ──────
+            // The founder asked for the Scripta username at the top-right of the
+            // generated story image, right-aligned on the same axis as the
+            // wordmark / "LETTURE" header rather than tucked under the title.
             Positioned(
-              top: 24,
+              top: 26,
               left: 28,
               right: 28,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'SCRIPTA',
@@ -582,14 +585,20 @@ class _StatsShareCard extends StatelessWidget {
                       letterSpacing: 3.5,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    context.l10n.shareStatsReadingOf(userName),
-                    style: GoogleFonts.ebGaramond(
-                      fontSize: 18,
-                      fontStyle: FontStyle.italic,
-                      color: const Color(0xFFF1EEE7),
-                      height: 1.2,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      userName,
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.ebGaramond(
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFF1EEE7),
+                        height: 1.1,
+                      ),
                     ),
                   ),
                 ],

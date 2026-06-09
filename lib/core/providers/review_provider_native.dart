@@ -373,6 +373,20 @@ class ReviewSessionController
     if (persisted) {
       ref.invalidate(reviewStateProvider);
       ref.invalidate(reviewedDaysProvider);
+      // Flow today's running card count into the Jam results feed (an upsert
+      // keyed by day keeps the latest), so jam-mates see Ripasso activity — both
+      // the user's own and everyone else's.
+      unawaited(_logRipassoToJams(state.index));
+    }
+  }
+
+  Future<void> _logRipassoToJams(int cardsReviewed) async {
+    try {
+      await ref
+          .read(supabaseServiceProvider)
+          .logRipassoResultsToJams(cardsReviewed);
+    } catch (error) {
+      debugPrint('[Ripasso] jam result log skipped: $error');
     }
   }
 

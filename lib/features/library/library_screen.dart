@@ -18,11 +18,11 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
-import 'book_detail_screen.dart' show editBookCover;
 import 'recommendations_section.dart';
 import '../../core/services/recs_cache.dart';
 import '../search/highlight_search_screen.dart';
 import '../quiz/quiz_screen.dart';
+import '../quiz/quiz_lock.dart';
 import '../review/review_entry_card.dart';
 import '../../core/providers/daily_highlight_provider.dart';
 import '../../core/providers/daily_subtitle_provider.dart';
@@ -87,6 +87,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     final randomAsync       = ref.watch(dailyHighlightProvider);
     // "Why this phrase is for you" line — null off-iOS or with no context.
     final subtitle          = ref.watch(dailySubtitleProvider);
+    // Pre-load the daily-quiz lock so the entry card below can gate taps until
+    // 08:00 the next morning once today's quiz is done.
+    final quizLockedUntil   = ref.watch(quizLockProvider).asData?.value;
 
     // Apply filter
     final filteredBooksAsync = booksAsync.whenData((books) {
@@ -173,8 +176,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 child: GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const QuizScreen())),
+                  onTap: () {
+                    // Daily quiz is a once-a-day ritual: once finished it's
+                    // locked until 08:00 the next morning (Ripasso-style).
+                    if (quizLockedUntil != null) {
+                      final isIt =
+                          Localizations.localeOf(context).languageCode == 'it';
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(isIt
+                            ? 'Quiz completato. Torna domani alle 08:00.'
+                            : 'Quiz done — come back tomorrow at 08:00.'),
+                      ));
+                      return;
+                    }
+                    Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const QuizScreen()));
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -1175,51 +1192,7 @@ class _BookGridCard extends StatelessWidget {
         ),
       ),
     );
-    return StaggeredListItem(
-      index: index,
-      child: Stack(
-        children: [
-          card,
-          // Pencil to set a custom cover (gallery / camera). On the cover's
-          // top-right; its own opaque tap never triggers the open-detail tap
-          // of the card underneath.
-          Positioned(
-            top: 7,
-            right: 7,
-            child: Consumer(
-              builder: (context, ref, _) => _GridCoverPencil(
-                onTap: () => editBookCover(context, ref, book),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Small frosted pencil overlaid on a library cover — opens the cover editor.
-class _GridCoverPencil extends StatelessWidget {
-  const _GridCoverPencil({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: Colors.black.withAlpha(112),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withAlpha(60), width: 0.8),
-        ),
-        alignment: Alignment.center,
-        child: const Icon(Icons.edit_rounded, size: 15, color: Colors.white),
-      ),
-    );
+    return StaggeredListItem(index: index, child: card);
   }
 }
 

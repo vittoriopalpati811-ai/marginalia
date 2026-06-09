@@ -854,6 +854,101 @@ class SupabaseService {
     }
   }
 
+  String _localTodayIso() {
+    final n = DateTime.now();
+    return '${n.year}-${n.month.toString().padLeft(2, '0')}-${n.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Persist today's quiz score into EVERY jam the caller belongs to, so it
+  /// surfaces in each jam's shared activity feed (visible to all members).
+  /// Best-effort; never throws into the quiz UI.
+  Future<void> logQuizResultsToJams(int score, int total) async {
+    try {
+      if (!isAuthenticated || userId == null) return;
+      final jams = await fetchMyJams();
+      if (jams.isEmpty) return;
+      final today = _localTodayIso();
+      for (final jam in jams) {
+        final jamId = jam['id'] as String?;
+        if (jamId == null) continue;
+        await _client.from('jam_quiz_results').upsert({
+          'jam_id': jamId,
+          'user_id': userId,
+          'completed_on': today,
+          'score': score,
+          'total': total,
+        }, onConflict: 'jam_id,user_id,completed_on');
+      }
+    } catch (_) {/* best-effort */}
+  }
+
+  /// Persist today's ripasso session into every jam the caller belongs to.
+  Future<void> logRipassoResultsToJams(int cardsReviewed) async {
+    try {
+      if (!isAuthenticated || userId == null) return;
+      final jams = await fetchMyJams();
+      if (jams.isEmpty) return;
+      final today = _localTodayIso();
+      for (final jam in jams) {
+        final jamId = jam['id'] as String?;
+        if (jamId == null) continue;
+        await _client.from('jam_ripasso_results').upsert({
+          'jam_id': jamId,
+          'user_id': userId,
+          'completed_on': today,
+          'cards_reviewed': cardsReviewed,
+        }, onConflict: 'jam_id,user_id,completed_on');
+      }
+    } catch (_) {/* best-effort */}
+  }
+
+  /// Every member's quiz results in [jamId] (newest first) + profile info.
+  Future<List<Map<String, dynamic>>> fetchJamQuizResults(String jamId) async {
+    final res = await _client
+        .from('jam_quiz_results')
+        .select('id, user_id, completed_on, score, total, profiles(display_name, avatar_url)')
+        .eq('jam_id', jamId)
+        .order('completed_on', ascending: false)
+        .limit(200);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  /// Every member's ripasso results in [jamId] (newest first) + profile info.
+  Future<List<Map<String, dynamic>>> fetchJamRipassoResults(String jamId) async {
+    final res = await _client
+        .from('jam_ripasso_results')
+        .select('id, user_id, completed_on, cards_reviewed, profiles(display_name, avatar_url)')
+        .eq('jam_id', jamId)
+        .order('completed_on', ascending: false)
+        .limit(200);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  /// "title|author" (lowercased) → cover_url for [targetUserId]'s books that
+  /// carry a custom cover. Lets favorite-book tiles (own + visited profiles)
+  /// render the cover that user set. Best-effort; empty on error.
+  Future<Map<String, String>> fetchBookCovers(String targetUserId) async {
+    try {
+      final res = await _client
+          .from('books')
+          .select('title, author, cover_url')
+          .eq('user_id', targetUserId)
+          .not('cover_url', 'is', null) as List;
+      final map = <String, String>{};
+      for (final r in res) {
+        final m = r as Map<String, dynamic>;
+        final url = (m['cover_url'] as String?) ?? '';
+        if (url.isEmpty) continue;
+        final t = (m['title'] ?? '').toString().toLowerCase().trim();
+        final a = (m['author'] ?? '').toString().toLowerCase().trim();
+        map['$t|$a'] = url;
+      }
+      return map;
+    } catch (_) {
+      return {};
+    }
+  }
+
   // ─── Follows ──────────────────────────────────────────────────────────────
 
   /// Follow another user (idempotent upsert).
@@ -1265,7 +1360,7 @@ class SupabaseService {
     if (!isAuthenticated || userId == null) return [];
     final rows = await _client
         .from('books')
-        .select('id, title, author')
+        .select('id, title, author, cover_url')
         .eq('user_id', userId!)
         .order('title') as List;
     return List<Map<String, dynamic>>.from(rows);
@@ -2026,7 +2121,7 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> fetchUserBooks(String targetId) async {
     final rows = await _client
             .from('books')
-            .select('id, title, author')
+            .select('id, title, author, cover_url')
             .eq('user_id', targetId)
             .order('title') as List;
     return List<Map<String, dynamic>>.from(rows);
@@ -2558,6 +2653,30 @@ class SupabaseService {
     });
   }
 
+  /// Edit a challenge's fields (only the creator may, enforced by RLS).
+  Future<void> updateChallenge({
+    required String challengeId,
+    String? title,
+    String? description,
+    int? targetCount,
+    String? unit,
+    DateTime? deadline,
+  }) async {
+    final patch = <String, dynamic>{};
+    if (title != null) patch['title'] = title.trim();
+    if (description != null) patch['description'] = description.trim();
+    if (targetCount != null) patch['target_count'] = targetCount;
+    if (unit != null) patch['unit'] = unit;
+    if (deadline != null) patch['deadline'] = deadline.toIso8601String();
+    if (patch.isEmpty) return;
+    await _client.from('jam_challenges').update(patch).eq('id', challengeId);
+  }
+
+  /// Delete a challenge (only the creator may, enforced by RLS).
+  Future<void> deleteChallenge(String challengeId) async {
+    await _client.from('jam_challenges').delete().eq('id', challengeId);
+  }
+
   // ─── Jam 2.0: Highlight Polls ────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> fetchJamPolls(String jamId) async {
@@ -2598,7 +2717,7 @@ class SupabaseService {
       'highlight_content': highlightContent.trim(),
       'book_title': bookTitle?.trim(),
       'book_author': bookAuthor?.trim(),
-    });
+    }, onConflict: 'poll_id,submitted_by');
   }
 
   Future<void> voteOnPollCandidate(String candidateId) async {

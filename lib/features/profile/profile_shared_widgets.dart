@@ -2,20 +2,43 @@
 // Widgets used by both MyProfileScreen and UserProfileScreen.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme.dart';
+import '../../core/providers/auth_provider.dart';
 import '../library/book_cover.dart';
 import '../reader/book_info_screen.dart';
+
+/// Per-user custom book covers, keyed by [favCoverKey] ('title|author',
+/// lowercased). Lets a reader's custom covers show on their favourites — both
+/// on their own profile AND when someone else visits their profile. Pass the
+/// profile owner's id; null/empty resolves to the signed-in user.
+final favCoversProvider = FutureProvider.family
+    .autoDispose<Map<String, String>, String?>((ref, ownerUserId) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  final uid =
+      (ownerUserId == null || ownerUserId.isEmpty) ? svc.userId : ownerUserId;
+  if (uid == null || uid.isEmpty) return const {};
+  return svc.fetchBookCovers(uid);
+});
+
+/// Normalised lookup key for [favCoversProvider]; mirrors
+/// SupabaseService.fetchBookCovers ('title|author', both lowercased + trimmed).
+String favCoverKey(String title, String author) =>
+    '${title.toLowerCase().trim()}|${author.toLowerCase().trim()}';
 
 // ─── Favourite books Pinterest masonry grid ────────────────────────────────────
 
 enum FavTileSize { large, medium, small }
 
 class FavBooksGrid extends StatelessWidget {
-  const FavBooksGrid({super.key, required this.favBooks});
+  const FavBooksGrid({super.key, required this.favBooks, this.ownerUserId});
   final List<Map<String, String>> favBooks;
+
+  /// Profile owner whose custom covers to show (null = signed-in user).
+  final String? ownerUserId;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +54,9 @@ class FavBooksGrid extends StatelessWidget {
         ? favBooks.skip(3).take(3).toList()
         : <Map<String, String>>[];
 
+    Widget tile(Map<String, String> b, FavTileSize s) =>
+        FavBookTile(book: b, size: s, ownerUserId: ownerUserId);
+
     return Column(
       children: [
         // ── Row 1: large left + up to two stacked mediums ─────────────────
@@ -41,7 +67,7 @@ class FavBooksGrid extends StatelessWidget {
             children: [
               Expanded(
                 flex: row1.length >= 2 ? 55 : 100,
-                child: FavBookTile(book: row1[0], size: FavTileSize.large),
+                child: tile(row1[0], FavTileSize.large),
               ),
               if (row1.length >= 2) ...[
                 const SizedBox(width: gap),
@@ -50,18 +76,12 @@ class FavBooksGrid extends StatelessWidget {
                   child: row1.length >= 3
                       ? Column(
                           children: [
-                            Expanded(
-                              child: FavBookTile(
-                                  book: row1[1], size: FavTileSize.medium),
-                            ),
+                            Expanded(child: tile(row1[1], FavTileSize.medium)),
                             const SizedBox(height: gap),
-                            Expanded(
-                              child: FavBookTile(
-                                  book: row1[2], size: FavTileSize.medium),
-                            ),
+                            Expanded(child: tile(row1[2], FavTileSize.medium)),
                           ],
                         )
-                      : FavBookTile(book: row1[1], size: FavTileSize.medium),
+                      : tile(row1[1], FavTileSize.medium),
                 ),
               ],
             ],
@@ -77,10 +97,7 @@ class FavBooksGrid extends StatelessWidget {
               children: [
                 for (int i = 0; i < row2.length; i++) ...[
                   if (i > 0) const SizedBox(width: gap),
-                  Expanded(
-                    child: FavBookTile(
-                        book: row2[i], size: FavTileSize.small),
-                  ),
+                  Expanded(child: tile(row2[i], FavTileSize.small)),
                 ],
               ],
             ),
@@ -91,15 +108,25 @@ class FavBooksGrid extends StatelessWidget {
   }
 }
 
-class FavBookTile extends StatelessWidget {
-  const FavBookTile({super.key, required this.book, required this.size});
+class FavBookTile extends ConsumerWidget {
+  const FavBookTile(
+      {super.key, required this.book, required this.size, this.ownerUserId});
   final Map<String, String> book;
   final FavTileSize size;
 
+  /// Profile owner whose custom covers to show (null = signed-in user).
+  final String? ownerUserId;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final title  = book['title']  ?? '';
     final author = book['author'] ?? '';
+    final coverUrl = title.isEmpty
+        ? null
+        : ref
+            .watch(favCoversProvider(ownerUserId))
+            .asData
+            ?.value[favCoverKey(title, author)];
 
     if (title.isEmpty) {
       return Container(
@@ -141,7 +168,7 @@ class FavBookTile extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          BookEditorialCover(title: title, author: author),
+          BookEditorialCover(title: title, author: author, coverUrl: coverUrl),
           Positioned(
             left: 0, right: 0, bottom: 0, height: gradH,
             child: const DecoratedBox(

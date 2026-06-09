@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
+import '../messages/giphy_picker.dart';
 
 // Reactions per single jam_highlight
 final reactionsProvider = FutureProvider.autoDispose
@@ -62,6 +63,7 @@ class _JamHighlightDetailScreenState
   bool _posting = false;
   Uint8List? _imageBytes;
   String? _imageExt;
+  String? _gifUrl;
 
   @override
   void dispose() {
@@ -78,7 +80,19 @@ class _JamHighlightDetailScreenState
     setState(() {
       _imageBytes = result.files.first.bytes;
       _imageExt   = (result.files.first.extension ?? 'jpg').toLowerCase();
+      _gifUrl     = null; // image and gif are mutually exclusive attachments
     });
+  }
+
+  Future<void> _pickGif() async {
+    final url = await showGifPicker(context);
+    if (url != null && mounted) {
+      setState(() {
+        _gifUrl     = url;
+        _imageBytes = null; // image and gif are mutually exclusive attachments
+        _imageExt   = null;
+      });
+    }
   }
 
   Future<void> _toggleReaction(String emoji) async {
@@ -97,11 +111,14 @@ class _JamHighlightDetailScreenState
 
   Future<void> _postComment() async {
     final text = _commentController.text.trim();
-    if (text.isEmpty && _imageBytes == null) return;
+    if (text.isEmpty && _imageBytes == null && _gifUrl == null) return;
     setState(() => _posting = true);
     try {
       final svc = ref.read(supabaseServiceProvider);
-      String? imageUrl;
+      // The jam_highlight_comments table only has an image_url column, so the
+      // GIF rides along on the same field — the Tenor URL is an external image
+      // URL and renders identically through Image.network in _CommentBubble.
+      String? imageUrl = _gifUrl;
       if (_imageBytes != null && _imageExt != null) {
         imageUrl = await svc.uploadCommentImage(_imageBytes!, _imageExt!);
       }
@@ -111,7 +128,7 @@ class _JamHighlightDetailScreenState
         imageUrl: imageUrl,
       );
       _commentController.clear();
-      setState(() { _imageBytes = null; _imageExt = null; });
+      setState(() { _imageBytes = null; _imageExt = null; _gifUrl = null; });
       ref.invalidate(commentsProvider(widget.jamHighlightId));
     } catch (e) {
       if (mounted) {
@@ -131,6 +148,10 @@ class _JamHighlightDetailScreenState
     final currentUserId = ref.watch(currentUserProvider)?.id;
 
     return Scaffold(
+      // The comment input already pads itself by viewInsets.bottom; letting the
+      // Scaffold ALSO resize double-applied the keyboard inset and flung the bar
+      // up over the content. Disable the auto-resize.
+      resizeToAvoidBottomInset: false,
       backgroundColor: ScriptaColors.background,
       appBar: AppBar(
         backgroundColor: ScriptaColors.background,
@@ -277,19 +298,26 @@ class _JamHighlightDetailScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Image preview
-                if (_imageBytes != null) ...[
+                // Attachment preview (picked image OR selected GIF)
+                if (_imageBytes != null || _gifUrl != null) ...[
                   Stack(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.memory(_imageBytes!,
-                            height: 80, width: double.infinity, fit: BoxFit.cover),
+                        child: _imageBytes != null
+                            ? Image.memory(_imageBytes!,
+                                height: 80, width: double.infinity, fit: BoxFit.cover)
+                            : Image.network(_gifUrl!,
+                                height: 80, width: double.infinity, fit: BoxFit.cover),
                       ),
                       Positioned(
                         top: 4, right: 4,
                         child: GestureDetector(
-                          onTap: () => setState(() { _imageBytes = null; _imageExt = null; }),
+                          onTap: () => setState(() {
+                            _imageBytes = null;
+                            _imageExt   = null;
+                            _gifUrl     = null;
+                          }),
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.black.withAlpha(160),
@@ -317,6 +345,30 @@ class _JamHighlightDetailScreenState
                     ),
                     child: const Icon(Icons.image_outlined, size: 18,
                         color: ScriptaColors.primaryDark),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // GIF button — sends a Tenor GIF on the same image_url field.
+                GestureDetector(
+                  onTap: _pickGif,
+                  child: Container(
+                    height: 34,
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    decoration: BoxDecoration(
+                      color: ScriptaColors.primaryFaint,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'GIF',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: ScriptaColors.primaryDark,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -535,13 +587,20 @@ class _CommentBubble extends StatelessWidget {
           ],
           if (imageUrl != null && imageUrl.isNotEmpty) ...[
             const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            // image_url carries either an uploaded photo OR an external GIF
+            // (Tenor) — both render through Image.network. Cap the height so a
+            // tall GIF can't blow out the bubble.
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 180),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
             ),
           ],
