@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../branding/scripta_mark.dart';
 import '../l10n/l10n_extension.dart';
 
 import '../utils/share_helper.dart';
@@ -550,19 +551,11 @@ class _StatsShareCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // ── Decorative big S ───────────────────────────────────────
-            Positioned(
+            // ── Decorative big mark ────────────────────────────────────
+            const Positioned(
               top: -30,
               right: -20,
-              child: Text(
-                'S',
-                style: GoogleFonts.ebGaramond(
-                  fontSize: 300,
-                  height: 0.8,
-                  color: const Color(0xFFF1EEE7).withAlpha(10),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: ScriptaMark(size: 300, opacity: 0.05),
             ),
 
             // ── Wordmark (left) + username (top-right, right-aligned) ──────
@@ -665,24 +658,7 @@ class _StatsShareCard extends StatelessWidget {
                       letterSpacing: 1.4,
                     ),
                   ),
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1EEE7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'S',
-                      style: GoogleFonts.ebGaramond(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1B2A1A),
-                        height: 1,
-                      ),
-                    ),
-                  ),
+                  const ScriptaMark(size: 28),
                 ],
               ),
             ),

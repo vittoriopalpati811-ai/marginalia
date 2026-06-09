@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/branding/scripta_mark.dart';
 import '../../core/services/widget_service.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -673,25 +674,7 @@ class _WidgetBrand extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: const Color(0xFF3A6624),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: const Center(
-            child: Text(
-              'S',
-              style: TextStyle(
-                color: Color(0xFFF5F2EC),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'serif',
-              ),
-            ),
-          ),
-        ),
+        const ScriptaMark(size: 20),
         const SizedBox(width: 6),
         if (!small)
           Text(

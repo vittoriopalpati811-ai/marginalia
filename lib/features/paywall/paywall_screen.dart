@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme.dart';
+import '../../core/branding/scripta_mark.dart';
 import '../../core/providers/subscription_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 
@@ -181,28 +182,8 @@ class _PaywallBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // M badge
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(15),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                                color: Colors.white.withAlpha(30), width: 1),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'S',
-                              style: GoogleFonts.playfairDisplay(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFF1EEE7),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                          ),
-                        ).animate()
+                        // Brand mark
+                        const ScriptaMark(size: 56).animate()
                             .fadeIn(duration: 400.ms)
                             .scale(begin: const Offset(0.85, 0.85),
                                    end: const Offset(1, 1),

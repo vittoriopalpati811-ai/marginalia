@@ -32,6 +32,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/branding/scripta_mark.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/services/gallery_saver.dart';
 import '../../core/services/instagram_share.dart';
@@ -621,36 +622,8 @@ class HighlightStoryCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 9),
-                  // Small rounded-square gradient brand mark with an "S".
-                  Container(
-                    width: 26,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF4A7A35), Color(0xFF254D16)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(89), // ~35%
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'S',
-                      style: GoogleFonts.ebGaramond(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: _cream,
-                        height: 1,
-                      ),
-                    ),
-                  ),
+                  // The Scripta brand mark (sage cards + red bookmark).
+                  const ScriptaMark(size: 26),
                 ],
               ),
             ),

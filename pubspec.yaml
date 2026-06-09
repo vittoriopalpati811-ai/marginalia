@@ -120,6 +120,7 @@ flutter:
 
   assets:
     - assets/demo/My Clippings.txt
+    - assets/brand/scripta_mark.png
     - docs/privacy/index.html
     - docs/privacy/it/index.html
     - docs/terms/index.html
