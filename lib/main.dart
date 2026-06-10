@@ -8,7 +8,6 @@ import 'package:sentry/sentry.dart';
 
 import 'core/bootstrap_error_app.dart';
 import 'core/services/widget_service.dart';
-import 'core/services/subscription_service.dart';
 import 'core/storage/app_startup.dart';
 
 const _supabaseUrl = 'https://ibucvloawkfwobaelwbr.supabase.co';
@@ -141,12 +140,6 @@ class _StartupGateState extends State<_StartupGate> {
         'Preparazione…',
         const Duration(seconds: 5),
         WidgetService.init,
-      );
-      await _optional(
-        'Subscriptions',
-        'Preparazione…',
-        const Duration(seconds: 5),
-        SubscriptionService.configure,
       );
 
       // ── Required: open the local DB, read persisted state, runApp(real) ────

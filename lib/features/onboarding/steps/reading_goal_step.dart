@@ -5,6 +5,7 @@
 // CTA + secondary "I'll set my goal later".
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/l10n/l10n_extension.dart';
@@ -56,7 +57,10 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
               letterSpacing: -1.0,
               height: 1.05,
             ),
-          ),
+          )
+              .animate()
+              .fadeIn(duration: 380.ms)
+              .slideY(begin: -0.05, end: 0, duration: 380.ms),
           const SizedBox(height: 16),
           Text(
             context.l10n.onboardingGoalSubtitle,
@@ -65,7 +69,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
               color: ScriptaColors.inkMuted,
               height: 1.5,
             ),
-          ),
+          ).animate().fadeIn(delay: 90.ms, duration: 360.ms),
           const SizedBox(height: 28),
 
           Text(
@@ -76,7 +80,7 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
               color: ScriptaColors.ink,
               letterSpacing: 0.2,
             ),
-          ),
+          ).animate().fadeIn(delay: 160.ms, duration: 360.ms),
           const SizedBox(height: 8),
 
           Container(
@@ -118,7 +122,16 @@ class _ReadingGoalStepState extends State<ReadingGoalStep> {
                 ),
               ],
             ),
-          ),
+          )
+              .animate()
+              .fadeIn(delay: 220.ms, duration: 360.ms)
+              .scale(
+                begin: const Offset(0.97, 0.97),
+                end: const Offset(1, 1),
+                delay: 220.ms,
+                duration: 380.ms,
+                curve: Curves.easeOutQuart,
+              ),
           const SizedBox(height: 14),
 
           AnimatedSwitcher(

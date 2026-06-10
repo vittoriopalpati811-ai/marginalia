@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "it",
 
   "appTitle": "Scripta",
@@ -346,53 +346,21 @@
   "jamHighlights": "Highlight condivisi",
   "@jamHighlights": {},
 
-  "paywallTitle": "Scripta Premium",
-  "@paywallTitle": {},
 
-  "paywallSubtitle": "Sblocca il pieno potenziale\ndella tua lettura",
-  "@paywallSubtitle": {},
 
-  "paywallPrice": "€19,99/anno",
-  "@paywallPrice": {},
 
-  "paywallPriceSub": "Meno di un caffè al mese",
-  "@paywallPriceSub": {},
 
-  "paywallPurchaseCta": "Sblocca Scripta Premium",
-  "@paywallPurchaseCta": {},
 
-  "paywallRestore": "Ripristina acquisto",
-  "@paywallRestore": {},
 
-  "paywallFeatureHighlights": "Highlight illimitati da Kindle",
-  "@paywallFeatureHighlights": {},
 
-  "paywallFeatureJams": "Crea e partecipa a Jam illimitate",
-  "@paywallFeatureJams": {},
 
-  "paywallFeatureWidget": "Widget iOS attivi",
-  "@paywallFeatureWidget": {},
 
-  "paywallFreeTierHighlights": "Fino a 100 highlight (piano free)",
-  "@paywallFreeTierHighlights": {},
 
-  "paywallFreeTierJams": "Solo visualizzazione Jam (piano free)",
-  "@paywallFreeTierJams": {},
 
-  "paywallFreeTierWidget": "Widget non disponibile (piano free)",
-  "@paywallFreeTierWidget": {},
 
-  "paywallTerms": "Rinnovo automatico annuale. Cancella in qualsiasi momento da Impostazioni → Abbonamenti.",
-  "@paywallTerms": {},
 
-  "paywallPurchaseError": "Acquisto non riuscito. Riprova.",
-  "@paywallPurchaseError": {},
 
-  "paywallRestoreSuccess": "Acquisto ripristinato!",
-  "@paywallRestoreSuccess": {},
 
-  "paywallRestoreNone": "Nessun acquisto da ripristinare.",
-  "@paywallRestoreNone": {},
 
   "onboardingWelcomeSubtitle": "Riscopri quello che hai letto. Parlane con chi lo sta leggendo con te.",
   "@onboardingWelcomeSubtitle": {},
@@ -621,8 +589,6 @@
   "copy": "Copia",
   "@copy": {},
 
-  "paywallPurchaseSuccess": "Benvenuto in Scripta Premium.",
-  "@paywallPurchaseSuccess": {},
 
   "highlightNotFound": "Highlight non trovato.",
   "@highlightNotFound": {},
@@ -1535,8 +1501,6 @@
   "authTermsPrefix": "Creando un account accetti la nostra ",
   "authTermsSuffix": " e confermi di avere almeno 16 anni.",
 
-  "paywallPremiumBadge": "PREMIUM",
-  "paywallPriceMonthlyEquivalent": "~€1,67/mese",
 
   "chatUnableToLoad": "Impossibile caricare i messaggi",
   "chatEmptyBody": "Inizia la conversazione\ninviando il primo messaggio.",

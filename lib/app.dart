@@ -319,11 +319,6 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) => _modalPage(const ResetPasswordScreen(), state),
     ),
-    // NOTE: the /paywall route was removed for App Store review safety — the
-    // subscription flow is stubbed in the MVP (purchases disabled), and Apple
-    // Guideline 3.1.1 rejects visible-but-non-functional payment UI. Nothing
-    // navigated to it. Restore the route together with a real RevenueCat
-    // integration (see paywall_screen.dart, kept for that moment).
   ],
 );
 

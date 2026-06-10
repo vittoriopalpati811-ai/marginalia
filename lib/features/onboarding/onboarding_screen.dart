@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/branding/scripta_mark.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/locale_provider.dart';
@@ -592,6 +593,19 @@ class _LanguageStepState extends State<_LanguageStep> {
         children: [
           const Spacer(flex: 2),
 
+          // ── Brand mark — the very first thing a new reader sees ──────────
+          const ScriptaMark(size: 84)
+              .animate()
+              .fadeIn(duration: 700.ms, curve: Curves.easeOut)
+              .scale(
+                begin: const Offset(0.82, 0.82),
+                end: const Offset(1, 1),
+                duration: 700.ms,
+                curve: Curves.easeOutBack,
+              ),
+
+          const SizedBox(height: 22),
+
           // ── Wordmark ──────────────────────────────────────────────────────
           Text(
             'Scripta',
@@ -604,8 +618,13 @@ class _LanguageStepState extends State<_LanguageStep> {
             ),
           )
               .animate()
-              .fadeIn(duration: 600.ms, curve: Curves.easeOut)
-              .slideY(begin: -0.06, end: 0, duration: 600.ms, curve: Curves.easeOut),
+              .fadeIn(delay: 120.ms, duration: 700.ms, curve: Curves.easeOut)
+              .slideY(
+                  begin: -0.06,
+                  end: 0,
+                  delay: 120.ms,
+                  duration: 700.ms,
+                  curve: Curves.easeOut),
 
           const SizedBox(height: 8),
 
@@ -850,23 +869,16 @@ class _WelcomeStep extends StatelessWidget {
           StaggeredListItem(
             index: 0,
             duration: AirbnbMotion.longForm,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: ScriptaColors.primaryFaint,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: ScriptaColors.primary.withAlpha(40),
-                  width: 1.5,
+            // The real brand mark with a slow, gentle float — alive but calm,
+            // the "memorabile" anchor of the welcome moment.
+            child: const ScriptaMark(size: 104)
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .moveY(
+                  begin: -3,
+                  end: 3,
+                  duration: 2600.ms,
+                  curve: Curves.easeInOut,
                 ),
-              ),
-              child: const Icon(
-                Icons.auto_stories,
-                size: 48,
-                color: ScriptaColors.primary,
-              ),
-            ),
           ),
 
           const SizedBox(height: 28),
@@ -1039,10 +1051,28 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
     await _runSocial(svc.signInWithGoogle);
   }
 
-  // Apple sign-in awaits Apple Developer enrollment (required for App Store
-  // Rule 4.8 if you ship Google login). The wiring in SupabaseService is
-  // ready; only the UI button is hidden until then.
-  //
+  Future<void> _onApple() async {
+    if (_socialLoading) return;
+    setState(() {
+      _socialLoading = true;
+      _socialError   = null;
+    });
+    final svc = ref.read(supabaseServiceProvider);
+    // Same pre-flight as Google: a friendly inline message instead of the raw
+    // Supabase JSON error page when the provider isn't configured yet.
+    final enabled = await svc.isOAuthProviderEnabled('apple');
+    if (!mounted) return;
+    if (!enabled) {
+      setState(() {
+        _socialLoading = false;
+        _socialError   = context.l10n.authProviderNotEnabled;
+      });
+      return;
+    }
+    setState(() => _socialLoading = false);
+    await _runSocial(svc.signInWithApple);
+  }
+
   // Phone/SMS removed entirely — no Twilio dependency at launch. Will be
   // reintroduced if/when an SMS provider becomes cost-effective.
 
@@ -1082,9 +1112,11 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
 
           const SizedBox(height: 28),
 
-          // ── Social auth (Google only for now) ────────────────────────────
+          // ── Social auth (Apple first per HIG, then Google) ───────────────
           SocialAuthButtons(
             loading: _socialLoading,
+            appleLabel: context.l10n.authContinueWithApple,
+            onApple: _onApple,
             googleLabel: context.l10n.authContinueWithGoogle,
             onGoogle: _onGoogle,
           ),
@@ -1897,13 +1929,32 @@ class _PermissionsStep extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(),
+          // Icons pop in one after the other (soft elastic) — "this matters,
+          // but it's safe", instead of two static squares.
           Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                _PermIcon(icon: Icons.favorite_rounded),
-                SizedBox(width: 14),
-                _PermIcon(icon: Icons.event_rounded),
+              children: [
+                const _PermIcon(icon: Icons.favorite_rounded)
+                    .animate()
+                    .fadeIn(duration: 380.ms)
+                    .scale(
+                      begin: const Offset(0.7, 0.7),
+                      end: const Offset(1, 1),
+                      duration: 520.ms,
+                      curve: Curves.elasticOut,
+                    ),
+                const SizedBox(width: 14),
+                const _PermIcon(icon: Icons.event_rounded)
+                    .animate()
+                    .fadeIn(delay: 110.ms, duration: 380.ms)
+                    .scale(
+                      begin: const Offset(0.7, 0.7),
+                      end: const Offset(1, 1),
+                      delay: 110.ms,
+                      duration: 520.ms,
+                      curve: Curves.elasticOut,
+                    ),
               ],
             ),
           ),
@@ -1917,7 +1968,15 @@ class _PermissionsStep extends StatelessWidget {
               height: 1.12,
               color: ScriptaColors.ink,
             ),
-          ),
+          )
+              .animate()
+              .fadeIn(delay: 240.ms, duration: 380.ms)
+              .slideY(
+                  begin: -0.06,
+                  end: 0,
+                  delay: 240.ms,
+                  duration: 380.ms,
+                  curve: AirbnbMotion.enter),
           const SizedBox(height: 16),
           Text(
             body,
@@ -1927,7 +1986,7 @@ class _PermissionsStep extends StatelessWidget {
               height: 1.6,
               color: ScriptaColors.inkMuted,
             ),
-          ),
+          ).animate().fadeIn(delay: 330.ms, duration: 360.ms),
           const SizedBox(height: 12),
           Text(
             note,
@@ -1936,7 +1995,7 @@ class _PermissionsStep extends StatelessWidget {
               fontSize: 12.5,
               color: ScriptaColors.inkFaint,
             ),
-          ),
+          ).animate().fadeIn(delay: 410.ms, duration: 360.ms),
           const Spacer(),
           GestureDetector(
             onTap: () => onAllow(),
@@ -1957,7 +2016,15 @@ class _PermissionsStep extends StatelessWidget {
                 ),
               ),
             ),
-          ),
+          )
+              .animate()
+              .fadeIn(delay: 480.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.1,
+                  end: 0,
+                  delay: 480.ms,
+                  duration: 380.ms,
+                  curve: AirbnbMotion.enter),
           const SizedBox(height: 6),
           TextButton(
             onPressed: onSkip,
@@ -1969,7 +2036,7 @@ class _PermissionsStep extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-          ),
+          ).animate().fadeIn(delay: 560.ms, duration: 360.ms),
         ],
       ),
     );
@@ -2047,26 +2114,52 @@ class _GenderStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 36),
+          // Cards settle in one after the other — soft, respectful pacing for
+          // a sensitive question (selection feedback stays instant).
           _GenderOption(
             label: female,
             value: 'female',
             isSelected: selected == 'female',
             onTap: () => onSelect('female'),
-          ),
+          )
+              .animate()
+              .fadeIn(delay: 140.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.12,
+                  end: 0,
+                  delay: 140.ms,
+                  duration: 400.ms,
+                  curve: AirbnbMotion.enter),
           const SizedBox(height: 12),
           _GenderOption(
             label: male,
             value: 'male',
             isSelected: selected == 'male',
             onTap: () => onSelect('male'),
-          ),
+          )
+              .animate()
+              .fadeIn(delay: 220.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.12,
+                  end: 0,
+                  delay: 220.ms,
+                  duration: 400.ms,
+                  curve: AirbnbMotion.enter),
           const SizedBox(height: 12),
           _GenderOption(
             label: unspecified,
             value: 'unspecified',
             isSelected: selected == 'unspecified',
             onTap: () => onSelect('unspecified'),
-          ),
+          )
+              .animate()
+              .fadeIn(delay: 300.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.12,
+                  end: 0,
+                  delay: 300.ms,
+                  duration: 400.ms,
+                  curve: AirbnbMotion.enter),
           const Spacer(),
         ],
       ),

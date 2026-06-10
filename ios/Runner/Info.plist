@@ -133,6 +133,19 @@
 				<string>marginalia</string>
 			</array>
 		</dict>
+		<!--
+		  Supabase OAuth deep-link return (Sign in with Apple/Google web flow):
+		  supabase_flutter listens for io.supabase.flutter://login-callback and
+		  completes the session. Keep in sync with the dashboard's Redirect URLs.
+		-->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>io.supabase.flutter</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.flutter</string>
+			</array>
+		</dict>
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Scripta needs access to your photo library so you can pick an avatar, a profile cover, or attach an image to a chat message.</string>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Console · Scripta</title>
+<link rel="icon" type="image/png" href="../assets/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F2F1EA;
+    --sage-light: #DAE4D4;
+    --sage: #BECEB3;
+    --sage-dark: #8AA178;
+    --ink: #1B1F1B;
+    --ink-muted: #6F756E;
+    --red: #B94A41;
+    --card: #FFFFFF;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px 20px 64px;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+  header img { width: 44px; height: 44px; border-radius: 11px; }
+  header h1 { font-family: 'EB Garamond', serif; font-size: 30px; font-weight: 600; }
+  .sub { color: var(--ink-muted); font-size: 13px; margin-bottom: 28px; }
+  .sub b { color: var(--ink); font-weight: 600; }
+  .section { font-family: 'EB Garamond', serif; font-size: 21px; font-weight: 600; margin: 34px 0 14px; display: flex; align-items: baseline; gap: 10px; }
+  .section small { font-family: 'Manrope'; font-size: 12px; color: var(--ink-muted); font-weight: 400; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(27,31,27,0.07);
+    border-radius: 18px;
+    padding: 18px 18px 15px;
+    box-shadow: 0 2px 10px rgba(27,31,27,0.04);
+  }
+  .card .num { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+  .card .num.red { color: var(--red); }
+  .card .num.sage { color: var(--sage-dark); }
+  .card .label { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
+  .card .expl { font-size: 12px; color: var(--ink-muted); line-height: 1.45; margin-top: 7px; }
+  .pill {
+    display: inline-block; background: var(--sage-light); color: var(--ink);
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; margin-left: 4px;
+  }
+  .controls { margin-top: 30px; display: flex; gap: 10px; align-items: center; }
+  button {
+    font-family: 'Manrope'; font-weight: 600; font-size: 13.5px;
+    background: var(--ink); color: var(--cream); border: 0; border-radius: 12px;
+    padding: 10px 20px; cursor: pointer;
+  }
+  button:hover { opacity: .88; }
+  #status { font-size: 12.5px; color: var(--ink-muted); }
+  #gate { max-width: 460px; margin: 12vh auto 0; text-align: center; }
+  #gate input {
+    width: 100%; font-family: 'Manrope'; font-size: 14px; padding: 12px 14px;
+    border: 1px solid var(--sage); border-radius: 12px; background: #fff; margin: 14px 0;
+  }
+  #dash { display: none; }
+  .revnote { font-size: 12px; color: var(--ink-muted); margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="gate">
+    <header style="justify-content:center">
+      <img src="../assets/icon-192.png" alt="">
+      <h1>Console Scripta</h1>
+    </header>
+    <p class="sub" style="margin-top:8px">Pagina privata, non indicizzata. Inserisci la chiave di accesso.</p>
+    <input id="tok" type="password" placeholder="Chiave di accesso" autocomplete="off">
+    <button onclick="saveToken()">Entra</button>
+    <p id="gateerr" style="color:var(--red);font-size:13px;margin-top:12px"></p>
+  </div>
+
+  <div id="dash">
+    <header>
+      <img src="../assets/icon-192.png" alt="">
+      <h1>Console Scripta</h1>
+    </header>
+    <p class="sub">Metriche live dal database di produzione · aggiornate <b id="ts">—</b></p>
+
+    <div class="section">Utenti</div>
+    <div class="grid" id="g-users"></div>
+
+    <div class="section">Engagement <small>ultimi 7 giorni</small></div>
+    <div class="grid" id="g-eng"></div>
+
+    <div class="section">Ricavi potenziali <small>scenari ipotetici a €19,99/anno</small></div>
+    <div class="grid" id="g-rev"></div>
+    <p class="revnote">Gli scenari moltiplicano gli utenti attivi mensili (MAU) per il prezzo annuale ipotetico
+    di €19,99, a tre tassi di conversione tipici del consumer subscription (2% prudente, 5% buono, 10% eccellente).
+    Sono proiezioni indicative: l'app oggi è gratuita e non incassa nulla.</p>
+
+    <div class="section">Contenuti <small>totali dalla nascita dell'app</small></div>
+    <div class="grid" id="g-content"></div>
+
+    <div class="controls">
+      <button onclick="load()">Aggiorna</button>
+      <button style="background:transparent;color:var(--ink-muted);border:1px solid var(--sage)" onclick="logout()">Esci</button>
+      <span id="status"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const FN = 'https://ibucvloawkfwobaelwbr.supabase.co/functions/v1/admin-metrics';
+const KEY = 'scripta_console_token';
+
+// Accept the token from the URL hash once (#t=...), then keep it ONLY in
+// localStorage and scrub the address bar.
+(function () {
+  const m = location.hash.match(/t=([0-9a-f]+)/);
+  if (m) {
+    localStorage.setItem(KEY, m[1]);
+    history.replaceState(null, '', location.pathname);
+  }
+})();
+
+// Defense-in-depth: the API only ever returns numbers/currency strings we
+// build ourselves, but coerce + escape anything that lands in innerHTML.
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+function card(num, label, expl, tone) {
+  return `<div class="card"><div class="num ${tone || ''}">${esc(num)}</div>` +
+         `<div class="label">${esc(label)}</div><div class="expl">${esc(expl)}</div></div>`;
+}
+function eur(n) {
+  return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+}
+
+async function load() {
+  const token = localStorage.getItem(KEY);
+  if (!token) { showGate(); return; }
+  document.getElementById('status').textContent = 'Carico…';
+  try {
+    const res = await fetch(FN, { headers: { 'x-admin-token': token } });
+    if (res.status === 403) { localStorage.removeItem(KEY); showGate('Chiave non valida.'); return; }
+    const body = await res.json();
+    if (!res.ok) {
+      document.getElementById('status').textContent =
+        'Errore server: ' + (body && body.error ? body.error : res.status);
+      return;
+    }
+    render(body);
+    document.getElementById('status').textContent = '';
+  } catch (e) {
+    document.getElementById('status').textContent = 'Errore di rete: ' + e;
+  }
+}
+
+function render(body) {
+  const m = body.metrics;
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  document.getElementById('ts').textContent =
+    new Date(body.generated_at).toLocaleString('it-IT');
+
+  const u = m.users;
+  document.getElementById('g-users').innerHTML =
+    card(u.total, 'Utenti totali', 'Tutti gli account registrati dalla nascita dell\'app.') +
+    card(u.dau, 'Attivi oggi (DAU)', 'Utenti che hanno effettuato l\'accesso nelle ultime 24 ore. Misura l\'abitudine quotidiana.', 'sage') +
+    card(u.wau, 'Attivi 7 giorni (WAU)', 'Utenti con un accesso negli ultimi 7 giorni. Il rapporto DAU/WAU indica quanto è "quotidiana" l\'app.', 'sage') +
+    card(u.mau, 'Attivi 30 giorni (MAU)', 'Utenti con un accesso negli ultimi 30 giorni. È la base degli scenari di ricavo.', 'sage') +
+    card(u.new_7d, 'Nuovi (7gg)', 'Account creati negli ultimi 7 giorni: la crescita recente.') +
+    card(u.new_30d, 'Nuovi (30gg)', 'Account creati negli ultimi 30 giorni.') +
+    card(u.push_enabled, 'Con notifiche attive', 'Utenti che hanno accettato le notifiche push: i più raggiungibili.');
+
+  const e = m.engagement_7d;
+  document.getElementById('g-eng').innerHTML =
+    card(e.posts, 'Post pubblicati', 'Nuovi post nel feed negli ultimi 7 giorni.') +
+    card(e.comments, 'Commenti', 'Commenti lasciati sui post negli ultimi 7 giorni.') +
+    card(e.messages, 'Messaggi', 'Messaggi privati scambiati negli ultimi 7 giorni.') +
+    card(e.ripassi, 'Ripassi completati', 'Sessioni di ripasso giornaliero completate negli ultimi 7 giorni (registrate nelle Jam).') +
+    card(e.streak_users_today, 'In serie oggi', 'Utenti che hanno già fatto il ripasso di oggi (serie attiva).');
+
+  const PRICE = 19.99, mau = u.mau;
+  document.getElementById('g-rev').innerHTML =
+    card(eur(mau * PRICE * 0.02), 'Scenario prudente (2%)', `Se il 2% dei ${mau} MAU pagasse €19,99/anno.`, 'red') +
+    card(eur(mau * PRICE * 0.05), 'Scenario buono (5%)', `Se il 5% dei ${mau} MAU pagasse €19,99/anno.`, 'red') +
+    card(eur(mau * PRICE * 0.10), 'Scenario eccellente (10%)', `Se il 10% dei ${mau} MAU pagasse €19,99/anno.`, 'red') +
+    card(eur(mau * PRICE), 'Tetto teorico', 'Se il 100% dei MAU pagasse: il massimo assoluto, irrealistico ma utile come riferimento.', 'red');
+
+  const c = m.content;
+  document.getElementById('g-content').innerHTML =
+    card(c.highlights, 'Highlights', 'Frasi sincronizzate dai Kindle degli utenti: il cuore dell\'app.') +
+    card(c.books, 'Libri', 'Libri distinti presenti nelle librerie.') +
+    card(c.reading_sessions, 'Sessioni di lettura', 'Sessioni registrate dal reading tracker.') +
+    card(c.posts, 'Post', 'Post totali nel feed sociale.') +
+    card(c.post_comments, 'Commenti', 'Commenti totali sui post.') +
+    card(c.post_likes, 'Like', 'Like totali sui post.') +
+    card(c.messages, 'Messaggi', `In ${c.conversations} conversazioni private e di gruppo.`) +
+    card(c.jams, 'Jam', `Circoli di lettura attivi, con ${c.jam_members} membri totali.`) +
+    card(c.jam_highlights, 'Highlight nelle Jam', 'Frasi condivise dentro i circoli.') +
+    card(c.follows, 'Follow', 'Relazioni di follow tra utenti.') +
+    card(c.reviews, 'Recensioni', 'Recensioni scritte sui libri letti.') +
+    card(c.covers_custom, 'Copertine personalizzate', 'Copertine caricate dagli utenti al posto di quelle generate.');
+}
+
+function showGate(err) {
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('gate').style.display = 'block';
+  document.getElementById('gateerr').textContent = err || '';
+}
+function saveToken() {
+  const v = document.getElementById('tok').value.trim();
+  if (!v) return;
+  localStorage.setItem(KEY, v);
+  load();
+}
+function logout() {
+  localStorage.removeItem(KEY);
+  showGate();
+}
+
+load();
+</script>
+</body>
+</html>

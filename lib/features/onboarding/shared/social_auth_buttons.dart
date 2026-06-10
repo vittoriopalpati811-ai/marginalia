@@ -1,8 +1,11 @@
 // ─── Social auth buttons (shared) ──────────────────────────────────────────
 //
-// Currently only Google. Apple and Phone are temporarily disabled —
-// Apple awaits Apple Developer enrollment, Phone removed entirely to
-// avoid SMS provider costs at launch.
+// Apple + Google (Supabase OAuth web flow — no native SDKs, no entitlement
+// risk; the dashboard provider config is the only server-side prerequisite,
+// and callers pre-flight isOAuthProviderEnabled for a friendly message).
+// Apple is rendered FIRST per Apple's HIG: when third-party login is offered,
+// Sign in with Apple must be equally prominent (App Store Guideline 4.8).
+// Phone removed entirely to avoid SMS provider costs at launch.
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -15,27 +18,51 @@ class SocialAuthButtons extends StatelessWidget {
     super.key,
     required this.onGoogle,
     required this.googleLabel,
+    this.onApple,
+    this.appleLabel,
     this.loading = false,
   });
 
-  final VoidCallback onGoogle;
-  final String       googleLabel;
-  final bool         loading;
+  final VoidCallback  onGoogle;
+  final String        googleLabel;
+  final VoidCallback? onApple;
+  final String?       appleLabel;
+  final bool          loading;
 
   @override
   Widget build(BuildContext context) {
-    // Single Google pill — white-background per Google's brand guide,
-    // with the multicolor G mark on the leading edge.
-    return StaggeredListItem(
-      index: 0,
-      child: _AuthPill(
-        onPressed: loading ? null : onGoogle,
-        background: Colors.white,
-        foreground: const Color(0xFF1F1F1F),
-        border: ScriptaColors.rule,
-        iconBuilder: () => const _GoogleMark(),
-        label: googleLabel,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Apple pill — black per Apple's brand guide, leading  mark.
+        if (onApple != null && appleLabel != null) ...[
+          StaggeredListItem(
+            index: 0,
+            child: _AuthPill(
+              onPressed: loading ? null : onApple!,
+              background: Colors.black,
+              foreground: Colors.white,
+              iconBuilder: () =>
+                  const Icon(Icons.apple, size: 22, color: Colors.white),
+              label: appleLabel!,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        // Google pill — white-background per Google's brand guide,
+        // with the multicolor G mark on the leading edge.
+        StaggeredListItem(
+          index: 1,
+          child: _AuthPill(
+            onPressed: loading ? null : onGoogle,
+            background: Colors.white,
+            foreground: const Color(0xFF1F1F1F),
+            border: ScriptaColors.rule,
+            iconBuilder: () => const _GoogleMark(),
+            label: googleLabel,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,4 +1,4 @@
-{
+﻿{
   "@@locale": "en",
 
   "appTitle": "Scripta",
@@ -126,22 +126,6 @@
   "jamMembers": "Members",
   "jamHighlights": "Shared highlights",
 
-  "paywallTitle": "Scripta Premium",
-  "paywallSubtitle": "Unlock the full potential\nof your reading",
-  "paywallPrice": "€19.99/year",
-  "paywallPriceSub": "Less than a coffee a month",
-  "paywallPurchaseCta": "Unlock Scripta Premium",
-  "paywallRestore": "Restore purchase",
-  "paywallFeatureHighlights": "Unlimited Kindle highlights",
-  "paywallFeatureJams": "Create and join unlimited Jams",
-  "paywallFeatureWidget": "Active iOS widget",
-  "paywallFreeTierHighlights": "Up to 100 highlights (free plan)",
-  "paywallFreeTierJams": "View-only Jams (free plan)",
-  "paywallFreeTierWidget": "Widget not available (free plan)",
-  "paywallTerms": "Annual auto-renewal. Cancel anytime from Settings → Subscriptions.",
-  "paywallPurchaseError": "Purchase failed. Please try again.",
-  "paywallRestoreSuccess": "Purchase restored!",
-  "paywallRestoreNone": "No purchases to restore.",
 
   "onboardingWelcomeSubtitle": "Rediscover what you've read. Talk it over with the readers who read it with you.",
   "onboardingStart": "Start →",
@@ -202,7 +186,6 @@
   "share": "Share",
   "copy": "Copy",
 
-  "paywallPurchaseSuccess": "Welcome to Scripta Premium.",
 
   "highlightNotFound": "Highlight not found.",
   "bookNotFound": "Book not found.",
@@ -789,8 +772,6 @@
   "authTermsPrefix": "By creating an account you agree to our ",
   "authTermsSuffix": " and confirm you are 16 or older.",
 
-  "paywallPremiumBadge": "PREMIUM",
-  "paywallPriceMonthlyEquivalent": "~€1.67/month",
 
   "chatUnableToLoad": "Unable to load messages",
   "chatEmptyBody": "Start the conversation\nby sending the first message.",

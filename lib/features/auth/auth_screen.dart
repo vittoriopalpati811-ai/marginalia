@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../settings/privacy_policy_screen.dart';
@@ -11,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../onboarding/shared/social_auth_buttons.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -34,20 +37,74 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   // Guideline 1.2). Client-side gate; no DB column is stored for it.
   bool _acceptedTerms = false;
 
+  StreamSubscription<AuthState>? _authSub;
+
+  // True only while a SOCIAL sign-in round-trip is in flight. The listener
+  // below pops ONLY for that flow — the email path already pops on success
+  // itself, and reacting to its signedIn event too would pop TWICE (throwing
+  // or dismissing the underlying route).
+  bool _socialFlowInFlight = false;
+
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 2, vsync: this);
     _tab.addListener(() => setState(() => _error = null));
+    // Social OAuth returns via deep link: when the session lands, leave the
+    // auth screen exactly like the email path does (context.pop on success).
+    _authSub =
+        Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (!mounted) return;
+      if (data.event == AuthChangeEvent.signedIn && _socialFlowInFlight) {
+        _socialFlowInFlight = false;
+        context.pop();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _tab.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
     super.dispose();
+  }
+
+  /// Social sign-in (Apple/Google) via the Supabase OAuth web flow. Pre-flights
+  /// the provider so an unconfigured dashboard shows a friendly message instead
+  /// of Supabase's raw JSON error page. Success returns through the deep link
+  /// and the auth listener pops this screen.
+  Future<void> _social(String provider) async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final service = ref.read(supabaseServiceProvider);
+      final enabled = await service.isOAuthProviderEnabled(provider);
+      if (!mounted) return;
+      if (!enabled) {
+        setState(() => _error = context.l10n.authProviderNotEnabled);
+        return;
+      }
+      _socialFlowInFlight = true;
+      if (provider == 'apple') {
+        await service.signInWithApple();
+      } else {
+        await service.signInWithGoogle();
+      }
+    } on AuthException catch (e) {
+      _socialFlowInFlight = false;
+      if (mounted) setState(() => _error = _mapError(e.message));
+    } catch (_) {
+      _socialFlowInFlight = false;
+      if (mounted) setState(() => _error = context.l10n.authOauthFailed);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -426,6 +483,43 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                               )
                             : Text(_tab.index == 0 ? context.l10n.authSignIn : context.l10n.authCreateAccount),
                       ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // ── "oppure" + social sign-in (Apple first per HIG) ──────
+                    Row(
+                      children: [
+                        const Expanded(
+                            child:
+                                Divider(color: ScriptaColors.rule, height: 1)),
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            context.l10n.authOrDivider,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: ScriptaColors.inkFaint,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                        const Expanded(
+                            child:
+                                Divider(color: ScriptaColors.rule, height: 1)),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    SocialAuthButtons(
+                      loading: _loading,
+                      appleLabel: context.l10n.authContinueWithApple,
+                      onApple: () => _social('apple'),
+                      googleLabel: context.l10n.authContinueWithGoogle,
+                      onGoogle: () => _social('google'),
                     ),
 
                     const SizedBox(height: 20),

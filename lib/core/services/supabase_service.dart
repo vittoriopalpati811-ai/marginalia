@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
@@ -86,9 +87,11 @@ class SupabaseService {
   Future<bool> signInWithApple() {
     return _client.auth.signInWithOAuth(
       OAuthProvider.apple,
-      // On web, return to the same page (Supabase parses the hash).
-      // On native, the SDK handles deep-link redirect automatically.
-      redirectTo: null,
+      // On web, return to the same page (Supabase parses the hash). On native,
+      // come back via the io.supabase.flutter deep link (registered in
+      // Info.plist and in the dashboard's Redirect URLs) so the in-app session
+      // completes without the user re-opening the app manually.
+      redirectTo: kIsWeb ? null : 'io.supabase.flutter://login-callback/',
     );
   }
 
@@ -96,7 +99,7 @@ class SupabaseService {
   Future<bool> signInWithGoogle() {
     return _client.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: null,
+      redirectTo: kIsWeb ? null : 'io.supabase.flutter://login-callback/',
     );
   }
 

@@ -1,211 +1,300 @@
-# Project: Marginalia
+# Scripta — project guide & session handoff
 
-> App iOS nativa per riscoprire gli highlight Kindle attraverso widget intelligenti, cerchie di lettura sociali (Jam) e sync automatico con Amazon.
+> iOS-first Flutter app that turns Kindle highlights into a daily ritual:
+> smart home-screen widgets, spaced-repetition "Ripasso", reading social
+> circles ("Jam"), and a reading tracker. Formerly **Marginalia** (the repo,
+> bundle id `io.marginalia.app`, and folder name still say "Marginalia" — only
+> the user-facing brand is **Scripta**).
 
----
-
-## ⚠️ Nota meta-importante per Claude
-
-Questi file (CLAUDE.md, BACKLOG.md, PROGRESS.md, QUESTIONS.md) sono stati scritti con il founder. **Sono base di partenza, non vangelo.**
-
-Sei autorizzato — anzi, incoraggiato — a:
-- **Riorganizzare** i file se trovi una struttura migliore
-- **Aggiungere** sezioni mancanti che ti renderebbero più efficace
-- **Correggere** incoerenze o ambiguità che noti leggendo
-
-L'unica regola: **prima di una riorganizzazione strutturale**, scrivi in `QUESTIONS.md` cosa vuoi cambiare e perché, e procedi solo dopo l'OK del founder.
+This file is the **single source of truth for a new AI session**. Read it fully
+before touching anything. It is kept accurate; if you change how the project
+works, update this file in the same commit.
 
 ---
 
-## 1. Contesto e principi
+## 0. STANDING FOUNDER INSTRUCTIONS (always in effect — verbatim)
 
-### Cosa sto costruendo
-App iOS che importa highlight da Kindle e li ripropone all'utente attraverso widget home/lockscreen, ricerca semantica, e feature social (Jam — cerchie di lettura).
+- **"fai tutto tu, non chiedermi niente"** — do everything autonomously, don't
+  ask. Don't stop to confirm; pick the sensible option and proceed.
+- **"prima iphone poi apk"** — iOS is the priority. Always ship the iOS build
+  first, then rebuild the Android APK.
+- Production-ready, **zero-bug, no "AI slop"**. Verify before reporting ("prima
+  di rimandarmi le cose controlla che funzionino") — claims must be backed by
+  `flutter analyze` + tests + (where possible) live DB checks.
+- **English-predominant** UI; founder communicates in Italian.
+- **Ultracode is ON**: use the Workflow tool for substantive tasks (parallel
+  investigation + adversarial verification). Solo only for trivial edits.
+- When a build is green, send a recap as a **Gmail draft** (not auto-sent) to
+  **vittoriopalpati811@gmail.com**.
 
-### Target utente
-Lettori avidi (Kindle owners) che soffrono il "ho letto 40 libri e non ricordo niente". Sovra-rappresentazione su iOS, gusto estetico curato, disposti a pagare €25/anno.
-
-### Filosofia di prodotto
-- **Rituale, non database.** L'app deve far venire voglia di aprirla.
-- **Estetica giapponese minimalista.** Bianchi caldi (#FAFAF8), Lora serif, sepia accent (#8B7355).
-- **Offline-first.** Tutto funziona senza rete. Supabase è un layer opzionale.
-
----
-
-## 2. Stack tecnico (DECISIONE DEFINITIVA — 2026-05-10)
-
-### ⚠️ Pivot da Swift a Flutter
-
-**Motivo**: il founder sviluppa su Windows. Flutter compila e gira nativamente su Windows
-(`flutter run -d windows`) senza nessun Mac. La qualità delle animazioni (Impeller engine)
-è paragonabile a SwiftUI nativo.
-
-### Stack corrente
-
-**Framework**: Flutter/Dart
-- Target primario: iOS (App Store)
-- Development & test: Windows desktop + Chrome (`flutter run -d windows`)
-- Animazioni: Impeller engine (60/120fps)
-
-**State management**: flutter_riverpod 2.x
-- Provider manuali (senza riverpod_generator per semplicità)
-
-**Database locale**: Isar 3.x
-- NoSQL embedded, offline-first
-- ⚠️ Richiede code generation: `dart run build_runner build --delete-conflicting-outputs`
-- I file `*.g.dart` sono in .gitignore (si rigenerano)
-
-**Backend**: Supabase
-- PostgreSQL + RLS + Storage + Realtime + Edge Functions
-- Tier free sufficiente per MVP
-- Auth: email + password (magic link in roadmap)
-
-**Navigation**: go_router 13.x
-- ShellRoute per bottom nav (Library, Search, Jam, Settings)
-- Route full-screen per book detail, highlight detail, Amazon sync
-
-**Amazon Kindle sync**: webview_flutter + JavaScript injection
-- L'utente accede ad Amazon sul proprio account (credenziali non visibili all'app)
-- JS iniettato su `read.amazon.com/kp/notebook` per estrarre highlights
-- Stesso approccio usato da Readwise, Obsidian, Notion
-
-**CI/CD**: Codemagic (free: 500 min/mese)
-- Build iOS in cloud senza Mac → TestFlight → iPhone
-- Config: `codemagic.yaml` nella root del repo
-
-**Animazioni**: flutter_animate 4.x
-
-**Tipografia**: google_fonts (Lora serif per highlights, system-ui per UI)
-
-### Struttura monorepo
-```
-Marginalia/
-├── lib/                    # Flutter source
-│   ├── main.dart           # Entry point
-│   ├── app.dart            # MaterialApp + router
-│   ├── core/
-│   │   ├── theme.dart
-│   │   ├── models/         # Isar models (+ *.g.dart generati)
-│   │   ├── parser/         # MyClippingsParser
-│   │   ├── services/       # ImportService, AmazonSyncService, SupabaseService
-│   │   └── providers/      # Riverpod providers
-│   └── features/
-│       ├── library/        # LibraryScreen, BookDetailScreen
-│       ├── reader/         # HighlightDetailScreen
-│       ├── search/         # SearchScreen
-│       ├── social/         # SocialScreen (Jam)
-│       ├── settings/       # SettingsScreen
-│       └── onboarding/     # AmazonLoginScreen
-├── supabase/               # Migrations + Edge Functions
-│   ├── migrations/
-│   └── functions/parse-clippings/
-├── test/                   # Flutter tests
-│   └── parser/
-├── pubspec.yaml
-├── codemagic.yaml
-└── [file di processo]
-```
+Founder develops on **Windows, no Mac**. Everything must build without a Mac.
 
 ---
 
-## 3. Setup del founder (Windows)
+## 1. CURRENT STATUS (2026-06-10)
 
-### Sviluppo locale
-
-1. Installa Flutter SDK: https://docs.flutter.dev/get-started/install/windows
-2. Clona il repo
-3. `flutter pub get`
-4. Genera schemi Isar: `dart run build_runner build --delete-conflicting-outputs`
-5. Testa su Windows: `flutter run -d windows`
-6. Testa su Chrome: `flutter run -d chrome`
-
-### Build iOS (senza Mac)
-
-Ogni push su `main` → Codemagic builda → TestFlight → iPhone in ~20 minuti.
-
-Prima configurazione Codemagic (una sola volta, dal browser):
-1. Crea account su codemagic.io
-2. Connetti repo GitHub
-3. Configura integrazione App Store Connect (API key)
-4. Aggiungi certificati (Codemagic gestisce il keychain automaticamente)
-
-Vedi `codemagic.yaml` per la config completa.
-
-### ⚠️ Code generation obbligatoria
-
-Prima di ogni `flutter run`, se hai modificato un modello Isar:
-```
-dart run build_runner build --delete-conflicting-outputs
-```
-
-I file `*.g.dart` non sono in git (sono in .gitignore) — si rigenerano localmente.
+- **Live in production.** ~87 users, ~1115 highlights, ~215 posts (real usage).
+- **App is FREE** — all paywall/premium code was removed (see §6). No gates.
+- Latest green iOS build: **TestFlight run #71, commit `ae0a113`** (build number
+  = unix timestamp). Latest APK: **`Scripta_1.1.0.apk` on the Desktop**.
+- Active branch: **`feat/profile-ui-privacy`** (this is what CI builds — see §3).
+- A batch (free-app + admin console + Apple/Google sign-in + animated
+  onboarding) is **committed-pending-push** as of this handoff — see §9.
 
 ---
 
-## 4. Come Claude deve lavorare in questo repo
+## 2. STACK (current, accurate)
 
-### Modalità di lavoro
-Sessioni autonome di 2-4 ore. A fine sessione:
-1. Commit con messaggio descrittivo
-2. Aggiorna `PROGRESS.md`
-3. Dubbi importanti → `QUESTIONS.md`
+- **Flutter 3.22.0** / Dart. iOS primary; Android secondary (free via Flutter).
+  Local dev/test on Windows desktop + Chrome.
+- **flutter_riverpod 2.x**, manual providers (no riverpod_generator).
+- **Isar 3.x** local DB, offline-first. ⚠️ `*.g.dart` are gitignored and
+  regenerated: `dart run build_runner build --delete-conflicting-outputs`.
+- **Supabase** (Postgres + RLS + Storage + Realtime + Edge Functions).
+  Project ref **`ibucvloawkfwobaelwbr`**. URL + anon key are committed in
+  `lib/main.dart` (anon key is public by design).
+- **go_router** ShellRoute for the bottom nav.
+- **Amazon Kindle sync**: `webview_flutter` + JS injection on
+  `read.amazon.com/.../notebook` (same approach as Readwise). Not supported on
+  Windows desktop — use mock data locally.
+- **google_fonts** (EB Garamond serif for editorial text, Manrope for UI).
+- **flutter_animate 4.x** for motion; `lib/core/motion/airbnb_motion.dart` has
+  the shared duration/curve constants (fast 180 / standard 280 / emphasis 380 /
+  longForm 520; easeOutQuart enter).
 
-### Cosa fai in autonomia
-- Implementare feature da `BACKLOG.md`
-- Scrivere test Flutter (`flutter test`)
-- Aggiornare documentazione tecnica
-- Refactoring locali
-
-### Cosa NON fai senza conferma
-- Cambiare stack o aggiungere dipendenze a `pubspec.yaml`
-- Modificare schema Supabase in modo non retrocompatibile
-- Pushare su `main`
-- Commit > 500 righe (spezza in commit logici)
-
-### Stile di codice
-- Flutter dichiarativo, widget composabili e piccoli
-- Provider Riverpod manuali (non riverpod_generator)
-- Naming in inglese, commenti in inglese tecnico
-- Niente abbreviazioni (clipping non clp, highlightCount non hCnt)
-- Errori gestiti con try/catch + AsyncValue, mai silenziosi
-
-### Stile commit
-Vedi `.claude/commit-style.md`
+### Conditional (web vs native) files — IMPORTANT
+Several modules have `_native.dart` (iOS/Android, Isar/home_widget) and
+`_web.dart` (Chrome stub) variants behind a conditional `export`:
+`review_provider`, `widget_service`. **The analyzer resolves the `_web` stub by
+default**, so if you add a field/method used by shared UI you MUST mirror it in
+BOTH variants or `flutter analyze` breaks with "undefined getter". (Burned on
+this twice — see §7.)
 
 ---
 
-## 5. Vincoli MVP
+## 3. BUILD & SHIP PIPELINE (exact)
 
-1. iOS primario. Flutter permette Android gratis, ma foco su iOS fino a 1000 utenti.
-2. Nessuna AI nell'MVP. Si aggiunge post-lancio (Claude Haiku).
-3. Account obbligatorio (richiesto dalle Jam). Highlight locali offline funzionano, Jam richiede identity.
-4. Tempo founder: max 5h/settimana. Niente over-engineering.
+### iOS → TestFlight (no Mac)
+- GitHub Actions: `.github/workflows/ios-testflight.yml`. Triggers on push to
+  **`feat/profile-ui-privacy` | main | master**. Public repo → free macOS
+  runners. Uses Codemagic's open-source `codemagic-cli-tools` for signing +
+  `app-store-connect publish` (internal TestFlight, no Beta review).
+- Build number = unix timestamp. App display name forced to **Scripta**
+  (CFBundleDisplayName **and** CFBundleName via PlistBuddy).
+- `flutter create --platforms=ios` regenerates the iOS shell each build, so the
+  widget/watch Xcode targets are re-injected by `ios/scripts/add_widgets_extension.rb`
+  + `add_watch_targets.rb`. **CI now FAILS if injection fails or if the widget
+  `.appex` is missing from the IPA** (added this batch — an appex-less IPA
+  silently freezes every home-screen widget).
+- ⚠️ **Flaky-upload lesson**: a build can compile the IPA fine and fail ONLY at
+  "Publish to TestFlight (internal)" (altool transient). **Re-push (fresh build
+  number) fixes it** — it is NOT a code problem. Verify *where* it failed before
+  assuming a code bug.
+
+### Monitoring CI from Windows (no `gh` CLI installed!)
+The repo is **public**, so poll the Actions API unauthenticated:
+`https://api.github.com/repos/vittoriopalpati811-ai/marginalia/actions/runs?branch=feat/profile-ui-privacy&per_page=3`
+Pattern that works well: a PowerShell `run_in_background` loop that polls every
+45s and exits when the run for your SHA is `completed`, printing the conclusion.
+To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conclusion`.
+
+### Android APK
+- Port lives at **`../Marginalia_ANDROID`** (sibling of `Marginalia/`).
+- Sync: `robocopy <src>\lib <dst>\lib /MIR` (exit codes 0–7 = success). `pubspec`,
+  `assets`, launcher-icons config are already in sync; the port keeps its OWN
+  `flutter_launcher_icons.yaml` (android:true) — don't overwrite it. For a
+  lib-only change, copying just the changed files is enough.
+- Build env (from `Marginalia_ANDROID/run_android.ps1`):
+  - JDK17 `C:\Users\User\Android\jdk17`, SDK `C:\Users\User\Android\Sdk`
+  - `$env:JAVA_HOME`/`ANDROID_SDK_ROOT`/`ANDROID_HOME` then
+    `flutter build apk --release`.
+  - Kotlin "incompatible metadata 1.9.0 vs 1.7.1" lines are **non-fatal**
+    warnings; the build still produces `app-release.apk` (~72 MB). First Gradle
+    run on Windows can flake → re-run.
+- Deliver to **`C:\Users\User\Desktop\Scripta_1.1.0.apk`**.
+
+### Tooling paths (NOT on PATH — use absolute)
+- Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
+- Run flutter from inside `Marginalia/` (working dir is the PARENT
+  `Progetto 1/`). `gh` and `flutter` are NOT on PATH.
+- Commit messages: PowerShell here-strings mangle special chars → write the
+  message to a temp file and `git commit -F <file>`.
+- `flutter analyze` baseline = **23 issues, 0 errors** (pre-existing infos +
+  unnecessary-null-assertion warnings in profile/social files). "Back to 23, 0
+  errors" = clean. `flutter test` = **45 tests, all pass**.
 
 ---
 
-## 6. Errori noti e gotchas
+## 4. ARCHITECTURE MAP (where things live)
 
-### Isar code generation
-`*.g.dart` devono essere rigenerati dopo ogni modifica ai modelli. Se dimentichi:
-`type 'Null' is not a subtype of type 'IsarCollection<Book>'` al runtime.
-
-### Flutter Windows: webview_flutter non supportato
-`webview_flutter` funziona su iOS/Android ma non su Windows desktop.
-Per test locale su Windows, l'Amazon sync non funzionerà — usa mock data.
-
-### Supabase constants
-`lib/main.dart` ha `_supabaseUrl` e `_supabaseAnonKey` come placeholder.
-Il founder deve sostituirli con i valori reali prima del primo build.
+- `lib/main.dart` — bootstrap gate (optional subsystems are timeout-bounded so
+  startup never hangs), Supabase init, Sentry (DSN via `--dart-define`, CI
+  secret only).
+- `lib/app.dart` — `ScriptaApp`, go_router routes, the **bottom nav**
+  (`_ScaffoldWithNav` + `_LiquidGlassNavBar`): liquid-glass blur bar with a
+  sliding sage indicator pill, and a direction-aware page transition (read
+  `_direction` per-frame in the transitionBuilder — see §7).
+- `lib/core/theme.dart` — `ScriptaColors` (sage `primary 0xFFC0CFB2`, cream
+  `background/surfaceElevated`, `ink/inkMuted/inkFaint`, `sienna*`, red
+  `0xFFB94A41`), `ScriptaDecorations`, `ScriptaTextStyles`.
+- `lib/core/services/supabase_service.dart` — the big Supabase wrapper (auth,
+  covers, jams, push triggers, `markReviewCompleted` RPC call…).
+- `lib/features/`: `library/` (LibraryScreen, book_detail), `social/`
+  (SocialScreen=Jam, feed_tab), `messages/`, `profile/`, `review/` (Ripasso),
+  `quiz/`, `search/` (=Persone user search), `onboarding/`, `auth/`,
+  `settings/`, `widget/`, `wrapped/`, `stats/`.
+- `lib/core/branding/scripta_mark.dart` — **`ScriptaMark`** widget = the brand
+  logo (`assets/brand/scripta_mark.png`, sage layered cards + red bookmark).
+  Single source for the badge everywhere (share cards, onboarding, etc.).
+  The app icon comes from `assets/icon/app-icon.png` via flutter_launcher_icons.
 
 ---
 
-## 7. Decision log (riassunto)
+## 5. BACKEND (Supabase) — what's there
 
-| Data | Decisione | Motivazione |
-|------|-----------|-------------|
-| 2026-05-10 | Pivot Swift → Flutter | Founder su Windows: Flutter gira nativamente su Windows senza Mac |
-| 2026-05-10 | Codemagic invece di GitHub Actions | Specializzato Flutter, gestisce certificati iOS automaticamente, 500 min gratis |
-| 2026-05-10 | Riverpod manuale (no generator) | Evita dipendenza da code gen per i provider; solo Isar richiede build_runner |
-| 2026-05-10 | Account obbligatorio | Jam sociali incompatibili con no-account |
-| 2026-05-10 | Supabase al MVP | Social Jam richiede backend; meglio architettura finale subito |
-| 2026-05-10 | Amazon WKWebView sync | No USB, stesso approccio di Readwise, credenziali non visibili all'app |
+- Storage buckets: `book-covers` (public read, owner write by `userId/` prefix),
+  `avatars`, `covers`, `jam-covers`, `post-images`, `comment-images`,
+  `message-images`, `clippings`.
+- Per-user covers: table **`user_book_covers`** (PK `(user_id, book_key)`,
+  `book_key = 'title|author'` lowercased), public-read RLS. This is the single
+  source of truth for custom covers shown everywhere + to profile visitors.
+- Ripasso → Jam: tables `jam_ripasso_results`, `jam_quiz_results`
+  (unique `(jam_id, user_id, completed_on)`). The leaderboard reads
+  `profiles.review_streak/review_best_streak/last_reviewed_on`.
+  **RPC `mark_review_completed(p_cards int)`** (migration `059`) atomically
+  bumps the profile streak AND upserts a `jam_ripasso_results` row for every jam
+  the user is in (member OR owner), Europe/Rome day boundary. Called per graded
+  card. This replaced fragile unawaited client mirrors that left streaks at 0.
+- Edge functions: `send-push-notification` (APNs, server-derives recipient),
+  `recommend-books`, `semantic-search`, `pick-daily-highlight`, `moderate-image`,
+  `parse-clippings`, and **`admin-metrics`** (founder console — see §8).
+- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `059`. When you
+  apply something live via MCP, **also write the migration file** (drift bit us
+  once — the live RPC existed but no migration captured it).
+- Supabase MCP tools are available: `execute_sql`, `apply_migration`,
+  `list/deploy_edge_function`, etc. Use them to verify live state.
+
+---
+
+## 6. DECISIONS & WHY
+
+- **Swift → Flutter** (2026-05-10): founder is on Windows; Flutter builds iOS in
+  cloud CI without a Mac.
+- **Codemagic → GitHub Actions** for iOS: Codemagic free tier (500 min) ran out;
+  public repo gets free uncapped macOS runners. Same signing CLI, identical IPA.
+- **App is FREE / paywall removed** (this batch): purchases were always stubbed
+  (RevenueCat key was a placeholder; `purchases_flutter` was disabled because its
+  pod failed to compile on the CI Xcode). A visible-but-dead paywall is an App
+  Store **Guideline 3.1.1** rejection risk, and the founder decided free for now.
+  Deleted the screen, providers, services, route, and all `paywall*` l10n keys.
+  There were **no real feature gates** to unlock — the "free tier" text was
+  theatre.
+- **Apple sign-in rendered FIRST** (before Google) per Apple HIG / Guideline 4.8
+  (if you offer third-party login you must offer Sign in with Apple, equally
+  prominent). Uses the Supabase OAuth **web flow** (`signInWithOAuth`) — no
+  native `sign_in_with_apple`/`google_sign_in` packages, so **no new Apple
+  entitlement and no signing risk**; the only prerequisite is dashboard config.
+- **Admin metrics = static unlisted page + token-gated edge function**, not an
+  in-app screen: zero App Store surface, founder-only, and the token never ships
+  in the app binary.
+- **Email confirmation via 6-digit OTP** (not magic link): typing a code is more
+  reliable on mobile than a Safari deep-link round-trip. The screen
+  (`email_otp_screen.dart`) already existed.
+
+---
+
+## 7. FAILED APPROACHES / GOTCHAS (don't repeat)
+
+- **Widget "doesn't update" had TWO causes**: (a) the manual "update widget"
+  button in the preview screen was a literal stub (`// In a real build this
+  would call…`) that showed success without writing anything — now it really
+  pushes via the same pipeline and reports the real error; (b) the App
+  Group/kind names must match across Dart (`group.marginalia.widget`,
+  `MarginaliaWidget`/`MarginaliaStats`), the Swift extension, and entitlements.
+  If widgets still freeze after an update, **remove + re-add the widget** once
+  (WidgetKit caches the old timeline).
+- **Tab transition left-direction bug**: `_direction` was baked into the
+  outgoing page's tween when it first built, so switching to a LEFT tab after a
+  RIGHT one slid the wrong way. Fix: read `_direction` per-frame inside an
+  `AnimatedBuilder` in the transitionBuilder (now correct both ways).
+- **Navbar slider alignment**: `Alignment.x` maps over FREE space (bar − pill),
+  so for n slots of width 1/n the slots are at `-1 + 2*i/(n-1)` — divide by
+  **(n−1)**, not n (dividing by n mis-centres every non-middle tab).
+- **Conditional web stub drift**: see §2 — mirror new state fields in both
+  `*_native.dart` and `*_web.dart`.
+- **Unawaited streak mirror** left `profiles.review_streak` at 0 → jam Ripasso
+  section showed "ancora nessuna serie" even after a completed ripasso. Fixed
+  with the server-side RPC.
+- **Double-pop risk on auth**: the auth screen listens for `signedIn` to pop
+  after social OAuth, but the EMAIL path also pops itself → guard with a
+  `_socialFlowInFlight` bool so only the social flow reacts to the event.
+- **Isar reads DateTime back as UTC** — always normalise to LOCAL date-only
+  before comparing to "today" (a raw `!= today` silently reset streaks daily).
+- **PostgrestException in poll vote**: upsert needed `onConflict`.
+- **Permanent deletion is prohibited** by safety rules — when cleaning files
+  (e.g. old APKs) move to Recycle Bin, never hard-delete.
+
+---
+
+## 8. ADMIN CONSOLE (founder metrics)
+
+- Page: `docs/console-hl0591p7oc/` (unlisted, `noindex`, served at
+  **https://get-scripta.app/console-hl0591p7oc/** after the next site deploy —
+  `docs/` is the GitHub Pages root, custom domain `get-scripta.app` confirmed
+  live). Nothing links to it; the slug is the obscurity layer.
+- Auth: a 48-char random token, sent only in the **`x-admin-token` header**
+  (header-only after this batch — query-param form was removed so it can't land
+  in logs). 403 on mismatch. The token is **NOT in the repo** — it lives only in
+  the deployed `admin-metrics` function and in the founder's Desktop file
+  (`Scripta — Console e Credenziali.txt`, kept out of git).
+- Data: edge fn `admin-metrics` → RPC `admin_metrics_snapshot()` (SECURITY
+  DEFINER, EXECUTE granted only to service_role). Returns **aggregate counts
+  only — no PII**: users (total/DAU/WAU/MAU/new/push-enabled), 7-day engagement,
+  content totals, and computed revenue scenarios (2/5/10% of MAU × €19,99). Each
+  metric has an Italian explanation in the UI.
+- If asked to rotate the token: change `ADMIN_TOKEN` in the deployed function and
+  update the Desktop file.
+
+---
+
+## 9. EXACT NEXT STEPS
+
+1. **Ship the pending batch** (free-app + admin console page + Apple/Google
+   sign-in + animated onboarding): commit all (incl. `docs/console-…/index.html`
+   and this CLAUDE.md), push to `feat/profile-ui-privacy` → watch iOS to green
+   (re-push if it fails only at the upload step), then robocopy `lib/` to
+   `../Marginalia_ANDROID`, rebuild the APK, copy to Desktop. Then draft the
+   Gmail recap.
+2. **Founder-only dashboard toggles** (only the founder can do these — they are
+   in his Supabase/Google/Apple accounts; the app code is already wired and
+   degrades gracefully until then). They are written out in the Desktop file
+   `Scripta — Console e Credenziali.txt`:
+   - Supabase → Auth → Email → enable **Confirm email**.
+   - Configure **Google** OAuth provider (redirect
+     `https://ibucvloawkfwobaelwbr.supabase.co/auth/v1/callback`).
+   - Configure **Apple** OAuth provider (Services ID + .p8 key).
+   - Supabase → Auth → URL Configuration → add redirect
+     `io.supabase.flutter://login-callback/`.
+   Once configured, the social buttons "just work" (pre-flight check already
+   shows a friendly message while they're off).
+3. **Verify social login end-to-end** on a real device after the founder
+   configures the providers (couldn't be fully verified in CI — the adversarial
+   `verify:auth` agent hit a session limit; the double-pop guard is in but
+   confirm the OAuth deep-link return pops the auth screen correctly).
+4. **Open backlog** (tasks #63/#67): book cover Google-search + custom cover
+   pencil flow polish (mostly done; re-confirm the "impossibile aggiornare la
+   copertina" path now that errors are surfaced).
+
+---
+
+## 10. HOW TO WORK HERE (process)
+
+- Pattern that works: **scout (parallel read-only Workflow agents) → implement →
+  adversarial-verify (parallel Workflow agents) → analyze+test → ship**. Apply
+  the verifier's blocker/warning findings before committing.
+- Keep `flutter analyze` at the 23/0 baseline and `flutter test` at 45/45 green
+  before every push.
+- Don't change `pubspec.yaml` deps or do non-backwards-compatible Supabase schema
+  changes without thinking about existing builds/users in production.
+- Update this file whenever the build pipeline, branch, backend, or standing
+  instructions change.

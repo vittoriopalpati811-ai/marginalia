@@ -55,15 +55,6 @@ dependencies:
   home_widget: ^0.7.0
   http: ^1.2.1
 
-  # Payments / subscriptions
-  # TEMPORARILY DISABLED — 2026-05-29. purchases_flutter ^7.x bundles an old
-  # PurchasesHybridCommon pod whose Swift fails to compile on the Codemagic
-  # runner's Xcode 26.4 ('SubscriptionPeriod' is ambiguous), breaking Build IPA.
-  # The RevenueCat key was only ever the placeholder, so nothing functional is
-  # lost. Re-enable when wiring a real paywall (see the restore notes in
-  # lib/core/services/subscription_service_native.dart).
-  # purchases_flutter: ^7.0.0
-
   # Localizzazione
   flutter_localizations:
     sdk: flutter
