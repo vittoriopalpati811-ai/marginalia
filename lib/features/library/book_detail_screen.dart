@@ -587,15 +587,9 @@ void editBookCover(BuildContext context, WidgetRef ref, Book book) {
               leading: const Icon(Icons.delete_outline_rounded,
                   color: ScriptaColors.highlightRose),
               title: Text(it ? 'Rimuovi copertina' : 'Remove cover'),
-              onTap: () async {
+              onTap: () {
                 Navigator.of(sheetCtx).pop();
-                await ref
-                    .read(bookCoverControllerProvider)
-                    .setCover(book.id, null);
-                await ref
-                    .read(supabaseServiceProvider)
-                    .removeUserBookCover(book.title, book.author);
-                ref.invalidate(favCoversProvider);
+                _removeCover(context, ref, book);
               },
             ),
           const SizedBox(height: 8),
@@ -697,6 +691,29 @@ Future<void> _pickFromCameraAndUpload(
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
+  } catch (error) {
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
+  }
+}
+
+/// Remove a custom cover for a library [book]. DB-first: if the network remove
+/// fails we surface the error BEFORE dropping the local cover, so the on-screen
+/// state stays consistent — and confirm success, like the upload paths do.
+Future<void> _removeCover(BuildContext context, WidgetRef ref, Book book) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    await ref
+        .read(supabaseServiceProvider)
+        .removeUserBookCover(book.title, book.author);
+    await ref.read(bookCoverControllerProvider).setCover(book.id, null);
+    ref.invalidate(favCoversProvider);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Copertina rimossa' : 'Cover removed')));
   } catch (error) {
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
@@ -824,18 +841,9 @@ void editBookCoverByKey(
               leading: const Icon(Icons.delete_outline_rounded,
                   color: ScriptaColors.highlightRose),
               title: Text(it ? 'Rimuovi copertina' : 'Remove cover'),
-              onTap: () async {
+              onTap: () {
                 Navigator.of(sheetCtx).pop();
-                await ref
-                    .read(supabaseServiceProvider)
-                    .removeUserBookCover(title, author);
-                final b = _findLibraryBook(ref, title, author);
-                if (b != null) {
-                  await ref
-                      .read(bookCoverControllerProvider)
-                      .setCover(b.id, null);
-                }
-                ref.invalidate(favCoversProvider);
+                _removeCoverByKey(context, ref, title, author);
               },
             ),
           const SizedBox(height: 8),
@@ -916,6 +924,30 @@ Future<void> _pickFromCameraByKey(
     }
   } catch (error) {
     // Camera failure (e.g. permission denied) — surface like any cover error.
+    messenger?.showSnackBar(SnackBar(
+        content: Text(_coverErrorText(error, it)),
+        duration: const Duration(seconds: 6)));
+  }
+}
+
+/// Remove a custom cover keyed by title|author (profile favourites). DB-first,
+/// then mirror to the local Isar book if one matches — with confirm/error toast.
+Future<void> _removeCoverByKey(
+    BuildContext context, WidgetRef ref, String title, String author) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  final it = Localizations.localeOf(context).languageCode == 'it';
+  try {
+    await ref.read(supabaseServiceProvider).removeUserBookCover(title, author);
+    final b = _findLibraryBook(ref, title, author);
+    if (b != null) {
+      await ref.read(bookCoverControllerProvider).setCover(b.id, null);
+    }
+    ref.invalidate(favCoversProvider);
+    messenger?.hideCurrentSnackBar();
+    messenger?.showSnackBar(SnackBar(
+        content: Text(it ? 'Copertina rimossa' : 'Cover removed')));
+  } catch (error) {
+    messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(_coverErrorText(error, it)),
         duration: const Duration(seconds: 6)));

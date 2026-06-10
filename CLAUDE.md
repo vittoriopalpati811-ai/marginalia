@@ -31,15 +31,17 @@ Founder develops on **Windows, no Mac**. Everything must build without a Mac.
 
 ---
 
-## 1. CURRENT STATUS (2026-06-10)
+## 1. CURRENT STATUS (2026-06-11)
 
 - **Live in production.** ~87 users, ~1115 highlights, ~215 posts (real usage).
 - **App is FREE** — all paywall/premium code was removed (see §6). No gates.
-- Latest green iOS build: **TestFlight run #71, commit `ae0a113`** (build number
+- Latest green iOS build: **TestFlight run #72, commit `1700007`** (build number
   = unix timestamp). Latest APK: **`Scripta_1.1.0.apk` on the Desktop**.
 - Active branch: **`feat/profile-ui-privacy`** (this is what CI builds — see §3).
-- A batch (free-app + admin console + Apple/Google sign-in + animated
-  onboarding) is **committed-pending-push** as of this handoff — see §9.
+- The free-app + admin console + Apple/Google sign-in + animated-onboarding batch
+  is **SHIPPED green on both platforms** (iOS #72 + APK rebuilt); the Gmail recap
+  draft for it already exists. Remaining open work is in §9 (founder dashboard
+  toggles, on-device social-login verification, covers backlog).
 
 ---
 
