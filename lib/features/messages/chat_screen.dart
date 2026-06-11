@@ -2,6 +2,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -57,11 +58,40 @@ final _chatHeaderProvider = FutureProvider.autoDispose
   // Exclude myself so `others` holds the people I'm talking to.
   final others = profiles.where((p) => p['id'] != myId).toList();
 
+  // For 1:1 chats the header also shows what the other person is reading.
+  // The member RPC (migration 015) only returns id/name/avatar/username, so
+  // the currently_reading_* fields come from a follow-up profiles select
+  // (profiles are readable by any authenticated user). Best-effort: a
+  // failure here only hides the subtitle, never the header.
+  String? readingTitle;
+  String? readingAuthor;
+  if (conv['is_group'] != true && others.isNotEmpty) {
+    final otherId = others.first['id'] as String?;
+    if (otherId != null && otherId.isNotEmpty) {
+      try {
+        final rows = await svc.client
+            .from('profiles')
+            .select('currently_reading_title, currently_reading_author')
+            .eq('id', otherId)
+            .limit(1);
+        if ((rows as List).isNotEmpty) {
+          final p = Map<String, dynamic>.from(rows.first as Map);
+          readingTitle = (p['currently_reading_title'] as String?)?.trim();
+          readingAuthor = (p['currently_reading_author'] as String?)?.trim();
+        }
+      } catch (_) {}
+    }
+  }
+
   return {
     'is_group': conv['is_group'] == true,
     'group_name': conv['group_name'] as String?,
     'group_avatar_url': conv['group_avatar_url'] as String?,
     'others': others,
+    // All members (me included) — drives the group-header member count.
+    'member_count': profiles.length,
+    'reading_title': readingTitle,
+    'reading_author': readingAuthor,
   };
 });
 
@@ -641,12 +671,11 @@ class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
-  static const _ink = Color(0xFFF1EEE7);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final headerAsync = ref.watch(_chatHeaderProvider(conversationId));
     final header = headerAsync.asData?.value;
+    final it = Localizations.localeOf(context).languageCode == 'it';
 
     final isGroup = header?['is_group'] == true;
     final others =
@@ -677,70 +706,120 @@ class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       }
     }
 
+    // Second line under the name: member count for groups, what the other
+    // person is currently reading for 1:1 (only when they have a book set).
+    String? subtitle;
+    if (header != null) {
+      if (isGroup) {
+        final memberCount = header['member_count'] as int? ?? 0;
+        if (memberCount > 0) {
+          subtitle =
+              '$memberCount ${context.l10n.jamMemberCount(memberCount)}';
+        }
+      } else {
+        final reading = (header['reading_title'] as String?)?.trim();
+        if (reading != null && reading.isNotEmpty) {
+          subtitle = it ? 'Sta leggendo: $reading' : 'Reading: $reading';
+        }
+      }
+    }
+
     final initial =
         title.isNotEmpty ? title[0].toUpperCase() : '?';
     final avatarColor = ScriptaDecorations.bookCoverColor(title);
 
-    // Tapping the title renames the group (groups only). 1:1 titles aren't
-    // editable — they're the other person's name.
-    final titleWidget = Text(
+    final nameText = Text(
       title,
       style: GoogleFonts.ebGaramond(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: _ink,
+        color: ScriptaColors.ink,
         letterSpacing: -0.2,
+        height: 1.15,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
 
+    // Tapping the title renames the group (groups only). For 1:1 the whole
+    // header row opens the other person's profile instead.
+    final titleColumn = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (isGroup)
+          GestureDetector(
+            onTap: () => _renameGroup(context, ref, title),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(child: nameText),
+                const SizedBox(width: 6),
+                const Icon(Icons.edit_outlined,
+                    size: 15, color: ScriptaColors.inkFaint),
+              ],
+            ),
+          )
+        else
+          nameText,
+        if (subtitle != null) ...[
+          const SizedBox(height: 1),
+          Text(
+            subtitle,
+            style: GoogleFonts.manrope(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+              color: ScriptaColors.inkMuted,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
+    );
+
+    final headerRow = Row(
+      children: [
+        _ChatHeaderAvatar(
+          avatarUrl: avatarUrl,
+          initial: initial,
+          color: avatarColor,
+          isGroup: isGroup,
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: titleColumn),
+      ],
+    );
+
     return AppBar(
-      backgroundColor: ScriptaColors.primary,
-      foregroundColor: _ink,
+      // Minimal light header (founder: no green up top) — blends with the
+      // page; the hairline rule below carries the separation instead of a
+      // colored fill.
+      backgroundColor: ScriptaColors.background,
+      foregroundColor: ScriptaColors.ink,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
       titleSpacing: 0,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      shape: const Border(
+        bottom: BorderSide(color: ScriptaColors.rule, width: 0.5),
+      ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded,
-            size: 18, color: _ink),
+            size: 18, color: ScriptaColors.ink),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: Row(
-        children: [
-          // Header avatar — tapping a 1:1 avatar opens the other user's
-          // profile (groups have no single profile to open).
-          GestureDetector(
-            onTap: otherUserId != null
-                ? () => context.push('/user/$otherUserId')
-                : null,
-            child: _ChatHeaderAvatar(
-              avatarUrl: avatarUrl,
-              initial: initial,
-              color: avatarColor,
-              isGroup: isGroup,
+      title: isGroup
+          ? headerRow
+          : GestureDetector(
+              onTap: otherUserId != null
+                  ? () => context.push('/user/$otherUserId')
+                  : null,
+              behavior: HitTestBehavior.opaque,
+              child: headerRow,
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: isGroup
-                ? GestureDetector(
-                    onTap: () => _renameGroup(context, ref, title),
-                    behavior: HitTestBehavior.opaque,
-                    child: Row(
-                      children: [
-                        Flexible(child: titleWidget),
-                        const SizedBox(width: 6),
-                        const Icon(Icons.edit_outlined,
-                            size: 15, color: Color(0xAAF1EEE7)),
-                      ],
-                    ),
-                  )
-                : titleWidget,
-          ),
-        ],
-      ),
     );
   }
 

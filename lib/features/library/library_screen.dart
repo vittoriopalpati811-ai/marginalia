@@ -21,8 +21,6 @@ import 'book_cover.dart';
 import 'recommendations_section.dart';
 import '../../core/services/recs_cache.dart';
 import '../search/highlight_search_screen.dart';
-import '../quiz/quiz_screen.dart';
-import '../quiz/quiz_lock.dart';
 import '../review/review_entry_card.dart';
 import '../../core/providers/daily_highlight_provider.dart';
 import '../../core/providers/daily_subtitle_provider.dart';
@@ -87,9 +85,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     final randomAsync       = ref.watch(dailyHighlightProvider);
     // "Why this phrase is for you" line — null off-iOS or with no context.
     final subtitle          = ref.watch(dailySubtitleProvider);
-    // Pre-load the daily-quiz lock so the entry card below can gate taps until
-    // 08:00 the next morning once today's quiz is done.
-    final quizLockedUntil   = ref.watch(quizLockProvider).asData?.value;
 
     // Apply filter
     final filteredBooksAsync = booksAsync.whenData((books) {
@@ -204,78 +199,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
 
-            // ── Ripasso del giorno + Quiz ──────────────────────────────────
+            // ── Ripasso del giorno ─────────────────────────────────────────
             // Positioned here (between "Recenti" and "Libri consigliati") per
-            // the founder. Both are once-a-day rituals that lock until 08:00 the
-            // next morning.
+            // the founder. The daily quiz now lives INSIDE Ripasso (Ripasso 2.0),
+            // so there is no separate "Mettiti alla prova" entry point anymore.
             const SliverToBoxAdapter(child: RipassoEntryCard()),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: GestureDetector(
-                  onTap: () {
-                    if (quizLockedUntil != null) {
-                      final isIt =
-                          Localizations.localeOf(context).languageCode == 'it';
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(isIt
-                            ? 'Quiz completato. Torna domani alle 08:00.'
-                            : 'Quiz done — come back tomorrow at 08:00.'),
-                      ));
-                      return;
-                    }
-                    Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const QuizScreen()));
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: ScriptaColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withAlpha(10),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                              color: ScriptaColors.primaryFaint,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.quiz_outlined,
-                              color: ScriptaColors.primaryDark, size: 22),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(context.l10n.quizCardTitle,
-                                  style: GoogleFonts.manrope(
-                                      fontSize: 15.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: ScriptaColors.ink)),
-                              const SizedBox(height: 2),
-                              Text(context.l10n.quizCardSubtitle,
-                                  style: GoogleFonts.manrope(
-                                      fontSize: 13,
-                                      color: ScriptaColors.inkMuted)),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.chevron_right_rounded,
-                            color: ScriptaColors.inkFaint),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
 
             // ── Filter chips (Airbnb-clean: no section header here, the
             //    screen-level hero title above already announces this) ──

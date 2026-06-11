@@ -1,0 +1,25 @@
+-- 060_book_covers_no_listing.sql
+-- Harden the public `book-covers` storage bucket against object LISTING.
+-- Supabase security advisor finding: `public_bucket_allows_listing`.
+--
+-- The bucket is public=true, so object reads are served by the public object
+-- endpoint (/storage/v1/object/public/book-covers/...) via the bucket's
+-- `public` flag and do NOT require an RLS SELECT policy. The broad
+-- `book_covers_public_read` SELECT policy (USING bucket_id='book-covers', to
+-- role public) added nothing for reads but DID let the anon/public role LIST
+-- the bucket, enumerating every user's "<uid>/" folder and the filenames
+-- within. The app never calls .list() on this bucket: it reads specific public
+-- URLs via getPublicUrl() and reads custom-cover URLs from the
+-- public.user_book_covers table; it only writes under its own "<uid>/" prefix.
+--
+-- Drop the listing-enabling SELECT policy. Cover display is unaffected (public
+-- object GETs keep working). The owner-scoped INSERT/UPDATE/DELETE policies
+-- (book_covers_owner_insert/update/delete, scoped to (foldername(name))[1] =
+-- auth.uid()) are kept untouched.
+--
+-- NOTE: the `book-covers` bucket and these policies were originally created
+-- live (server migration `add_book_cover_url_and_book_covers_bucket`) and were
+-- never captured as a local migration file; this also closes that drift for the
+-- policy being removed.
+
+drop policy if exists "book_covers_public_read" on storage.objects;

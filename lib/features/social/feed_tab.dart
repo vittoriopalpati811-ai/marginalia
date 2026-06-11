@@ -1,5 +1,4 @@
 ﻿import 'dart:async';
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -493,24 +492,14 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
     });
   }
 
-  void _showSuccessOverlay(BuildContext ctx) {
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (_) => _FlowerWordsOverlay(
-        onDone: () => entry.remove(),
-      ),
-    );
-    Overlay.of(ctx).insert(entry);
-  }
-
   Future<void> _submit() async {
+    if (_posting) return;
     final text = _controller.text.trim();
     if (text.isEmpty && _imageBytes == null) return;
 
     // First-line keyword filter: refuse obviously objectionable text BEFORE we
-    // show the optimistic success overlay or hit the network, and let the user
-    // edit. (Image moderation is server-side / out of scope; this only checks
-    // the typed text.)
+    // hit the network, and let the user edit. (Image moderation is server-side
+    // / out of scope; this only checks the typed text.)
     final inspection = contentFilter.inspect(text);
     if (inspection.flagged) {
       final category = inspection.category!;
@@ -527,21 +516,10 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
       return;
     }
 
-    // Drop the keyboard immediately so it doesn't hover over the success
-    // animation or linger on the feed after the sheet closes.
+    // Drop the keyboard immediately so it doesn't linger on the feed after the
+    // sheet closes.
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _posting = true);
-
-    // Capture context before async gap
-    final ctx = context;
-
-    // Show the success overlay immediately (optimistic)
-    _showSuccessOverlay(ctx);
-
-    // Close the sheet after the animation duration
-    Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) Navigator.of(ctx).pop();
-    });
 
     try {
       final svc = ref.read(supabaseServiceProvider);
@@ -555,6 +533,8 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
         imageUrl: imageUrl,
         mentions: taggedIds,
       );
+      // Success → close the sheet and let the caller refresh the feed.
+      if (mounted) Navigator.of(context).pop();
       widget.onCreated();
     } catch (e) {
       if (mounted) {
@@ -618,19 +598,11 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                   ),
                 ),
               ),
-              if (_posting)
-                const SizedBox(
-                  width: 44, height: 44,
-                  child: CircularProgressIndicator(
-                    color: ScriptaColors.sienna,
-                    strokeWidth: 2,
-                  ),
-                )
-              else
-                _HoldToPublishButton(
-                  enabled: canPost,
-                  onComplete: _submit,
-                ),
+              _PublishButton(
+                enabled: canPost,
+                posting: _posting,
+                onTap: _submit,
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -842,425 +814,60 @@ class _MentionSuggestionRow extends StatelessWidget {
   }
 }
 
-// ─── Post success: multilingual word-flowers animation ────────────────────────
-
-const _kPostWords = [
-  'Posted!',
-  'Publié!',
-  'Published!',
-  'Publicado!',
-  '投稿済み!',
-];
-
-class _FlowerWordsOverlay extends StatefulWidget {
-  const _FlowerWordsOverlay({required this.onDone});
-  final VoidCallback onDone;
-
-  @override
-  State<_FlowerWordsOverlay> createState() => _FlowerWordsOverlayState();
-}
-
-class _FlowerWordsOverlayState extends State<_FlowerWordsOverlay>
-    with TickerProviderStateMixin {
-  final List<_WordParticle> _particles = [];
-  late final AnimationController _master;
-
-  @override
-  void initState() {
-    super.initState();
-    _master = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    );
-
-    // Generate 15 particles — the 5 words repeated/shuffled with varied params
-    final rng = math.Random(42);
-    final words = [..._kPostWords, ..._kPostWords, ..._kPostWords];
-    words.shuffle(rng);
-    for (int i = 0; i < 15; i++) {
-      _particles.add(_WordParticle(
-        word:       words[i % words.length],
-        startDelay: rng.nextDouble() * 0.35,          // 0–35% into animation
-        dx:         (rng.nextDouble() - 0.5) * 1.8,   // horizontal drift –0.9..+0.9 of screen width fraction
-        dy:         -(0.35 + rng.nextDouble() * 0.45), // rise 35–80% of screen height
-        rotation:   (rng.nextDouble() - 0.5) * 0.5,   // ±0.25 rad
-        fontSize:   11.0 + rng.nextDouble() * 5.0,    // 11–16px
-        color:      _kWordColors[i % _kWordColors.length],
-      ));
-    }
-
-    _master.forward().then((_) {
-      Future.delayed(const Duration(milliseconds: 200), widget.onDone);
-    });
-  }
-
-  static const _kWordColors = [
-    Color(0xFF3A6624), // deep matcha
-    Color(0xFF4A7A35), // matcha
-    Color(0xFF6A9E52), // matcha light
-    Color(0xFF2D5A3D), // dark forest
-    Color(0xFF5C8C48), // mid matcha
-  ];
-
-  @override
-  void dispose() {
-    _master.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    return Positioned.fill(
-      child: IgnorePointer(
-        child: AnimatedBuilder(
-          animation: _master,
-          builder: (_, __) {
-            return Stack(
-              children: _particles.map((p) {
-                // Normalize time within this particle's window
-                final start = p.startDelay;
-                final t = ((_master.value - start) / (1.0 - start)).clamp(0.0, 1.0);
-                if (t <= 0) return const SizedBox.shrink();
-
-                final rise   = Curves.easeOut.transform(t);
-                final fade   = t < 0.7 ? 1.0 : 1.0 - ((t - 0.7) / 0.3);
-                final scale  = 0.4 + 0.6 * Curves.elasticOut.transform(math.min(t * 2, 1.0));
-
-                // Start near center-bottom of screen
-                final baseX = size.width  * 0.5 + p.dx * size.width  * 0.5;
-                final baseY = size.height * 0.78 + p.dy * size.height * rise;
-
-                return Positioned(
-                  left: baseX,
-                  top:  baseY,
-                  child: Transform.rotate(
-                    angle: p.rotation * rise,
-                    child: Transform.scale(
-                      scale: scale,
-                      child: Opacity(
-                        opacity: fade.clamp(0.0, 1.0),
-                        child: Text(
-                          p.word,
-                          style: TextStyle(
-                            fontSize:   p.fontSize,
-                            fontWeight: FontWeight.w700,
-                            color:      p.color,
-                            letterSpacing: -0.2,
-                            shadows: const [
-                              Shadow(
-                                color:  Color(0x40000000),
-                                offset: Offset(0, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _WordParticle {
-  const _WordParticle({
-    required this.word,
-    required this.startDelay,
-    required this.dx,
-    required this.dy,
-    required this.rotation,
-    required this.fontSize,
-    required this.color,
-  });
-  final String word;
-  final double startDelay;
-  final double dx;
-  final double dy;
-  final double rotation;
-  final double fontSize;
-  final Color color;
-}
-
-// ─── Hold-to-publish button (Liftoff-style) ──────────────────────────────────
+// ─── Publish button ──────────────────────────────────────────────────────────
 //
-// Long-press 1.8s → matcha circle ORIGINATES at the button position and
-// expands radially to fill the screen. Mid-hold the message changes to
-// "Continua a tenere!". When full, a checkmark + "Postato!" replaces it
-// and the post is sent. Release early → circle shrinks back to the button.
+// Plain modern publish button (founder order — reverses the old hold-to-publish
+// mechanic): a tap publishes immediately, no hold, no celebration animation.
+// Disabled (and greyed) when there is nothing to post; while a publish is in
+// flight it shows a small inline spinner in place of the label.
 
-class _HoldToPublishButton extends StatefulWidget {
-  const _HoldToPublishButton({required this.enabled, required this.onComplete});
+class _PublishButton extends StatelessWidget {
+  const _PublishButton({
+    required this.enabled,
+    required this.posting,
+    required this.onTap,
+  });
+
   final bool         enabled;
-  final VoidCallback onComplete;
-
-  @override
-  State<_HoldToPublishButton> createState() => _HoldToPublishButtonState();
-}
-
-class _HoldToPublishButtonState extends State<_HoldToPublishButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  final GlobalKey _buttonKey = GlobalKey();
-  OverlayEntry? _overlay;
-  bool _holding   = false;
-  bool _completed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..addStatusListener(_onAnimStatus);
-  }
-
-  void _onAnimStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed && !_completed) {
-      _completed = true;
-      // Brief "Postato!" display, then submit
-      Future.delayed(const Duration(milliseconds: 900), () {
-        _removeOverlay();
-        widget.onComplete();
-      });
-    } else if (status == AnimationStatus.dismissed) {
-      _removeOverlay();
-    }
-  }
-
-  void _removeOverlay() {
-    _overlay?.remove();
-    _overlay = null;
-    if (mounted) setState(() { _holding = false; _completed = false; });
-  }
-
-  /// Returns the button's center position in global screen coordinates.
-  Offset _buttonCenter() {
-    final box = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) {
-      final size = MediaQuery.of(context).size;
-      return Offset(size.width / 2, size.height / 2);
-    }
-    final pos = box.localToGlobal(Offset.zero);
-    return pos + Offset(box.size.width / 2, box.size.height / 2);
-  }
-
-  void _onHoldStart() {
-    if (!widget.enabled || _holding) return;
-    setState(() => _holding = true);
-
-    final origin = _buttonCenter();
-    final l10n   = context.l10n;
-
-    _overlay = OverlayEntry(
-      builder: (_) => _HoldCircleOverlay(
-        controller:    _ctrl,
-        origin:        origin,
-        keepHolding:   l10n.feedKeepHolding,
-        published:     l10n.feedPostPublished,
-      ),
-    );
-    Overlay.of(context).insert(_overlay!);
-    _ctrl.forward(from: 0);
-  }
-
-  void _onHoldEnd() {
-    if (!_holding || _completed) return;
-    // Released early → shrink back
-    _ctrl.reverse();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.removeStatusListener(_onAnimStatus);
-    _overlay?.remove();
-    _ctrl.dispose();
-    super.dispose();
-  }
+  final bool         posting;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final active = enabled && !posting;
     return GestureDetector(
-      key: _buttonKey,
-      onLongPressStart: (_) => _onHoldStart(),
-      onLongPressEnd:   (_) => _onHoldEnd(),
-      onLongPressCancel:    _onHoldEnd,
-      // Hold-to-publish ONLY (founder's choice): a plain tap just reminds you to
-      // hold; the liftoff animation + actual publish happen on long-press.
-      onTap: widget.enabled
-          ? () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(context.l10n.feedHoldToPublishToast),
-                  duration: const Duration(seconds: 1),
+      behavior: HitTestBehavior.opaque,
+      onTap: active ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: (enabled || posting)
+              ? ScriptaColors.sienna
+              : ScriptaColors.rule,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: posting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFFF2F5EA),
                 ),
               )
-          : null,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOut,
-        scale: _holding ? 0.92 : 1.0,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: widget.enabled
-                ? (_holding
-                    ? ScriptaColors.sienna.withAlpha(180)
-                    : ScriptaColors.sienna)
-                : ScriptaColors.rule,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            context.l10n.feedPublishLabel,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: widget.enabled
-                  ? const Color(0xFFF2F5EA)
-                  : ScriptaColors.inkFaint,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Full-screen hold circle overlay (Liftoff style) ─────────────────────────
-//
-// The matcha circle originates AT THE BUTTON (origin) and grows to cover
-// the whole screen. Three timed text phases:
-//   0–28%   → no text (just the growing circle)
-//   28–78%  → "Continua a tenere!" centered, fades in/out
-//   78–100% → checkmark + "Postato!" replaces it
-
-class _HoldCircleOverlay extends StatelessWidget {
-  const _HoldCircleOverlay({
-    required this.controller,
-    required this.origin,
-    required this.keepHolding,
-    required this.published,
-  });
-
-  final AnimationController controller;
-  final Offset              origin;
-  final String              keepHolding;
-  final String              published;
-
-  static const _matcha = Color(0xFF4A7A35);
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    // Radius needed to reach the furthest screen corner from `origin`
-    final dx1 = origin.dx, dx2 = size.width  - origin.dx;
-    final dy1 = origin.dy, dy2 = size.height - origin.dy;
-    final maxX = dx1 > dx2 ? dx1 : dx2;
-    final maxY = dy1 > dy2 ? dy1 : dy2;
-    final maxR = math.sqrt(maxX * maxX + maxY * maxY) * 1.05; // small overshoot
-
-    return Material(
-      color: Colors.transparent,
-      child: IgnorePointer(
-        child: AnimatedBuilder(
-          animation: controller,
-          builder: (_, __) {
-            // Smoother growth than elastic — fast at start, settles at end
-            final expand = CurvedAnimation(
-              parent: controller,
-              curve: const Interval(0.0, 0.92, curve: Curves.easeOutCubic),
-            );
-            final keepFade = _bumpInterval(controller.value, 0.28, 0.55, 0.78);
-            final doneFade = CurvedAnimation(
-              parent: controller,
-              curve: const Interval(0.80, 1.0, curve: Curves.easeOut),
-            ).value;
-
-            final r = expand.value * maxR;
-
-            return Stack(
-              children: [
-                // Expanding matcha circle, anchored at button origin
-                Positioned(
-                  left: origin.dx - r,
-                  top:  origin.dy - r,
-                  width:  r * 2,
-                  height: r * 2,
-                  child: const DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: _matcha,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+            : Text(
+                context.l10n.feedPublishLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: enabled
+                      ? const Color(0xFFF2F5EA)
+                      : ScriptaColors.inkFaint,
                 ),
-
-                // Mid-hold encouragement
-                if (keepFade > 0.01)
-                  Center(
-                    child: Opacity(
-                      opacity: keepFade,
-                      child: Text(
-                        keepHolding,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.ebGaramond(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Final confirmation
-                if (doneFade > 0.01)
-                  Center(
-                    child: Opacity(
-                      opacity: doneFade,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.check_rounded,
-                            color: Colors.white,
-                            size: 56,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            published,
-                            style: GoogleFonts.ebGaramond(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
+              ),
       ),
     );
-  }
-
-  /// Returns a triangular envelope: 0 at `start`, 1 at `peak`, 0 at `end`.
-  /// Used to fade text in and back out within a single animation phase.
-  double _bumpInterval(double t, double start, double peak, double end) {
-    if (t <= start || t >= end) return 0;
-    if (t <= peak) return ((t - start) / (peak - start)).clamp(0.0, 1.0);
-    return (1 - (t - peak) / (end - peak)).clamp(0.0, 1.0);
   }
 }
 
@@ -1278,12 +885,16 @@ class _PostCard extends ConsumerStatefulWidget {
 class _PostCardState extends ConsumerState<_PostCard> {
   late bool _liked;
   late int  _likesCount;
+  // Whether the author has hidden the like count on this post. Mutated
+  // optimistically from the owner's overflow-menu toggle.
+  late bool _hideLikeCount;
 
   @override
   void initState() {
     super.initState();
-    _liked      = widget.post['is_liked']    as bool? ?? false;
-    _likesCount = widget.post['likes_count'] as int?  ?? 0;
+    _liked         = widget.post['is_liked']        as bool? ?? false;
+    _likesCount    = widget.post['likes_count']     as int?  ?? 0;
+    _hideLikeCount = widget.post['hide_like_count'] as bool? ?? false;
   }
 
   Future<void> _showPostMenu(BuildContext context) async {
@@ -1355,12 +966,40 @@ class _PostCardState extends ConsumerState<_PostCard> {
       return;
     }
 
-    // Owner: edit + delete
+    // Owner: hide/show like count + edit + delete
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final hidden = _hideLikeCount;
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _PostMenuSheet(
         items: [
+          _MenuAction(
+            icon: hidden
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            label: it
+                ? (hidden
+                    ? 'Mostra numero di mi piace'
+                    : 'Nascondi numero di mi piace')
+                : (hidden ? 'Show like count' : 'Hide like count'),
+            color: ScriptaColors.ink,
+            onTap: () async {
+              Navigator.pop(ctx);
+              if (postId == null) return;
+              // Optimistic local flip; revert on failure.
+              final next = !hidden;
+              if (mounted) setState(() => _hideLikeCount = next);
+              try {
+                await svc.setPostHideLikeCount(postId, next);
+              } catch (e) {
+                if (mounted) setState(() => _hideLikeCount = hidden);
+                messenger.showSnackBar(
+                  SnackBar(content: Text(l10n.feedErrorPrefix(e.toString()))),
+                );
+              }
+            },
+          ),
           _MenuAction(
             icon: Icons.edit_outlined,
             label: context.l10n.feedEdit,
@@ -1442,6 +1081,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
               filled: true,
               fillColor: ScriptaColors.surfaceElevated,
               contentPadding: const EdgeInsets.all(14),
+              // Full 16px rounded outline for EVERY state so the filled box
+              // never falls back to Material's default top-only 4px underline
+              // shape (which left mixed rounded/square corners).
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -1455,6 +1097,20 @@ class _PostCardState extends ConsumerState<_PostCard> {
                 borderRadius: BorderRadius.circular(16),
                 borderSide:
                     const BorderSide(color: ScriptaColors.primary, width: 1.5),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide:
+                    const BorderSide(color: ScriptaColors.rule, width: 1),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide:
+                    const BorderSide(color: Color(0xFFDC2626), width: 1.5),
               ),
             ),
           ),
@@ -1818,17 +1474,32 @@ class _PostCardState extends ConsumerState<_PostCard> {
                             ? ScriptaColors.primaryDark
                             : ScriptaColors.inkFaint,
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        '$_likesCount',
-                        style: GoogleFonts.manrope(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _liked
-                              ? ScriptaColors.primaryDark
-                              : ScriptaColors.inkFaint,
+                      // Like count visibility:
+                      //  • count hidden & not mine → heart only (no number).
+                      //  • count hidden & mine      → number + a small
+                      //    visibility-off hint so I know it's hidden to others.
+                      //  • not hidden               → number as usual.
+                      if (!(_hideLikeCount && !isOwner)) ...[
+                        const SizedBox(width: 5),
+                        Text(
+                          '$_likesCount',
+                          style: GoogleFonts.manrope(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _liked
+                                ? ScriptaColors.primaryDark
+                                : ScriptaColors.inkFaint,
+                          ),
                         ),
-                      ),
+                        if (_hideLikeCount && isOwner) ...[
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.visibility_off_outlined,
+                            size: 16,
+                            color: ScriptaColors.inkFaint,
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),

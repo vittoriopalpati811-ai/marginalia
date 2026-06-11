@@ -61,6 +61,7 @@ Future<void> shareHighlightAsStory(
   required String text,
   String? title,
   String? author,
+  String? customCoverUrl,
 }) async {
   // Web can't rasterise reliably and has no Instagram app — share text instead
   // so the action still does something useful.
@@ -82,7 +83,12 @@ Future<void> shareHighlightAsStory(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-    builder: (_) => _StoryPreviewSheet(text: text, title: title, author: author),
+    builder: (_) => _StoryPreviewSheet(
+      text: text,
+      title: title,
+      author: author,
+      customCoverUrl: customCoverUrl,
+    ),
   );
 }
 
@@ -97,11 +103,16 @@ String _storyShareText(String cta, String text, String? title) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _StoryPreviewSheet extends StatefulWidget {
-  const _StoryPreviewSheet({required this.text, this.title, this.author});
+  const _StoryPreviewSheet(
+      {required this.text, this.title, this.author, this.customCoverUrl});
 
   final String text;
   final String? title;
   final String? author;
+
+  /// The user's custom cover for this book, if any — overrides the generated
+  /// doodle so the story matches the cover shown across the app.
+  final String? customCoverUrl;
 
   @override
   State<_StoryPreviewSheet> createState() => _StoryPreviewSheetState();
@@ -316,6 +327,7 @@ class _StoryPreviewSheetState extends State<_StoryPreviewSheet> {
                         text: widget.text,
                         title: widget.title,
                         author: widget.author,
+                        customCoverUrl: widget.customCoverUrl,
                       ),
                     ),
                   ),
@@ -424,11 +436,16 @@ class HighlightStoryCard extends StatelessWidget {
     required this.text,
     this.title,
     this.author,
+    this.customCoverUrl,
   });
 
   final String text;
   final String? title;
   final String? author;
+
+  /// The user's custom cover for this book — overrides the generated doodle so
+  /// the shared story shows the same cover as everywhere else in the app.
+  final String? customCoverUrl;
 
   // Quotes longer than this are trimmed at a word boundary so the card never
   // overflows its fixed 9:16 frame.
@@ -473,6 +490,7 @@ class HighlightStoryCard extends StatelessWidget {
               child: BookEditorialCover(
                 title: coverTitle,
                 author: safeAuthor,
+                coverUrl: customCoverUrl,
               ),
             ),
 

@@ -19,6 +19,9 @@ Future<void> showProfileList(
   required String userId,
   required ProfileListType type,
   required int count,
+  // Called after a follower is removed, so the profile behind the sheet can
+  // refresh its (now-decremented) follower count.
+  VoidCallback? onChanged,
 }) async {
   await showModalBottomSheet<void>(
     context: context,
@@ -28,6 +31,7 @@ Future<void> showProfileList(
       userId: userId,
       type: type,
       count: count,
+      onChanged: onChanged,
     ),
   );
 }
@@ -39,10 +43,12 @@ class _ProfileListSheet extends ConsumerStatefulWidget {
     required this.userId,
     required this.type,
     required this.count,
+    this.onChanged,
   });
   final String userId;
   final ProfileListType type;
   final int count;
+  final VoidCallback? onChanged;
 
   @override
   ConsumerState<_ProfileListSheet> createState() => _ProfileListSheetState();
@@ -83,8 +89,57 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
         ProfileListType.books     => context.l10n.booksTitle,
       };
 
+  /// Followee-side curation: drop [followerId] from MY followers, then remove
+  /// the row locally and refresh the count shown to the user. Only reachable on
+  /// my OWN followers list (the overflow is hidden elsewhere).
+  Future<void> _removeFollower(String followerId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(it ? 'Rimuovere questo follower?' : 'Remove this follower?',
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(it ? 'Annulla' : 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB94A41)),
+            child: Text(it ? 'Rimuovi' : 'Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(supabaseServiceProvider).removeFollower(followerId);
+      if (!mounted) return;
+      setState(() => _items?.removeWhere((m) => m['id'] == followerId));
+      // Refresh the profile's follower count behind the sheet.
+      widget.onChanged?.call();
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(it ? 'Errore: $e' : 'Error: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // "Remove follower" is only offered on MY OWN followers list — never on
+    // another reader's followers, and never on a Following list.
+    final myId = ref.watch(supabaseServiceProvider).userId;
+    final canRemove = widget.type == ProfileListType.followers &&
+        myId != null &&
+        myId == widget.userId;
+    // Keep the header count in step with local removals once the list loaded.
+    final shownCount = _items?.length ?? widget.count;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       minChildSize: 0.4,
@@ -126,7 +181,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${widget.count}',
+                      '$shownCount',
                       style: const TextStyle(
                         fontSize: 14,
                         color: ScriptaColors.inkMuted,
@@ -177,6 +232,11 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
                                             context.push(
                                                 '/user/${item['id']}');
                                           },
+                                          onRemove:
+                                              canRemove && item['id'] != null
+                                                  ? () => _removeFollower(
+                                                      item['id'] as String)
+                                                  : null,
                                         );
                                 },
                               ),
@@ -196,13 +256,19 @@ class _UserRow extends StatelessWidget {
     required this.data,
     required this.index,
     required this.onTap,
+    this.onRemove,
   });
   final Map<String, dynamic> data;
   final int index;
   final VoidCallback onTap;
 
+  /// When non-null, the row shows a 3-dot overflow with "Remove" → removes this
+  /// follower. Only set on the signed-in user's OWN followers list.
+  final VoidCallback? onRemove;
+
   @override
   Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
     final name = data['display_name'] as String? ?? context.l10n.profileReaderFallback;
     final reading = data['currently_reading_title'] as String?;
     final avatarUrl = data['avatar_url'] as String?;
@@ -240,11 +306,39 @@ class _UserRow extends StatelessWidget {
               ],
             )
           : null,
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: ScriptaColors.inkFaint,
-        size: 18,
-      ),
+      trailing: onRemove != null
+          ? PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz,
+                  color: ScriptaColors.inkFaint, size: 20),
+              color: ScriptaColors.surface,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              onSelected: (v) {
+                if (v == 'remove') onRemove!();
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem<String>(
+                  value: 'remove',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.person_remove_outlined,
+                          size: 18, color: Color(0xFFB94A41)),
+                      const SizedBox(width: 10),
+                      Text(
+                        it ? 'Rimuovi' : 'Remove',
+                        style: const TextStyle(
+                            fontSize: 14, color: ScriptaColors.ink),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : const Icon(
+              Icons.chevron_right,
+              color: ScriptaColors.inkFaint,
+              size: 18,
+            ),
     )
         .animate(delay: (index * 25).ms)
         .fadeIn(duration: 200.ms)

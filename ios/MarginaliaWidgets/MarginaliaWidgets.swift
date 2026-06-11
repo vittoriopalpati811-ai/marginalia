@@ -35,6 +35,11 @@ private extension Color {
     static let mPrimary = Color(red: 0.227, green: 0.400, blue: 0.141) // #3A6624 matcha
     static let mAccent  = Color(red: 0.290, green: 0.478, blue: 0.204) // #4A7A35
     static let mMuted   = Color(red: 0.435, green: 0.459, blue: 0.431) // #6F756E
+    // Scripta brand mark palette (sage layered cards + red bookmark).
+    static let sCream   = Color(red: 0.945, green: 0.933, blue: 0.906) // #F1EEE7
+    static let sSage    = Color(red: 0.753, green: 0.812, blue: 0.698) // #C0CFB2
+    static let sSageDeep = Color(red: 0.561, green: 0.647, blue: 0.494) // deeper sage
+    static let sRed     = Color(red: 0.725, green: 0.290, blue: 0.255) // #B94A41
 }
 
 // A soft brand gradient that sits *under* the frosted material to give the glass
@@ -60,14 +65,8 @@ private struct BrandMark: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Color.mPrimary)
-                    .frame(width: 20, height: 20)
-                Text("S")
-                    .font(.system(size: 12, weight: .bold, design: .serif))
-                    .foregroundStyle(.white)
-            }
+            ScriptaLogo()
+                .frame(width: 22, height: 22)
             if let label {
                 Text(label)
                     .font(.system(size: 11, weight: .medium))
@@ -75,6 +74,50 @@ private struct BrandMark: View {
                     .lineLimit(1)
             }
         }
+    }
+}
+
+/// The Scripta mark drawn entirely in SwiftUI (no asset-catalog entry, so the
+/// per-build widget-target regeneration in CI can never drop it): three layered
+/// rounded "cards" in cream → sage and a red bookmark over the top card.
+private struct ScriptaLogo: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let card = h * 0.74
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: w * 0.26, style: .continuous)
+                    .fill(Color.sSageDeep)
+                    .frame(width: w, height: card)
+                    .offset(y: h * 0.26)
+                RoundedRectangle(cornerRadius: w * 0.26, style: .continuous)
+                    .fill(Color.sSage)
+                    .frame(width: w, height: card)
+                    .offset(y: h * 0.13)
+                RoundedRectangle(cornerRadius: w * 0.26, style: .continuous)
+                    .fill(Color.sCream)
+                    .frame(width: w, height: card)
+                ScriptaBookmark()
+                    .fill(Color.sRed)
+                    .frame(width: w * 0.22, height: h * 0.42)
+                    .offset(x: w * 0.26, y: -h * 0.03)
+            }
+        }
+    }
+}
+
+/// A classic bookmark: a rectangle with a downward V-notch cut from the bottom.
+private struct ScriptaBookmark: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.34))
+        p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
+        p.closeSubpath()
+        return p
     }
 }
 

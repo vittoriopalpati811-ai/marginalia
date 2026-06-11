@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -48,12 +49,12 @@ final _isFollowingUserProvider =
     FutureProvider.autoDispose.family<bool, String>((ref, userId) async {
   final svc = ref.watch(supabaseServiceProvider);
   if (!svc.isAuthenticated) return false;
-  try {
-    final ids = await svc.fetchFollowingIds();
-    return ids.contains(userId);
-  } catch (_) {
-    return false;
-  }
+  // Let a failure surface as an ERROR state, not a definitive "not following".
+  // The private-profile gate must be able to tell "unknown" from "confirmed not
+  // a follower", or a transient network/RLS error would permanently lock a real
+  // follower out of a private profile.
+  final ids = await svc.fetchFollowingIds();
+  return ids.contains(userId);
 });
 
 /// Whether the viewed profile is currently blocked by me — drives the
@@ -152,9 +153,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(_publicProfileProvider(widget.userId));
-    final statsAsync = ref.watch(_userStatsProvider(widget.userId));
-    final postsAsync = ref.watch(_userPostsProvider(widget.userId));
-    final isFollowingAsync = ref.watch(_isFollowingUserProvider(widget.userId));
     final me = ref.read(supabaseServiceProvider).userId;
     final isMe = me == widget.userId;
 
@@ -165,293 +163,15 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           if (profile == null) {
             return Center(child: Text(context.l10n.profileNotFound));
           }
-          final name = profile['display_name'] as String? ?? context.l10n.profileUserFallback;
-          final readingTitle = profile['currently_reading_title'] as String?;
-          final avatarUrl = profile['avatar_url'] as String?;
-          final coverUrl  = profile['cover_url']  as String?;
-          final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-          final avatarColor = ScriptaDecorations.bookCoverColor(name);
-
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // ── Collapsing gradient header ───────────────────────────────
-              SliverAppBar(
-                expandedHeight: 260,
-                pinned: true,
-                backgroundColor: ScriptaColors.primary,
-                foregroundColor: const Color(0xFFF1EEE7),
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                actions: isMe
-                    ? null
-                    : [
-                        _ProfileOverflowMenu(
-                          isBlockedAsync:
-                              ref.watch(_isUserBlockedProvider(widget.userId)),
-                          onToggleBlock: _toggleBlock,
-                          onReport: _reportProfile,
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.parallax,
-                  background: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(28),
-                      bottomRight: Radius.circular(28),
-                    ),
-                    child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Cover photo or gradient
-                      if (coverUrl != null && coverUrl.isNotEmpty)
-                        Image.network(
-                          coverUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            decoration: ScriptaDecorations.gradientHeader,
-                          ),
-                        )
-                      else
-                        Container(decoration: ScriptaDecorations.gradientHeader),
-                      // Dark scrim so text stays readable over photos
-                      Container(color: const Color(0x55000000)),
-                      // Content column: avatar + name + reading status
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Avatar
-                          Container(
-                            width: 86,
-                            height: 86,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(43),
-                              border: Border.all(
-                                  color: Colors.white.withAlpha(60), width: 2),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x40000000),
-                                  blurRadius: 16,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(43),
-                              child: avatarUrl != null && avatarUrl.isNotEmpty
-                                  ? Image.network(
-                                      avatarUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          _AvatarFallback(
-                                        initial: initial,
-                                        color: avatarColor,
-                                      ),
-                                    )
-                                  : _AvatarFallback(
-                                      initial: initial,
-                                      color: avatarColor,
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Name
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFFEDE5D5),
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                          // Currently reading
-                          if (readingTitle != null && readingTitle.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.menu_book_outlined,
-                                    size: 13, color: Color(0xAAF1EEE7)),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    readingTitle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white.withAlpha(160),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          const SizedBox(height: 24),
-                        ],
-                      ),
-                    ],
-                  ),
-                  ),
-                ),
-              ),
-
-              // ── Stats row ────────────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: statsAsync.when(
-                  data: (stats) => _StatsRow(stats: stats),
-                  loading: () => const SizedBox(height: 80),
-                  error: (_, __) => const SizedBox(height: 80),
-                ),
-              ),
-
-              // ── Follow button (not shown for self) ───────────────────────
-              if (!isMe)
-                SliverToBoxAdapter(
-                  child: isFollowingAsync.when(
-                    data: (isFollowing) => Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                      child: _followLoading
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                  color: ScriptaColors.sienna,
-                                  strokeWidth: 1.5))
-                          : isFollowing
-                              ? OutlinedButton.icon(
-                                  onPressed: () => _toggleFollow(true),
-                                  icon: const Icon(Icons.check, size: 16),
-                                  label: Text(context.l10n.profileFollowingButton),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: ScriptaColors.inkMuted,
-                                    side: const BorderSide(
-                                        color: ScriptaColors.rule),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(14)),
-                                  ),
-                                )
-                              : FilledButton.icon(
-                                  onPressed: () => _toggleFollow(false),
-                                  icon: const Icon(Icons.add, size: 16),
-                                  label: Text(context.l10n.profileFollowButton),
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: ScriptaColors.primary,
-                                    foregroundColor: const Color(0xFFF1EEE7),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(14)),
-                                  ),
-                                ),
-                    ),
-                    loading: () => const SizedBox(height: 52),
-                    error: (_, __) => const SizedBox(height: 52),
-                  ),
-                ),
-
-              // ── Libri del cuore (read-only) ──────────────────────────────
-              SliverToBoxAdapter(
-                child: Builder(
-                  builder: (_) {
-                    final raw = profile['favorite_books'];
-                    if (raw is! List || raw.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    final favs = raw
-                        .whereType<Map>()
-                        .map((e) => <String, String>{
-                              'title':  e['title']?.toString()  ?? '',
-                              'author': e['author']?.toString() ?? '',
-                            })
-                        .where((m) => m['title']!.isNotEmpty)
-                        .take(6)
-                        .toList();
-                    if (favs.isEmpty) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(context.l10n.profileFavouriteBooksSection,
-                                  style: ScriptaTextStyles.sectionTitle),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                  child: Divider(
-                                      color: ScriptaColors.ruleFaint)),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          // ownerUserId = this profile's user, so visitors see
-                          // THAT reader's custom favourite covers.
-                          FavBooksGrid(favBooks: favs, ownerUserId: widget.userId),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // ── Post section header ───────────────────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-                  child: Row(
-                    children: [
-                      Text(context.l10n.profilePostsSection, style: ScriptaTextStyles.sectionTitle),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Divider(
-                            color: ScriptaColors.ruleFaint, height: 1),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ── Posts list (Twitter-style) ────────────────────────────────
-              postsAsync.when(
-                data: (posts) => posts.isEmpty
-                    ? SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                          child: Text(
-                            context.l10n.feedNoPostsYet,
-                            style: GoogleFonts.manrope(
-                                color: ScriptaColors.inkMuted, fontSize: 13),
-                          ),
-                        ),
-                      )
-                    : SliverToBoxAdapter(
-                        child: PostsTimeline(
-                          posts: posts,
-                          profile: profile,
-                          onTapPost: (post) =>
-                              context.push('/post/${post['id']}'),
-                        ),
-                      ),
-                loading: () => const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(40),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                          color: ScriptaColors.sienna, strokeWidth: 1.5),
-                    ),
-                  ),
-                ),
-                error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
-              ),
-              // Block lives in the top-right overflow menu (with Report); the
-              // duplicate bottom block box was removed per design.
-              const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            ],
+          return _ProfileBody(
+            userId: widget.userId,
+            profile: profile,
+            isMe: isMe,
+            followLoading: _followLoading,
+            onToggleFollow: _toggleFollow,
+            onToggleBlock: _toggleBlock,
+            onReport: _reportProfile,
+            isBlockedAsync: ref.watch(_isUserBlockedProvider(widget.userId)),
           );
         },
         loading: () => const Center(
@@ -467,6 +187,592 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   }
 }
 
+// ─── Profile body (cover behind + draggable panel in front) ──────────────────
+//
+// Restyled to match the book-detail screen and the own-profile hierarchy: the
+// cover photo / gradient bleeds full-bleed behind the upper ~40% of the screen,
+// and a white rounded DraggableScrollableSheet panel sits in front carrying the
+// identity + content. The back button floats over the cover, top-left.
+
+class _ProfileBody extends ConsumerWidget {
+  const _ProfileBody({
+    required this.userId,
+    required this.profile,
+    required this.isMe,
+    required this.followLoading,
+    required this.onToggleFollow,
+    required this.onToggleBlock,
+    required this.onReport,
+    required this.isBlockedAsync,
+  });
+
+  final String userId;
+  final Map<String, dynamic> profile;
+  final bool isMe;
+  final bool followLoading;
+  final Future<void> Function(bool isFollowing) onToggleFollow;
+  final Future<void> Function(bool isBlocked) onToggleBlock;
+  final Future<void> Function() onReport;
+  final AsyncValue<bool> isBlockedAsync;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(_userStatsProvider(userId));
+    final postsAsync = ref.watch(_userPostsProvider(userId));
+    final isFollowingAsync = ref.watch(_isFollowingUserProvider(userId));
+
+    final name =
+        profile['display_name'] as String? ?? context.l10n.profileUserFallback;
+    final bio = (profile['bio'] as String?)?.trim();
+    final readingTitle = (profile['currently_reading_title'] as String?)?.trim();
+    final readingAuthor =
+        (profile['currently_reading_author'] as String?)?.trim();
+    final avatarUrl = profile['avatar_url'] as String?;
+    final coverUrl = profile['cover_url'] as String?;
+    final isPrivate = profile['is_private'] == true;
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    final avatarColor = ScriptaDecorations.bookCoverColor(name);
+
+    // Private gating: hide reading / favourites / posts from non-owners who
+    // don't already follow this private profile. The follow button + header
+    // (avatar, name, bio, stats) stay visible so they can request access.
+    //
+    // Gate ONLY when we positively KNOW the viewer is not a follower
+    // (asData == false). While the follow check is loading OR if it errors,
+    // asData is null → NOT gated, so a real follower is never flashed the
+    // "private — follow to see more" lock by a transient unknown. The v1 gate
+    // is a soft UX courtesy (profiles stay readable server-side), so erring
+    // toward showing content on 'unknown' is the right trade-off.
+    final gated =
+        isPrivate && !isMe && isFollowingAsync.asData?.value == false;
+
+    final screenH = MediaQuery.of(context).size.height;
+    final coverH = screenH * 0.42;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: ScriptaDecorations.lightStatusBar,
+      child: Stack(
+        children: [
+          // ── Cover photo / gradient, full-bleed behind the panel ───────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: coverH,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (coverUrl != null && coverUrl.isNotEmpty)
+                  Image.network(
+                    coverUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                        decoration: ScriptaDecorations.gradientHeader),
+                  )
+                else
+                  Container(decoration: ScriptaDecorations.gradientHeader),
+                // Soft dark scrim at the bottom so the panel edge reads as
+                // overlapping the cover, and any text stays legible over photos.
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x22000000), Color(0x55000000)],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Foreground panel (DraggableScrollableSheet, like book detail) ──
+          Positioned.fill(
+            child: DraggableScrollableSheet(
+              initialChildSize: 0.66,
+              minChildSize: 0.66,
+              maxChildSize: 1.0,
+              builder: (ctx, scrollCtrl) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: ScriptaColors.background,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x20261E1D),
+                        blurRadius: 20,
+                        offset: Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: CustomScrollView(
+                    controller: scrollCtrl,
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      // Grab handle
+                      SliverToBoxAdapter(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 12),
+                            Container(
+                              width: 36,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: ScriptaColors.rule,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
+                        ),
+                      ),
+
+                      // (1) Avatar + display name
+                      SliverToBoxAdapter(
+                        child: _IdentityBlock(
+                          name: name,
+                          avatarUrl: avatarUrl,
+                          initial: initial,
+                          avatarColor: avatarColor,
+                        ),
+                      ),
+
+                      // (2) Bio directly under the name
+                      if (bio != null && bio.isNotEmpty)
+                        SliverToBoxAdapter(child: _BioBlock(bio: bio)),
+
+                      // (3) Stats banner: Highlight | Condivisi | Seguiti | Follower
+                      SliverToBoxAdapter(
+                        child: statsAsync.when(
+                          data: (stats) => _StatsRow(stats: stats),
+                          loading: () => const SizedBox(height: 80),
+                          error: (_, __) => const SizedBox(height: 80),
+                        ),
+                      ),
+
+                      // (4) Follow / Following button (not shown for self)
+                      if (!isMe)
+                        SliverToBoxAdapter(
+                          child: isFollowingAsync.when(
+                            data: (following) => _FollowButton(
+                              isFollowing: following,
+                              loading: followLoading,
+                              onToggle: onToggleFollow,
+                            ),
+                            loading: () => const SizedBox(height: 52),
+                            error: (_, __) => const SizedBox(height: 52),
+                          ),
+                        ),
+
+                      // Private-profile gate: stop here for non-followers.
+                      if (gated)
+                        const SliverToBoxAdapter(child: _PrivateLockRow())
+                      else ...[
+                        // (5) Currently reading card (when set)
+                        if (readingTitle != null && readingTitle.isNotEmpty)
+                          SliverToBoxAdapter(
+                            child: _CurrentlyReadingCard(
+                              title: readingTitle,
+                              author: readingAuthor,
+                            ),
+                          ),
+
+                        // (6) Libri del cuore favourites grid
+                        SliverToBoxAdapter(
+                          child: _FavouritesSection(
+                              profile: profile, userId: userId),
+                        ),
+
+                        // (7) Posts timeline
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+                            child: Row(
+                              children: [
+                                Text(context.l10n.profilePostsSection,
+                                    style: ScriptaTextStyles.sectionTitle),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Divider(
+                                      color: ScriptaColors.ruleFaint, height: 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        postsAsync.when(
+                          data: (posts) => posts.isEmpty
+                              ? SliverToBoxAdapter(
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        20, 8, 20, 120),
+                                    child: Text(
+                                      context.l10n.feedNoPostsYet,
+                                      style: GoogleFonts.manrope(
+                                          color: ScriptaColors.inkMuted,
+                                          fontSize: 13),
+                                    ),
+                                  ),
+                                )
+                              : SliverToBoxAdapter(
+                                  child: PostsTimeline(
+                                    posts: posts,
+                                    profile: profile,
+                                    // Viewing your OWN profile via /user/:id
+                                    // (from notifications, search, chat header…)
+                                    // still shows your own hidden like counts.
+                                    isOwnProfile: isMe,
+                                    onTapPost: (post) =>
+                                        context.push('/post/${post['id']}'),
+                                  ),
+                                ),
+                          loading: () => const SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.all(40),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                    color: ScriptaColors.sienna,
+                                    strokeWidth: 1.5),
+                              ),
+                            ),
+                          ),
+                          error: (_, __) =>
+                              const SliverToBoxAdapter(child: SizedBox()),
+                        ),
+                      ],
+
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                            height:
+                                MediaQuery.of(context).padding.bottom + 32),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ── Back button (floating, top-left over the cover) ───────────────
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 8,
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(50),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.arrow_back,
+                    color: Colors.white, size: 20),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+
+          // ── Overflow menu (block / report), top-right over the cover ──────
+          if (!isMe)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              right: 8,
+              child: _ProfileOverflowMenu(
+                isBlockedAsync: isBlockedAsync,
+                onToggleBlock: onToggleBlock,
+                onReport: onReport,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Identity block (avatar + name) ──────────────────────────────────────────
+
+class _IdentityBlock extends StatelessWidget {
+  const _IdentityBlock({
+    required this.name,
+    required this.avatarUrl,
+    required this.initial,
+    required this.avatarColor,
+  });
+
+  final String name;
+  final String? avatarUrl;
+  final String initial;
+  final Color avatarColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+      child: Column(
+        children: [
+          Container(
+            width: 86,
+            height: 86,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(43),
+              border: Border.all(color: Colors.white.withAlpha(60), width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(43),
+              child: avatarUrl != null && avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _AvatarFallback(
+                        initial: initial,
+                        color: avatarColor,
+                      ),
+                    )
+                  : _AvatarFallback(initial: initial, color: avatarColor),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: ScriptaColors.ink,
+              letterSpacing: -0.4,
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+// ─── Bio block ────────────────────────────────────────────────────────────────
+
+class _BioBlock extends StatelessWidget {
+  const _BioBlock({required this.bio});
+  final String bio;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 8, 28, 0),
+      child: Text(
+        bio,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 13.5,
+          height: 1.5,
+          color: ScriptaColors.inkMuted,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms, delay: 40.ms);
+  }
+}
+
+// ─── Follow button ────────────────────────────────────────────────────────────
+
+class _FollowButton extends StatelessWidget {
+  const _FollowButton({
+    required this.isFollowing,
+    required this.loading,
+    required this.onToggle,
+  });
+
+  final bool isFollowing;
+  final bool loading;
+  final Future<void> Function(bool isFollowing) onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+      child: loading
+          ? const Center(
+              child: CircularProgressIndicator(
+                  color: ScriptaColors.sienna, strokeWidth: 1.5))
+          : isFollowing
+              ? OutlinedButton.icon(
+                  onPressed: () => onToggle(true),
+                  icon: const Icon(Icons.check, size: 16),
+                  label: Text(context.l10n.profileFollowingButton),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ScriptaColors.inkMuted,
+                    side: const BorderSide(color: ScriptaColors.rule),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    minimumSize: const Size(double.infinity, 0),
+                  ),
+                )
+              : FilledButton.icon(
+                  onPressed: () => onToggle(false),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: Text(context.l10n.profileFollowButton),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: ScriptaColors.primary,
+                    foregroundColor: const Color(0xFFF1EEE7),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    minimumSize: const Size(double.infinity, 0),
+                  ),
+                ),
+    );
+  }
+}
+
+// ─── Private-profile lock row ─────────────────────────────────────────────────
+
+class _PrivateLockRow extends StatelessWidget {
+  const _PrivateLockRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+      child: Column(
+        children: [
+          const Icon(Icons.lock_outline_rounded,
+              size: 30, color: ScriptaColors.inkFaint),
+          const SizedBox(height: 12),
+          Text(
+            it
+                ? 'Profilo privato — segui per vedere di più'
+                : 'Private profile — follow to see more',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 13.5,
+              height: 1.5,
+              color: ScriptaColors.inkMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Currently reading card ──────────────────────────────────────────────────
+
+class _CurrentlyReadingCard extends StatelessWidget {
+  const _CurrentlyReadingCard({required this.title, this.author});
+  final String title;
+  final String? author;
+
+  @override
+  Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Container(
+        decoration: ScriptaDecorations.card(),
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        child: Row(
+          children: [
+            const Icon(Icons.menu_book_outlined,
+                size: 20, color: ScriptaColors.primaryDark),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    it ? 'STA LEGGENDO' : 'READING',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: ScriptaColors.inkFaint,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: ScriptaColors.ink,
+                      letterSpacing: -0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (author != null && author!.isNotEmpty)
+                    Text(
+                      author!.toUpperCase(),
+                      style:
+                          ScriptaTextStyles.bookAuthor.copyWith(fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.04, end: 0);
+  }
+}
+
+// ─── Libri del cuore (read-only favourites grid) ─────────────────────────────
+
+class _FavouritesSection extends StatelessWidget {
+  const _FavouritesSection({required this.profile, required this.userId});
+  final Map<String, dynamic> profile;
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = profile['favorite_books'];
+    if (raw is! List || raw.isEmpty) return const SizedBox.shrink();
+    final favs = raw
+        .whereType<Map>()
+        .map((e) => <String, String>{
+              'title': e['title']?.toString() ?? '',
+              'author': e['author']?.toString() ?? '',
+            })
+        .where((m) => m['title']!.isNotEmpty)
+        .take(6)
+        .toList();
+    if (favs.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(context.l10n.profileFavouriteBooksSection,
+                  style: ScriptaTextStyles.sectionTitle),
+              const SizedBox(width: 12),
+              const Expanded(child: Divider(color: ScriptaColors.ruleFaint)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // ownerUserId = this profile's user, so visitors see THAT reader's
+          // custom favourite covers.
+          FavBooksGrid(favBooks: favs, ownerUserId: userId),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Stats row ────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
@@ -476,7 +782,7 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: ScriptaDecorations.card(),
       child: Row(
@@ -558,7 +864,14 @@ class _ProfileOverflowMenu extends StatelessWidget {
     // Default to "not blocked" while the state loads so the menu is usable.
     final isBlocked = isBlockedAsync.asData?.value ?? false;
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_horiz, color: Color(0xFFF1EEE7)),
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(50),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
+      ),
       color: ScriptaColors.surface,
       shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -605,13 +918,6 @@ class _ProfileOverflowMenu extends StatelessWidget {
   }
 }
 
-// ─── Block box (bottom of profile, not shown for self) ───────────────────────
-//
-// A prominent, clearly-labelled block/unblock action at the very bottom of every
-// OTHER user's profile (the overflow menu in the header stays too, for report +
-// quick block). Tinted danger-red when the user is not yet blocked; neutral once
-// blocked, with an "unblock" affordance. Backs onto _toggleBlock (which confirms
-// before blocking and refreshes follow/stats/posts state).
 // ─── Avatar fallback (gradient + initial) ────────────────────────────────────
 
 class _AvatarFallback extends StatelessWidget {
@@ -642,4 +948,3 @@ class _AvatarFallback extends StatelessWidget {
     );
   }
 }
-

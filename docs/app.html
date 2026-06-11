@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Scripta — reimposta la tua password">
+  <meta name="theme-color" content="#F9F8F5">
+  <link rel="icon" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <title>Scripta — Reimposta password</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sage: #C0CFB2;
+      --sage-dark: #8FA67E;
+      --cream: #F9F8F5;
+      --surface: #FFFFFF;
+      --ink: #2B2A26;
+      --ink-muted: #6B6560;
+      --ink-faint: #9E9689;
+      --red: #B94A41;
+      --rule: #E8E4DC;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: 'Manrope', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 56px 24px 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .mark { width: 76px; height: 76px; border-radius: 20px; box-shadow: 0 6px 24px rgba(143,166,126,.35); }
+    h1 {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-weight: 600;
+      font-size: 34px;
+      letter-spacing: .3px;
+      margin-top: 18px;
+    }
+    .tagline { color: var(--ink-faint); font-size: 13.5px; margin-top: 4px; }
+    .card {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 22px;
+      padding: 26px 22px;
+      margin-top: 28px;
+      box-shadow: 0 10px 30px rgba(43,42,38,.06);
+      text-align: left;
+    }
+    .card h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .card p  { font-size: 14px; color: var(--ink-muted); line-height: 1.55; }
+    .card .en { font-size: 12px; color: var(--ink-faint); margin-top: 8px; }
+    label { display: block; font-size: 13px; font-weight: 700; margin: 16px 0 6px; }
+    input[type=password] {
+      width: 100%;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 15px;
+      color: var(--ink);
+      background: var(--cream);
+      border: 1px solid var(--rule);
+      border-radius: 14px;
+      outline: none;
+    }
+    input[type=password]:focus { border-color: var(--sage-dark); }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px 16px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+      background: var(--sage);
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: filter .15s;
+    }
+    button:hover { filter: brightness(.97); }
+    button:disabled { opacity: .55; cursor: default; }
+    .error { color: var(--red); font-size: 13.5px; margin-top: 12px; display: none; }
+    .ok-icon {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--sage); color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; margin: 0 auto 14px;
+    }
+    .hidden { display: none !important; }
+    .foot { margin-top: 26px; font-size: 12px; color: var(--ink-faint); }
+    .foot a { color: var(--sage-dark); text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="mark" src="assets/scripta-mark.png" alt="Scripta">
+    <h1>Scripta</h1>
+    <div class="tagline">I tuoi highlight Kindle, reinventati.</div>
+
+    <!-- Reset form -->
+    <div id="reset" class="card hidden">
+      <h2>Reimposta la tua password</h2>
+      <p>Scegli una nuova password per il tuo account Scripta.</p>
+      <p class="en">Choose a new password for your Scripta account.</p>
+      <form id="reset-form">
+        <label for="pw1">Nuova password</label>
+        <input type="password" id="pw1" autocomplete="new-password" minlength="8" required>
+        <label for="pw2">Ripeti la password</label>
+        <input type="password" id="pw2" autocomplete="new-password" minlength="8" required>
+        <div id="reset-error" class="error"></div>
+        <button id="reset-btn" type="submit">Salva la nuova password</button>
+      </form>
+    </div>
+
+    <!-- Success -->
+    <div id="done" class="card hidden" style="text-align:center">
+      <div class="ok-icon">✓</div>
+      <h2 id="done-title" style="text-align:center">Password aggiornata</h2>
+      <p id="done-text" style="text-align:center">Ora apri Scripta sul tuo iPhone e accedi con la nuova password.</p>
+      <p class="en" style="text-align:center">All set — open the Scripta app and sign in.</p>
+    </div>
+
+    <!-- Expired / error -->
+    <div id="expired" class="card hidden" style="text-align:center">
+      <h2 style="text-align:center">Link scaduto</h2>
+      <p style="text-align:center">Questo link non è più valido. Apri Scripta e richiedi un nuovo
+        link da “Password dimenticata?”.</p>
+      <p class="en" style="text-align:center">This link has expired — request a new one from the app.</p>
+    </div>
+
+    <!-- Plain landing (no token in the URL) -->
+    <div id="landing" class="card hidden" style="text-align:center">
+      <h2 style="text-align:center">Apri l’app</h2>
+      <p style="text-align:center">Scripta vive sul tuo telefono: apri l’app per continuare.</p>
+      <p class="en" style="text-align:center">Scripta lives on your phone — open the app to continue.</p>
+    </div>
+
+    <div class="foot">
+      <a href="privacy/">Privacy</a> · <a href="terms/">Termini</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      var SUPABASE_URL = 'https://ibucvloawkfwobaelwbr.supabase.co';
+      // Anon key — public by design (same key shipped inside the app binary).
+      var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc';
+
+      function show(id) {
+        ['reset', 'done', 'expired', 'landing'].forEach(function (s) {
+          document.getElementById(s).classList.toggle('hidden', s !== id);
+        });
+      }
+
+      // Supabase's /verify endpoint redirects here with the session in the
+      // URL fragment: #access_token=…&refresh_token=…&type=recovery|signup,
+      // or #error=…&error_code=otp_expired when the link is stale.
+      var params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      var accessToken = params.get('access_token');
+      var refreshToken = params.get('refresh_token');
+      var type = params.get('type');
+      var errCode = params.get('error_code') || params.get('error');
+
+      // Don't leave tokens sitting in the address bar / browser history.
+      if (window.location.hash) {
+        history.replaceState(null, '', window.location.pathname);
+      }
+
+      if (errCode) { show('expired'); return; }
+      if (!accessToken || !refreshToken) { show('landing'); return; }
+
+      var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      if (type === 'signup' || type === 'email_change' || type === 'magiclink') {
+        // E.g. the "confirm your email" link: confirming it is all that was
+        // needed — sign the browser session out and send them to the app.
+        client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .finally(function () { client.auth.signOut(); });
+        document.getElementById('done-title').textContent = 'Email confermata';
+        document.getElementById('done-text').textContent =
+          'Ora apri Scripta sul tuo iPhone e accedi.';
+        show('done');
+        return;
+      }
+
+      // type === 'recovery' (password reset)
+      show('reset');
+      var form = document.getElementById('reset-form');
+      var btn = document.getElementById('reset-btn');
+      var errEl = document.getElementById('reset-error');
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        errEl.style.display = 'none';
+        var p1 = document.getElementById('pw1').value;
+        var p2 = document.getElementById('pw2').value;
+        if (p1.length < 8) {
+          errEl.textContent = 'La password deve avere almeno 8 caratteri.';
+          errEl.style.display = 'block';
+          return;
+        }
+        if (p1 !== p2) {
+          errEl.textContent = 'Le due password non coincidono.';
+          errEl.style.display = 'block';
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Salvataggio…';
+        client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return client.auth.updateUser({ password: p1 });
+          })
+          .then(function (res) {
+            if (res.error) throw res.error;
+            // The phone app keeps its own session; the browser one is not needed.
+            return client.auth.signOut();
+          })
+          .then(function () { show('done'); })
+          .catch(function (err) {
+            btn.disabled = false;
+            btn.textContent = 'Salva la nuova password';
+            var msg = (err && err.message) || '';
+            errEl.textContent = /expired|invalid/i.test(msg)
+              ? 'Il link è scaduto: richiedi un nuovo reset dall’app.'
+              : 'Non sono riuscito ad aggiornare la password. Riprova.';
+            errEl.style.display = 'block';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

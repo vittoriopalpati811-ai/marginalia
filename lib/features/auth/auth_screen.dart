@@ -7,9 +7,12 @@ import '../settings/terms_of_service_screen.dart';
 import 'email_otp_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/branding/scripta_mark.dart';
+import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -295,337 +298,422 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isSignup = _tab.index == 1;
+
     return Scaffold(
       backgroundColor: ScriptaColors.background,
-      body: Column(
-        children: [
-          // ── Header con gradient ────────────────────────────────────────────
-          _AuthHeader(tab: _tab),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Editorial header ─────────────────────────────────────────
+                const SizedBox(height: 24),
+                Center(
+                  child: const ScriptaMark(size: 72)
+                      .animate()
+                      .fadeIn(duration: AirbnbMotion.longForm, curve: AirbnbMotion.enter)
+                      .scale(
+                        begin: const Offset(0.84, 0.84),
+                        end: const Offset(1, 1),
+                        duration: AirbnbMotion.longForm,
+                        curve: Curves.easeOutBack,
+                      ),
+                ),
+                const SizedBox(height: 18),
+                Center(
+                  child: Text(
+                    'Scripta',
+                    style: GoogleFonts.ebGaramond(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w600,
+                      color: ScriptaColors.ink,
+                      letterSpacing: -0.8,
+                      height: 1,
+                    ),
+                  ),
+                ).animate().fadeIn(
+                    delay: 80.ms,
+                    duration: AirbnbMotion.emphasis,
+                    curve: AirbnbMotion.enter),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    context.l10n.authSubtitle,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.manrope(
+                      fontSize: 14,
+                      color: ScriptaColors.inkMuted,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ).animate().fadeIn(
+                    delay: 140.ms, duration: AirbnbMotion.emphasis),
 
-          // ── Form ──────────────────────────────────────────────────────────
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Nome (solo registrazione)
-                    AnimatedSize(
-                      duration: 250.ms,
-                      curve: Curves.easeOut,
-                      child: _tab.index == 1
-                          ? Column(
-                              children: [
-                                TextFormField(
-                                  controller: _nameController,
-                                  textCapitalization: TextCapitalization.words,
-                                  decoration: InputDecoration(
-                                    hintText: context.l10n.authName,
-                                    prefixIcon: const Icon(Icons.person_outline),
-                                    filled: true,
-                                    fillColor: ScriptaColors.surfaceElevated,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 14),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(14),
-                                      borderSide: const BorderSide(
-                                          color: ScriptaColors.primaryDark,
-                                          width: 1.5),
-                                    ),
-                                  ),
-                                  validator: (v) => _tab.index == 1 && (v == null || v.trim().isEmpty)
+                const SizedBox(height: 30),
+
+                // ── Pill segmented control (Accedi / Registrati) ─────────────
+                _AuthSegmented(tab: _tab).animate().fadeIn(
+                    delay: 200.ms, duration: AirbnbMotion.emphasis),
+
+                const SizedBox(height: 26),
+
+                // Name (signup only)
+                AnimatedSize(
+                  duration: AirbnbMotion.standard,
+                  curve: AirbnbMotion.enter,
+                  child: isSignup
+                      ? Column(
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: _fieldDecoration(
+                                hint: context.l10n.authName,
+                                icon: Icons.person_outline,
+                              ),
+                              validator: (v) =>
+                                  _tab.index == 1 && (v == null || v.trim().isEmpty)
                                       ? context.l10n.authNameRequired
                                       : null,
-                                ),
-                                const SizedBox(height: 14),
-                              ],
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.authEmail,
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        filled: true,
-                        fillColor: ScriptaColors.surfaceElevated,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: ScriptaColors.primaryDark, width: 1.5),
-                        ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return context.l10n.authEmailRequired;
-                        if (!v.contains('@')) return context.l10n.authEmailInvalid;
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscure,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.authPassword,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                        ),
-                        filled: true,
-                        fillColor: ScriptaColors.surfaceElevated,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                              color: ScriptaColors.primaryDark, width: 1.5),
-                        ),
-                      ),
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return context.l10n.authPasswordRequired;
-                        if (_tab.index == 1 && v.length < 6) return context.l10n.authPasswordTooShort;
-                        return null;
-                      },
-                    ),
-
-                    // "Forgot password" — solo nel tab login
-                    if (_tab.index == 0)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _showForgotPassword,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                            foregroundColor: ScriptaColors.primaryDark,
-                          ),
-                          child: Text(
-                            context.l10n.authForgotPassword,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
-                      ),
-
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFECACA)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _error!,
-                                style: const TextStyle(
-                                  color: Color(0xFFDC2626),
-                                  fontSize: 13,
-                                ),
-                              ),
                             ),
+                            const SizedBox(height: 14),
                           ],
-                        ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  decoration: _fieldDecoration(
+                    hint: context.l10n.authEmail,
+                    icon: Icons.email_outlined,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return context.l10n.authEmailRequired;
+                    if (!v.contains('@')) return context.l10n.authEmailInvalid;
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 14),
+
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _obscure,
+                  decoration: _fieldDecoration(
+                    hint: context.l10n.authPassword,
+                    icon: Icons.lock_outline,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscure
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: ScriptaColors.inkFaint,
                       ),
-                    ],
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return context.l10n.authPasswordRequired;
+                    if (_tab.index == 1 && v.length < 6) return context.l10n.authPasswordTooShort;
+                    return null;
+                  },
+                ),
 
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      height: 52,
-                      child: FilledButton(
-                        onPressed: _loading ? null : _submit,
-                        child: _loading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(_tab.index == 0 ? context.l10n.authSignIn : context.l10n.authCreateAccount),
+                // "Forgot password" — login tab only
+                if (!isSignup)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _showForgotPassword,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 6),
+                        foregroundColor: ScriptaColors.primaryDark,
+                      ),
+                      child: Text(
+                        context.l10n.authForgotPassword,
+                        style: const TextStyle(fontSize: 13),
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 18),
+                if (_error != null) ...[
+                  const SizedBox(height: 16),
+                  _ErrorBanner(message: _error!),
+                ],
 
-                    // ── "oppure" + social sign-in (Apple first per HIG) ──────
-                    Row(
-                      children: [
-                        const Expanded(
-                            child:
-                                Divider(color: ScriptaColors.rule, height: 1)),
-                        Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            context.l10n.authOrDivider,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: ScriptaColors.inkFaint,
-                              letterSpacing: 0.6,
+                // ── Terms acceptance — directly ABOVE the primary CTA, signup
+                // only (App Store Guideline 1.2). Login mode never shows it.
+                if (isSignup) ...[
+                  const SizedBox(height: 20),
+                  _TermsAcceptanceRow(
+                    accepted: _acceptedTerms,
+                    onChanged: (v) =>
+                        setState(() => _acceptedTerms = v ?? false),
+                  ),
+                ],
+
+                const SizedBox(height: 22),
+
+                // ── Primary CTA — full-width sage, 52px ──────────────────────
+                SizedBox(
+                  height: 52,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: ScriptaColors.primary,
+                      foregroundColor: ScriptaColors.ink,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: _loading ? null : _submit,
+                    child: _loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            isSignup
+                                ? context.l10n.authCreateAccount
+                                : context.l10n.authSignIn,
+                            style: GoogleFonts.manrope(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+
+                // ── "oppure" divider ─────────────────────────────────────────
+                Row(
+                  children: [
+                    const Expanded(
+                        child: Divider(color: ScriptaColors.rule, height: 1)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        context.l10n.authOrDivider,
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: ScriptaColors.inkFaint,
+                          letterSpacing: 0.6,
                         ),
-                        const Expanded(
-                            child:
-                                Divider(color: ScriptaColors.rule, height: 1)),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    SocialAuthButtons(
-                      loading: _loading,
-                      appleLabel: context.l10n.authContinueWithApple,
-                      onApple: () => _social('apple'),
-                      googleLabel: context.l10n.authContinueWithGoogle,
-                      onGoogle: () => _social('google'),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // ToS/EULA + Privacy acceptance — shown only on signup tab.
-                    // Required by App Store Guideline 1.2: the user must agree
-                    // to the Terms (zero-tolerance EULA) before creating an
-                    // account. Both links are independently tappable.
-                    if (_tab.index == 1) ...[
-                      _TermsAcceptanceRow(
-                        accepted: _acceptedTerms,
-                        onChanged: (v) =>
-                            setState(() => _acceptedTerms = v ?? false),
                       ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // Account creation is mandatory — no anonymous bypass.
-                    // (Previously a "Continue without account" link lived
-                    // here; removed 2026-05-27.)
+                    ),
+                    const Expanded(
+                        child: Divider(color: ScriptaColors.rule, height: 1)),
                   ],
                 ),
-              ),
+
+                const SizedBox(height: 16),
+
+                // ── Social sign-in (Apple first per HIG) ─────────────────────
+                SocialAuthButtons(
+                  loading: _loading,
+                  appleLabel: context.l10n.authContinueWithApple,
+                  onApple: () => _social('apple'),
+                  googleLabel: context.l10n.authContinueWithGoogle,
+                  onGoogle: () => _social('google'),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Account creation is mandatory — no anonymous bypass.
+                // (Previously a "Continue without account" link lived here;
+                // removed 2026-05-27.)
+              ],
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  /// Shared filled-field decoration for the restyled auth form: a soft cream
+  /// surface, rounded 16px corners, a subtle rest border (Airbnb-light) and a
+  /// sage focus ring. Keeps every field visually identical without repeating
+  /// the OutlineInputBorder triplet five times.
+  InputDecoration _fieldDecoration({
+    required String hint,
+    required IconData icon,
+    Widget? suffix,
+  }) {
+    OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: color, width: width),
+        );
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon, color: ScriptaColors.inkFaint),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: ScriptaColors.surfaceElevated,
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: border(ScriptaColors.rule, 1),
+      enabledBorder: border(ScriptaColors.rule, 1),
+      focusedBorder: border(ScriptaColors.primaryDark, 1.5),
+      // Brand red (0xFFB94A41) for validation errors — not a named palette
+      // constant, so referenced as a literal to match the spec.
+      errorBorder: border(const Color(0xFFB94A41), 1),
+      focusedErrorBorder: border(const Color(0xFFB94A41), 1.5),
+    );
+  }
+}
+
+// ─── Pill segmented control (Accedi / Registrati) ───────────────────────────
+//
+// A light, modern replacement for the old boxy TabBar: a pill track with a
+// single sliding sage indicator. Driven by the same [TabController] the form
+// reads (`_tab.index`), so all the existing mode logic is untouched — tapping a
+// half animates the controller, which both slides the indicator AND rebuilds
+// the form. Listens to the controller's animation for a smooth slide even when
+// the index is changed programmatically.
+class _AuthSegmented extends StatefulWidget {
+  const _AuthSegmented({required this.tab});
+  final TabController tab;
+
+  @override
+  State<_AuthSegmented> createState() => _AuthSegmentedState();
+}
+
+class _AuthSegmentedState extends State<_AuthSegmented> {
+  @override
+  void initState() {
+    super.initState();
+    widget.tab.animation?.addListener(_onTick);
+  }
+
+  @override
+  void dispose() {
+    widget.tab.animation?.removeListener(_onTick);
+    super.dispose();
+  }
+
+  void _onTick() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Continuous 0..1 position from the controller's animation so the indicator
+    // tracks the swipe/animation, not just the settled index.
+    final t = (widget.tab.animation?.value ?? widget.tab.index.toDouble())
+        .clamp(0.0, 1.0);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const pad = 4.0;
+        final trackWidth = constraints.maxWidth;
+        final slotWidth = (trackWidth - pad * 2) / 2;
+
+        return Container(
+          height: 48,
+          padding: const EdgeInsets.all(pad),
+          decoration: BoxDecoration(
+            color: ScriptaColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: ScriptaColors.rule),
+          ),
+          child: Stack(
+            children: [
+              // Sliding indicator
+              Align(
+                alignment: Alignment(-1 + 2 * t, 0),
+                child: Container(
+                  width: slotWidth,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: ScriptaColors.primary,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  _segment(context, context.l10n.authSignIn, 0, t < 0.5),
+                  _segment(context, context.l10n.authSignUp, 1, t >= 0.5),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _segment(BuildContext context, String label, int index, bool active) {
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => widget.tab.animateTo(index),
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: AirbnbMotion.fast,
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              color: active ? ScriptaColors.ink : ScriptaColors.inkMuted,
+            ),
+            child: Text(label),
+          ),
+        ),
       ),
     );
   }
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// ─── Error banner ───────────────────────────────────────────────────────────
 
-class _AuthHeader extends StatelessWidget {
-  const _AuthHeader({required this.tab});
-  final TabController tab;
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: ScriptaDecorations.gradientHeader,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            // Logo
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(30),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.auto_stories, color: Colors.white, size: 28),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              'Scripta',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              context.l10n.authSubtitle,
-              style: TextStyle(
-                color: Colors.white.withAlpha(180),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.manrope(
+                color: const Color(0xFFDC2626),
                 fontSize: 13,
               ),
             ),
-            const SizedBox(height: 24),
-            // Tab bar
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(20),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: tab,
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: ScriptaColors.primaryDark,
-                unselectedLabelColor: Colors.white.withAlpha(200),
-                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                tabs: [
-                  Tab(text: context.l10n.authSignIn),
-                  Tab(text: context.l10n.authSignUp),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
-    ).animate().fadeIn(duration: 400.ms);
+    ).animate().fadeIn(duration: AirbnbMotion.fast).shake(duration: 300.ms);
   }
 }
 

@@ -73,6 +73,11 @@ const _ripassoResultsKey = 'ripasso_results_v1';
 
 /// Today's session results — valid only while the daily lock window from the
 /// completion moment is still active (i.e. until the next 08:00).
+///
+/// Ripasso 2.0 records [score]/[total]/[durationSeconds] (the quiz the daily
+/// session now is) alongside the legacy grade tallies. The grade tallies are
+/// kept so any older persisted blob still decodes, and so the recap/entry card
+/// can still summarise "good/hard/forgot" derived from correct vs. wrong taps.
 class RipassoResults {
   const RipassoResults({
     required this.cards,
@@ -80,6 +85,9 @@ class RipassoResults {
     required this.hard,
     required this.good,
     required this.completedAt,
+    this.score = 0,
+    this.total = 0,
+    this.durationSeconds = 0,
   });
 
   final int cards;
@@ -87,13 +95,28 @@ class RipassoResults {
   final int hard;
   final int good;
   final DateTime completedAt;
+
+  /// Correct answers in today's session (Ripasso 2.0).
+  final int score;
+
+  /// Total questions answered today (Ripasso 2.0) — usually equals [cards].
+  final int total;
+
+  /// Wall-clock seconds from the first question to completion (Ripasso 2.0).
+  final int durationSeconds;
 }
 
+/// Persists today's recap. [score]/[total]/[durationSeconds] are the Ripasso 2.0
+/// quiz figures; [forgot]/[hard]/[good] remain for backward compatibility with
+/// the entry-card line (callers may derive them from correct/wrong, or pass 0).
 Future<void> saveRipassoResults({
   required int cards,
-  required int forgot,
-  required int hard,
-  required int good,
+  int forgot = 0,
+  int hard = 0,
+  int good = 0,
+  int score = 0,
+  int total = 0,
+  int durationSeconds = 0,
 }) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString(
@@ -103,6 +126,9 @@ Future<void> saveRipassoResults({
         'forgot': forgot,
         'hard': hard,
         'good': good,
+        'score': score,
+        'total': total,
+        'duration': durationSeconds,
         'at': DateTime.now().toIso8601String(),
       }));
 }
@@ -118,11 +144,15 @@ Future<RipassoResults?> todayRipassoResults() async {
     if (at == null) return null;
     // Stale once the lock window from that completion has passed (next 08:00).
     if (lockedUntilFrom(atIso) == null) return null;
+    // Backward compatibility: older blobs have no score/total/duration keys.
     return RipassoResults(
       cards: (decoded['cards'] as num?)?.toInt() ?? 0,
       forgot: (decoded['forgot'] as num?)?.toInt() ?? 0,
       hard: (decoded['hard'] as num?)?.toInt() ?? 0,
       good: (decoded['good'] as num?)?.toInt() ?? 0,
+      score: (decoded['score'] as num?)?.toInt() ?? 0,
+      total: (decoded['total'] as num?)?.toInt() ?? 0,
+      durationSeconds: (decoded['duration'] as num?)?.toInt() ?? 0,
       completedAt: at,
     );
   } catch (_) {

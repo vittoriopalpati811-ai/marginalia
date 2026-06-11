@@ -76,6 +76,17 @@ CupertinoPage<void> _pushPage(Widget child, GoRouterState state) {
   );
 }
 
+/// Instant push — no slide in either direction (founder request 2026-06-11
+/// for the book-detail screen: opening a book's saved phrases and returning
+/// to the library must not animate). Back-swipe is not needed here; the
+/// screen has its own back button.
+NoTransitionPage<void> _instantPage(Widget child, GoRouterState state) {
+  return NoTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+  );
+}
+
 /// Modal transition: slide from bottom + fade (for auth, settings overlays).
 CustomTransitionPage<void> _modalPage(Widget child, GoRouterState state) {
   return CustomTransitionPage<void>(
@@ -184,7 +195,7 @@ final router = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (_, state) {
         final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-        return _pushPage(BookDetailScreen(bookId: id), state);
+        return _instantPage(BookDetailScreen(bookId: id), state);
       },
     ),
     GoRoute(
@@ -527,21 +538,11 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
     (path: '/profile',  icon: PhosphorIconsRegular.userCircle,      activeIcon: PhosphorIconsFill.userCircle,      label: 'Profile'),
   ];
 
-  // Track the previous tab so a switch slides in the direction that matches the
-  // nav bar: moving to a tab on the RIGHT slides L→R, moving to one on the LEFT
-  // slides R→L (instead of always cross-fading).
-  int _prevIndex = 0;
-  int _direction = 1;
-
   @override
   Widget build(BuildContext context) {
     final routePath = widget.routePath;
     final selectedIndex =
         _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
-    if (selectedIndex != _prevIndex) {
-      _direction = selectedIndex > _prevIndex ? 1 : -1;
-      _prevIndex = selectedIndex;
-    }
 
     // Nuclear layout: previous attempts (StackFit.expand on AnimatedSwitcher,
     // 100dvh + flt-glass-pane sizing) didn't fix the navbar-floating-
@@ -582,59 +583,12 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                   bottom: navInset,
                 ),
               ),
-              child: PageTransitionSwitcher(
-                duration: const Duration(milliseconds: 300),
-                // Direction-aware tab transition (founder spec, matched to the
-                // reference video): tapping a tab to the RIGHT slides the new
-                // page in FROM the right (content moves right→left); tapping a
-                // tab to the LEFT slides it in FROM the left (left→right). It is a
-                // clean lock-step horizontal slide — NO fade/scale (the old
-                // SharedAxisTransition) — so it reads exactly like paging
-                // sideways, both pages moving as one.
-                //
-                // `_direction` = +1 when the target tab is to the RIGHT (higher
-                // index), -1 when it's to the LEFT. The offsets are driven
-                // straight from it with `reverse: false`, so direction lives in
-                // ONE place and the two pages can never fight each other.
-                reverse: false,
-                layoutBuilder: (entries) => Stack(
-                  fit: StackFit.expand,
-                  children: entries,
-                ),
-                transitionBuilder:
-                    (child, primaryAnimation, secondaryAnimation) {
-                  // Compute the offset at ANIMATION TIME, reading the CURRENT
-                  // `_direction`. The old version baked the direction into the
-                  // tweens when each page's transition was first built — so the
-                  // OUTGOING page kept the direction from when it ENTERED, and
-                  // switching to a tab on the LEFT after one on the RIGHT made
-                  // the outgoing page exit the wrong way (both pages piling up
-                  // on the left). Reading `_direction` per-frame keeps the two
-                  // pages in lock-step for BOTH directions.
-                  return AnimatedBuilder(
-                    animation: Listenable.merge(
-                        [primaryAnimation, secondaryAnimation]),
-                    child: child,
-                    builder: (context, animatedChild) {
-                      final dir = _direction.toDouble();
-                      final enterT = Curves.easeOutCubic
-                          .transform(primaryAnimation.value);
-                      final leaveT = Curves.easeInCubic
-                          .transform(secondaryAnimation.value);
-                      // Enter: from one full width on the side we move FROM
-                      // (dir) to centre. Leave: from centre toward -dir.
-                      final dx = dir * (1.0 - enterT) - dir * leaveT;
-                      return FractionalTranslation(
-                        translation: Offset(dx, 0),
-                        child: animatedChild,
-                      );
-                    },
-                  );
-                },
-                child: KeyedSubtree(
-                  key: ValueKey(routePath),
-                  child: widget.child,
-                ),
+              // Tab switches are INSTANT (founder request 2026-06-11): no
+              // slide/fade between sections — the previous direction-aware
+              // PageTransitionSwitcher was removed on purpose.
+              child: KeyedSubtree(
+                key: ValueKey(routePath),
+                child: widget.child,
               ),
             ),
           ),

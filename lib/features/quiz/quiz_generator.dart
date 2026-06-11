@@ -151,6 +151,86 @@ List<QuizQuestion> generateQuiz(
   return out;
 }
 
+/// Builds ONE question from a single [target] highlight, drawing distractors
+/// from [corpus] (the user's other highlights/books). Used by Ripasso 2.0, where
+/// every due card becomes a tap-to-answer question instead of a self-graded card.
+///
+/// Tries the three kinds in a rotation seeded by the target's id (so the same
+/// card tends to ask the same kind of question across sessions, but the corpus
+/// still varies the distractors), falling back to whatever the content + corpus
+/// can actually support. Returns null only when the target has no answerable
+/// question at all (e.g. a one-word highlight with an empty corpus) — the caller
+/// then skips straight to grading that card.
+QuizQuestion? generateQuestionForHighlight(
+  QuizSource target,
+  List<QuizSource> corpus, {
+  Random? rng,
+}) {
+  final r = rng ?? Random();
+  if (target.content.trim().isEmpty) return null;
+
+  // The corpus always includes the target, so its words/titles/authors are part
+  // of the pools. Sources with empty content are skipped.
+  final pool = corpus.where((s) => s.content.trim().isNotEmpty).toList();
+  if (pool.every((s) => s.highlightId != target.highlightId &&
+      s.content != target.content)) {
+    pool.add(target);
+  }
+
+  final titles = <String>{
+    for (final s in pool)
+      if ((s.bookTitle ?? '').trim().isNotEmpty) s.bookTitle!.trim(),
+  }.toList();
+  final authors = <String>{
+    for (final s in pool)
+      if ((s.bookAuthor ?? '').trim().isNotEmpty) s.bookAuthor!.trim(),
+  }.toList();
+
+  final wordPool = <String>{};
+  for (final s in pool) {
+    for (final m in _wordRe.allMatches(s.content)) {
+      final w = m.group(0)!;
+      if (_isMeaningfulWord(w)) wordPool.add(w);
+    }
+  }
+  final words = wordPool.toList();
+
+  final canWhichBook = titles.length >= 3;
+  final canWhichAuthor = authors.length >= 3;
+
+  // Stable per-card rotation: cloze → which-book → which-author, then fall back
+  // to any other kind that can be built from this card + corpus.
+  final slot = (target.highlightId ?? target.content.hashCode).abs() % 3;
+  final attempts = <QuizQuestion? Function()>[];
+  void addCloze() => attempts.add(() => _cloze(target, words, r));
+  void addBook() {
+    if (canWhichBook) attempts.add(() => _whichBook(target, titles, r));
+  }
+  void addAuthor() {
+    if (canWhichAuthor) attempts.add(() => _whichAuthor(target, authors, r));
+  }
+
+  if (slot == 0) {
+    addCloze();
+    addBook();
+    addAuthor();
+  } else if (slot == 1) {
+    addBook();
+    addCloze();
+    addAuthor();
+  } else {
+    addAuthor();
+    addCloze();
+    addBook();
+  }
+
+  for (final make in attempts) {
+    final q = make();
+    if (q != null) return q;
+  }
+  return null;
+}
+
 QuizQuestion? _cloze(QuizSource s, List<String> wordPool, Random r) {
   final content = s.content.trim();
   final matches = _wordRe.allMatches(content).toList();

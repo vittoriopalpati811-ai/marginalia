@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../review/sm2.dart';
 import '../services/local_notif_service.dart';
 import 'isar_provider_native.dart';
 import 'auth_provider.dart';
+import '../../features/quiz/quiz_generator.dart';
 import '../../features/quiz/quiz_lock.dart'
     show
         markRipassoCompletedNow,
@@ -109,6 +111,28 @@ final dueCountProvider = FutureProvider.autoDispose<int>((ref) async {
   return total > kMaxSessionCards ? kMaxSessionCards : total;
 });
 
+/// The distractor corpus for Ripasso 2.0 questions: ALL of the user's highlights
+/// (with their book title/author eagerly loaded), turned into [QuizSource]s. The
+/// session generates one multiple-choice question per due card, drawing wrong
+/// options (cloze words, other book titles/authors) from this pool — so the quiz
+/// is built entirely from the reader's own library, offline. autoDispose: it is
+/// only needed while a session is being built.
+final reviewQuizCorpusProvider =
+    FutureProvider.autoDispose<List<QuizSource>>((ref) async {
+  final isar = ref.watch(isarProvider);
+  final userId = ref.watch(currentUserProvider)?.id;
+  if (userId == null) return const [];
+
+  final all =
+      await isar.highlights.filter().userIdEqualTo(userId).findAll();
+  await Future.wait(all.map((h) => h.book.load()));
+  return [
+    for (final h in all)
+      if (h.content.trim().isNotEmpty)
+        QuizSource(h.content, h.bookTitle, h.bookAuthor, highlightId: h.id),
+  ];
+});
+
 /// Pulls the given highlights FORWARD into the Ripasso queue (sets reviewDueAt to
 /// now) — used by the Quiz to schedule the passages you got WRONG for spaced
 /// review, so the quiz strengthens exactly what you forgot. Only ever moves a
@@ -177,11 +201,21 @@ final reviewedDaysProvider = FutureProvider<Set<DateTime>>((ref) async {
 // ─── Session controller ──────────────────────────────────────────────────────
 
 /// Immutable snapshot of an in-progress review session.
+///
+/// Ripasso 2.0: the daily session is a multiple-choice quiz built from the due
+/// cards. [questions] holds ONE [QuizQuestion] per deck card (same order). A
+/// correct tap grades the card [ReviewGrade.good], a wrong tap grades it
+/// [ReviewGrade.forgot] — so SM-2 keeps scheduling and tomorrow's deck stays
+/// fresh. [score] counts correct answers; [startedAt] is set on the first
+/// answer so the recap can show elapsed time.
 class ReviewSessionState {
   const ReviewSessionState({
     required this.deck,
+    required this.questions,
     required this.index,
     required this.streakIncremented,
+    this.score = 0,
+    this.startedAt,
     this.forgotCount = 0,
     this.hardCount = 0,
     this.goodCount = 0,
@@ -190,15 +224,28 @@ class ReviewSessionState {
   /// The cards for this session, in order. Stable for the session's lifetime.
   final List<Highlight> deck;
 
-  /// Index of the current top card. When `index >= deck.length` the session is
-  /// finished and the review screen shows the "all caught up" state.
+  /// One generated question per deck card (same index). A null entry means no
+  /// answerable question could be built for that card — it is graded as a
+  /// "good" recall automatically so the deck never stalls.
+  final List<QuizQuestion?> questions;
+
+  /// Index of the current card. When `index >= deck.length` the session is
+  /// finished and the review screen shows the recap.
   final int index;
 
   /// True once the just-finished session pushed the streak to a new day — lets
   /// the finished state play the one-time flame bounce / "+1".
   final bool streakIncremented;
 
-  /// Per-grade tallies for this session — feed the end-of-session recap.
+  /// Correct answers so far (Ripasso 2.0 quiz score).
+  final int score;
+
+  /// When the first question was answered — anchors the session duration.
+  final DateTime? startedAt;
+
+  /// Per-grade tallies for this session — feed the end-of-session recap and the
+  /// backward-compatible entry-card line. With the quiz, wrong → forgot,
+  /// correct → good (hard is unused but kept for the persisted shape).
   final int forgotCount;
   final int hardCount;
   final int goodCount;
@@ -206,20 +253,36 @@ class ReviewSessionState {
   bool get isFinished => index >= deck.length;
   int get total => deck.length;
   int get reviewed => index;
+
+  /// The quiz denominator: how many cards actually produced an answerable
+  /// question. Cards with no question are recalls, not scored questions, so
+  /// counting them would inflate the score/accuracy.
+  int get questionsTotal => questions.where((q) => q != null).length;
+
   Highlight? get current => isFinished ? null : deck[index];
+
+  /// The question for the current card, or null if none could be built.
+  QuizQuestion? get currentQuestion =>
+      (isFinished || index >= questions.length) ? null : questions[index];
 
   ReviewSessionState copyWith({
     List<Highlight>? deck,
+    List<QuizQuestion?>? questions,
     int? index,
     bool? streakIncremented,
+    int? score,
+    DateTime? startedAt,
     int? forgotCount,
     int? hardCount,
     int? goodCount,
   }) =>
       ReviewSessionState(
         deck: deck ?? this.deck,
+        questions: questions ?? this.questions,
         index: index ?? this.index,
         streakIncremented: streakIncremented ?? this.streakIncremented,
+        score: score ?? this.score,
+        startedAt: startedAt ?? this.startedAt,
         forgotCount: forgotCount ?? this.forgotCount,
         hardCount: hardCount ?? this.hardCount,
         goodCount: goodCount ?? this.goodCount,
@@ -234,18 +297,53 @@ class ReviewSessionController
   @override
   ReviewSessionState build() => const ReviewSessionState(
         deck: [],
+        questions: [],
         index: 0,
         streakIncremented: false,
       );
 
-  /// Loads the deck for today. Called once when the review screen mounts.
+  /// Loads the deck for today AND generates one multiple-choice question per due
+  /// card from the user's own library (Ripasso 2.0). Called once when the review
+  /// screen mounts. Questions are built up-front so the swipe between cards is
+  /// instant; a card with no answerable question gets a null slot and is graded
+  /// automatically as a recall when reached.
   Future<void> load() async {
     final deck = await ref.read(dueHighlightsProvider.future);
+    final corpus = await ref.read(reviewQuizCorpusProvider.future);
+    final rng = Random();
+    final questions = <QuizQuestion?>[
+      for (final h in deck)
+        generateQuestionForHighlight(
+          QuizSource(h.content, h.bookTitle, h.bookAuthor, highlightId: h.id),
+          corpus,
+          rng: rng,
+        ),
+    ];
     state = ReviewSessionState(
       deck: deck,
+      questions: questions,
       index: 0,
       streakIncremented: false,
     );
+  }
+
+  /// Answers the current card's question. [correct] maps onto the SM-2 grading
+  /// pipeline: a correct answer is a [ReviewGrade.good] recall, a wrong one is a
+  /// [ReviewGrade.forgot] lapse (which reschedules the card for tomorrow, keeping
+  /// spaced repetition fresh). Tracks the running quiz score and stamps the
+  /// session start on the first answer. Cards with no question (null slot) are
+  /// graded as a recall so the deck still advances.
+  Future<void> answer({required bool correct, bool counts = true}) async {
+    if (state.startedAt == null) {
+      state = state.copyWith(startedAt: DateTime.now());
+    }
+    // [counts] is false for an un-quizzable card (no question): it still grades
+    // as a recall so the deck advances and SM-2 keeps scheduling, but it does
+    // NOT count toward the quiz score/total.
+    if (counts && correct) {
+      state = state.copyWith(score: state.score + 1);
+    }
+    await grade(correct ? ReviewGrade.good : ReviewGrade.forgot);
   }
 
   /// Grades the current card. EVERY Isar mutation for this grade — the SM-2
@@ -390,48 +488,78 @@ class ReviewSessionController
     if (persisted) {
       ref.invalidate(reviewStateProvider);
       ref.invalidate(reviewedDaysProvider);
-      // ONE atomic server call (mark_review_completed RPC): bumps
-      // profiles.review_streak — the columns the jam "Ripasso" leaderboard
-      // actually reads — AND records today's completion in every jam the user
-      // belongs to (members and owners). Idempotent per day; calling it per
-      // grade just keeps the running card count fresh. This replaced the old
-      // pair of client mirrors that left profiles at streak 0, so the jam
-      // section showed "ancora nessuna serie" even after a finished ripasso.
-      unawaited(_syncReviewToServer(state.index));
-      // Lock the daily ripasso until 08:00 tomorrow (once-a-day ritual), then
-      // refresh the entry-card lock state so it flips to "completato". The
-      // invalidate runs after an await gap on an autoDispose notifier — guard
-      // it so popping the screen mid-write can't surface a StateError.
+    }
+
+    // Session over → record the completed quiz ONCE on the server (Ripasso 2.0,
+    // mark_review_completed_v2 RPC: bumps profiles.review_streak AND writes the
+    // score/total/duration into every jam the user belongs to), and persist
+    // today's recap so the finished screen AND the locked entry card can show
+    // the results until the next 08:00 reset. The old per-card
+    // mark_review_completed sync is gone — completion is a single atomic call.
+    if (state.isFinished && state.deck.isNotEmpty) {
+      final cards = state.total;
+      // Quiz total = answerable questions only (un-quizzable recalls excluded),
+      // so score/total and accuracy reflect what was actually quizzed.
+      final quizTotal = state.questionsTotal;
+      final score = state.score;
+      final startedAt = state.startedAt;
+      final elapsed = startedAt == null
+          ? 0
+          : DateTime.now().difference(startedAt).inSeconds;
+      final forgot = state.forgotCount;
+      final hard = state.hardCount;
+      final good = state.goodCount;
+      unawaited(_markCompletedOnServer(
+        cards: cards,
+        score: score,
+        total: quizTotal,
+        durationSeconds: elapsed,
+      ));
+      unawaited(saveRipassoResults(
+        cards: cards,
+        forgot: forgot,
+        hard: hard,
+        good: good,
+        score: score,
+        total: quizTotal,
+        durationSeconds: elapsed,
+      ).then((_) {
+        try {
+          ref.invalidate(ripassoResultsProvider);
+        } catch (_) {/* provider disposed — nothing to refresh */}
+      }));
+      // Lock the daily ripasso until 08:00 tomorrow — ONLY now, at the END of
+      // the session. Setting it per-grade replaced the in-flight session with
+      // the locked summary right after the first answer, so multi-card decks
+      // never finished and the completion writes above never ran. Locking at
+      // completion keeps the session intact; an abandoned session simply
+      // resumes its remaining (still-due) cards next time.
       unawaited(markRipassoCompletedNow().then((_) {
         try {
           ref.invalidate(ripassoLockProvider);
         } catch (_) {/* provider disposed — nothing to refresh */}
       }));
     }
-
-    // Session over → persist today's recap so the finished screen AND the
-    // locked entry card can show the results until the next 08:00 reset.
-    if (state.isFinished && state.deck.isNotEmpty) {
-      unawaited(saveRipassoResults(
-        cards: state.total,
-        forgot: state.forgotCount,
-        hard: state.hardCount,
-        good: state.goodCount,
-      ).then((_) {
-        try {
-          ref.invalidate(ripassoResultsProvider);
-        } catch (_) {/* provider disposed — nothing to refresh */}
-      }));
-    }
   }
 
-  Future<void> _syncReviewToServer(int cardsReviewed) async {
+  /// One atomic server call at session end (mark_review_completed_v2): bumps the
+  /// profile streak the jam "Ripasso" leaderboard reads AND records today's
+  /// score/total/duration in every jam the user belongs to. Best-effort.
+  Future<void> _markCompletedOnServer({
+    required int cards,
+    required int score,
+    required int total,
+    required int durationSeconds,
+  }) async {
     try {
-      await ref
-          .read(supabaseServiceProvider)
-          .markReviewCompleted(cardsReviewed);
+      await ref.read(supabaseServiceProvider).markReviewCompletedV2(
+            cards: cards,
+            score: score,
+            total: total,
+            durationSeconds: durationSeconds,
+          );
     } catch (error) {
-      debugPrint('[Ripasso] server sync skipped: $error');
+      debugPrint('[Ripasso] server completion skipped: $error');
     }
   }
 

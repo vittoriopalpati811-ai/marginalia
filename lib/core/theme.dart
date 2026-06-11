@@ -39,6 +39,9 @@ class ScriptaColors {
   static const rule      = Color(0xFFE6E6E1);
   static const ruleFaint = Color(0xFFEFEFEC);
 
+  // Brand red — bookmark accent + destructive actions (delete/remove/danger).
+  static const red = Color(0xFFB94A41);
+
   // Kindle highlight tints (unchanged)
   static const highlightAmber     = Color(0xFFFFF3C4);
   static const highlightSky       = Color(0xFFD4EBF7);

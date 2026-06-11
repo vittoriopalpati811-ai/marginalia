@@ -1,8 +1,26 @@
-name: Deploy Flutter Web → GitHub Pages
+# Static site → GitHub Pages
+# ──────────────────────────────────────────────────────────────────────────────
+# This used to build and deploy the FULL Flutter web app. That build was old,
+# crashed on open ("ProviderContainer was already disposed") and users landed
+# on it from the password-reset email. Killed on founder request (2026-06-11):
+# Pages now serves the static docs/ folder only —
+#   index.html            tiny branded landing
+#   app.html              password-reset / email-confirm page (supabase-js);
+#                         SAME URL the reset emails already point to, so no
+#                         dashboard change is needed for old emails to work
+#   privacy/ terms/       legal pages (IT + EN)
+#   console-hl0591p7oc/   unlisted founder metrics console
+#
+# Deploys from the ACTIVE branch (feat/profile-ui-privacy) on site changes —
+# master is stale and pushing it would also trigger an iOS build of old code.
+name: Deploy static site → GitHub Pages
 
 on:
   push:
-    branches: [main, master]
+    branches: [feat/profile-ui-privacy]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,53 +33,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.22.0'
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Generate localizations
-        run: flutter gen-l10n
-
-      - name: Generate Isar schemas
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run tests
-        run: flutter test
-
-      - name: Build web
-        run: flutter build web --release --base-href "/marginalia/" --web-renderer html
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload Pages artifact (docs/)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
       # actions/deploy-pages@v4 fetches its tarball from codeload.github.com,
       # which occasionally returns 404 for a few seconds and breaks the
-      # whole deploy with "An action could not be found at the URI ...".
-      # Wandalen/wretry wraps the action and re-attempts the download on
-      # transient failures so we don't have to hand-trigger re-runs.
+      # whole deploy. Wandalen/wretry re-attempts on transient failures.
       - name: Deploy to GitHub Pages (with retry)
         id: deployment
         uses: Wandalen/wretry.action@v3
         with:
           action: actions/deploy-pages@v4
           attempt_limit: 3
-          attempt_delay: 10000   # 10s between attempts
+          attempt_delay: 10000

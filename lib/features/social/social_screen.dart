@@ -638,7 +638,7 @@ class _JamGridCard extends StatelessWidget {
                       child: const Padding(
                         padding: EdgeInsets.all(4),
                         child: Icon(
-                          Icons.ios_share_outlined,
+                          Icons.ios_share_rounded,
                           size: 16,
                           color: ScriptaColors.inkFaint,
                         ),
@@ -672,7 +672,7 @@ class _CreateJamFab extends StatelessWidget {
       backgroundColor: ScriptaColors.primary,
       foregroundColor: const Color(0xFFF1EEE7),
       elevation: 6,
-      icon: const Icon(Icons.add, size: 20),
+      icon: const Icon(Icons.add_rounded, size: 20),
       label: Text(context.l10n.jamCreate,
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
     );
@@ -726,13 +726,16 @@ class _CreateJamSheet extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
+                    colors: [
+                      ScriptaColors.primaryDark,
+                      ScriptaColors.primary,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.group_add_outlined,
+                child: const Icon(Icons.group_add_rounded,
                     color: Colors.white, size: 18),
               ),
               const SizedBox(width: 12),
@@ -756,7 +759,7 @@ class _CreateJamSheet extends StatelessWidget {
             textCapitalization: TextCapitalization.sentences,
             decoration: InputDecoration(
               hintText: context.l10n.socialJamNameHint,
-              prefixIcon: const Icon(Icons.auto_stories_outlined),
+              prefixIcon: const Icon(Icons.auto_stories_rounded),
             ),
           ),
           const SizedBox(height: 12),
@@ -856,7 +859,7 @@ class _JoinJamSheet extends StatelessWidget {
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
               hintText: context.l10n.jamJoinHint,
-              prefixIcon: const Icon(Icons.tag_outlined),
+              prefixIcon: const Icon(Icons.tag_rounded),
             ),
           ),
           const SizedBox(height: 20),
@@ -897,13 +900,16 @@ class _EmptyJams extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4C3B3A), Color(0xFF261E1D)],
+                  colors: [
+                    ScriptaColors.primaryDark,
+                    ScriptaColors.primary,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: const Icon(Icons.group_outlined,
+              child: const Icon(Icons.group_rounded,
                   size: 36, color: Colors.white),
             ),
             const SizedBox(height: 24),
@@ -963,16 +969,18 @@ class _UnauthenticatedState extends StatelessWidget {
       backgroundColor: ScriptaColors.background,
       body: Column(
         children: [
+          // Cream header (matches the signed-in _SocialHeader and the Library
+          // look) — replaces the old dark forest-green gradient bar.
           Container(
             width: double.infinity,
-            decoration: ScriptaDecorations.gradientHeader,
+            color: ScriptaColors.background,
             child: SafeArea(
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                 child: Text(context.l10n.socialTitle,
                     style: const TextStyle(
-                        color: Color(0xFFF1EEE7),
+                        color: ScriptaColors.ink,
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.6)),
@@ -992,7 +1000,7 @@ class _UnauthenticatedState extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: ScriptaColors.siennaFaint,
                           borderRadius: BorderRadius.circular(20)),
-                      child: const Icon(Icons.lock_outline,
+                      child: const Icon(Icons.lock_rounded,
                           size: 32, color: ScriptaColors.primaryDark),
                     ),
                     const SizedBox(height: 24),

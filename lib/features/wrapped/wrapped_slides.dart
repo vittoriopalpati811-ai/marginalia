@@ -12,10 +12,13 @@
 // drift apart. Everything is built from a single [WrappedData].
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/l10n/l10n_extension.dart';
 import '../library/book_cover.dart';
+import '../profile/profile_shared_widgets.dart'
+    show favCoversProvider, favCoverKey;
 import 'wrapped_data.dart';
 
 const Color _cream = Color(0xFFF5F2EC);
@@ -517,7 +520,7 @@ class _StatLine extends StatelessWidget {
   }
 }
 
-class _TopBookLayout extends StatelessWidget {
+class _TopBookLayout extends ConsumerWidget {
   const _TopBookLayout({
     required this.title,
     required this.author,
@@ -534,15 +537,21 @@ class _TopBookLayout extends StatelessWidget {
   final bool big;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final coverSize = _s(big, 130);
+    // Use the reader's own custom cover for this book when they have one, so
+    // Wrapped matches the cover shown everywhere else (favourites, library).
+    final customCover = ref
+        .watch(favCoversProvider(null))
+        .asData
+        ?.value[favCoverKey(title, author)];
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         _Eyebrow(eyebrow, big: big, centered: true),
         SizedBox(height: _s(big, 24)),
-        // The procedural cover, in the app's house style.
+        // The procedural cover (or the user's custom one), in the house style.
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_s(big, 12)),
@@ -560,6 +569,7 @@ class _TopBookLayout extends StatelessWidget {
             child: BookEditorialCover(
               title: title,
               author: author,
+              coverUrl: customCover,
               borderRadius: BorderRadius.all(Radius.circular(_s(big, 12))),
             ),
           ),

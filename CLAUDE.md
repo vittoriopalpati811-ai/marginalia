@@ -39,9 +39,16 @@ Founder develops on **Windows, no Mac**. Everything must build without a Mac.
   = unix timestamp). Latest APK: **`Scripta_1.1.0.apk` on the Desktop**.
 - Active branch: **`feat/profile-ui-privacy`** (this is what CI builds — see §3).
 - The free-app + admin console + Apple/Google sign-in + animated-onboarding batch
-  is **SHIPPED green on both platforms** (iOS #72 + APK rebuilt); the Gmail recap
-  draft for it already exists. Remaining open work is in §9 (founder dashboard
-  toggles, on-device social-login verification, covers backlog).
+  is **SHIPPED green on both platforms** (iOS #72 + APK rebuilt).
+- **Big founder-feedback batch (2026-06-11)** — auth-loop fix + login restyle,
+  like-count fix + author hide-toggle, jam RLS/poll/palette/avatars/flame,
+  visited-profile rebuild + private/public + remove-follower, custom-cover
+  propagation + centred upload spinner + add-to-favourites, frase save-fix +
+  story-cover, instant post publish, no tab/back animations, **Ripasso 2.0**
+  (quiz merged in, end summary, once-a-day, day/week/month jam leaderboard with
+  titles), chat header restyle, Scripta logo in iOS widgets, branded reset page
+  + email templates, old buggy web build removed. Migrations `061–063`. All
+  green (analyze 23/0, tests 45/45) + adversarially verified. See §9.
 
 ---
 
@@ -154,7 +161,8 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 
 ## 5. BACKEND (Supabase) — what's there
 
-- Storage buckets: `book-covers` (public read, owner write by `userId/` prefix),
+- Storage buckets: `book-covers` (public-flag read, **no listing** — see
+  migration `060`; owner write by `userId/` prefix),
   `avatars`, `covers`, `jam-covers`, `post-images`, `comment-images`,
   `message-images`, `clippings`.
 - Per-user covers: table **`user_book_covers`** (PK `(user_id, book_key)`,
@@ -170,7 +178,7 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 - Edge functions: `send-push-notification` (APNs, server-derives recipient),
   `recommend-books`, `semantic-search`, `pick-daily-highlight`, `moderate-image`,
   `parse-clippings`, and **`admin-metrics`** (founder console — see §8).
-- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `059`. When you
+- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `063`. When you
   apply something live via MCP, **also write the migration file** (drift bit us
   once — the live RPC existed but no migration captured it).
 - Supabase MCP tools are available: `execute_sql`, `apply_migration`,
@@ -261,31 +269,48 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 
 ## 9. EXACT NEXT STEPS
 
-1. **Ship the pending batch** (free-app + admin console page + Apple/Google
-   sign-in + animated onboarding): commit all (incl. `docs/console-…/index.html`
-   and this CLAUDE.md), push to `feat/profile-ui-privacy` → watch iOS to green
-   (re-push if it fails only at the upload step), then robocopy `lib/` to
-   `../Marginalia_ANDROID`, rebuild the APK, copy to Desktop. Then draft the
-   Gmail recap.
-2. **Founder-only dashboard toggles** (only the founder can do these — they are
-   in his Supabase/Google/Apple accounts; the app code is already wired and
-   degrades gracefully until then). They are written out in the Desktop file
+1. **Founder-only dashboard toggles** (only the founder can do these — they live
+   in his Supabase/Google/Apple accounts; the app code is wired and degrades
+   gracefully until then). Step-by-step in the Desktop file
    `Scripta — Console e Credenziali.txt`:
-   - Supabase → Auth → Email → enable **Confirm email**.
-   - Configure **Google** OAuth provider (redirect
+   - Supabase → Auth → Email → enable **Confirm email** (the signup→OTP→onboarding
+     flow is now fixed and handles it).
+   - **Paste the new Scripta email templates** (Reset Password + Confirm signup)
+     from the Desktop file `Scripta — Template email (da incollare su Supabase).html`
+     — the old reset email still said "Marginalia" and pointed at the dead web app.
+   - Configure **Google** OAuth (redirect
      `https://ibucvloawkfwobaelwbr.supabase.co/auth/v1/callback`).
-   - Configure **Apple** OAuth provider (Services ID + .p8 key).
+   - Configure **Apple** OAuth (Services ID + .p8 key).
    - Supabase → Auth → URL Configuration → add redirect
      `io.supabase.flutter://login-callback/`.
-   Once configured, the social buttons "just work" (pre-flight check already
-   shows a friendly message while they're off).
-3. **Verify social login end-to-end** on a real device after the founder
-   configures the providers (couldn't be fully verified in CI — the adversarial
-   `verify:auth` agent hit a session limit; the double-pop guard is in but
-   confirm the OAuth deep-link return pops the auth screen correctly).
-4. **Open backlog** (tasks #63/#67): book cover Google-search + custom cover
-   pencil flow polish (mostly done; re-confirm the "impossibile aggiornare la
-   copertina" path now that errors are surfaced).
+2. **Verify social login end-to-end** on a real device once the providers are
+   configured (the OAuth web flow + `_socialFlowInFlight` double-pop guard are in;
+   the adversarial pass found the email signup/login loop fix SOLID — confirm the
+   social deep-link return pops the auth screen on device).
+3. **Visual polish pass** on device for the big batch: the auth-screen restyle,
+   the rebuilt visited-profile sheet, the Ripasso 2.0 quiz/summary, and the new
+   jam leaderboard tabs are logic-verified + analyze/test green, but screenshot
+   feedback (the founder's usual loop) may want spacing/tweaks.
+4. **`reset-password` page redirect**: `docs/app.html` is the branded reset/confirm
+   page served at the SAME `…github.io/marginalia/app.html` URL the old reset
+   emails point to, so existing links keep working; once the new email templates
+   are pasted, links will point at `get-scripta.app/app.html` too.
+
+### Notes for the next session (gotchas from the 2026-06-11 batch)
+- **Ripasso lock is set ONLY at session end** (review_provider_native.dart). It
+  used to be set per-graded-card, which replaced the in-flight session with the
+  locked summary after the first answer (deck never finished, completion writes
+  never ran). Don't reintroduce a per-card lock.
+- **`profiles.is_private` gating is APP-LEVEL/soft in v1** (RLS still allows the
+  read). The visited profile gates content only when it KNOWS the viewer is not a
+  follower (loading/error ⇒ not gated). If you make privacy a real boundary,
+  enforce it in RLS too.
+- **Gender is a single source**: the Settings "personalization" gender now also
+  mirrors to `profiles.gender` (female→f/male→m/unspecified→null) for the
+  leaderboard titles. Onboarding also pushes it. Don't add a second selector.
+- **`set_jam_cover` RPC** (migration 062): jam photo is now editable by any
+  member/owner (was owner-only → 403). Storage policies on `jam-covers` widened
+  to members too.
 
 ---
 

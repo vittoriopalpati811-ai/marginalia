@@ -53,15 +53,31 @@ class HighlightFavoriteNotifier extends Notifier<void> {
     final isar = ref.read(isarProvider);
     // Guarded like grade(): a storage error must never crash the UI. The
     // favorites stream stays consistent with whatever actually persisted.
+    String? supabaseId;
+    bool? newValue;
     try {
       await isar.writeTxn(() async {
         final highlight = await isar.highlights.get(highlightId);
         if (highlight == null) return;
         highlight.isFavorite = !highlight.isFavorite;
         await isar.highlights.put(highlight);
+        // Capture what to mirror remotely once the local write succeeds.
+        supabaseId = highlight.supabaseId;
+        newValue = highlight.isFavorite;
       });
     } catch (_) {
       // swallow — non-critical
+    }
+    // Best-effort remote sync so "save to favourites" actually persists for the
+    // user (and survives a reinstall). Never crash the UI if it fails offline.
+    final id = supabaseId;
+    final value = newValue;
+    if (id != null && id.isNotEmpty && value != null) {
+      try {
+        await ref.read(supabaseServiceProvider).updateHighlightFavorite(id, value);
+      } catch (_) {
+        // swallow — non-critical, the local Isar write is the source of truth
+      }
     }
   }
 }

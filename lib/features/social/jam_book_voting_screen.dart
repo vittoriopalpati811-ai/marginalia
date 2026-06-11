@@ -10,6 +10,8 @@ import '../../core/providers/books_provider.dart';
 import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../library/book_cover.dart';
+import '../profile/profile_shared_widgets.dart'
+    show favCoversProvider, favCoverKey;
 
 // ─── Jam Book Voting Screen ───────────────────────────────────────────────────
 
@@ -577,7 +579,7 @@ class _ProposeSheetState extends ConsumerState<_ProposeSheet> {
 
 // ─── Library book row ─────────────────────────────────────────────────────────
 
-class _LibraryBookRow extends StatelessWidget {
+class _LibraryBookRow extends ConsumerWidget {
   const _LibraryBookRow({
     required this.book,
     required this.onTap,
@@ -589,7 +591,16 @@ class _LibraryBookRow extends StatelessWidget {
   final bool enabled;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Prefer the reader's custom cover for this book; fall back to any Kindle
+    // cover URL on the book, then to the generated doodle.
+    final customCover = ref
+        .watch(favCoversProvider(null))
+        .asData
+        ?.value[favCoverKey(book.title, book.author)];
+    final coverUrl = (customCover != null && customCover.isNotEmpty)
+        ? customCover
+        : book.coverUrl;
     return Opacity(
       opacity: enabled ? 1 : 0.5,
       child: Material(
@@ -612,7 +623,7 @@ class _LibraryBookRow extends StatelessWidget {
                   child: BookEditorialCover(
                     title: book.title,
                     author: book.author,
-                    coverUrl: book.coverUrl,
+                    coverUrl: coverUrl,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),

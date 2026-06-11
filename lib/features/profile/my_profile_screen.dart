@@ -331,7 +331,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                 onFollowers: () => showProfileList(context,
                     userId: uid,
                     type: ProfileListType.followers,
-                    count: stats['followers'] ?? 0),
+                    count: stats['followers'] ?? 0,
+                    onChanged: () => ref.invalidate(_myStatsProvider)),
                 onFollowing: () => showProfileList(context,
                     userId: uid,
                     type: ProfileListType.following,
@@ -451,6 +452,8 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                       // its keyboard aren't clipped by the shell's bottom bar.
                       useRootNavigator: true,
                       backgroundColor: Colors.transparent,
+                      // Keep the feed visible behind the composer (founder).
+                      barrierColor: Colors.black.withOpacity(0.12),
                       builder: (_) => CreatePostSheet(
                         onCreated: () => ref.invalidate(_myPostsProvider),
                       ),
@@ -505,6 +508,9 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                     child: PostsTimeline(
                       posts: posts,
                       profile: profileAsync.value,
+                      // The owner still sees their own hidden like counts
+                      // (with a visibility-off hint) on their own timeline.
+                      isOwnProfile: true,
                       onTapPost: (post) =>
                           context.push('/post/${post['id']}'),
                     ),

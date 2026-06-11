@@ -20,6 +20,7 @@ import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
 import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
+import '../auth/email_otp_screen.dart';
 import 'shared/social_auth_buttons.dart';
 import 'steps/reading_goal_step.dart';
 import 'steps/currently_reading_step.dart';
@@ -52,12 +53,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Login mode flag (toggled from "Hai già un account? Accedi")
   bool _loginMode = false;
 
-  // OAuth auto-advance: listens for AuthChangeEvent.signedIn so that the
-  // user returning from Google/Apple OAuth doesn't land back on the
-  // Welcome screen. Without this they'd have to tap "Start" again and
-  // navigate through the Auth step manually.
+  // Auth auto-advance: listens for AuthChangeEvent.signedIn so that a user who
+  // signs in WHILE on the Welcome/Auth steps doesn't land back on the Welcome
+  // screen. Covers Google/Apple OAuth (returns via deep link) AND email
+  // login/signup-confirmation — without this they'd be bounced to the auth step
+  // forever. The actual advance is funnelled through [_continueAfterSignIn].
   StreamSubscription<AuthState>? _authSub;
-  bool _handlingOAuthReturn = false;
+  bool _handlingSignIn = false;
 
   // Step 1 — Auth
   final _emailCtrl = TextEditingController();
@@ -103,21 +105,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void initState() {
     super.initState();
 
-    // When OAuth flow completes (Google etc.), Supabase fires a signedIn
-    // event with the new session. Auto-advance past Welcome+Auth to the
-    // next required step (Username if new user, Complete if returning).
+    // Any signedIn event while we sit on a pre-auth step means the user just
+    // authenticated (OAuth deep-link return, OR an email login whose session
+    // lands without us driving the navigation). Auto-advance past Welcome+Auth
+    // to the next required step. The email signup→OTP path drives the advance
+    // itself via [_continueAfterSignIn] (and sets _handlingSignIn first), so the
+    // guard below stops this listener from double-advancing.
     _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (!mounted) return;
       if (data.event != AuthChangeEvent.signedIn) return;
-      if (_handlingOAuthReturn) return;
+      if (_handlingSignIn) return;
       // Only act if we're still on a pre-auth step (Welcome=0 or Auth=1).
       if (_step > 1) return;
-      _handlingOAuthReturn = true;
-      _advanceAfterOAuth();
+      _continueAfterSignIn();
     });
   }
 
-  Future<void> _advanceAfterOAuth() async {
+  /// Advances the onboarding once a session exists, regardless of HOW the user
+  /// signed in (OAuth, email login, or email-confirmation OTP). Returning users
+  /// with a complete profile skip straight to Complete; new users start at the
+  /// Username step. Idempotent-guarded via [_handlingSignIn] so the auth
+  /// listener and an explicit caller can't both run it.
+  Future<void> _continueAfterSignIn() async {
+    if (_handlingSignIn) return;
+    _handlingSignIn = true;
     try {
       final svc = ref.read(supabaseServiceProvider);
       final profile = await svc.fetchProfile();
@@ -137,7 +148,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // the user isn't stuck on Welcome.
       if (mounted) _goTo(2);
     } finally {
-      _handlingOAuthReturn = false;
+      _handlingSignIn = false;
     }
   }
 
@@ -210,58 +221,45 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       final svc = ref.read(supabaseServiceProvider);
       if (_loginMode) {
+        // Email LOGIN. Drive the advance ourselves (set the guard first so the
+        // auth listener's signedIn event doesn't race us). _continueAfterSignIn
+        // sends returning users straight to Complete, new ones to Username.
+        _handlingSignIn = true;
         await svc.signInWithEmail(email, password);
-        // Check if profile already has username — if so skip to completion.
-        final profile = await svc.fetchProfile();
-        final hasUsername =
-            (profile?['username'] as String?)?.isNotEmpty ?? false;
-        if (!mounted) return;
-        if (hasUsername) {
-          // Pre-fill name from profile if available.
-          final displayName = profile?['display_name'] as String? ?? '';
-          if (displayName.isNotEmpty) _nameCtrl.text = displayName;
-          _goTo(_kStepComplete); // jump straight to complete
-        } else {
-          _goTo(2); // let them pick a username
+        if (!mounted) {
+          _handlingSignIn = false;
+          return;
         }
+        _handlingSignIn = false;
+        await _continueAfterSignIn();
       } else {
         final res = await svc.signUpWithEmail(email, password);
         if (!mounted) return;
         if (res.session == null) {
-          // Email confirmation required.
-          _showConfirmEmailDialog();
+          // Email confirmation required → take the user straight to in-app OTP
+          // entry (no go_router mounted yet, so we pass onVerified and continue
+          // the onboarding ourselves once the code is verified). Typing the
+          // 6-digit code is far more reliable on mobile than a magic link.
+          await Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => EmailOtpScreen(
+              email: email,
+              onVerified: _continueAfterSignIn,
+            ),
+          ));
           return;
         }
-        _goTo(2);
+        // Confirmation disabled → session already exists; continue straight on.
+        await _continueAfterSignIn();
       }
     } on AuthException catch (e) {
+      _handlingSignIn = false;
       setState(() => _authError = _mapAuthError(e.message, context));
     } catch (e) {
+      _handlingSignIn = false;
       setState(() => _authError = context.l10n.authErrGeneric);
     } finally {
       if (mounted) setState(() => _authLoading = false);
     }
-  }
-
-  void _showConfirmEmailDialog() {
-    final l = context.l10n;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(l.onboardingCheckEmailTitle),
-        content: Text(l.onboardingCheckEmailBody(_emailCtrl.text.trim())),
-        actions: [
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() => _loginMode = true);
-            },
-            child: Text(l.onboardingCheckEmailCta),
-          ),
-        ],
-      ),
-    );
   }
 
   String _mapAuthError(String msg, BuildContext ctx) {
@@ -386,6 +384,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         username:
             _usernameCtrl.text.trim().isEmpty ? null : _usernameCtrl.text.trim().toLowerCase(),
       );
+
+      // Mirror the (otherwise on-device-only) gender choice to the profile so
+      // the server can tailor recommendations. The DB column is 'f' | 'm' | null:
+      // 'unspecified' and a skipped choice both map to null (we never store the
+      // "prefer not to say" answer server-side). The on-device GenderService copy
+      // written in _complete() above stays the source of truth for local UI.
+      try {
+        final genderForProfile = switch (_gender) {
+          'female' => 'f',
+          'male' => 'm',
+          _ => null,
+        };
+        await svc.updateProfileGender(genderForProfile);
+      } catch (_) {
+        // Non-fatal — gender personalisation still works from the local copy.
+      }
 
       // Save annual reading goal if user entered a valid number
       final goalText  = _goalCtrl.text.trim();

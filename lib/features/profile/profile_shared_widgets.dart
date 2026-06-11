@@ -396,7 +396,7 @@ class _PostImageTile extends StatelessWidget {
 
 // ─── Post detail sheet (generic) ──────────────────────────────────────────────
 
-class PostDetailSheet extends StatelessWidget {
+class PostDetailSheet extends ConsumerWidget {
   const PostDetailSheet({super.key, required this.post});
   final Map<String, dynamic> post;
 
@@ -413,7 +413,7 @@ class PostDetailSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bottom    = MediaQuery.of(context).padding.bottom;
     final body      = post['body']        as String?;
     final imageUrl  = post['image_url']   as String?;
@@ -423,6 +423,13 @@ class PostDetailSheet extends StatelessWidget {
     final hlContent = highlight?['content'] as String?;
     final hlBook    = highlight?['books']   as Map?;
     final hlTitle   = hlBook?['title']  as String?;
+
+    // Like-count visibility mirrors the feed: the author can hide the COUNT
+    // (not the heart). Hide the number when hide_like_count is set and the
+    // post isn't mine; my own posts always show the count.
+    final currentUserId = ref.read(supabaseServiceProvider).userId;
+    final isMine = currentUserId != null && currentUserId == post['user_id'];
+    final hideLikeCount = post['hide_like_count'] == true && !isMine;
 
     return Container(
       decoration: const BoxDecoration(
@@ -547,21 +554,24 @@ class PostDetailSheet extends StatelessWidget {
                       ),
                     ),
                   ],
-                  // Likes
+                  // Likes — the heart always shows; the COUNT is hidden when
+                  // the author hid it and this isn't my own post.
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       const Icon(Icons.favorite_border,
                           size: 14, color: ScriptaColors.inkFaint),
-                      const SizedBox(width: 5),
-                      Text(
-                        '$likes',
-                        style: GoogleFonts.manrope(
-                          fontSize: 12,
-                          color: ScriptaColors.inkFaint,
-                          fontWeight: FontWeight.w600,
+                      if (!hideLikeCount) ...[
+                        const SizedBox(width: 5),
+                        Text(
+                          '$likes',
+                          style: GoogleFonts.manrope(
+                            fontSize: 12,
+                            color: ScriptaColors.inkFaint,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],

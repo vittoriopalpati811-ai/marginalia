@@ -10,8 +10,22 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/books_provider.dart';
 import '../../core/services/share_card_service.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../profile/profile_shared_widgets.dart'
+    show favCoversProvider, favCoverKey;
 import 'book_info_screen.dart';
 import 'highlight_story_share.dart';
+
+/// Resolves the signed-in user's custom cover for [title]/[author] from the
+/// per-user cover store, or null if none — so the shared story uses the same
+/// cover shown elsewhere. Reads the already-cached provider value; never throws.
+String? _resolveCustomCover(WidgetRef ref, String? title, String? author) {
+  final t = title?.trim() ?? '';
+  if (t.isEmpty) return null;
+  final covers = ref.read(favCoversProvider(null)).asData?.value;
+  if (covers == null) return null;
+  final url = covers[favCoverKey(t, author ?? '')];
+  return (url != null && url.isNotEmpty) ? url : null;
+}
 
 class HighlightDetailScreen extends ConsumerWidget {
   const HighlightDetailScreen({super.key, required this.highlightId});
@@ -21,6 +35,9 @@ class HighlightDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final highlightAsync = ref.watch(highlightByIdProvider(highlightId));
+    // Warm the per-user cover store so the story share picks up the custom
+    // cover; _resolveCustomCover reads the cached value at tap time.
+    ref.watch(favCoversProvider(null));
 
     return Scaffold(
       backgroundColor: ScriptaColors.background,
@@ -81,6 +98,8 @@ class HighlightDetailScreen extends ConsumerWidget {
                                 text: h.content,
                                 title: h.bookTitle,
                                 author: h.bookAuthor,
+                                customCoverUrl: _resolveCustomCover(
+                                    ref, h.bookTitle, h.bookAuthor),
                               );
                           }
                         },
@@ -254,6 +273,8 @@ class _HighlightBody extends ConsumerWidget {
                       text: highlight.content as String,
                       title: embTitle,
                       author: embAuthor,
+                      customCoverUrl:
+                          _resolveCustomCover(ref, embTitle, embAuthor),
                     ),
                     icon: const Icon(PhosphorIconsRegular.instagramLogo,
                         size: 20),

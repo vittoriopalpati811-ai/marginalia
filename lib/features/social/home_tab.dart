@@ -38,6 +38,9 @@ class HomeTab extends ConsumerWidget {
       // (the "can't type in the new-post box" bug). Mirrors the profile call site.
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
+      // Light scrim so the feed (founder photo) stays visible behind the
+      // composer; the default black54 dim hid it almost entirely.
+      barrierColor: Colors.black.withOpacity(0.12),
       builder: (_) => CreatePostSheet(
         onCreated: () async {
           // Small delay so Postgres commits before we re-fetch

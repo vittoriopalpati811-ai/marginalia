@@ -1,11 +1,11 @@
 {
-    "name": "Marginalia",
-    "short_name": "Marginalia",
+    "name": "Scripta",
+    "short_name": "Scripta",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FAFAF8",
-    "theme_color": "#8B7355",
-    "description": "Riscopri i tuoi highlight Kindle",
+    "background_color": "#F9F8F5",
+    "theme_color": "#C0CFB2",
+    "description": "I tuoi highlight Kindle, reinventati",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

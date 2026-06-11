@@ -19,6 +19,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import '../../core/providers/books_provider.dart';
 import '../profile/profile_shared_widgets.dart' show favCoversProvider;
+import '../profile/fav_books_actions.dart';
 import '../../core/services/supabase_service.dart'
     show ImageModerationException;
 import '../../core/l10n/l10n_extension.dart';
@@ -99,14 +100,22 @@ class BookDetailScreen extends ConsumerWidget {
                 ),
               ),
 
-              // ── Cover edit (matitina) ─────────────────────────────────────
-              // A small frosted pencil on the cover: pick a photo, search Google
-              // for one, or remove a custom cover. Sits clear of the back button.
+              // ── Cover actions (cuore + matitina) ──────────────────────────
+              // A heart to add/remove the book from the profile's "libri del
+              // cuore", plus a frosted pencil to edit the cover. Both sit clear
+              // of the back button on the cover's top-right.
               Positioned(
                 top: MediaQuery.of(context).padding.top + 6,
                 right: 12,
-                child: _CoverEditButton(
-                  onTap: () => editBookCover(context, ref, book),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _CoverFavButton(book: book),
+                    const SizedBox(width: 10),
+                    _CoverEditButton(
+                      onTap: () => editBookCover(context, ref, book),
+                    ),
+                  ],
                 ),
               ),
 
@@ -622,6 +631,56 @@ String _coverErrorText(Object error, bool it) {
       : "Couldn't update the cover — $detail";
 }
 
+/// Centred modal loading overlay shown while a cover uploads. A rounded white
+/// card with a sage spinner that stays up (barrier-locked) until the upload AND
+/// both DB writes AND provider invalidation finish, so the founder gets clear
+/// "working…" feedback instead of a transient snackbar. Always pair with a
+/// try/finally that closes it via the captured root navigator.
+void _showCoverUploadingOverlay(BuildContext context, bool it) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        decoration: BoxDecoration(
+          color: ScriptaColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x33261E1D),
+              blurRadius: 24,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 30,
+              height: 30,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                color: ScriptaColors.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              it ? 'Carico la copertina…' : 'Uploading cover…',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: ScriptaColors.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 Future<void> _pickAndUploadCover(
     BuildContext context, WidgetRef ref, Book book) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
@@ -635,23 +694,29 @@ Future<void> _pickAndUploadCover(
     if (bytes == null) return;
     var ext = (file.extension ?? 'jpg').toLowerCase();
     if (ext == 'jpeg') ext = 'jpg';
-    messenger?.showSnackBar(SnackBar(
-        content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
-    final url = await ref
-        .read(supabaseServiceProvider)
-        .uploadBookCover(bytes, ext, book.supabaseId);
-    await ref.read(bookCoverControllerProvider).setCover(book.id, url);
-    // Single source of truth: mirror to the per-user cover store so the cover
-    // shows on favourites, reviews and to anyone visiting the profile.
-    await ref
-        .read(supabaseServiceProvider)
-        .setUserBookCover(book.title, book.author, url);
-    ref.invalidate(favCoversProvider); // refresh profile favourite covers
-    messenger?.hideCurrentSnackBar();
+    if (!context.mounted) return;
+    // Capture the root navigator BEFORE awaiting so we can always dismiss the
+    // overlay even if the original context unmounts during the upload.
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    _showCoverUploadingOverlay(context, it);
+    try {
+      final url = await ref
+          .read(supabaseServiceProvider)
+          .uploadBookCover(bytes, ext, book.supabaseId);
+      await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+      // Single source of truth: mirror to the per-user cover store so the cover
+      // shows on favourites, reviews and to anyone visiting the profile.
+      await ref
+          .read(supabaseServiceProvider)
+          .setUserBookCover(book.title, book.author, url);
+      ref.invalidate(favCoversProvider); // refresh profile favourite covers
+    } finally {
+      // ALWAYS close the overlay, on success or error, before the snackbar.
+      if (rootNav.canPop()) rootNav.pop();
+    }
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
   } catch (error) {
-    messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(_coverErrorText(error, it)),
         duration: const Duration(seconds: 6)));
@@ -676,23 +741,29 @@ Future<void> _pickFromCameraAndUpload(
         : 'jpg';
     if (ext == 'jpeg') ext = 'jpg';
     if (ext.isEmpty || ext.length > 4) ext = 'jpg';
-    messenger?.showSnackBar(SnackBar(
-        content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
-    final url = await ref
-        .read(supabaseServiceProvider)
-        .uploadBookCover(bytes, ext, book.supabaseId);
-    await ref.read(bookCoverControllerProvider).setCover(book.id, url);
-    // Single source of truth: mirror to the per-user cover store so the cover
-    // shows on favourites, reviews and to anyone visiting the profile.
-    await ref
-        .read(supabaseServiceProvider)
-        .setUserBookCover(book.title, book.author, url);
-    ref.invalidate(favCoversProvider); // refresh profile favourite covers
-    messenger?.hideCurrentSnackBar();
+    if (!context.mounted) return;
+    // Capture the root navigator BEFORE awaiting so we can always dismiss the
+    // overlay even if the original context unmounts during the upload.
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    _showCoverUploadingOverlay(context, it);
+    try {
+      final url = await ref
+          .read(supabaseServiceProvider)
+          .uploadBookCover(bytes, ext, book.supabaseId);
+      await ref.read(bookCoverControllerProvider).setCover(book.id, url);
+      // Single source of truth: mirror to the per-user cover store so the cover
+      // shows on favourites, reviews and to anyone visiting the profile.
+      await ref
+          .read(supabaseServiceProvider)
+          .setUserBookCover(book.title, book.author, url);
+      ref.invalidate(favCoversProvider); // refresh profile favourite covers
+    } finally {
+      // ALWAYS close the overlay, on success or error, before the snackbar.
+      if (rootNav.canPop()) rootNav.pop();
+    }
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
   } catch (error) {
-    messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(SnackBar(
         content: Text(_coverErrorText(error, it)),
         duration: const Duration(seconds: 6)));
@@ -756,9 +827,9 @@ Book? _findLibraryBook(WidgetRef ref, String title, String author) {
       return b;
     }
   }
-  for (final b in list) {
-    if (b.title.toLowerCase().trim() == t) return b;
-  }
+  // No title-only fallback: the per-user cover store is keyed by title|author,
+  // so mirroring onto a same-title-different-author library book would flip the
+  // cover of an unrelated book. Require an exact title+author match.
   return null;
 }
 
@@ -857,9 +928,11 @@ Future<void> _applyCoverByKey(BuildContext context, WidgetRef ref, String title,
     String author, Uint8List bytes, String ext) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
   final it = Localizations.localeOf(context).languageCode == 'it';
+  // Capture the root navigator BEFORE awaiting so we can always dismiss the
+  // overlay even if the original context unmounts during the upload.
+  final rootNav = Navigator.of(context, rootNavigator: true);
+  _showCoverUploadingOverlay(context, it);
   try {
-    messenger?.showSnackBar(SnackBar(
-        content: Text(it ? 'Carico la copertina…' : 'Uploading cover…')));
     final url = await ref
         .read(supabaseServiceProvider)
         .uploadBookCover(bytes, ext, _coverStorageKey(title, author));
@@ -871,11 +944,13 @@ Future<void> _applyCoverByKey(BuildContext context, WidgetRef ref, String title,
       await ref.read(bookCoverControllerProvider).setCover(b.id, url);
     }
     ref.invalidate(favCoversProvider);
-    messenger?.hideCurrentSnackBar();
+    // Close the overlay BEFORE the success snackbar.
+    if (rootNav.canPop()) rootNav.pop();
     messenger?.showSnackBar(SnackBar(
         content: Text(it ? 'Copertina aggiornata' : 'Cover updated')));
   } catch (error) {
-    messenger?.hideCurrentSnackBar();
+    // ALWAYS close the overlay on error before surfacing the failure.
+    if (rootNav.canPop()) rootNav.pop();
     messenger?.showSnackBar(SnackBar(
         content: Text(_coverErrorText(error, it)),
         duration: const Duration(seconds: 6)));
@@ -961,6 +1036,49 @@ Future<void> _searchCoverOnGoogleQuery(String title, String author) async {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   } catch (_) {
     // ignore — nothing to open
+  }
+}
+
+/// Frosted heart overlaid on the cover — toggles the book in the profile's
+/// "libri del cuore" (max 6). Filled when the book is already a favourite,
+/// outline otherwise; both states give snackbar feedback via [toggleFavoriteBook].
+class _CoverFavButton extends ConsumerWidget {
+  const _CoverFavButton({required this.book});
+
+  final Book book;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFav = ref
+            .watch(isFavoriteBookProvider(
+                (title: book.title, author: book.author)))
+            .asData
+            ?.value ??
+        false;
+    return GestureDetector(
+      onTap: () => toggleFavoriteBook(
+        context,
+        ref,
+        title: book.title,
+        author: book.author,
+      ),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.28),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+        ),
+        child: Icon(
+          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          size: 18,
+          // Brand red (0xFFB94A41) when favourited, white outline otherwise.
+          color: isFav ? const Color(0xFFB94A41) : Colors.white,
+        ),
+      ),
+    );
   }
 }
 

@@ -11,17 +11,28 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
-import '../../core/review/sm2.dart';
+import '../../core/motion/airbnb_motion.dart';
 import '../../core/providers/review_provider.dart';
-import 'review_deck.dart';
+import '../quiz/quiz_generator.dart';
+import '../quiz/quiz_lock.dart'
+    show ripassoLockProvider, ripassoResultsProvider;
 
-// ─── Ripasso review screen — the daily recall ritual ─────────────────────────
+// ─── Ripasso review screen — Ripasso 2.0 (the daily quiz ritual) ─────────────
 //
-// Paper background (so the system status-bar icons stay dark). A slim progress
-// header with a streak flame pill; the swipe deck in the centre; three grading
-// buttons at the bottom, each captioned with the next SM-2 interval as a legible
-// promise ("tomorrow" / "in 3d" / "in 2 weeks"). When the deck is empty or the
-// session finishes, a calm "all caught up" state with the streak.
+// Paper background (so the system status-bar icons stay dark). The daily session
+// is now a multiple-choice quiz generated from the reader's own due highlights:
+// a slim progress header with a streak flame pill, then the passage + options.
+// Tapping an option gives immediate feedback (sage = correct, red = wrong with
+// the right answer revealed) and auto-advances after ~700ms. A correct tap maps
+// to an SM-2 "good" recall, a wrong tap to "forgot" — so spaced repetition keeps
+// scheduling and tomorrow's deck stays fresh.
+//
+// When the deck is exhausted — or the screen is opened while today's session is
+// already done (08:00 lock active) — a polished recap is shown: big score X/Y,
+// accuracy %, time taken, completion time, and the current streak.
+
+/// How long the correct/wrong feedback lingers before the deck auto-advances.
+const Duration _kFeedbackHold = Duration(milliseconds: 700);
 
 class ReviewScreen extends ConsumerStatefulWidget {
   const ReviewScreen({super.key});
@@ -40,15 +51,14 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     });
   }
 
-  void _grade(ReviewGrade grade) {
-    HapticFeedback.lightImpact();
-    ref.read(reviewSessionControllerProvider.notifier).grade(grade);
-  }
-
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(reviewSessionControllerProvider);
     final due = ref.watch(dueHighlightsProvider);
+    // If today's session is already locked (08:00 ritual), and we are NOT in the
+    // middle of a just-finished in-memory session, show the persisted recap
+    // instead of loading a deck again.
+    final locked = ref.watch(ripassoLockProvider).asData?.value != null;
 
     return Scaffold(
       backgroundColor: ScriptaColors.background,
@@ -71,20 +81,27 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               strokeWidth: 1.5,
             ),
           ),
-          error: (_, __) => _FinishedState(
-            streak: 0,
-            isEmpty: true,
-            streakIncremented: false,
-          ),
+          error: (_, __) => const _EmptyState(),
           data: (deck) {
+            // Already done today AND not mid-session → the polished summary.
+            if (locked && !(session.isFinished && session.deck.isNotEmpty)) {
+              return const _LockedSummary();
+            }
             // Empty: nothing was due at all.
             if (deck.isEmpty) {
-              return _StreakFinished(isEmpty: true);
+              return const _EmptyState();
             }
-            // Finished: graded through the whole deck.
+            // Finished: answered through the whole deck → live recap.
             if (session.isFinished && session.deck.isNotEmpty) {
-              return _StreakFinished(
-                isEmpty: false,
+              return _SessionSummary(
+                score: session.score,
+                total: session.questionsTotal > 0
+                    ? session.questionsTotal
+                    : session.total,
+                durationSeconds: session.startedAt == null
+                    ? 0
+                    : DateTime.now().difference(session.startedAt!).inSeconds,
+                completedAt: DateTime.now(),
                 streakIncremented: session.streakIncremented,
               );
             }
@@ -100,9 +117,8 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
             return _ActiveSession(
               total: session.total,
               reviewed: session.reviewed,
-              deck: session.deck,
               index: session.index,
-              onGrade: _grade,
+              question: session.currentQuestion,
             );
           },
         ),
@@ -111,56 +127,297 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 }
 
-// ─── Active session: header + deck + grading bar ─────────────────────────────
+// ─── Active session: header + question + options ─────────────────────────────
 
-class _ActiveSession extends ConsumerWidget {
+class _ActiveSession extends ConsumerStatefulWidget {
   const _ActiveSession({
     required this.total,
     required this.reviewed,
-    required this.deck,
     required this.index,
-    required this.onGrade,
+    required this.question,
   });
 
   final int total;
   final int reviewed;
-  final List deck;
   final int index;
-  final void Function(ReviewGrade) onGrade;
+  final QuizQuestion? question;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final progress = total == 0 ? 0.0 : reviewed / total;
-    final current = deck[index];
+  ConsumerState<_ActiveSession> createState() => _ActiveSessionState();
+}
+
+class _ActiveSessionState extends ConsumerState<_ActiveSession> {
+  // Per-question transient state. Reset whenever the card index changes.
+  String? _picked;
+  bool _answered = false;
+  Timer? _advanceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoAdvanceIfUnquizzable();
+  }
+
+  @override
+  void didUpdateWidget(_ActiveSession old) {
+    super.didUpdateWidget(old);
+    // A new card reached the top → clear the feedback state.
+    if (old.index != widget.index) {
+      _advanceTimer?.cancel();
+      _picked = null;
+      _answered = false;
+      _autoAdvanceIfUnquizzable();
+    }
+  }
+
+  /// A card with no answerable question is auto-graded as a recall so the deck
+  /// never stalls on an un-quizzable highlight (e.g. a one-word passage with no
+  /// distractors). Runs after the frame so it never mutates state mid-build.
+  void _autoAdvanceIfUnquizzable() {
+    if (widget.question != null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.question == null) {
+        // counts:false → graded as a recall (deck advances, SM-2 schedules)
+        // but NOT counted toward the quiz score/total.
+        ref
+            .read(reviewSessionControllerProvider.notifier)
+            .answer(correct: true, counts: false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _advanceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onPick(QuizQuestion q, String option) {
+    if (_answered) return;
+    final correct = option == q.answer;
+    HapticFeedback.lightImpact();
+    setState(() {
+      _picked = option;
+      _answered = true;
+    });
+    // Hold the feedback, then advance through the SM-2 pipeline.
+    _advanceTimer = Timer(_kFeedbackHold, () {
+      if (!mounted) return;
+      ref
+          .read(reviewSessionControllerProvider.notifier)
+          .answer(correct: correct);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = widget.question;
+    // Null question is auto-advanced in initState — show a brief spinner.
+    if (q == null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: ScriptaColors.primaryDark,
+          strokeWidth: 1.5,
+        ),
+      );
+    }
+
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final progress = widget.total == 0 ? 0.0 : widget.reviewed / widget.total;
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
           child: _ProgressHeader(
-            done: reviewed,
-            total: total,
+            done: widget.reviewed,
+            total: widget.total,
             progress: progress,
           ),
         ),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-            child: ReviewDeck(
-              deck: List.castFrom(deck),
-              index: index,
-              onGrade: onGrade,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              key: ValueKey('q${widget.index}'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  _kindLabel(it, q.kind),
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                    color: ScriptaColors.primaryDark,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _PassageCard(question: q, answered: _answered),
+                // After answering a which-book / which-author, reveal the source.
+                if (q.kind != QuizKind.cloze &&
+                    (q.bookTitle ?? '').trim().isNotEmpty &&
+                    _answered) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    [q.bookTitle, q.bookAuthor]
+                        .where((s) => (s ?? '').trim().isNotEmpty)
+                        .join(' · '),
+                    style: GoogleFonts.manrope(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: ScriptaColors.inkFaint,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                ...q.options.map((opt) => _OptionTile(
+                      label: opt,
+                      isCorrect: opt == q.answer,
+                      isPicked: opt == _picked,
+                      answered: _answered,
+                      onTap: () => _onPick(q, opt),
+                    )),
+              ],
             ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-          child: _GradingBar(
-            highlight: current,
-            onGrade: onGrade,
-          ),
+          )
+              .animate(key: ValueKey('anim${widget.index}'))
+              .fadeIn(duration: AirbnbMotion.standard, curve: AirbnbMotion.enter)
+              .slideY(begin: 0.04, end: 0, duration: AirbnbMotion.standard),
         ),
       ],
+    );
+  }
+}
+
+String _kindLabel(bool it, QuizKind kind) {
+  switch (kind) {
+    case QuizKind.cloze:
+      return it ? 'Completa il passaggio' : 'Complete the passage';
+    case QuizKind.whichBook:
+      return it ? 'Da quale libro?' : 'Which book?';
+    case QuizKind.whichAuthor:
+      return it ? 'Chi è l’autore?' : 'Who is the author?';
+  }
+}
+
+// ─── Passage card (the question stem) ────────────────────────────────────────
+
+class _PassageCard extends StatelessWidget {
+  const _PassageCard({required this.question, required this.answered});
+
+  final QuizQuestion question;
+  final bool answered;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = GoogleFonts.ebGaramond(
+      fontSize: 20,
+      height: 1.55,
+      color: ScriptaColors.ink,
+    );
+
+    Widget child;
+    // After answering a cloze, fill the blank back in with the correct word.
+    if (question.kind == QuizKind.cloze &&
+        answered &&
+        (question.clozeWord ?? '').isNotEmpty) {
+      final parts = question.prompt.split('_____');
+      child = Text.rich(
+        TextSpan(
+          style: style,
+          children: [
+            TextSpan(text: parts.first),
+            TextSpan(
+              text: question.clozeWord,
+              style: style.copyWith(
+                color: ScriptaColors.primaryDark,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (parts.length > 1)
+              TextSpan(text: parts.sublist(1).join('_____')),
+          ],
+        ),
+      );
+    } else {
+      child = Text(question.prompt, style: style);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: ScriptaDecorations.card(radius: 18),
+      child: child,
+    );
+  }
+}
+
+// ─── Option tile with immediate feedback ─────────────────────────────────────
+
+class _OptionTile extends StatelessWidget {
+  const _OptionTile({
+    required this.label,
+    required this.isCorrect,
+    required this.isPicked,
+    required this.answered,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isCorrect;
+  final bool isPicked;
+  final bool answered;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Brand red (0xFFB94A41) for a wrong pick — used only inline here.
+    const red = Color(0xFFB94A41);
+    var bg = ScriptaColors.surface;
+    var border = ScriptaColors.rule;
+    if (answered) {
+      // Correct option always highlighted sage; the wrong pick goes red.
+      if (isCorrect) {
+        bg = ScriptaColors.siennaFaint;
+        border = ScriptaColors.primaryDark;
+      } else if (isPicked) {
+        bg = const Color(0xFFF6E4E4);
+        border = red;
+      }
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AirbnbMotion.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: border, width: 1.4),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.manrope(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: ScriptaColors.ink,
+                  ),
+                ),
+              ),
+              if (answered && isCorrect)
+                const Icon(Icons.check_circle,
+                    color: ScriptaColors.primaryDark, size: 20),
+              if (answered && isPicked && !isCorrect)
+                const Icon(Icons.cancel, color: red, size: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -182,6 +439,7 @@ class _ProgressHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final streak =
         ref.watch(reviewStateProvider).asData?.value.currentStreak ?? 0;
+    final it = Localizations.localeOf(context).languageCode == 'it';
 
     return Row(
       children: [
@@ -190,7 +448,7 @@ class _ProgressHeader extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                context.l10n.ripassoProgress(done, total),
+                it ? '$done di $total' : '$done of $total',
                 style: ScriptaTextStyles.label,
               ),
               const SizedBox(height: 6),
@@ -220,8 +478,7 @@ class _ProgressHeader extends ConsumerWidget {
   }
 }
 
-/// A flame + streak count pill, reused by the review header and the finished
-/// state.
+/// A flame + streak count pill, reused by the review header and the summary.
 class StreakPill extends StatelessWidget {
   const StreakPill({super.key, required this.streak});
 
@@ -261,350 +518,304 @@ class StreakPill extends StatelessWidget {
   }
 }
 
-// ─── Grading bar ─────────────────────────────────────────────────────────────
+// ─── Empty state — nothing was due ───────────────────────────────────────────
 
-class _GradingBar extends StatelessWidget {
-  const _GradingBar({required this.highlight, required this.onGrade});
-
-  final dynamic highlight; // Highlight (native or web stub) — only reads SM-2.
-  final void Function(ReviewGrade) onGrade;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _GradeButton(
-            label: context.l10n.ripassoForgot,
-            caption: _intervalLabel(context, ReviewGrade.forgot),
-            kind: _GradeKind.neutral,
-            onTap: () => onGrade(ReviewGrade.forgot),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _GradeButton(
-            label: context.l10n.ripassoHard,
-            caption: _intervalLabel(context, ReviewGrade.hard),
-            kind: _GradeKind.hard,
-            onTap: () => onGrade(ReviewGrade.hard),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _GradeButton(
-            label: context.l10n.ripassoGood,
-            caption: _intervalLabel(context, ReviewGrade.good),
-            kind: _GradeKind.good,
-            onTap: () => onGrade(ReviewGrade.good),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Computes the human next-interval label for [grade] given the card's current
-  /// SM-2 state, turning the algorithm into a legible promise under each button.
-  String _intervalLabel(BuildContext context, ReviewGrade grade) {
-    final result = scheduleSm2(
-      easeFactor: (highlight.reviewEase as double?) ?? kDefaultEaseFactor,
-      intervalDays: (highlight.reviewIntervalDays as int?) ?? 0,
-      repetitions: (highlight.reviewReps as int?) ?? 0,
-      grade: grade,
-      now: DateTime.now(),
-    );
-    final days = result.intervalDays;
-    if (days <= 1) return context.l10n.ripassoNextTomorrow;
-    if (days < 14) return context.l10n.ripassoNextDays(days);
-    final weeks = (days / 7).round();
-    return context.l10n.ripassoNextWeeks(weeks);
-  }
-}
-
-enum _GradeKind { neutral, hard, good }
-
-class _GradeButton extends StatelessWidget {
-  const _GradeButton({
-    required this.label,
-    required this.caption,
-    required this.kind,
-    required this.onTap,
-  });
-
-  final String label;
-  final String caption;
-  final _GradeKind kind;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final (bg, fg, border) = switch (kind) {
-      _GradeKind.neutral => (
-          Colors.transparent,
-          ScriptaColors.ink,
-          ScriptaColors.rule,
-        ),
-      _GradeKind.hard => (
-          ScriptaColors.siennaLight,
-          ScriptaColors.ink,
-          ScriptaColors.siennaLight,
-        ),
-      _GradeKind.good => (
-          ScriptaColors.primary,
-          ScriptaColors.ink,
-          ScriptaColors.primary,
-        ),
-    };
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            height: 52,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: border, width: 1.5),
-            ),
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.manrope(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: fg,
-                letterSpacing: -0.2,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          caption,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: ScriptaTextStyles.label.copyWith(
-            fontSize: 10,
-            color: ScriptaColors.inkFaint,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Finished / empty state ──────────────────────────────────────────────────
-//
-// Reads the live streak so the "all caught up" copy can celebrate it.
-
-class _StreakFinished extends ConsumerWidget {
-  const _StreakFinished({
-    required this.isEmpty,
-    this.streakIncremented = false,
-  });
-
-  final bool isEmpty;
-  final bool streakIncremented;
+class _EmptyState extends ConsumerWidget {
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final streak =
         ref.watch(reviewStateProvider).asData?.value.currentStreak ?? 0;
-    // The just-finished session still holds its grade tallies in memory —
-    // feed them straight into the recap (the locked entry card reads the
-    // persisted copy instead).
-    final session = ref.watch(reviewSessionControllerProvider);
-    return _FinishedState(
-      streak: streak,
-      isEmpty: isEmpty,
-      streakIncremented: streakIncremented,
-      cards: isEmpty ? 0 : session.total,
-      good: session.goodCount,
-      hard: session.hardCount,
-      forgot: session.forgotCount,
-    );
-  }
-}
-
-class _FinishedState extends StatelessWidget {
-  const _FinishedState({
-    required this.streak,
-    required this.isEmpty,
-    required this.streakIncremented,
-    this.cards = 0,
-    this.good = 0,
-    this.hard = 0,
-    this.forgot = 0,
-  });
-
-  final int streak;
-  final bool isEmpty;
-  final bool streakIncremented;
-  final int cards;
-  final int good;
-  final int hard;
-  final int forgot;
-
-  @override
-  Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
     return Center(
-      // Scrollable: with the recap card the finished stack can exceed the
-      // available height on SE-class screens — never overflow, just scroll.
-      child: SingleChildScrollView(
-        child: Padding(
+      child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Completed a session → a "Great Success" burst (check pops in with
-            // an elastic spring, a ring expands, sparkles radiate). The empty
-            // state keeps a calm flame so it never over-celebrates "nothing due".
-            if (isEmpty)
-              Icon(
-                PhosphorIconsFill.flame,
-                size: 64,
-                color: streak > 0
-                    ? ScriptaColors.primaryDark.withOpacity(0.85)
-                    : ScriptaColors.siennaLight,
-              )
-            else
-              const _SuccessBurst(),
+            Icon(
+              PhosphorIconsFill.flame,
+              size: 64,
+              color: streak > 0
+                  ? ScriptaColors.primaryDark.withOpacity(0.85)
+                  : ScriptaColors.siennaLight,
+            ),
             const SizedBox(height: 24),
             Text(
-              isEmpty
-                  ? context.l10n.ripassoEmptyTitle
-                  : context.l10n.ripassoAllDone,
+              it ? 'Tutto ripassato' : 'All caught up',
               textAlign: TextAlign.center,
               style: ScriptaTextStyles.heroTitle,
             ),
             const SizedBox(height: 12),
             Text(
-              isEmpty
-                  ? context.l10n.ripassoEmpty
-                  : context.l10n.ripassoStreakDays(streak),
+              it
+                  ? 'Niente da ripassare adesso. Torna più tardi.'
+                  : 'Nothing to review right now. Come back later.',
               textAlign: TextAlign.center,
               style: ScriptaTextStyles.subtitle,
             ),
-            if (!isEmpty && cards > 0) ...[
-              const SizedBox(height: 24),
-              _SessionRecap(
-                cards: cards,
-                good: good,
-                hard: hard,
-                forgot: forgot,
-              ),
-            ],
-            const SizedBox(height: 28),
-            const _NextReviewCountdown(),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: () => context.pop(),
-              child: Text(context.l10n.ripassoBackToLibrary),
+              child: Text(it ? 'Torna alla libreria' : 'Back to library'),
             ),
           ],
-        ),
         ),
       ),
     );
   }
 }
 
-// ─── End-of-session recap ─────────────────────────────────────────────────────
+// ─── Locked summary — opened while today's session is already done ───────────
 //
-// The founder's "schermata riepilogativa dei propri risultati": after the one
-// daily session, show how the cards went — remembered / tricky / to revisit.
+// Reads the persisted recap (score/total/duration/completedAt) and renders the
+// same polished summary as the in-session finish, with the live streak.
 
-class _SessionRecap extends StatelessWidget {
-  const _SessionRecap({
-    required this.cards,
-    required this.good,
-    required this.hard,
-    required this.forgot,
+class _LockedSummary extends ConsumerWidget {
+  const _LockedSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final results = ref.watch(ripassoResultsProvider).asData?.value;
+    if (results == null) {
+      // Lock set but no recap stored (e.g. a legacy completion) → calm fallback.
+      return const _EmptyState();
+    }
+    return _SessionSummary(
+      score: results.score,
+      total: results.total > 0 ? results.total : results.cards,
+      durationSeconds: results.durationSeconds,
+      completedAt: results.completedAt,
+      streakIncremented: false,
+    );
+  }
+}
+
+// ─── Session summary (founder point 1) ───────────────────────────────────────
+//
+// The polished recap: a success burst, big score X/Y, accuracy %, time taken
+// (m:ss), completion time (HH:mm), the current streak with a flame, and the
+// "come back tomorrow" line. Subtle staggered entrance (airbnb_motion).
+
+class _SessionSummary extends ConsumerWidget {
+  const _SessionSummary({
+    required this.score,
+    required this.total,
+    required this.durationSeconds,
+    required this.completedAt,
+    required this.streakIncremented,
   });
 
-  final int cards;
-  final int good;
-  final int hard;
-  final int forgot;
+  final int score;
+  final int total;
+  final int durationSeconds;
+  final DateTime completedAt;
+  final bool streakIncremented;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final streak =
+        ref.watch(reviewStateProvider).asData?.value.currentStreak ?? 0;
+    final accuracy = total == 0 ? 0 : (score * 100 / total).round();
+
+    String head;
+    if (accuracy >= 80) {
+      head = it ? 'Memoria di ferro!' : 'Razor-sharp memory!';
+    } else if (accuracy >= 50) {
+      head = it ? 'Niente male!' : 'Not bad!';
+    } else {
+      head = it ? 'Ottimo allenamento' : 'Good practice';
+    }
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _SuccessBurst()
+                .animate()
+                .scale(
+                  begin: const Offset(0.6, 0.6),
+                  end: const Offset(1, 1),
+                  duration: AirbnbMotion.emphasis,
+                  curve: Curves.easeOutBack,
+                ),
+            const SizedBox(height: 22),
+            Text(
+              head,
+              textAlign: TextAlign.center,
+              style: ScriptaTextStyles.heroTitle,
+            )
+                .animate()
+                .fadeIn(
+                    duration: AirbnbMotion.standard,
+                    delay: 80.ms,
+                    curve: AirbnbMotion.enter)
+                .slideY(begin: 0.08, end: 0, duration: AirbnbMotion.standard),
+            const SizedBox(height: 24),
+            // Big score circle.
+            Container(
+              width: 132,
+              height: 132,
+              decoration: const BoxDecoration(
+                color: ScriptaColors.primaryFaint,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$score/$total',
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w700,
+                  color: ScriptaColors.primaryDark,
+                ),
+              ),
+            )
+                .animate()
+                .scale(
+                  begin: const Offset(0.7, 0.7),
+                  end: const Offset(1, 1),
+                  delay: 140.ms,
+                  duration: AirbnbMotion.emphasis,
+                  curve: Curves.easeOutBack,
+                ),
+            const SizedBox(height: 24),
+            // Stat row: accuracy · time · completion time.
+            _StatRow(
+              accuracy: accuracy,
+              durationSeconds: durationSeconds,
+              completedAt: completedAt,
+              it: it,
+            )
+                .animate()
+                .fadeIn(
+                    duration: AirbnbMotion.standard,
+                    delay: 220.ms,
+                    curve: AirbnbMotion.enter)
+                .slideY(begin: 0.08, end: 0, duration: AirbnbMotion.standard),
+            const SizedBox(height: 22),
+            // Streak pill with flame. When this session pushed the streak to a
+            // new day, the pill gives a one-time celebratory pop.
+            Animate(
+              effects: [
+                FadeEffect(duration: AirbnbMotion.standard, delay: 300.ms),
+                if (streakIncremented)
+                  ScaleEffect(
+                    begin: const Offset(0.7, 0.7),
+                    end: const Offset(1, 1),
+                    delay: 300.ms,
+                    duration: AirbnbMotion.emphasis,
+                    curve: Curves.elasticOut,
+                  ),
+              ],
+              child: StreakPill(streak: streak),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              it
+                  ? 'Torna domani: nuove domande dai tuoi highlight'
+                  : 'Come back tomorrow: fresh questions from your highlights',
+              textAlign: TextAlign.center,
+              style: ScriptaTextStyles.subtitle,
+            )
+                .animate()
+                .fadeIn(
+                    duration: AirbnbMotion.standard,
+                    delay: 360.ms,
+                    curve: AirbnbMotion.enter),
+            const SizedBox(height: 28),
+            const _NextReviewCountdown(),
+            const SizedBox(height: 28),
+            FilledButton(
+              onPressed: () => context.pop(),
+              child: Text(it ? 'Torna alla libreria' : 'Back to library'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Accuracy %, time taken (m:ss), completion time (HH:mm) — three quiet stats.
+class _StatRow extends StatelessWidget {
+  const _StatRow({
+    required this.accuracy,
+    required this.durationSeconds,
+    required this.completedAt,
+    required this.it,
+  });
+
+  final int accuracy;
+  final int durationSeconds;
+  final DateTime completedAt;
+  final bool it;
+
+  String _duration(int s) {
+    final d = s < 0 ? 0 : s;
+    final m = d ~/ 60;
+    final sec = d % 60;
+    return '$m:${sec.toString().padLeft(2, '0')}';
+  }
+
+  String _time(DateTime t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: ScriptaDecorations.card(radius: 20),
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            context.l10n.ripassoRecapCards(cards),
-            style: ScriptaTextStyles.sectionTitleClean,
+          _Stat(
+            value: '$accuracy%',
+            label: it ? 'Precisione' : 'Accuracy',
+            icon: PhosphorIconsFill.target,
           ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _RecapStat(
-                count: good,
-                label: context.l10n.ripassoRecapGood,
-                icon: PhosphorIconsFill.checkCircle,
-                color: ScriptaColors.primaryDark,
-              ),
-              const SizedBox(width: 22),
-              _RecapStat(
-                count: hard,
-                label: context.l10n.ripassoRecapHard,
-                icon: PhosphorIconsFill.circleHalf,
-                color: ScriptaColors.sienna,
-              ),
-              const SizedBox(width: 22),
-              _RecapStat(
-                count: forgot,
-                label: context.l10n.ripassoRecapForgot,
-                icon: PhosphorIconsFill.arrowCounterClockwise,
-                color: ScriptaColors.inkMuted,
-              ),
-            ],
+          const SizedBox(width: 26),
+          _Stat(
+            value: _duration(durationSeconds),
+            label: it ? 'Tempo' : 'Time',
+            icon: PhosphorIconsFill.timer,
+          ),
+          const SizedBox(width: 26),
+          _Stat(
+            value: _time(completedAt),
+            label: it ? 'Completato' : 'Finished',
+            icon: PhosphorIconsFill.checkCircle,
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.06, end: 0);
+    );
   }
 }
 
-class _RecapStat extends StatelessWidget {
-  const _RecapStat({
-    required this.count,
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label, required this.icon});
 
-  final int count;
+  final String value;
   final String label;
   final IconData icon;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(height: 6),
+        Icon(icon, size: 19, color: ScriptaColors.primaryDark),
+        const SizedBox(height: 7),
         Text(
-          '$count',
-          style: TextStyle(
-            fontSize: 18,
+          value,
+          style: GoogleFonts.manrope(
+            fontSize: 17,
             fontWeight: FontWeight.w800,
             color: ScriptaColors.ink,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
         const SizedBox(height: 2),
@@ -623,10 +834,9 @@ class _RecapStat extends StatelessWidget {
 
 // ─── "Great Success" completion burst ────────────────────────────────────────
 //
-// A satisfying, on-brand success moment (a calm adaptation of the classic
-// "Great Success" micro-interaction): a sage check-circle springs in
-// (elasticOut), a ring expands and fades behind it, and six sparkles radiate
-// outward. No neon, no confetti — it stays in the paper/sienna world.
+// A sage check-circle springs in, a ring expands and fades behind it, and six
+// sparkles radiate outward. No neon, no confetti — it stays in the paper/sienna
+// world.
 
 class _SuccessBurst extends StatelessWidget {
   const _SuccessBurst({this.diameter = 96});
@@ -700,7 +910,8 @@ class _SuccessBurst extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.check_rounded, size: 52, color: Colors.white),
+            child:
+                const Icon(Icons.check_rounded, size: 52, color: Colors.white),
           )
               .animate()
               .scale(
@@ -717,10 +928,9 @@ class _SuccessBurst extends StatelessWidget {
 
 // ─── Live "next review in HH:MM:SS" countdown ────────────────────────────────
 //
-// A quiet, app-style countdown to tomorrow morning's 08:00 review (the hour the
-// morning reminder fires). A single 1-second Timer drives it, disposed with the
-// widget so it never leaks. Tabular figures keep the clock from jittering as the
-// digits change.
+// A quiet countdown to tomorrow morning's 08:00 review (the hour the morning
+// reminder fires). A single 1-second Timer drives it, disposed with the widget
+// so it never leaks. Tabular figures keep the clock from jittering.
 
 /// The hour the daily review window reopens — kept in sync with the 08:00
 /// morning reminder scheduled in app.dart.
@@ -759,7 +969,7 @@ class _NextReviewCountdownState extends State<_NextReviewCountdown> {
     final now = DateTime.now();
     var next = DateTime(now.year, now.month, now.day, _kReviewHour);
     // Use isBefore (not !isAfter): at exactly 08:00:00 `next` equals `now`, so
-    // the countdown reads 00:00:00 instead of rolling a full 24h to "24:00:00".
+    // the countdown reads 00:00:00 instead of rolling a full 24h.
     if (next.isBefore(now)) next = next.add(const Duration(days: 1));
     return next.difference(now);
   }
@@ -772,6 +982,7 @@ class _NextReviewCountdownState extends State<_NextReviewCountdown> {
 
   @override
   Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -782,7 +993,9 @@ class _NextReviewCountdownState extends State<_NextReviewCountdown> {
         ),
         const SizedBox(width: 7),
         Text(
-          context.l10n.ripassoNextReview(_format(_remaining)),
+          it
+              ? 'Prossimo ripasso tra ${_format(_remaining)}'
+              : 'Next review in ${_format(_remaining)}',
           style: ScriptaTextStyles.label.copyWith(
             fontSize: 12,
             color: ScriptaColors.inkMuted,

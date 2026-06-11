@@ -77,6 +77,32 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  // Optimistic overrides for the two privacy controls. Null means "use the
+  // value from the loaded profile"; set only while a write is in flight or has
+  // just landed, so the switch/selector react instantly without waiting for the
+  // provider to re-emit.
+  bool? _privateOverride;
+  bool _privacyBusy = false;
+
+  Future<void> _setPrivate(bool value) async {
+    setState(() {
+      _privateOverride = value;
+      _privacyBusy = true;
+    });
+    try {
+      await ref.read(supabaseServiceProvider).updateProfilePrivacy(value);
+      ref.invalidate(myProfileProvider);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _privateOverride = !value);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+      }
+    } finally {
+      if (mounted) setState(() => _privacyBusy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
@@ -96,6 +122,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final stats = statsAsync.asData?.value ?? {};
     final sharedHighlights =
         sharedHighlightsAsync.asData?.value ?? [];
+
+    // Effective privacy values: optimistic override wins, else the profile.
+    final isPrivate = _privateOverride ?? (profile?['is_private'] == true);
 
     if (user == null) return const _UnauthenticatedProfile();
 
@@ -521,6 +550,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
               ),
+
+              // ── Private profile toggle (followers-only visibility) ─────
+              Builder(builder: (context) {
+                final it =
+                    Localizations.localeOf(context).languageCode == 'it';
+                return SwitchListTile(
+                  value: isPrivate,
+                  onChanged: _privacyBusy ? null : _setPrivate,
+                  activeColor: ScriptaColors.primary,
+                  secondary: const Icon(Icons.lock_outline_rounded,
+                      color: ScriptaColors.primary, size: 22),
+                  title: Text(it ? 'Profilo privato' : 'Private profile',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w500)),
+                  subtitle: Text(
+                    it
+                        ? 'Solo chi ti segue può vedere libri, preferiti e post.'
+                        : 'Only your followers can see your books, favourites and posts.',
+                    style: const TextStyle(
+                        fontSize: 12, color: ScriptaColors.inkMuted),
+                  ),
+                );
+              }),
+
+
               _SettingsTile(
                 icon: Icons.shield_outlined,
                 label: context.l10n.settingsYourData,
@@ -811,6 +865,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Update the live provider so the daily subtitle (which watches it)
     // recomputes without an app restart.
     ref.read(genderProvider.notifier).state = value;
+    // Single gender source of truth: mirror to profiles.gender so the jam
+    // Ripasso leaderboard can gender its titles ("Il primo"/"La prima").
+    // female→'f', male→'m', anything else→null. Best-effort, never blocks.
+    try {
+      final g = value == 'female' ? 'f' : (value == 'male' ? 'm' : null);
+      await ref.read(supabaseServiceProvider).updateProfileGender(g);
+    } catch (_) {/* best-effort */}
     if (sheetContext.mounted) Navigator.pop(sheetContext);
   }
 

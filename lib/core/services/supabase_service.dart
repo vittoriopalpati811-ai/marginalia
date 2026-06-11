@@ -752,7 +752,7 @@ class SupabaseService {
     final profiles = List<Map<String, dynamic>>.from(
       await _client
           .from('profiles')
-          .select('id, display_name, currently_reading_title, currently_reading_author')
+          .select('id, display_name, username, avatar_url, currently_reading_title, currently_reading_author')
           .inFilter('id', ids) as List,
     );
     final profileById = {for (var p in profiles) p['id'] as String: p};
@@ -900,6 +900,25 @@ class SupabaseService {
     });
   }
 
+  /// Ripasso 2.0 completion: called ONCE at the end of a finished session.
+  /// Same streak semantics as [markReviewCompleted], plus the quiz score and
+  /// the session duration, recorded in every jam the caller belongs to
+  /// (migration 063). Time-of-day comes from the row's completed_at.
+  Future<void> markReviewCompletedV2({
+    required int cards,
+    required int score,
+    required int total,
+    required int durationSeconds,
+  }) async {
+    if (!isAuthenticated || userId == null) return;
+    await _client.rpc('mark_review_completed_v2', params: {
+      'p_cards': cards,
+      'p_score': score,
+      'p_total': total,
+      'p_duration_seconds': durationSeconds,
+    });
+  }
+
   /// Persist today's ripasso session into every jam the caller belongs to.
   Future<void> logRipassoResultsToJams(int cardsReviewed) async {
     try {
@@ -932,13 +951,29 @@ class SupabaseService {
   }
 
   /// Every member's ripasso results in [jamId] (newest first) + profile info.
+  /// Includes the Ripasso 2.0 fields (score / total / duration / time-of-day).
   Future<List<Map<String, dynamic>>> fetchJamRipassoResults(String jamId) async {
     final res = await _client
         .from('jam_ripasso_results')
-        .select('id, user_id, completed_on, cards_reviewed, profiles(display_name, avatar_url)')
+        .select('id, user_id, completed_on, cards_reviewed, score, total, '
+            'duration_seconds, completed_at, profiles(display_name, avatar_url)')
         .eq('jam_id', jamId)
         .order('completed_on', ascending: false)
         .limit(200);
+    return List<Map<String, dynamic>>.from(res as List);
+  }
+
+  /// Period leaderboard for a jam's Ripasso: 'day' | 'week' | 'month'
+  /// (Europe/Rome boundaries, ranked by total score then total time —
+  /// migration 063). Each row: user_id, display_name, avatar_url, gender,
+  /// sessions, total_score, total_questions, total_duration_seconds,
+  /// best_duration_seconds, first_completed_at.
+  Future<List<Map<String, dynamic>>> fetchJamRipassoLeaderboardPeriod(
+      String jamId, String period) async {
+    final res = await _client.rpc('jam_ripasso_leaderboard_period', params: {
+      'p_jam_id': jamId,
+      'p_period': period,
+    });
     return List<Map<String, dynamic>>.from(res as List);
   }
 
@@ -1328,6 +1363,35 @@ class SupabaseService {
     return row;
   }
 
+  /// Followee-side curation: removes [followerId] from MY followers (deletes
+  /// their follows row towards me). Allowed by the follows_remove_follower
+  /// RLS policy (migration 062).
+  Future<void> removeFollower(String followerId) async {
+    await _client
+        .from('follows')
+        .delete()
+        .eq('follower_id', followerId)
+        .eq('following_id', userId!);
+  }
+
+  /// Private/public profile toggle (profiles.is_private, migration 062).
+  /// v1 gating is app-level: a private profile shows visitors only the
+  /// header (name/bio/stats) until they follow.
+  Future<void> updateProfilePrivacy(bool isPrivate) async {
+    await _client
+        .from('profiles')
+        .update({'is_private': isPrivate}).eq('id', userId!);
+  }
+
+  /// Optional gender ('f' | 'm' | null) — used only to gender leaderboard
+  /// titles ("Il primo"/"La prima"). Mirrors the onboarding choice that was
+  /// previously stored only on-device (migration 062).
+  Future<void> updateProfileGender(String? gender) async {
+    await _client
+        .from('profiles')
+        .update({'gender': gender}).eq('id', userId!);
+  }
+
   /// Real aggregate counts for ANOTHER user's public profile stats row.
   ///
   /// The four numbers and their server-side sources:
@@ -1584,7 +1648,13 @@ class SupabaseService {
         );
     final ts = DateTime.now().millisecondsSinceEpoch;
     final url = '${_client.storage.from('jam-covers').getPublicUrl(path)}?v=$ts';
-    await _client.from('jams').update({'cover_url': url}).eq('id', jamId);
+    // SECURITY DEFINER RPC (migration 062): any member or the owner can set
+    // the photo. The direct jams UPDATE only worked for the owner (RLS), which
+    // is also why the storage policies were widened to members in 062.
+    await _client.rpc('set_jam_cover', params: {
+      'p_jam_id': jamId,
+      'p_cover_url': url,
+    });
     return url;
   }
 
@@ -1853,15 +1923,9 @@ class SupabaseService {
         'user_id': userId,
       });
     }
-    // Recompute the denormalised count from the likes table.
-    final rows = List<Map<String, dynamic>>.from(
-      await _client.from('post_likes').select('post_id').eq('post_id', postId)
-          as List,
-    );
-    await _client
-        .from('posts')
-        .update({'likes_count': rows.length})
-        .eq('id', postId);
+    // likes_count is maintained server-side by a SECURITY DEFINER trigger on
+    // post_likes (migration 061). The old client-side recompute silently
+    // failed RLS for everyone but the post owner, freezing the counter at 0.
 
     // Notify the post owner — only when ADDING a like, never on un-like.
     if (!currentlyLiked) {
@@ -1870,6 +1934,18 @@ class SupabaseService {
       // ignore: discarded_futures
       _pushPostInteraction(postId, 'like');
     }
+  }
+
+  /// Author-only: hide/show the like COUNT on one of their posts. The heart
+  /// keeps working for everyone; only the number is hidden to non-authors
+  /// (posts.hide_like_count, migration 061). RLS already restricts the
+  /// UPDATE to the post owner.
+  Future<void> setPostHideLikeCount(String postId, bool hide) async {
+    await _client
+        .from('posts')
+        .update({'hide_like_count': hide})
+        .eq('id', postId)
+        .eq('user_id', userId!);
   }
 
   /// Fetch posts by a specific user (for profile views), newest first.
@@ -2714,7 +2790,10 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> fetchJamPolls(String jamId) async {
     final res = await _client
         .from('jam_highlight_polls')
-        .select('*, jam_poll_candidates(id, submitted_by, highlight_content, book_title, book_author, jam_poll_votes(user_id))')
+        // The explicit FK hint disambiguates the embed: jam_highlight_polls
+        // has TWO relationships to jam_poll_candidates (poll_id and the
+        // winner_id fk_poll_winner), and PostgREST refuses to guess (PGRST201).
+        .select('*, jam_poll_candidates:jam_poll_candidates!jam_poll_candidates_poll_id_fkey(id, submitted_by, highlight_content, book_title, book_author, jam_poll_votes(user_id))')
         .eq('jam_id', jamId)
         .order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(res as List);

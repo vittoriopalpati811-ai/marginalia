@@ -9,8 +9,10 @@ import '../../core/providers/jam_features_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import 'jam_detail_screen.dart' show jamDetailProvider;
 
-/// Error red used across the app's input/error styling (see [ScriptaTheme]).
-const _kDangerColor = Color(0xFF8B2E2E);
+/// Destructive-action red, aligned to the brand palette (was a darker
+/// `0xFF8B2E2E`). Mirrors the intended `ScriptaColors.red` (`0xFFB94A41`);
+/// kept local until that constant lands in `theme.dart`.
+const _kDangerColor = Color(0xFFB94A41);
 
 // ─── Jam Challenge Screen ─────────────────────────────────────────────────────
 
@@ -52,7 +54,7 @@ class _JamChallengeScreenState extends ConsumerState<JamChallengeScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: ScriptaColors.primaryDark),
+            icon: const Icon(Icons.add_rounded, color: ScriptaColors.primaryDark),
             onPressed: _showCreateSheet,
             tooltip: context.l10n.jamChallengeCreateTooltip,
           ),
@@ -240,7 +242,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
   Widget _buildManageMenu(BuildContext context) {
     final isIt = Localizations.localeOf(context).languageCode == 'it';
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, size: 20, color: ScriptaColors.inkFaint),
+      icon: const Icon(Icons.more_vert_rounded, size: 20, color: ScriptaColors.inkFaint),
       tooltip: isIt ? 'Opzioni' : 'Options',
       padding: EdgeInsets.zero,
       splashRadius: 18,
@@ -258,7 +260,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
           value: 'edit',
           child: Row(
             children: [
-              const Icon(Icons.edit_outlined, size: 18, color: ScriptaColors.ink),
+              const Icon(Icons.edit_rounded, size: 18, color: ScriptaColors.ink),
               const SizedBox(width: 12),
               Text(
                 isIt ? 'Modifica' : 'Edit',
@@ -271,7 +273,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
           value: 'delete',
           child: Row(
             children: [
-              const Icon(Icons.delete_outline, size: 18, color: _kDangerColor),
+              const Icon(Icons.delete_rounded, size: 18, color: _kDangerColor),
               const SizedBox(width: 12),
               Text(
                 isIt ? 'Elimina' : 'Delete',
@@ -303,7 +305,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events_outlined, color: ScriptaColors.primaryDark, size: 18),
+              const Icon(Icons.emoji_events_rounded, color: ScriptaColors.primaryDark, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -363,7 +365,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               _ProgressButton(
-                icon: Icons.remove,
+                icon: Icons.remove_rounded,
                 onTap: progress > 0
                     ? () => widget.onProgressUpdate(progress - 1)
                     : null,
@@ -380,7 +382,7 @@ class _ChallengeCardState extends State<_ChallengeCard> {
                 ),
               ),
               _ProgressButton(
-                icon: Icons.add,
+                icon: Icons.add_rounded,
                 onTap: progress < target
                     ? () => widget.onProgressUpdate(progress + 1)
                     : null,
@@ -434,7 +436,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.emoji_events_outlined, size: 56, color: ScriptaColors.inkFaint),
+            const Icon(Icons.emoji_events_rounded, size: 56, color: ScriptaColors.inkFaint),
             const SizedBox(height: 16),
             Text(
               context.l10n.jamChallengeNoChallenges,
@@ -449,7 +451,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: onCreate,
-              icon: const Icon(Icons.add, size: 18),
+              icon: const Icon(Icons.add_rounded, size: 18),
               label: Text(context.l10n.jamCreateChallenge),
             ),
           ],
@@ -583,7 +585,7 @@ class _ChallengeFormSheetState extends ConsumerState<_ChallengeFormSheet> {
               controller: _titleCtrl,
               decoration: InputDecoration(
                 hintText: context.l10n.jamChallengeNameFieldHint,
-                prefixIcon: const Icon(Icons.emoji_events_outlined),
+                prefixIcon: const Icon(Icons.emoji_events_rounded),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -640,7 +642,7 @@ class _ChallengeFormSheetState extends ConsumerState<_ChallengeFormSheet> {
                       Row(
                         children: [
                           _ProgressButton(
-                            icon: Icons.remove,
+                            icon: Icons.remove_rounded,
                             onTap: _target > 1 ? () => setState(() => _target--) : null,
                           ),
                           Padding(
@@ -648,7 +650,7 @@ class _ChallengeFormSheetState extends ConsumerState<_ChallengeFormSheet> {
                             child: Text('$_target', style: GoogleFonts.manrope(fontSize: 24, fontWeight: FontWeight.w600)),
                           ),
                           _ProgressButton(
-                            icon: Icons.add,
+                            icon: Icons.add_rounded,
                             onTap: () => setState(() => _target++),
                           ),
                         ],
@@ -691,7 +693,7 @@ class _ChallengeFormSheetState extends ConsumerState<_ChallengeFormSheet> {
                 );
                 if (picked != null) setState(() => _deadline = picked);
               },
-              icon: const Icon(Icons.calendar_today_outlined, size: 16),
+              icon: const Icon(Icons.calendar_today_rounded, size: 16),
               label: Text(
                 _deadline != null
                     ? context.l10n.jamChallengeDeadlineLabel('${_deadline!.day}/${_deadline!.month}/${_deadline!.year}')

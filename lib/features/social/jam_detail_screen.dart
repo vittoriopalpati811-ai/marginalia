@@ -20,6 +20,22 @@ import 'social_screen.dart' show jamsProvider;
 import 'package:google_fonts/google_fonts.dart';
 import '../quiz/quiz_screen.dart';
 
+/// Warm sienna/orange used for flame accents across the Jam screens (matches
+/// the Ripasso leaderboard's flame colour).
+const _kFlameColor = Color(0xFFD9892F);
+
+/// Sage hero gradient for the Jam header — aligns the colored header with the
+/// Library look (the old `ScriptaDecorations.gradientHeader` was dark forest
+/// green). `primaryDark → primary` keeps the cream header text legible and
+/// matches the collapsed sage app-bar.
+const _kJamHeaderGradient = BoxDecoration(
+  gradient: LinearGradient(
+    colors: [ScriptaColors.primaryDark, ScriptaColors.primary],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+);
+
 // ─── Providers ────────────────────────────────────────────────────────────────
 
 /// Single jam row — used to get invite_code and metadata.
@@ -380,7 +396,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
+                    icon: const Icon(Icons.notifications_rounded),
                     tooltip: context.l10n.notificationsTitle,
                     onPressed: () => context.push('/notifications'),
                   ),
@@ -407,7 +423,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               // the owner still gets a rename affordance here in the toolbar.
               if (isOwner && jamCoverUrl != null && jamCoverUrl.isNotEmpty)
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: const Icon(Icons.edit_rounded),
                   tooltip: context.l10n.jamRenameTitle,
                   onPressed: _renameJam,
                 ),
@@ -423,12 +439,12 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       ),
                     )
                   : IconButton(
-                      icon: const Icon(Icons.image_outlined),
+                      icon: const Icon(Icons.image_rounded),
                       tooltip: context.l10n.jamChangeCover,
                       onPressed: _pickJamCover,
                     ),
               IconButton(
-                icon: const Icon(Icons.ios_share_outlined),
+                icon: const Icon(Icons.ios_share_rounded),
                 tooltip: context.l10n.jamInviteFriends,
                 onPressed: () => _shareInviteCode(inviteCode),
               ),
@@ -460,7 +476,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       children: [
                         Image.network(jamCoverUrl, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
-                                Container(decoration: ScriptaDecorations.gradientHeader)),
+                                Container(decoration: _kJamHeaderGradient)),
                         // Top scrim — keeps status-bar icons visible over photos.
                         // Bottom scrim — ensures title text is readable.
                         Container(
@@ -480,7 +496,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       ],
                     )
                   : Container(
-                decoration: ScriptaDecorations.gradientHeader,
+                decoration: _kJamHeaderGradient,
                 child: SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -536,7 +552,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                                 constraints: const BoxConstraints(
                                     minWidth: 40, minHeight: 40),
                                 icon: const Icon(
-                                  Icons.edit_outlined,
+                                  Icons.edit_rounded,
                                   color: Color(0xFFF1EEE7),
                                 ),
                               ),
@@ -574,7 +590,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.key_outlined,
+                                    Icons.key_rounded,
                                     size: 12,
                                     color: const Color(0xFFF1EEE7)
                                         .withAlpha(180),
@@ -591,7 +607,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Icon(
-                                    Icons.copy_outlined,
+                                    Icons.copy_rounded,
                                     size: 12,
                                     color: const Color(0xFFF1EEE7)
                                         .withAlpha(150),
@@ -723,7 +739,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
         backgroundColor: ScriptaColors.primary,
         foregroundColor: const Color(0xFFF1EEE7),
         elevation: 4,
-        icon: const Icon(Icons.add_comment_outlined),
+        icon: const Icon(Icons.add_comment_rounded),
         label: Text(
           context.l10n.share,
           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -750,7 +766,8 @@ class _TrendingSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
           child: Row(
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 14)),
+              const Icon(Icons.local_fire_department_rounded,
+                  size: 15, color: _kFlameColor),
               const SizedBox(width: 6),
               Text(context.l10n.jamTrendingSection,
                   style: ScriptaTextStyles.sectionTitle),
@@ -917,7 +934,7 @@ class _WeeklyPromptBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.auto_awesome,
+            const Icon(Icons.auto_awesome_rounded,
                 color: Color(0xFFF1EEE7), size: 18),
             const SizedBox(width: 10),
             Expanded(
@@ -985,6 +1002,7 @@ class _MembersStrip extends StatelessWidget {
               final profile = m['profile'] as Map<String, dynamic>?;
               final name =
                   profile?['display_name'] as String? ?? 'User';
+              final avatarUrl = profile?['avatar_url'] as String?;
               final readingTitle =
                   profile?['currently_reading_title'] as String?;
               final initial =
@@ -994,6 +1012,48 @@ class _MembersStrip extends StatelessWidget {
                   readingTitle != null && readingTitle.isNotEmpty;
               final avatarColor =
                   ScriptaDecorations.bookCoverColor(name);
+
+              // Gradient-initial fallback, shown when there is no avatar photo
+              // (and as the error fallback for a failed Image.network).
+              Widget initialAvatar = Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      avatarColor,
+                      ScriptaColors.primaryDark,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Color(0xFFF1EEE7),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              );
+
+              // Avatar photo when present; otherwise the gradient initial.
+              Widget avatar = (avatarUrl != null && avatarUrl.isNotEmpty)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(26),
+                      child: Image.network(
+                        avatarUrl,
+                        width: 52,
+                        height: 52,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => initialAvatar,
+                      ),
+                    )
+                  : initialAvatar;
 
               return GestureDetector(
                 onTap: () => onTapMember(m),
@@ -1008,18 +1068,13 @@ class _MembersStrip extends StatelessWidget {
                     children: [
                       Stack(
                         children: [
+                          // Owner gets a sienna ring around whichever avatar
+                          // (photo or gradient initial) is shown.
                           Container(
                             width: 52,
                             height: 52,
+                            clipBehavior: Clip.antiAlias,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  avatarColor,
-                                  ScriptaColors.primaryDark,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
                               borderRadius: BorderRadius.circular(26),
                               border: isOwner
                                   ? Border.all(
@@ -1028,16 +1083,7 @@ class _MembersStrip extends StatelessWidget {
                                     )
                                   : null,
                             ),
-                            child: Center(
-                              child: Text(
-                                initial,
-                                style: const TextStyle(
-                                  color: Color(0xFFF1EEE7),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
+                            child: avatar,
                           ),
                           // Reading indicator dot
                           if (isReading)
@@ -1057,7 +1103,7 @@ class _MembersStrip extends StatelessWidget {
                                   ),
                                 ),
                                 child: const Center(
-                                  child: Icon(Icons.auto_stories,
+                                  child: Icon(Icons.auto_stories_rounded,
                                       size: 8,
                                       color: Colors.white),
                                 ),
@@ -1123,7 +1169,7 @@ class _EmptyJamHighlights extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(
-              Icons.auto_stories_outlined,
+              Icons.auto_stories_rounded,
               size: 32,
               color: ScriptaColors.primaryDark,
             ),
@@ -1150,7 +1196,7 @@ class _EmptyJamHighlights extends StatelessWidget {
           const SizedBox(height: 28),
           FilledButton.icon(
             onPressed: onShare,
-            icon: const Icon(Icons.add_comment_outlined, size: 18),
+            icon: const Icon(Icons.add_comment_rounded, size: 18),
             label: Text(context.l10n.jamShareHighlightCta),
           ),
           if (inviteCode != null) ...[
@@ -1199,7 +1245,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: onCopy,
-                          icon: const Icon(Icons.copy_outlined, size: 16),
+                          icon: const Icon(Icons.copy_rounded, size: 16),
                           label: Text(context.l10n.copy),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ScriptaColors.primaryDark,
@@ -1212,7 +1258,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: onInvite,
-                          icon: const Icon(Icons.ios_share_outlined,
+                          icon: const Icon(Icons.ios_share_rounded,
                               size: 16),
                           label: Text(context.l10n.share),
                         ),
@@ -1619,7 +1665,7 @@ class _JamHighlightCard extends ConsumerWidget {
                             data: (rxs) => rxs.isEmpty
                                 ? const SizedBox.shrink()
                                 : _CountChip(
-                                    icon: Icons.favorite_outline,
+                                    icon: Icons.favorite_border_rounded,
                                     count: rxs.length,
                                   ),
                             orElse: () => const SizedBox.shrink(),
@@ -1632,7 +1678,7 @@ class _JamHighlightCard extends ConsumerWidget {
                                     padding:
                                         const EdgeInsets.only(left: 8),
                                     child: _CountChip(
-                                      icon: Icons.mode_comment_outlined,
+                                      icon: Icons.mode_comment_rounded,
                                       count: c.length,
                                     ),
                                   ),
@@ -1660,7 +1706,7 @@ class _JamHighlightCard extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
-                                  Icons.auto_awesome_outlined,
+                                  Icons.auto_awesome_rounded,
                                   size: 14,
                                   color: ScriptaColors.primaryDark,
                                 ),
@@ -1822,7 +1868,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                     onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                         builder: (_) =>
                             QuizScreen(bookTitle: title, appBarTitle: title))),
-                    icon: const Icon(Icons.quiz_outlined, size: 18),
+                    icon: const Icon(Icons.quiz_rounded, size: 18),
                     label: Text(it ? 'Quiz su questo libro' : 'Quiz this book'),
                     style: FilledButton.styleFrom(
                       backgroundColor: ScriptaColors.primaryDark,
@@ -1854,10 +1900,17 @@ class _MemberResult {
   int? quizTotal;
   String? ripassoDate;
   int? ripassoCards;
+  // V2 ripasso fields (null on legacy rows that only logged cards_reviewed).
+  int? ripassoScore;
+  int? ripassoTotal;
+  int? ripassoDurationSeconds;
+  String? ripassoCompletedAt; // ISO timestamp
 
-  bool get hasAny =>
-      (quizScore != null && quizTotal != null) ||
+  bool get hasRipasso =>
+      (ripassoScore != null && ripassoTotal != null) ||
       (ripassoCards != null && ripassoCards! > 0);
+
+  bool get hasAny => (quizScore != null && quizTotal != null) || hasRipasso;
 }
 
 /// Shows each member's latest Quiz + Ripasso result, so everyone in the Jam
@@ -1910,6 +1963,10 @@ class _JamResultsSection extends ConsumerWidget {
       if (m.ripassoDate == null || d.compareTo(m.ripassoDate!) >= 0) {
         m.ripassoDate = d;
         m.ripassoCards = (r['cards_reviewed'] as num?)?.toInt();
+        m.ripassoScore = (r['score'] as num?)?.toInt();
+        m.ripassoTotal = (r['total'] as num?)?.toInt();
+        m.ripassoDurationSeconds = (r['duration_seconds'] as num?)?.toInt();
+        m.ripassoCompletedAt = r['completed_at'] as String?;
       }
     }
 
@@ -1930,7 +1987,7 @@ class _JamResultsSection extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.emoji_events_outlined,
+                const Icon(Icons.emoji_events_rounded,
                     size: 16, color: ScriptaColors.primaryDark),
                 const SizedBox(width: 8),
                 Text(
@@ -1947,32 +2004,64 @@ class _JamResultsSection extends ConsumerWidget {
             for (final m in members)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        m.name.isEmpty ? (it ? 'Lettore' : 'Reader') : m.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.manrope(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: ScriptaColors.ink),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            m.name.isEmpty
+                                ? (it ? 'Lettore' : 'Reader')
+                                : m.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.manrope(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: ScriptaColors.ink),
+                          ),
+                        ),
+                        if (m.quizScore != null && m.quizTotal != null) ...[
+                          _ResultPill(
+                              icon: Icons.quiz_rounded,
+                              label: 'Quiz ${m.quizScore}/${m.quizTotal}'),
+                          const SizedBox(width: 6),
+                        ],
+                        // V2 ripasso: score X/Y when present, else legacy cards.
+                        if (m.ripassoScore != null && m.ripassoTotal != null)
+                          _ResultPill(
+                            icon: Icons.local_fire_department_rounded,
+                            iconColor: _kFlameColor,
+                            label: it
+                                ? 'Ripasso ${m.ripassoScore}/${m.ripassoTotal}'
+                                : 'Review ${m.ripassoScore}/${m.ripassoTotal}',
+                          )
+                        else if (m.ripassoCards != null && m.ripassoCards! > 0)
+                          _ResultPill(
+                            icon: Icons.local_fire_department_rounded,
+                            iconColor: _kFlameColor,
+                            label: it
+                                ? 'Ripasso ${m.ripassoCards}'
+                                : 'Review ${m.ripassoCards}',
+                          ),
+                      ],
                     ),
-                    if (m.quizScore != null && m.quizTotal != null) ...[
-                      _ResultPill(
-                          icon: Icons.quiz_outlined,
-                          label: 'Quiz ${m.quizScore}/${m.quizTotal}'),
-                      const SizedBox(width: 6),
-                    ],
-                    if (m.ripassoCards != null && m.ripassoCards! > 0)
-                      _ResultPill(
-                        icon: Icons.local_fire_department_rounded,
-                        label: it
-                            ? 'Ripasso ${m.ripassoCards}'
-                            : 'Review ${m.ripassoCards}',
+                    // Detail line: completion time-of-day + duration (V2 rows).
+                    if (_ripassoDetail(it, m) != null) ...[
+                      const SizedBox(height: 3),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 1),
+                        child: Text(
+                          _ripassoDetail(it, m)!,
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: ScriptaColors.inkFaint,
+                          ),
+                        ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -1981,12 +2070,37 @@ class _JamResultsSection extends ConsumerWidget {
       ),
     );
   }
+
+  /// Compact "HH:mm · m:ss" detail for a V2 ripasso row, or null when neither
+  /// the completion timestamp nor the duration is available (legacy rows).
+  static String? _ripassoDetail(bool it, _MemberResult m) {
+    final parts = <String>[];
+    final at = m.ripassoCompletedAt;
+    if (at != null) {
+      final t = DateTime.tryParse(at);
+      if (t != null) {
+        final l = t.toLocal();
+        final hh = l.hour.toString().padLeft(2, '0');
+        final mm = l.minute.toString().padLeft(2, '0');
+        parts.add(it ? 'alle $hh:$mm' : 'at $hh:$mm');
+      }
+    }
+    final dur = m.ripassoDurationSeconds;
+    if (dur != null && dur > 0) {
+      final mins = dur ~/ 60;
+      final secs = (dur % 60).toString().padLeft(2, '0');
+      parts.add('$mins:$secs');
+    }
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
+  }
 }
 
 class _ResultPill extends StatelessWidget {
-  const _ResultPill({required this.icon, required this.label});
+  const _ResultPill({required this.icon, required this.label, this.iconColor});
   final IconData icon;
   final String label;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -1999,7 +2113,7 @@ class _ResultPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: ScriptaColors.primaryDark),
+          Icon(icon, size: 12, color: iconColor ?? ScriptaColors.primaryDark),
           const SizedBox(width: 4),
           Text(
             label,
@@ -2036,13 +2150,13 @@ class _JamFeaturesRow extends StatelessWidget {
         route: '/jam/$jamId/voting',
       ),
       (
-        icon: Icons.emoji_events_outlined,
+        icon: Icons.emoji_events_rounded,
         label: context.l10n.jamFeatureChallenges,
         sub: context.l10n.jamFeatureChallengesSubtitle,
         route: '/jam/$jamId/challenges',
       ),
       (
-        icon: Icons.how_to_vote_outlined,
+        icon: Icons.how_to_vote_rounded,
         label: context.l10n.jamFeaturePolls,
         sub: context.l10n.jamFeaturePollsSubtitle,
         route: '/jam/$jamId/polls',
@@ -2136,11 +2250,36 @@ class _MemberProfileSheet extends StatelessWidget {
     final readingTitle = profile['currently_reading_title'] as String?;
     final readingAuthor = profile['currently_reading_author'] as String?;
     final isOwner = member['role'] == 'owner';
+    final avatarUrl = profile['avatar_url'] as String?;
     final userId = member['user_id'] as String? ??
         profile['id'] as String? ?? '';
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final avatarColor = ScriptaDecorations.bookCoverColor(name);
     final bottom = MediaQuery.of(context).padding.bottom;
+
+    // Gradient-initial avatar, reused as the fallback for a missing/failed photo.
+    Widget initialAvatar = Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [avatarColor, ScriptaColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(40),
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Color(0xFFF1EEE7),
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
 
     return Container(
       decoration: const BoxDecoration(
@@ -2165,32 +2304,27 @@ class _MemberProfileSheet extends StatelessWidget {
           ),
           const SizedBox(height: 28),
 
-          // Avatar
+          // Avatar — photo when available, gradient initial otherwise.
           Container(
             width: 80,
             height: 80,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [avatarColor, ScriptaColors.primaryDark],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
               borderRadius: BorderRadius.circular(40),
               border: isOwner
                   ? Border.all(
                       color: ScriptaColors.sienna, width: 3)
                   : null,
             ),
-            child: Center(
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: Color(0xFFF1EEE7),
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+            child: (avatarUrl != null && avatarUrl.isNotEmpty)
+                ? Image.network(
+                    avatarUrl,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => initialAvatar,
+                  )
+                : initialAvatar,
           ),
 
           // Owner badge
@@ -2250,7 +2384,7 @@ class _MemberProfileSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_stories,
+                  const Icon(Icons.auto_stories_rounded,
                       size: 16, color: ScriptaColors.primaryDark),
                   const SizedBox(width: 10),
                   Expanded(
@@ -2300,7 +2434,7 @@ class _MemberProfileSheet extends StatelessWidget {
                   Navigator.pop(context);
                   context.push('/user/$userId');
                 },
-                icon: const Icon(Icons.person_outline, size: 16),
+                icon: const Icon(Icons.person_rounded, size: 16),
                 label: Text(context.l10n.jamViewProfile),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: ScriptaColors.primaryDark,

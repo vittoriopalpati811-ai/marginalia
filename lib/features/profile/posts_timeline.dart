@@ -19,6 +19,7 @@ class PostsTimeline extends StatelessWidget {
     required this.posts,
     required this.profile,
     this.onTapPost,
+    this.isOwnProfile = false,
   });
 
   /// Posts list (each is a Map from Supabase select).
@@ -30,6 +31,11 @@ class PostsTimeline extends StatelessWidget {
   final Map<String, dynamic>? profile;
 
   final void Function(Map<String, dynamic> post)? onTapPost;
+
+  /// True when this timeline shows the signed-in user's OWN posts (my profile).
+  /// Controls how a hidden like count is presented: hidden from other readers,
+  /// but the owner still sees the number plus a small visibility-off hint.
+  final bool isOwnProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +51,7 @@ class PostsTimeline extends StatelessWidget {
             post: post,
             profile: profile,
             showDivider: !isLast,
+            isOwnProfile: isOwnProfile,
             onTap: onTapPost == null ? null : () => onTapPost!(post),
             key: ValueKey('thread-${post['id']}'),
           ),
@@ -62,12 +69,14 @@ class _ThreadPost extends StatelessWidget {
     required this.post,
     required this.profile,
     required this.showDivider,
+    required this.isOwnProfile,
     this.onTap,
   });
 
   final Map<String, dynamic>  post;
   final Map<String, dynamic>? profile;
   final bool                  showDivider;
+  final bool                  isOwnProfile;
   final VoidCallback?         onTap;
 
   String _timeAgo(BuildContext context, String? iso) {
@@ -92,6 +101,7 @@ class _ThreadPost extends StatelessWidget {
     final hlTitle   = (hlBook?['title']  as String?)?.trim();
     final hlAuthor  = (hlBook?['author'] as String?)?.trim();
     final likes     = (post['likes_count'] as num?)?.toInt() ?? 0;
+    final hideLikes = post['hide_like_count'] as bool? ?? false;
 
     final name      = (profile?['display_name'] as String?)?.trim()
         ?? (profile?['username'] as String?)?.trim()
@@ -168,7 +178,11 @@ class _ThreadPost extends StatelessWidget {
 
                       // Actions row
                       const SizedBox(height: 10),
-                      _Actions(likes: likes),
+                      _Actions(
+                        likes: likes,
+                        hideLikes: hideLikes,
+                        isOwnProfile: isOwnProfile,
+                      ),
                       const SizedBox(height: 14),
                     ],
                   ),
@@ -377,14 +391,33 @@ class _QuoteCard extends StatelessWidget {
 // ─── Action row (likes · reply · share) ────────────────────────────────────
 
 class _Actions extends StatelessWidget {
-  const _Actions({required this.likes});
-  final int likes;
+  const _Actions({
+    required this.likes,
+    required this.hideLikes,
+    required this.isOwnProfile,
+  });
+  final int  likes;
+  final bool hideLikes;
+  final bool isOwnProfile;
 
   @override
   Widget build(BuildContext context) {
+    // When the author hid the like count, other readers see the heart with no
+    // number; the owner still sees the number plus a small visibility-off hint.
+    final showCount = !hideLikes || isOwnProfile;
     return Row(
       children: [
-        _ActionIcon(icon: Icons.favorite_outline, count: likes),
+        _ActionIcon(
+          icon: Icons.favorite_outline,
+          count: showCount ? likes : 0,
+          trailing: (hideLikes && isOwnProfile)
+              ? const Icon(
+                  Icons.visibility_off_outlined,
+                  size: 16,
+                  color: ScriptaColors.inkFaint,
+                )
+              : null,
+        ),
         const SizedBox(width: 18),
         const _ActionIcon(icon: Icons.mode_comment_outlined),
         const SizedBox(width: 18),
@@ -395,9 +428,10 @@ class _Actions extends StatelessWidget {
 }
 
 class _ActionIcon extends StatelessWidget {
-  const _ActionIcon({required this.icon, this.count = 0});
+  const _ActionIcon({required this.icon, this.count = 0, this.trailing});
   final IconData icon;
   final int      count;
+  final Widget?  trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -415,6 +449,10 @@ class _ActionIcon extends StatelessWidget {
               color: ScriptaColors.inkMuted,
             ),
           ),
+        ],
+        if (trailing != null) ...[
+          const SizedBox(width: 4),
+          trailing!,
         ],
       ],
     );

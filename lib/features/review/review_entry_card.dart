@@ -188,7 +188,10 @@ class _CompletedCard extends StatelessWidget {
         ? '$base  ·  ${context.l10n.ripassoStreak(streak)}'
         : base;
 
-    return Container(
+    // Tappable while locked: re-opens today's polished recap (founder point C).
+    return PressableSpring(
+      onPressed: () => context.push('/review'),
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: ScriptaDecorations.card(radius: 20),
       child: Row(
@@ -241,6 +244,7 @@ class _CompletedCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

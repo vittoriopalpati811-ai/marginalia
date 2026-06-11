@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/branding/scripta_mark.dart';
 import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
@@ -16,9 +18,16 @@ import '../../core/providers/auth_provider.dart';
 /// the 6-digit code from the email; we verify it directly against Supabase
 /// (no magic-link round-trip), which yields a session and signs them in.
 class EmailOtpScreen extends ConsumerStatefulWidget {
-  const EmailOtpScreen({super.key, required this.email});
+  const EmailOtpScreen({super.key, required this.email, this.onVerified});
 
   final String email;
+
+  /// Optional success hook. When provided, a successful verification pops this
+  /// screen and invokes [onVerified] instead of routing to `/`. Used by the
+  /// onboarding flow (which runs in a standalone MaterialApp with no go_router
+  /// mounted yet) so the caller can continue the onboarding steps itself.
+  /// When null (the auth_screen path) the screen routes to `/` as before.
+  final VoidCallback? onVerified;
 
   @override
   ConsumerState<EmailOtpScreen> createState() => _EmailOtpScreenState();
@@ -79,9 +88,17 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
             email: widget.email,
             token: code,
           );
-      // Verified → a session now exists; the router (auth redirect) sends the
-      // user into the app. Close the whole auth stack just in case.
-      if (mounted) context.go('/');
+      if (!mounted) return;
+      // Verified → a session now exists. In the onboarding flow there is no
+      // go_router mounted yet, so the caller passes [onVerified]: pop back and
+      // let it continue the onboarding steps. In the auth_screen flow the
+      // router's auth redirect sends the user into the app, so route to `/`.
+      if (widget.onVerified != null) {
+        Navigator.of(context).pop();
+        widget.onVerified!.call();
+      } else {
+        context.go('/');
+      }
     } on AuthException catch (_) {
       // Never surface the raw server string (can leak details); generic message.
       setState(() {
@@ -134,35 +151,38 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: ScriptaColors.primaryFaint,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.mark_email_read_outlined,
-                    color: ScriptaColors.primary, size: 30),
-              ).animate().scale(
-                    begin: const Offset(0.5, 0.5),
-                    end: const Offset(1, 1),
-                    duration: 400.ms,
-                    curve: Curves.elasticOut,
-                  ),
-              const SizedBox(height: 24),
+              Center(
+                child: const ScriptaMark(size: 56)
+                    .animate()
+                    .fadeIn(duration: 500.ms, curve: Curves.easeOut)
+                    .scale(
+                      begin: const Offset(0.82, 0.82),
+                      end: const Offset(1, 1),
+                      duration: 500.ms,
+                      curve: Curves.easeOutBack,
+                    ),
+              ),
+              const SizedBox(height: 22),
               Text(
                 l10n.otpTitle,
-                style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5),
-              ),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w600,
+                  color: ScriptaColors.ink,
+                  letterSpacing: -0.5,
+                ),
+              ).animate().fadeIn(delay: 80.ms, duration: 400.ms),
               const SizedBox(height: 8),
               Text(
                 l10n.otpSubtitle(widget.email),
-                style: const TextStyle(
-                    fontSize: 14, color: ScriptaColors.inkMuted, height: 1.4),
-              ),
+                textAlign: TextAlign.center,
+                style: GoogleFonts.manrope(
+                  fontSize: 14,
+                  color: ScriptaColors.inkMuted,
+                  height: 1.5,
+                ),
+              ).animate().fadeIn(delay: 140.ms, duration: 400.ms),
               const SizedBox(height: 30),
 
               // 6-digit code field.
@@ -195,20 +215,20 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
                   fillColor: ScriptaColors.surfaceElevated,
                   contentPadding: const EdgeInsets.symmetric(vertical: 18),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(color: ScriptaColors.rule),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(color: ScriptaColors.rule),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     borderSide: const BorderSide(
                         color: ScriptaColors.primaryDark, width: 1.5),
                   ),
                 ),
-              ),
+              ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
 
               if (_error != null) ...[
                 const SizedBox(height: 14),
