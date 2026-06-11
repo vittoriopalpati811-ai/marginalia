@@ -549,7 +549,6 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final keyboard = media.viewInsets.bottom;
-    final bottom = keyboard + media.padding.bottom;
     // Cap the sheet to the space below the status bar / notch so the header
     // (and its publish button) can never slide under the system clock when
     // isScrollControlled lets the sheet grow tall with the keyboard up.
@@ -564,11 +563,17 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
 
     return Container(
       height: maxSheetHeight,
+      // Lift the whole sheet ABOVE the keyboard. `maxSheetHeight` already
+      // excludes the keyboard inset, so without this the bottom-anchored sheet
+      // slid down by the keyboard height, leaving a tall band of sheet-coloured
+      // fill over the feed (the "grey piece covering the home"). The margin
+      // raises it so the sheet spans exactly topGap..keyboardTop with no gap.
+      margin: EdgeInsets.only(bottom: keyboard),
       decoration: const BoxDecoration(
         color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 16),
+      padding: EdgeInsets.fromLTRB(20, 0, 20, media.padding.bottom + 16),
       child: Column(
         children: [
           // Handle
