@@ -143,7 +143,11 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
           );
           final resp = await http.get(uri).timeout(const Duration(seconds: 8));
           if (resp.statusCode != 200) continue;
-          final data = jsonDecode(resp.body) as Map<String, dynamic>;
+          // Decode UTF-8 explicitly: Google Books often omits `charset=utf-8`,
+          // and Dart http then falls back to latin1 → accented Italian text
+          // ("perché", "città") turns into mojibake. bodyBytes is the raw UTF-8.
+          final data =
+              jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
           final items = data['items'] as List?;
           if (items == null || items.isEmpty) continue;
           for (final item in items) {
@@ -198,7 +202,9 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
           });
           final resp = await http.get(uri).timeout(const Duration(seconds: 8));
           if (resp.statusCode == 200) {
-            final data = jsonDecode(resp.body) as Map<String, dynamic>;
+            // UTF-8 explicit (Open Library may omit charset → latin1 mojibake).
+            final data =
+                jsonDecode(utf8.decode(resp.bodyBytes)) as Map<String, dynamic>;
             final docs = data['docs'] as List?;
             if (docs != null && docs.isNotEmpty) {
               final doc = docs.first as Map<String, dynamic>;

@@ -112,7 +112,10 @@ class WeatherService {
           .timeout(const Duration(seconds: 6));
 
       if (res.statusCode != 200) return null;
-      final j = jsonDecode(res.body) as Map<String, dynamic>;
+      // UTF-8 explicit: the geo-IP API can omit `charset=utf-8`, which makes
+      // Dart http fall back to latin1 → accented city names (e.g. "Forlì")
+      // come back as mojibake and then leak into the widget + LLM prompt.
+      final j = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
       if (j['success'] != true) return null;
 
       final lat  = (j['latitude']  as num?)?.toDouble();
@@ -140,7 +143,7 @@ class WeatherService {
       final res = await http.get(uri).timeout(const Duration(seconds: 8));
       if (res.statusCode != 200) return null;
 
-      final j       = jsonDecode(res.body) as Map<String, dynamic>;
+      final j       = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
       final current = j['current'] as Map<String, dynamic>?;
       if (current == null) return null;
 

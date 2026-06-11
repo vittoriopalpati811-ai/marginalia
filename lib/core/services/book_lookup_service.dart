@@ -58,7 +58,9 @@ class BookLookupService {
       final res = await http.get(uri).timeout(const Duration(seconds: 8));
       if (res.statusCode != 200) return null;
 
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      // UTF-8 explicit: Open Library may omit `charset=utf-8`, and Dart http
+      // then falls back to latin1 → accented titles/authors become mojibake.
+      final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
       final entry = body['ISBN:$isbn'] as Map<String, dynamic>?;
       if (entry == null) return null;
 
