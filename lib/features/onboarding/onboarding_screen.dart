@@ -183,11 +183,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _goTo(int step) {
     if (!mounted) return;
     setState(() => _step = step);
-    _pageController.animateToPage(
-      step,
-      duration: const Duration(milliseconds: 380),
-      curve: Curves.easeInOutCubic,
-    );
+    // The PageView uses NeverScrollableScrollPhysics, so animateToPage is the
+    // ONLY way to move the visible page. On the OAuth deep-link return the app
+    // resumes and the signedIn event can fire BEFORE the PageView is laid out
+    // again — at which point the controller has no clients and animateToPage
+    // throws, leaving the page stuck on Auth while _step has already advanced
+    // (the "stuck after Apple/Google login, must reopen" bug). Animate only
+    // when the controller is attached; otherwise defer to the next frame and
+    // jump (there is no client to animate from) so the page always catches up.
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        step,
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeInOutCubic,
+      );
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_pageController.hasClients) return;
+        _pageController.jumpToPage(step);
+      });
+    }
   }
 
   void _next() => _goTo(_step + 1);

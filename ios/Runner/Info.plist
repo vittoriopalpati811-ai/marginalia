@@ -18,6 +18,10 @@
       rendering on ProMotion iPhones.
     * UIApplicationSupportsIndirectInputEvents required by Flutter
       for trackpad/mouse events.
+    * CFBundleURLTypes registers two URL schemes — 'marginalia'
+      (Instagram Stories source_application) and 'io.supabase.flutter'
+      (Supabase OAuth deep-link return for Sign in with Apple/Google).
+      Both are REQUIRED — do not remove.
 
   NOT included (add later if/when the feature ships):
     * NSCameraUsageDescription — only needed when barcode scanner
@@ -26,8 +30,6 @@
       — health_service is stubbed; not wired to the `health` package.
     * NSLocationWhenInUseUsageDescription — weather uses IP-based
       geolocation, no GPS permission needed.
-    * CFBundleURLTypes for OAuth callbacks — add when Google /
-      Sign in with Apple are enabled on Supabase.
 -->
 <plist version="1.0">
 <dict>
@@ -51,6 +53,16 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!--
+	  Export compliance: the app uses ONLY standard, exempt encryption
+	  (HTTPS/TLS for Supabase + SHA hashing via package:crypto) — no
+	  proprietary or otherwise non-exempt cryptography. Declaring this as
+	  false means App Store Connect won't ask the encryption question on
+	  every submission. Takes effect on the next build (not retroactive to
+	  an already-uploaded IPA).
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
