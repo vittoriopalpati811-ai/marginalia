@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import '../models/highlight_native.dart';
+import '../models/book_native.dart';
 import 'isar_provider_native.dart';
 import 'auth_provider.dart';
 
@@ -98,3 +101,96 @@ final allHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
     return all;
   },
 );
+
+// ─── Jam-share sync (native) ──────────────────────────────────────────────────
+//
+// Native highlights live only in local Isar and are never uploaded to Supabase,
+// so [Highlight.supabaseId] is null on device. Sharing a highlight into a Jam
+// inserts its id into jam_highlights.highlight_id, which is a uuid FK to
+// highlights(id) — so we must first push the BOOK and the HIGHLIGHT to Supabase
+// with STABLE UUIDs (mirroring import_service_web's `_stableUuid`), persist
+// those uuids back into Isar, and return the highlight uuid for the FK.
+//
+// Returns the highlight's real Supabase uuid, or null if it can't be resolved
+// (not authenticated, missing book/highlight, or the upsert failed).
+Future<String?> ensureHighlightSynced(WidgetRef ref, int highlightId) async {
+  final service = ref.read(supabaseServiceProvider);
+  final userId = service.userId;
+  if (!service.isAuthenticated || userId == null) return null;
+
+  final isar = ref.read(isarProvider);
+  final highlight = await isar.highlights.get(highlightId);
+  if (highlight == null) return null;
+
+  // Already synced (real uuid, not a `local_` placeholder) → return immediately.
+  final existing = highlight.supabaseId;
+  if (existing != null &&
+      existing.isNotEmpty &&
+      !existing.startsWith('local_')) {
+    return existing;
+  }
+
+  await highlight.book.load();
+  final book = highlight.book.value;
+  if (book == null) return null;
+
+  // Stable UUIDs keyed exactly like import_service_web so they are
+  // deterministic/idempotent and match any rows a web import already created.
+  final bookUuid = _stableUuid('$userId|${book.title}', book.author);
+  final location = highlight.location;
+  final hlUuid = _stableUuid(
+    bookUuid,
+    (location != null && location.isNotEmpty) ? location : highlight.content,
+  );
+
+  try {
+    await service.upsertRawBook(
+      id: bookUuid,
+      userId: userId,
+      title: book.title,
+      author: book.author,
+    );
+    await service.upsertRawHighlight(
+      id: hlUuid,
+      userId: userId,
+      bookId: bookUuid,
+      content: highlight.content,
+      location: highlight.location,
+      addedAt: highlight.addedAt,
+      color: highlight.color,
+    );
+  } catch (_) {
+    return null;
+  }
+
+  // Persist the uuids back into Isar so a re-share short-circuits above.
+  try {
+    await isar.writeTxn(() async {
+      final fresh = await isar.highlights.get(highlightId);
+      if (fresh != null) {
+        fresh.supabaseId = hlUuid;
+        await isar.highlights.put(fresh);
+      }
+      // Promote the book's local placeholder id to the real uuid so future
+      // syncs of its other highlights reuse the same remote book row.
+      if (book.supabaseId.isEmpty || book.supabaseId.startsWith('local_')) {
+        book.supabaseId = bookUuid;
+        await isar.books.put(book);
+      }
+    });
+  } catch (_) {
+    // Non-critical: the remote rows exist; the local mirror is best-effort.
+  }
+
+  return hlUuid;
+}
+
+// Stable UUID from two strings — idempotent, formatted as UUID v4 shape for
+// Supabase. MIRRORS import_service_web.dart's `_stableUuid` exactly.
+String _stableUuid(String a, String b) {
+  final bytes = utf8.encode('$a||$b');
+  final hash = sha256.convert(bytes).toString();
+  return '${hash.substring(0, 8)}-${hash.substring(8, 12)}'
+      '-4${hash.substring(13, 16)}-${hash.substring(16, 20)}'
+      '-${hash.substring(20, 32)}';
+}

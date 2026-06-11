@@ -22,16 +22,18 @@ import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
 import '../auth/email_otp_screen.dart';
 import 'shared/social_auth_buttons.dart';
+import 'steps/import_highlights_step.dart';
 import 'steps/reading_goal_step.dart';
 import 'steps/currently_reading_step.dart';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const _kTotalSteps = 11;
+const _kTotalSteps = 13;
 // Step indices (keep in sync with the PageView children below):
-// 0: Welcome   · 1: Auth   · 2: Username  · 3: Name   · 4: Avatar
-// 5: Cover     · 6: Goal   · 7: Currently · 8: Permissions · 9: Gender · 10: Complete
-const _kStepComplete = 10;
+// 0: Welcome   · 1: Auth      · 2: Username   · 3: ImportHighlights · 4: Name
+// 5: Bio       · 6: Avatar    · 7: Cover      · 8: Goal             · 9: Currently
+// 10: Permissions · 11: Gender · 12: Complete
+const _kStepComplete = 12;
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -76,6 +78,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   // Step 3 — Display name
   final _nameCtrl = TextEditingController();
+
+  // Step — Bio (optional)
+  final _bioCtrl = TextEditingController();
 
   // Step 4 — Avatar
   Uint8List? _avatarBytes;
@@ -160,6 +165,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _passwordCtrl.dispose();
     _usernameCtrl.dispose();
     _nameCtrl.dispose();
+    _bioCtrl.dispose();
     _goalCtrl.dispose();
     _crTitleCtrl.dispose();
     _crAuthorCtrl.dispose();
@@ -372,6 +378,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _complete() async {
     if (_completing) return;
+    // Belt-and-braces: a username is mandatory. If somehow we reached completion
+    // without one (deep-link race, hot-reload), bounce back to the Username step
+    // instead of persisting a usernameless profile.
+    if (_usernameCtrl.text.trim().isEmpty) {
+      _goTo(2);
+      setState(() => _completing = false);
+      return;
+    }
     setState(() => _completing = true);
     HapticFeedback.mediumImpact();
 
@@ -393,9 +407,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await svc.uploadCover(_coverBytes!, _coverExt ?? 'jpg');
       }
 
-      // Update profile (username + display name — avatar/cover already updated by upload methods)
+      // Update profile (username + display name + bio — avatar/cover already updated by upload methods)
       await svc.updateProfileInfo(
         displayName: _nameCtrl.text.trim().isEmpty ? null : _nameCtrl.text.trim(),
+        bio: _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
         username:
             _usernameCtrl.text.trim().isEmpty ? null : _usernameCtrl.text.trim().toLowerCase(),
       );
@@ -524,10 +539,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     checking: _usernameChecking,
                     onChanged: _onUsernameChanged,
                     onContinue: _next,
-                    onSkip: _next,
+                  )),
+                  _StepScroll(child: ImportHighlightsStep(
+                    onContinue: _next,
                   )),
                   _StepScroll(child: _NameStep(
                     nameCtrl: _nameCtrl,
+                    onContinue: _next,
+                    onSkip: _next,
+                  )),
+                  _StepScroll(child: _BioStep(
+                    bioCtrl: _bioCtrl,
                     onContinue: _next,
                     onSkip: _next,
                   )),
@@ -1341,7 +1363,6 @@ class _UsernameStep extends StatelessWidget {
     required this.checking,
     required this.onChanged,
     required this.onContinue,
-    required this.onSkip,
   });
 
   final TextEditingController usernameCtrl;
@@ -1349,7 +1370,6 @@ class _UsernameStep extends StatelessWidget {
   final bool checking;
   final ValueChanged<String> onChanged;
   final VoidCallback onContinue;
-  final VoidCallback onSkip;
 
   Widget _suffixIcon() {
     if (checking) {
@@ -1464,19 +1484,6 @@ class _UsernameStep extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
-
-          TextButton(
-            onPressed: onSkip,
-            child: Text(
-              context.l10n.onboardingSkip,
-              style: GoogleFonts.manrope(
-                color: ScriptaColors.inkMuted,
-                fontSize: 14,
-              ),
-            ),
-          ),
-
           const SizedBox(height: 8),
         ],
       ),
@@ -1535,6 +1542,113 @@ class _NameStep extends StatelessWidget {
             decoration: InputDecoration(
               hintText: context.l10n.authName,
               prefixIcon: const Icon(Icons.person_outline),
+            ),
+          ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
+
+          const Spacer(),
+
+          SizedBox(
+            height: 52,
+            child: FilledButton(
+              onPressed: onContinue,
+              child: Text(
+                context.l10n.onboardingContinue,
+                style: GoogleFonts.manrope(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          TextButton(
+            onPressed: onSkip,
+            child: Text(
+              context.l10n.onboardingSkip,
+              style: GoogleFonts.manrope(
+                color: ScriptaColors.inkMuted,
+                fontSize: 14,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Step: Bio (optional) ─────────────────────────────────────────────────────
+//
+// Modeled on _NameStep — a multiline TextField with Continue + Skip that both
+// simply advance. The bio is persisted in _complete() via updateProfileInfo.
+// Strings inlined it/en (matching _PermissionsStep / _GenderStep) to avoid .arb
+// churn for an onboarding-only field.
+
+class _BioStep extends StatelessWidget {
+  const _BioStep({
+    required this.bioCtrl,
+    required this.onContinue,
+    required this.onSkip,
+  });
+
+  final TextEditingController bioCtrl;
+  final VoidCallback onContinue;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    final title = isIt ? 'Due righe su di te' : 'A line about you';
+    final subtitle = isIt
+        ? 'Racconta cosa ami leggere — lo vedranno gli altri sul tuo profilo. Facoltativo.'
+        : 'Tell readers what you love — it shows on your profile. Optional.';
+    final hint = isIt
+        ? 'Es. Lettrice vorace di saggi e poesia…'
+        : 'e.g. Voracious reader of essays and poetry…';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 16),
+
+          Text(
+            title,
+            style: GoogleFonts.ebGaramond(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              color: ScriptaColors.ink,
+              letterSpacing: -0.4,
+            ),
+          ).animate().fadeIn(duration: 250.ms),
+
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              color: ScriptaColors.inkMuted,
+            ),
+          ).animate().fadeIn(delay: 40.ms, duration: 250.ms),
+
+          const SizedBox(height: 32),
+
+          TextField(
+            controller: bioCtrl,
+            textCapitalization: TextCapitalization.sentences,
+            textInputAction: TextInputAction.newline,
+            keyboardType: TextInputType.multiline,
+            minLines: 3,
+            maxLines: 5,
+            maxLength: 160,
+            decoration: InputDecoration(
+              hintText: hint,
+              alignLabelWithHint: true,
             ),
           ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
 

@@ -563,16 +563,14 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
         (_controller.text.trim().isNotEmpty || _imageBytes != null);
 
     return Container(
-      constraints: BoxConstraints(maxHeight: maxSheetHeight),
+      height: maxSheetHeight,
       decoration: const BoxDecoration(
         color: ScriptaColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 20),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 16),
+      child: Column(
+        children: [
           // Handle
           Container(
             margin: const EdgeInsets.only(top: 12, bottom: 16),
@@ -607,23 +605,30 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           ),
           const SizedBox(height: 14),
 
-          // Text area. A bounded maxHeight keeps the box fully visible (it
-          // scrolls internally past ~6 lines) so it is never clipped at the
-          // bottom, even with the keyboard up.
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: ScriptaColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: ScriptaColors.rule, width: 1),
-            ),
-            child: TextField(
-              controller: _controller,
-              autofocus: true,
-              maxLines: 6,
-              minLines: 3,
-              maxLength: 1000,
+          // Text area FILLS the space between the header and the pinned photo
+          // toolbar, so the box is large and the @mention list / image preview
+          // sit just beneath it -- and the photo button stays always visible
+          // (it used to be a fixed 200px box inside a scroll view, which made
+          // the box tiny and pushed the photo button below the fold).
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: ScriptaColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: ScriptaColors.rule, width: 1),
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      autofocus: true,
+                      expands: true,
+                      maxLines: null,
+                      minLines: null,
+                      textAlignVertical: TextAlignVertical.top,
+                      maxLength: 1000,
               // Return key dismisses the keyboard instead of inserting a
               // newline, per the founder's request ("dopo aver premuto invio").
               textInputAction: TextInputAction.done,
@@ -648,9 +653,10 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                   color: ScriptaColors.inkFaint,
                 ),
               ),
-              onChanged: _onComposerChanged,
-            ),
-          ),
+                      onChanged: _onComposerChanged,
+                    ),
+                  ),
+                ),
 
           // ── @mention suggestions ──────────────────────────────────────────
           // Up to 6 matching users, shown directly under the text box while an
@@ -707,10 +713,13 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
                 ),
               ],
             ),
-          ],
+                ],
+              ],
+            ),
+          ),
 
-          // Toolbar: attach photo
-          const SizedBox(height: 8),
+          // Toolbar: attach photo (pinned -- always visible above the keyboard)
+          const SizedBox(height: 10),
           Row(
             children: [
               GestureDetector(
@@ -741,7 +750,6 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
           ),
           ],
         ),
-      ),
     );
   }
 }

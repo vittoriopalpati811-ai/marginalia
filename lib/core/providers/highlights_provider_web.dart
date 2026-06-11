@@ -37,6 +37,19 @@ final allHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>((ref) 
   }
 });
 
+// ─── Jam-share sync (web) ─────────────────────────────────────────────────────
+//
+// On web, highlights are loaded straight from Supabase and already carry a real
+// uuid in [Highlight.supabaseId] — there is nothing to upload. This stub exists
+// so the conditional export compiles with the same signature the caller uses;
+// it just returns the highlight's existing supabaseId.
+Future<String?> ensureHighlightSynced(WidgetRef ref, int highlightId) async {
+  final all = await ref.read(allHighlightsProvider.future);
+  final highlight = all.where((h) => h.id == highlightId).firstOrNull;
+  final id = highlight?.supabaseId;
+  return (id != null && id.isNotEmpty) ? id : null;
+}
+
 class HighlightFavoriteNotifier extends Notifier<void> {
   @override
   void build() {}

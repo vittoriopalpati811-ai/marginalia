@@ -428,11 +428,18 @@ class SupabaseService {
   }
 
   Future<void> shareHighlightInJam(String jamId, String highlightId) async {
-    await _client.from('jam_highlights').upsert({
-      'jam_id': jamId,
-      'highlight_id': highlightId,
-      'shared_by': userId,
-    });
+    // jam_highlights has a synthetic `id` PK plus a UNIQUE(jam_id, highlight_id)
+    // constraint (jam_highlights_jam_highlight_unique). Target that unique on
+    // conflict so re-sharing the same highlight is idempotent instead of
+    // throwing a unique-violation on the second share.
+    await _client.from('jam_highlights').upsert(
+      {
+        'jam_id': jamId,
+        'highlight_id': highlightId,
+        'shared_by': userId,
+      },
+      onConflict: 'jam_id,highlight_id',
+    );
   }
 
   Future<List<Map<String, dynamic>>> fetchJamHighlights(String jamId) async {

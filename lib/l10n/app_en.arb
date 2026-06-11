@@ -194,6 +194,7 @@
   "jamCopiedToClipboard": "Code copied to clipboard!",
   "jamCoverUpdated": "Jam cover updated!",
   "jamHighlightShared": "Highlight shared in the Jam!",
+  "jamShareSyncFailed": "Couldn't sync this highlight. Try again.",
   "jamNoHighlightsAvailable": "No highlights available. Import a Kindle file first.",
   "jamShareHighlightCta": "Share a highlight",
   "jamShareCode": "Share this code with your friends",

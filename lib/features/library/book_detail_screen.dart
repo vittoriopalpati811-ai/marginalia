@@ -641,7 +641,12 @@ void _showCoverUploadingOverlay(BuildContext context, bool it) {
     context: context,
     barrierDismissible: false,
     builder: (_) => Center(
-      child: Container(
+      // Material ancestor: without it the Text below renders with the yellow
+      // "missing Material" debug underline (this dialog returns a raw Container,
+      // not an AlertDialog/Dialog which would supply Material themselves).
+      child: Material(
+        type: MaterialType.transparency,
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
         decoration: BoxDecoration(
           color: ScriptaColors.surface,
@@ -676,6 +681,7 @@ void _showCoverUploadingOverlay(BuildContext context, bool it) {
             ),
           ],
         ),
+      ),
       ),
     ),
   );

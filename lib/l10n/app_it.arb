@@ -608,6 +608,9 @@
   "jamHighlightShared": "Highlight condiviso nella Jam!",
   "@jamHighlightShared": {},
 
+  "jamShareSyncFailed": "Impossibile sincronizzare questo highlight. Riprova.",
+  "@jamShareSyncFailed": {},
+
   "jamNoHighlightsAvailable": "Nessun highlight disponibile. Importa prima un file Kindle.",
   "@jamNoHighlightsAvailable": {},
 

@@ -283,13 +283,26 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           Navigator.pop(ctx);
           final service = ref.read(supabaseServiceProvider);
           try {
-            await service.shareHighlightInJam(
-              widget.jamId,
-              (highlight.supabaseId != null &&
-                      (highlight.supabaseId as String).isNotEmpty)
-                  ? highlight.supabaseId as String
-                  : '${highlight.id}',
-            );
+            // Native highlights live only in Isar and carry no Supabase uuid,
+            // so upload the book + highlight with stable uuids first and use the
+            // returned highlight uuid. jam_highlights.highlight_id is a uuid FK
+            // to highlights(id); sending the Isar int id ("16") throws 22P02.
+            // On web this returns the already-present supabaseId immediately.
+            final hlUuid =
+                await ensureHighlightSynced(ref, highlight.id as int);
+            if (hlUuid == null || hlUuid.isEmpty) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      context.l10n.errorPrefix(context.l10n.jamShareSyncFailed),
+                    ),
+                  ),
+                );
+              }
+              return;
+            }
+            await service.shareHighlightInJam(widget.jamId, hlUuid);
             ref.invalidate(jamHighlightsProvider(widget.jamId));
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
