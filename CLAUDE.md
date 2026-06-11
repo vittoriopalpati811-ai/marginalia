@@ -186,11 +186,11 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   max,window)` (mig 039) RAISES when a caller exceeds the budget. Live coverage:
   per-write antispam triggers on posts/comments/messages/follows/jam-comments
   (039) PLUS jams/reviews/jam-content (mig **064**), and a per-user throttle
-  inside the expensive edge functions. **`semantic-search` + `pick-daily-highlight`
-  are DEPLOYED with the throttle; `recommend-books` + `send-push-notification`
-  are hardened in the repo but the deploy is PENDING** (their files are too large
-  to hand-inline through the MCP — run `supabase functions deploy recommend-books
-  send-push-notification`, or re-deploy from the repo, to finish). Mig 064 also
+  inside the expensive edge functions. **All four are now DEPLOYED with the
+  per-user throttle** (semantic-search + pick-daily-highlight via MCP;
+  recommend-books + send-push-notification via the dashboard Code editor,
+  2026-06-11 — paste the repo source into Functions → Code → Deploy when the
+  files are too large to hand-inline through the MCP). Mig 064 also
   adds length CHECKs on every user-text column and locks `amazon_sync_scripts`
   writes to service-role only.
 - Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `064`. When you
