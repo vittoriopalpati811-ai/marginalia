@@ -47,6 +47,35 @@ async function requireUser(req: Request): Promise<{ id: string } | null> {
   return { id: data.user.id };
 }
 
+// Per-user rate limit via check_rate_limit (RAISES on exceed). true = limited;
+// fails OPEN on any other error so a glitch never blocks a real user.
+async function isRateLimited(
+  req: Request,
+  action: string,
+  max: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  try {
+    const jwt = (req.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!jwt) return false;
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+    );
+    const { error } = await sb.rpc("check_rate_limit", {
+      p_action: action,
+      p_max: max,
+      p_window_seconds: windowSeconds,
+    });
+    return !!error;
+  } catch (_) {
+    return false;
+  }
+}
+
 // The built-in embedding model. Lives at module scope so it is initialised once
 // per isolate, not per request.
 // deno-lint-ignore no-explicit-any
@@ -77,6 +106,15 @@ Deno.serve(async (req) => {
 
   const mode = body.mode;
 
+  // Per-user throttle on the Supabase.ai embedding compute (index loops up to
+  // 200 embeds/call; search runs one). Graceful empty shapes the client expects.
+  if (mode === "index" && (await isRateLimited(req, "semantic_index", 10, 3600))) {
+    return jsonResponse({ embedded: 0, remaining: 0, rate_limited: true });
+  }
+  if (mode === "search" && (await isRateLimited(req, "semantic_search", 60, 3600))) {
+    return jsonResponse({ results: [], rate_limited: true });
+  }
+
   try {
     // ── INDEX: embed the caller's un-embedded highlights ────────────────────
     if (mode === "index") {
@@ -87,7 +125,10 @@ Deno.serve(async (req) => {
         .eq("user_id", caller.id)
         .is("embedding", null)
         .limit(limit);
-      if (error) return jsonResponse({ error: error.message }, 500);
+      if (error) {
+        console.error("semantic-search index select:", error);
+        return jsonResponse({ error: "internal_error" }, 500);
+      }
 
       let embedded = 0;
       for (const r of rows ?? []) {
@@ -121,7 +162,10 @@ Deno.serve(async (req) => {
         p_query_embedding: vec,
         p_match_count: matchCount,
       });
-      if (error) return jsonResponse({ results: [], error: error.message }, 200);
+      if (error) {
+        console.error("semantic-search match:", error);
+        return jsonResponse({ results: [] }, 200);
+      }
 
       const list = (matches ?? []) as Array<{ id: string; content: string; book_id: string | null; location: string | null; similarity: number }>;
       const bookIds = [...new Set(list.map((m) => m.book_id).filter(Boolean))] as string[];
@@ -146,6 +190,7 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ error: "unknown mode (use 'index' or 'search')" }, 400);
   } catch (e) {
-    return jsonResponse({ error: "internal error", detail: String(e) }, 500);
+    console.error("semantic-search:", e);
+    return jsonResponse({ error: "internal_error" }, 500);
   }
 });

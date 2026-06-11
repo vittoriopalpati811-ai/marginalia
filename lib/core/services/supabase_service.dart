@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
@@ -700,8 +700,9 @@ class SupabaseService {
       return 0;
     } catch (e) {
       // Non-fatal: stats just won't be auto-populated this round.
-      // ignore: avoid_print
-      print('[inferReadingSessions] $e');
+      // debugPrint (not print): stripped/throttled in release so it can't leak
+      // to device logs visible to other apps.
+      debugPrint('[inferReadingSessions] $e');
       return 0;
     }
   }
@@ -2382,9 +2383,9 @@ class SupabaseService {
       );
     } catch (e) {
       // Swallow but log — the badge will just stay until the next
-      // pull-to-refresh in the rare case the RPC fails.
-      // ignore: avoid_print
-      print('[markConversationRead] $e');
+      // pull-to-refresh in the rare case the RPC fails. debugPrint (not print):
+      // stripped/throttled in release, so nothing leaks to device logs.
+      debugPrint('[markConversationRead] $e');
     }
   }
 

@@ -74,6 +74,35 @@ async function requireUser(req: Request): Promise<{ id: string } | null> {
   return { id: data.user.id };
 }
 
+// Per-user rate limit via check_rate_limit (RAISES on exceed). true = limited;
+// fails OPEN on any other error so a glitch never blocks legitimate pushes.
+async function isRateLimited(
+  req: Request,
+  action: string,
+  max: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  try {
+    const jwt = (req.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!jwt) return false;
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+    );
+    const { error } = await sb.rpc("check_rate_limit", {
+      p_action: action,
+      p_max: max,
+      p_window_seconds: windowSeconds,
+    });
+    return !!error;
+  } catch (_) {
+    return false;
+  }
+}
+
 // ─── APNs JWT helper ──────────────────────────────────────────────────────────
 
 // base64URL-encode a Latin-1/binary string for JWT segments (RFC 7515): the
@@ -174,6 +203,14 @@ serve(async (req) => {
   const caller = await requireUser(req);
   if (!caller) {
     return jsonResponse({ error: "unauthorized" }, 401);
+  }
+
+  // Per-user push throttle: a user can otherwise loop this against their many
+  // jam-mates / group members to generate large APNs volume. Generous cap; if
+  // hit, the push is skipped (sent:0) but the in-app notification already landed
+  // and every caller treats push as best-effort, so nothing breaks.
+  if (await isRateLimited(req, "push_send", 200, 3600)) {
+    return jsonResponse({ sent: 0, message: "rate_limited" }, 200);
   }
 
   const teamId = Deno.env.get("APNS_TEAM_ID");

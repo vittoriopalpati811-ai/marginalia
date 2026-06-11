@@ -32,6 +32,12 @@ Deno.serve(async (req) => {
     return json({ error: "unauthorized" }, 401);
   }
 
+  // Per-user throttle on the shared Groq LLM (see recommend-books). Graceful:
+  // selectedIndex 0 just shows the first highlight, which the client expects.
+  if (await isRateLimited(req, "daily_highlight", 20, 86400)) {
+    return json({ selectedIndex: 0, rate_limited: true });
+  }
+
   let body: {
     highlights?: HighlightInput[];
     context?: Record<string, unknown>;
@@ -189,6 +195,35 @@ async function requireUser(req: Request): Promise<{ id: string } | null> {
   const { data, error } = await supabase.auth.getUser(jwt);
   if (error || !data?.user) return null;
   return { id: data.user.id };
+}
+
+// Per-user rate limit via check_rate_limit (RAISES when the caller exceeds the
+// budget). true = limited; fails OPEN on any other error.
+async function isRateLimited(
+  req: Request,
+  action: string,
+  max: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  try {
+    const jwt = (req.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!jwt) return false;
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+    );
+    const { error } = await supabase.rpc("check_rate_limit", {
+      p_action: action,
+      p_max: max,
+      p_window_seconds: windowSeconds,
+    });
+    return !!error;
+  } catch (_) {
+    return false;
+  }
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────

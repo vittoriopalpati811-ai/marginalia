@@ -178,7 +178,22 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 - Edge functions: `send-push-notification` (APNs, server-derives recipient),
   `recommend-books`, `semantic-search`, `pick-daily-highlight`, `moderate-image`,
   `parse-clippings`, and **`admin-metrics`** (founder console — see §8).
-- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `063`. When you
+  ⚠️ **`moderate-image` + `admin-metrics` are deployed-only — NOT in
+  `supabase/functions/`** (source drift). `moderate-image` is a Guideline-1.2
+  safety feature; pull its source into the repo so a from-repo redeploy can't
+  silently drop image moderation.
+- **Rate limiting (security hardening, 2026-06-11):** `check_rate_limit(action,
+  max,window)` (mig 039) RAISES when a caller exceeds the budget. Live coverage:
+  per-write antispam triggers on posts/comments/messages/follows/jam-comments
+  (039) PLUS jams/reviews/jam-content (mig **064**), and a per-user throttle
+  inside the expensive edge functions. **`semantic-search` + `pick-daily-highlight`
+  are DEPLOYED with the throttle; `recommend-books` + `send-push-notification`
+  are hardened in the repo but the deploy is PENDING** (their files are too large
+  to hand-inline through the MCP — run `supabase functions deploy recommend-books
+  send-push-notification`, or re-deploy from the repo, to finish). Mig 064 also
+  adds length CHECKs on every user-text column and locks `amazon_sync_scripts`
+  writes to service-role only.
+- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `064`. When you
   apply something live via MCP, **also write the migration file** (drift bit us
   once — the live RPC existed but no migration captured it).
 - Supabase MCP tools are available: `execute_sql`, `apply_migration`,

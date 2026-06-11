@@ -76,6 +76,14 @@ Deno.serve(async (req) => {
     return json({ error: "unauthorized" }, 401);
   }
 
+  // Per-user throttle: the Groq free tier is shared org-wide and was already
+  // exhausted in production, so one scripted abuser could deny the AI feature
+  // for everyone. Generous cap; degrades gracefully (the client already handles
+  // an empty recommendations list).
+  if (await isRateLimited(req, "recommend_books", 20, 86400)) {
+    return json({ recommendations: [], rate_limited: true });
+  }
+
   let body: {
     books?: InputBook[];
     existingTitles?: string[];
@@ -655,6 +663,37 @@ async function requireUser(req: Request): Promise<{ id: string } | null> {
   const { data, error } = await supabase.auth.getUser(jwt);
   if (error || !data?.user) return null;
   return { id: data.user.id };
+}
+
+// Per-user rate limit via the shared check_rate_limit RPC, which RAISES when
+// the caller exceeds [max] events in the trailing [windowSeconds]. Returns true
+// (= limited) only on that raise; fails OPEN on any other error so a limiter
+// glitch never blocks a legitimate user.
+async function isRateLimited(
+  req: Request,
+  action: string,
+  max: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  try {
+    const jwt = (req.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!jwt) return false;
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+    );
+    const { error } = await supabase.rpc("check_rate_limit", {
+      p_action: action,
+      p_max: max,
+      p_window_seconds: windowSeconds,
+    });
+    return !!error;
+  } catch (_) {
+    return false;
+  }
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
