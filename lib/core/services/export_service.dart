@@ -229,7 +229,7 @@ class ExportService {
     final date = DateFormat('yyyyMMdd').format(DateTime.now());
     await writeAndShareCsv(
       csv: csv,
-      filename: 'marginalia_reading_tracker_$date.csv',
+      filename: 'scripta_reading_tracker_$date.csv',
       subject: 'Scripta — Reading Tracker (CSV)',
       sharePositionOrigin: sharePositionOrigin,
     );
@@ -246,7 +246,7 @@ class ExportService {
     final date = DateFormat('yyyyMMdd').format(DateTime.now());
     await writeAndShareMarkdown(
       markdown: markdown,
-      filename: 'marginalia_export_$date.md',
+      filename: 'scripta_export_$date.md',
       subject: 'Scripta — Export completo',
       sharePositionOrigin: sharePositionOrigin,
     );
@@ -271,7 +271,7 @@ class ExportService {
         .replaceAll(RegExp(r'^_+|_+$'), '');
     await writeAndShareMarkdown(
       markdown: markdown,
-      filename: 'marginalia_${slug.isEmpty ? 'libro' : slug}.md',
+      filename: 'scripta_${slug.isEmpty ? 'book' : slug}.md',
       subject: 'Highlight: $bookTitle',
       sharePositionOrigin: sharePositionOrigin,
     );

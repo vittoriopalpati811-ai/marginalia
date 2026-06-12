@@ -128,9 +128,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (user == null) return const _UnauthenticatedProfile();
 
+    final email = user.email ?? '';
     final initial = displayName.isNotEmpty
         ? displayName[0].toUpperCase()
-        : user.email?[0].toUpperCase() ?? 'L';
+        : (email.isNotEmpty ? email[0].toUpperCase() : 'L');
 
     return Scaffold(
       backgroundColor: ScriptaColors.background,

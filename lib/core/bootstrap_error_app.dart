@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
 
 /// A self-contained screen shown when app bootstrap fails.
@@ -25,6 +27,12 @@ class BootstrapErrorApp extends StatelessWidget {
   static const _inkMuted = Color(0xFF6B6B6B);
   static const _panel = Color(0xFFF0EEE8);
   static const _accent = Color(0xFF4A7A35); // matcha green
+
+  /// Best-effort locale check WITHOUT the localization system (which may be the
+  /// very thing that failed). `PlatformDispatcher.locale` comes from dart:ui and
+  /// is always available, so even this emergency screen respects IT vs EN.
+  bool get _isItalian =>
+      PlatformDispatcher.instance.locale.languageCode == 'it';
 
   String get _detail {
     final buffer = StringBuffer(error.toString());
@@ -66,9 +74,11 @@ class BootstrapErrorApp extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    const Text(
-                      "Non siamo riusciti\nad aprire l'app",
-                      style: TextStyle(
+                    Text(
+                      _isItalian
+                          ? "Non siamo riusciti\nad aprire l'app"
+                          : "We couldn't\nopen the app",
+                      style: const TextStyle(
                         fontFamily: 'serif',
                         fontSize: 28,
                         height: 1.2,
@@ -77,12 +87,17 @@ class BootstrapErrorApp extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      "C'è stato un problema durante l'avvio. Tocca "
-                      '"Riprova". Se succede di nuovo, fai uno screenshot di '
-                      'questa schermata e invialo allo sviluppatore: contiene '
-                      "il dettaglio dell'errore.",
-                      style: TextStyle(
+                    Text(
+                      _isItalian
+                          ? "C'è stato un problema durante l'avvio. Tocca "
+                              '"Riprova". Se succede di nuovo, fai uno screenshot '
+                              'di questa schermata e invialo allo sviluppatore: '
+                              "contiene il dettaglio dell'errore."
+                          : 'Something went wrong while starting up. Tap '
+                              '"Retry". If it happens again, take a screenshot of '
+                              'this screen and send it to the developer — it '
+                              'contains the error details.',
+                      style: const TextStyle(
                         fontSize: 15.5,
                         height: 1.5,
                         color: _inkMuted,
@@ -99,9 +114,11 @@ class BootstrapErrorApp extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'DETTAGLIO TECNICO',
-                            style: TextStyle(
+                          Text(
+                            _isItalian
+                                ? 'DETTAGLIO TECNICO'
+                                : 'TECHNICAL DETAILS',
+                            style: const TextStyle(
                               fontSize: 10.5,
                               letterSpacing: 1.2,
                               fontWeight: FontWeight.w700,
@@ -135,9 +152,9 @@ class BootstrapErrorApp extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
-                            'Riprova',
-                            style: TextStyle(
+                          child: Text(
+                            _isItalian ? 'Riprova' : 'Retry',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
