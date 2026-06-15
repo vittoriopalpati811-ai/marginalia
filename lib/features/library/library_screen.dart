@@ -18,6 +18,8 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
+import '../profile/profile_shared_widgets.dart'
+    show favCoversProvider, favCoverKey;
 import 'recommendations_section.dart';
 import '../../core/services/recs_cache.dart';
 import '../search/highlight_search_screen.dart';
@@ -1032,7 +1034,7 @@ class _Chip extends StatelessWidget {
 
 // ─── Book grid card ───────────────────────────────────────────────────────────
 
-class _BookGridCard extends StatelessWidget {
+class _BookGridCard extends ConsumerWidget {
   const _BookGridCard({
     required this.book,
     required this.index,
@@ -1044,7 +1046,18 @@ class _BookGridCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // A custom cover (user_book_covers) wins over the Kindle/Isar cover so a
+    // cover set from the profile favourites — or any other surface — shows in
+    // the library grid too (multidirectional cover sync).
+    final customCover = ref
+        .watch(favCoversProvider(null))
+        .asData
+        ?.value[favCoverKey(book.title, book.author)];
+    final cover = (customCover != null && customCover.isNotEmpty)
+        ? customCover
+        : book.coverUrl;
+
     // PressableSpring → Airbnb-style press feedback (scale + spring restore).
     // Hero → shared-element transition: the cover animates from this grid
     // cell to the same Hero tag in BookDetailScreen.
@@ -1067,13 +1080,13 @@ class _BookGridCard extends StatelessWidget {
                   child: BookEditorialCover(
                     title: book.title,
                     author: book.author,
-                    coverUrl: book.coverUrl,
+                    coverUrl: cover,
                   ),
                 ),
                 child: BookEditorialCover(
                   title: book.title,
                   author: book.author,
-                  coverUrl: book.coverUrl,
+                  coverUrl: cover,
                   borderRadius: const BorderRadius.only(
                     topLeft:  Radius.circular(15),
                     topRight: Radius.circular(15),

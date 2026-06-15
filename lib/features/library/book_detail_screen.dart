@@ -18,7 +18,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import '../../core/providers/books_provider.dart';
-import '../profile/profile_shared_widgets.dart' show favCoversProvider;
+import '../profile/profile_shared_widgets.dart'
+    show favCoversProvider, favCoverKey;
 import '../profile/fav_books_actions.dart';
 import '../../core/services/supabase_service.dart'
     show ImageModerationException;
@@ -48,6 +49,18 @@ class BookDetailScreen extends ConsumerWidget {
         }
 
         final coverColor = ScriptaDecorations.bookCoverColor(book.title);
+
+        // A custom cover (user_book_covers) wins over the Kindle/Isar cover, so
+        // a cover the reader set from ANY surface — the profile favourites grid,
+        // a review, here — shows on the library hero too. This is what makes the
+        // cover flow multidirectional rather than library-only.
+        final customCover = ref
+            .watch(favCoversProvider(null))
+            .asData
+            ?.value[favCoverKey(book.title, book.author)];
+        final heroCover = (customCover != null && customCover.isNotEmpty)
+            ? customCover
+            : book.coverUrl;
 
         final highlightCount = highlightsAsync.maybeWhen(
           data: (h) => h.length,
@@ -88,14 +101,14 @@ class BookDetailScreen extends ConsumerWidget {
                       child: BookEditorialCover(
                         title: book.title,
                         author: book.author,
-                        coverUrl: book.coverUrl,
+                        coverUrl: heroCover,
                       ),
                     ),
                   ),
                   child: BookEditorialCover(
                     title: book.title,
                     author: book.author,
-                    coverUrl: book.coverUrl,
+                    coverUrl: heroCover,
                   ),
                 ),
               ),
