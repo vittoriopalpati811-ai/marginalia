@@ -1681,24 +1681,36 @@ class SupabaseService {
   /// can change the title. Returns the trimmed title that was persisted.
   Future<String> updateJamTitle(String jamId, String title) async {
     final trimmed = title.trim();
-    await _client
+    // .select() so an RLS/owner-filter rejection (0 rows) surfaces as an error
+    // instead of a silent success — otherwise the caller would optimistically
+    // show a title the DB never persisted.
+    final rows = await _client
         .from('jams')
         .update({'title': trimmed})
         .eq('id', jamId)
-        .eq('owner_id', userId!);
+        .eq('owner_id', userId!)
+        .select('id');
+    if ((rows as List).isEmpty) {
+      throw StateError('Not allowed to edit this jam');
+    }
     return trimmed;
   }
 
   /// Owner-only: set/clear a Jam's free-text description (shown under the jam
   /// header). RLS + the explicit owner_id filter keep it owner-only. An empty
-  /// string clears it (stored as NULL). Returns the trimmed value.
+  /// string clears it (stored as NULL). Returns the trimmed value. Throws if the
+  /// update affected no row (not the owner) so the UI never shows a false save.
   Future<String> updateJamDescription(String jamId, String description) async {
     final trimmed = description.trim();
-    await _client
+    final rows = await _client
         .from('jams')
         .update({'description': trimmed.isEmpty ? null : trimmed})
         .eq('id', jamId)
-        .eq('owner_id', userId!);
+        .eq('owner_id', userId!)
+        .select('id');
+    if ((rows as List).isEmpty) {
+      throw StateError('Not allowed to edit this jam');
+    }
     return trimmed;
   }
 
