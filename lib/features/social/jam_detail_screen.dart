@@ -101,6 +101,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   /// instantly without waiting for the provider round-trip.
   String? _liveTitle;
 
+  /// Locally-applied description after an owner edit, so it shows instantly.
+  /// Null means "use the value from the loaded jam".
+  String? _liveDescription;
+
   /// The title currently shown in the header — the freshest value we have.
   String get _displayTitle => _liveTitle ?? widget.jamName;
 
@@ -173,81 +177,168 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     }
   }
 
+  // ── Remove a shared highlight (its sharer, or the jam owner) ─────────────────
+
+  Future<void> _deleteJamHighlight(Map<String, dynamic> data) async {
+    final highlightId = data['highlight_id'] as String?;
+    if (highlightId == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final it = Localizations.localeOf(context).languageCode == 'it';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(it ? 'Rimuovere la citazione?' : 'Remove highlight?',
+            style: const TextStyle(fontWeight: FontWeight.w700)),
+        content: Text(
+          it
+              ? 'Verrà rimossa da questa jam per tutti.'
+              : 'It will be removed from this jam for everyone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB3503F)),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: Text(it ? 'Rimuovi' : 'Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref
+          .read(supabaseServiceProvider)
+          .deleteJamHighlight(widget.jamId, highlightId);
+      if (!mounted) return;
+      ref.invalidate(jamHighlightsProvider(widget.jamId));
+      messenger.showSnackBar(
+        SnackBar(content: Text(it ? 'Citazione rimossa' : 'Highlight removed')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(l10n.errorPrefix('$e'))));
+    }
+  }
+
   // ── Rename Jam (owner only) ──────────────────────────────────────────────────
 
   Future<void> _renameJam() async {
     // Capture context-bound objects before the async dialog gap.
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
-    final controller = TextEditingController(text: _displayTitle);
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    final nameController = TextEditingController(text: _displayTitle);
+    // Seed the description from the freshest value we have (local override else
+    // the loaded jam row).
+    final loadedDesc = ref
+        .read(jamDetailProvider(widget.jamId))
+        .asData
+        ?.value?['description'] as String?;
+    final currentDesc = (_liveDescription ?? loadedDesc ?? '').trim();
+    final descController = TextEditingController(text: currentDesc);
 
-    final newTitle = await showDialog<String>(
+    InputDecoration deco(String hint) => InputDecoration(
+          hintText: hint,
+          counterText: '',
+          filled: true,
+          fillColor: ScriptaColors.surfaceElevated,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide:
+                const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
+          ),
+        );
+
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
-          l10n.jamRenameTitle,
+          it ? 'Modifica jam' : 'Edit jam',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 60,
-          textCapitalization: TextCapitalization.sentences,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (value) => Navigator.pop(dialogCtx, value),
-          decoration: InputDecoration(
-            hintText: l10n.jamNameHint,
-            counterText: '',
-            filled: true,
-            fillColor: ScriptaColors.surfaceElevated,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              maxLength: 60,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.next,
+              decoration: deco(l10n.jamNameHint),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
+            const SizedBox(height: 12),
+            TextField(
+              controller: descController,
+              maxLength: 200,
+              minLines: 2,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: deco(
+                  it ? 'Descrizione (facoltativa)' : 'Description (optional)'),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
-            ),
-          ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: Text(l10n.cancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, controller.text),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: Text(l10n.save),
           ),
         ],
       ),
     );
 
-    controller.dispose();
+    final newTitle = nameController.text.trim();
+    final newDesc = descController.text.trim();
+    nameController.dispose();
+    descController.dispose();
 
-    final trimmed = newTitle?.trim() ?? '';
-    if (trimmed.isEmpty || trimmed == _displayTitle) return;
+    if (confirmed != true) return;
 
+    final titleChanged = newTitle.isNotEmpty && newTitle != _displayTitle;
+    final descChanged = newDesc != currentDesc;
+    if (!titleChanged && !descChanged) return;
+
+    final svc = ref.read(supabaseServiceProvider);
     try {
-      final saved = await ref
-          .read(supabaseServiceProvider)
-          .updateJamTitle(widget.jamId, trimmed);
+      if (titleChanged) {
+        final savedTitle = await svc.updateJamTitle(widget.jamId, newTitle);
+        if (mounted) setState(() => _liveTitle = savedTitle);
+      }
+      if (descChanged) {
+        final savedDesc =
+            await svc.updateJamDescription(widget.jamId, newDesc);
+        if (mounted) setState(() => _liveDescription = savedDesc);
+      }
       if (!mounted) return;
-      setState(() => _liveTitle = saved);
       ref.invalidate(jamDetailProvider(widget.jamId));
-      // Also refresh the Jams list (social tab) so the new name shows
-      // immediately there instead of only after an app restart.
+      // Also refresh the Jams list (social tab) so the new name shows there.
       ref.invalidate(jamsProvider);
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.jamRenamed)),
+        SnackBar(content: Text(it ? 'Jam aggiornata' : 'Jam updated')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -356,10 +447,6 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     final membersAsync = ref.watch(jamMembersProvider(widget.jamId));
     final jamDetailAsync = ref.watch(jamDetailProvider(widget.jamId));
     final prompt = WeeklyPrompt.current(context);
-    final unreadCount = ref.watch(unreadNotificationCountProvider).maybeWhen(
-      data: (n) => n,
-      orElse: () => 0,
-    );
 
     final inviteCode = jamDetailAsync.maybeWhen(
       data: (j) => j?['invite_code'] as String?,
@@ -382,6 +469,13 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     );
     final isOwner =
         ownerId != null && ownerId == ref.read(supabaseServiceProvider).userId;
+    final myId = ref.read(supabaseServiceProvider).userId;
+
+    final jamDescription = _liveDescription ??
+        jamDetailAsync.maybeWhen(
+          data: (j) => (j?['description'] as String?)?.trim(),
+          orElse: () => null,
+        );
 
     return Scaffold(
       backgroundColor: ScriptaColors.background,
@@ -406,34 +500,6 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               statusBarColor: Colors.transparent,
             ),
             actions: [
-              // Notification bell with unread dot
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_rounded),
-                    tooltip: context.l10n.notificationsTitle,
-                    onPressed: () => context.push('/notifications'),
-                  ),
-                  if (unreadCount > 0)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE64A4A),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: ScriptaColors.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
               // Rename pencil — when a cover photo hides the inline pencil,
               // the owner still gets a rename affordance here in the toolbar.
               if (isOwner && jamCoverUrl != null && jamCoverUrl.isNotEmpty)
@@ -570,7 +636,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                                     minWidth: 40, minHeight: 40),
                                 icon: const Icon(
                                   Icons.edit_rounded,
-                                  color: Color(0xFFF1EEE7),
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
@@ -641,6 +707,23 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               ),
             ),
           ),
+
+          // ── Jam description (when the owner has set one) ────────────────
+          if (jamDescription != null && jamDescription.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 2),
+                child: Text(
+                  jamDescription,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: ScriptaColors.inkMuted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
 
           // ── Prompt settimanale ─────────────────────────────────────────
           SliverToBoxAdapter(
@@ -726,6 +809,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       itemCount: highlights.length,
                       itemBuilder: (ctx, i) {
                         final data = highlights[i];
+                        // The sharer, or the jam owner, may remove a highlight.
+                        final canDelete = isOwner ||
+                            (myId != null && data['shared_by'] == myId);
                         return _JamHighlightCard(
                           data: data,
                           index: i,
@@ -733,6 +819,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                           onMatchTap: (bookTitle) =>
                               _shareHighlight(
                                   filterByBookTitle: bookTitle),
+                          onDelete: canDelete
+                              ? () => _deleteJamHighlight(data)
+                              : null,
                         );
                       },
                     ),
@@ -1554,18 +1643,65 @@ class _SharePickerItem extends StatelessWidget {
 
 // ─── Jam highlight card ────────────────────────────────────────────────────────
 
+/// The "3 dots" overflow menu on a shared-highlight card. Shown only when the
+/// viewer may remove the highlight (its sharer or the jam owner).
+class _JamHighlightMenu extends StatelessWidget {
+  const _JamHighlightMenu({required this.onDelete});
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    return SizedBox(
+      height: 26,
+      width: 30,
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_horiz,
+            size: 18, color: ScriptaColors.inkFaint),
+        padding: EdgeInsets.zero,
+        splashRadius: 18,
+        color: ScriptaColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onSelected: (v) {
+          if (v == 'delete') onDelete();
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem<String>(
+            value: 'delete',
+            child: Row(
+              children: [
+                const Icon(Icons.delete_outline,
+                    size: 17, color: Color(0xFFB3503F)),
+                const SizedBox(width: 8),
+                Text(it ? 'Rimuovi dalla jam' : 'Remove from jam',
+                    style: const TextStyle(
+                        fontSize: 13.5, color: ScriptaColors.ink)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _JamHighlightCard extends ConsumerWidget {
   const _JamHighlightCard({
     required this.data,
     required this.index,
     required this.onTap,
     required this.onMatchTap,
+    this.onDelete,
   });
 
   final Map<String, dynamic> data;
   final int index;
   final VoidCallback onTap;
   final ValueChanged<String> onMatchTap;
+
+  /// Non-null only when the current user may remove this shared highlight
+  /// (its sharer, or the jam owner) — drives the "3 dots" menu.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1619,27 +1755,43 @@ class _JamHighlightCard extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Book info
-                      if (bookTitle.isNotEmpty) ...[
-                        Text(
-                          bookTitle,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: ScriptaColors.primaryDark,
-                            letterSpacing: 0.3,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      // Book info (left) + optional "3 dots" remove menu (right)
+                      if (bookTitle.isNotEmpty || onDelete != null) ...[
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (bookTitle.isNotEmpty) ...[
+                                    Text(
+                                      bookTitle,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: ScriptaColors.primaryDark,
+                                        letterSpacing: 0.3,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (bookAuthor.isNotEmpty)
+                                      Text(
+                                        bookAuthor.toUpperCase(),
+                                        style: ScriptaTextStyles.bookAuthor,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (onDelete != null)
+                              _JamHighlightMenu(onDelete: onDelete!),
+                          ],
                         ),
-                        if (bookAuthor.isNotEmpty)
-                          Text(
-                            bookAuthor.toUpperCase(),
-                            style: ScriptaTextStyles.bookAuthor,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        const SizedBox(height: 8),
+                        if (bookTitle.isNotEmpty) const SizedBox(height: 8),
                       ],
                       // Content
                       Text(

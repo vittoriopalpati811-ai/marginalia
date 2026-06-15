@@ -442,6 +442,17 @@ class SupabaseService {
     );
   }
 
+  /// Removes a highlight that was shared into a jam. RLS (migration 068) allows
+  /// this for the user who shared it OR the jam owner (moderation), so the
+  /// caller doesn't need to pre-check — the DB enforces it.
+  Future<void> deleteJamHighlight(String jamId, String highlightId) async {
+    await _client
+        .from('jam_highlights')
+        .delete()
+        .eq('jam_id', jamId)
+        .eq('highlight_id', highlightId);
+  }
+
   Future<List<Map<String, dynamic>>> fetchJamHighlights(String jamId) async {
     final response = await _client
         .from('jam_highlights')
@@ -1673,6 +1684,19 @@ class SupabaseService {
     await _client
         .from('jams')
         .update({'title': trimmed})
+        .eq('id', jamId)
+        .eq('owner_id', userId!);
+    return trimmed;
+  }
+
+  /// Owner-only: set/clear a Jam's free-text description (shown under the jam
+  /// header). RLS + the explicit owner_id filter keep it owner-only. An empty
+  /// string clears it (stored as NULL). Returns the trimmed value.
+  Future<String> updateJamDescription(String jamId, String description) async {
+    final trimmed = description.trim();
+    await _client
+        .from('jams')
+        .update({'description': trimmed.isEmpty ? null : trimmed})
         .eq('id', jamId)
         .eq('owner_id', userId!);
     return trimmed;
