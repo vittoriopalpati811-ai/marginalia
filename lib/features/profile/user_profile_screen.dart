@@ -813,6 +813,10 @@ class _ReadBooksSection extends ConsumerWidget {
       data: (books) {
         if (books.isEmpty) return const SizedBox.shrink();
         final it = Localizations.localeOf(context).languageCode == 'it';
+        // Watch the owner's custom covers ONCE here (during build), not inside
+        // the lazy itemBuilder — ref.watch outside build asserts in Riverpod.
+        final covers = ref.watch(favCoversProvider(userId)).asData?.value ??
+            const <String, String>{};
         return Padding(
           padding: const EdgeInsets.only(top: 24),
           child: Column(
@@ -845,10 +849,7 @@ class _ReadBooksSection extends ConsumerWidget {
                     if (title.isEmpty) return const SizedBox.shrink();
                     // The owner's custom cover wins, else the stored cover_url,
                     // else the procedural cover — same resolution as everywhere.
-                    final custom = ref
-                        .watch(favCoversProvider(userId))
-                        .asData
-                        ?.value[favCoverKey(title, author)];
+                    final custom = covers[favCoverKey(title, author)];
                     final cover = (custom != null && custom.isNotEmpty)
                         ? custom
                         : b['cover_url']?.toString();
