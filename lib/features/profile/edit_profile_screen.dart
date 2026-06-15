@@ -63,18 +63,6 @@ String _gradientLabel(BuildContext context, String key) => switch (key) {
       _          => context.l10n.gradientSepia,
     };
 
-const _kPatterns = ['none', 'dots', 'lines', 'grid', 'circles'];
-
-// Render-time localized label for a pattern, keyed by the stable pattern id.
-String _patternLabel(BuildContext context, String key) => switch (key) {
-      'none'    => context.l10n.patternNone,
-      'dots'    => context.l10n.patternDots,
-      'lines'   => context.l10n.patternLines,
-      'grid'    => context.l10n.patternGrid,
-      'circles' => context.l10n.patternCircles,
-      _         => context.l10n.patternNone,
-    };
-
 // ─── EditProfileScreen ────────────────────────────────────────────────────────
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -632,84 +620,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 28),
-
-                  // ── Pattern picker ─────────────────────────────────────────
-                  _SectionLabel(context.l10n.editProfilePatternLabel),
-                  const SizedBox(height: 12),
-
-                  SizedBox(
-                    height: 52,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemCount: _kPatterns.length,
-                      itemBuilder: (_, i) {
-                        final pk  = _kPatterns[i];
-                        final sel = pk == _patKey;
-                        return GestureDetector(
-                          onTap: () => setState(() => _patKey = pk),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            width: 64,
-                            decoration: BoxDecoration(
-                              color: sel
-                                  ? ScriptaColors.primaryFaint
-                                  : ScriptaColors.surfaceElevated,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: sel
-                                    ? ScriptaColors.primary
-                                    : ScriptaColors.rule,
-                                width: sel ? 1.5 : 1,
-                              ),
-                            ),
-                            child: Center(
-                              child: pk == 'none'
-                                  ? const Icon(Icons.block,
-                                      size: 18, color: ScriptaColors.inkFaint)
-                                  : SizedBox(
-                                      width: 28,
-                                      height: 28,
-                                      child: CustomPaint(
-                                        painter: _PatternPainter(pk,
-                                            color: ScriptaColors.primary
-                                                .withAlpha(120)),
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    height: 18,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemCount: _kPatterns.length,
-                      itemBuilder: (_, i) {
-                        final pk  = _kPatterns[i];
-                        final sel = pk == _patKey;
-                        return SizedBox(
-                          width: 64,
-                          child: Text(
-                            _patternLabel(context, pk),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                              color: sel
-                                  ? ScriptaColors.primaryDark
-                                  : ScriptaColors.inkFaint,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                   const SizedBox(height: 36),
 
                   // ── Save button ────────────────────────────────────────────
@@ -1015,9 +925,8 @@ class _Field extends StatelessWidget {
 // ─── Pattern painter (same as in my_profile_screen.dart) ─────────────────────
 
 class _PatternPainter extends CustomPainter {
-  _PatternPainter(this.pattern, {this.color});
+  _PatternPainter(this.pattern);
   final String pattern;
-  final Color? color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1025,7 +934,7 @@ class _PatternPainter extends CustomPainter {
     canvas.clipRect(Offset.zero & size);
 
     final paint = Paint()
-      ..color = (color ?? Colors.white).withAlpha(color != null ? 255 : 20)
+      ..color = Colors.white.withAlpha(20)
       ..strokeWidth = 0.6
       ..style = PaintingStyle.stroke;
 
@@ -1080,6 +989,5 @@ class _PatternPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PatternPainter old) =>
-      old.pattern != pattern || old.color != color;
+  bool shouldRepaint(_PatternPainter old) => old.pattern != pattern;
 }

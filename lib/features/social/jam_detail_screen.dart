@@ -394,7 +394,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             pinned: true,
             stretch: true,
             backgroundColor: ScriptaColors.primary,
-            foregroundColor: const Color(0xFFF1EEE7),
+            // Header buttons (back + bell/edit/cover/share) pure white over the
+            // cover image, per founder request.
+            foregroundColor: Colors.white,
             elevation: 0,
             scrolledUnderElevation: 0,
             // Keep status-bar icons white even when the hero image is visible.
@@ -466,6 +468,8 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               collapseMode: CollapseMode.parallax,
               stretchModes: const [StretchMode.blurBackground],
+              // Left-align the jam name (was centred) per founder request.
+              centerTitle: false,
               // Only use FlexibleSpaceBar.title when a cover photo is shown —
               // the no-cover background already renders the name in large type.
               title: (jamCoverUrl != null && jamCoverUrl.isNotEmpty)

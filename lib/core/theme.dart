@@ -578,15 +578,20 @@ ThemeData buildScriptaTheme() {
     ),
 
     // ── SnackBar ─────────────────────────────────────────────────────────────
+    // Sage-green (brand) instead of black, dark ink text for contrast, and a
+    // bottom inset that floats it ABOVE the liquid-glass bottom nav bar
+    // (~64px bar + safe area) instead of overlapping it.
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: ScriptaColors.ink,
+      backgroundColor: ScriptaColors.primary,
       contentTextStyle: GoogleFonts.manrope(
-        color: const Color(0xFFF5F5F5),
+        color: ScriptaColors.ink,
         fontSize: 14,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(16, 5, 16, 100),
+      elevation: 3,
     ),
 
     // ── ListTile ────────────────────────────────────────────────────────────
@@ -768,14 +773,16 @@ ThemeData buildScriptaDarkTheme() {
           const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: ScriptaColorsDark.surfaceElevated,
+      backgroundColor: ScriptaColors.primary,
       contentTextStyle: GoogleFonts.manrope(
-        color: ScriptaColorsDark.ink,
+        color: ScriptaColors.ink,
         fontSize: 14,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       behavior: SnackBarBehavior.floating,
+      insetPadding: const EdgeInsets.fromLTRB(16, 5, 16, 100),
+      elevation: 3,
     ),
     listTileTheme: ListTileThemeData(
       titleTextStyle: GoogleFonts.manrope(

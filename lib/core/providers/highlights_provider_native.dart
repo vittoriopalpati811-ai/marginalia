@@ -71,6 +71,12 @@ class HighlightFavoriteNotifier extends Notifier<void> {
     } catch (_) {
       // swallow — non-critical
     }
+    // Refresh the providers the UI watches so the bookmark/favourite state
+    // flips immediately (the web variant does the same). Without this the Isar
+    // row updates but the highlight-detail icon + favourites list show stale
+    // data — the "mark as favourite" button looked broken.
+    ref.invalidate(highlightByIdProvider(highlightId));
+    ref.invalidate(allHighlightsProvider);
     // Best-effort remote sync so "save to favourites" actually persists for the
     // user (and survives a reinstall). Never crash the UI if it fails offline.
     final id = supabaseId;
