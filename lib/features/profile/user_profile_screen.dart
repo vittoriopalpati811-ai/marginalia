@@ -11,6 +11,9 @@ import '../../core/providers/auth_provider.dart';
 import '../social/report_sheet.dart';
 import 'posts_timeline.dart';
 import 'profile_shared_widgets.dart';
+import 'reviews_tab.dart';
+import '../reader/book_info_screen.dart';
+import '../library/book_cover.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -69,6 +72,18 @@ final _isUserBlockedProvider =
     return ids.contains(userId);
   } catch (_) {
     return false;
+  }
+});
+
+/// The books in [userId]'s library (id/title/author/cover_url), alphabetical.
+/// Used by the visited profile's "read books" shelf.
+final _userBooksProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, userId) async {
+  final svc = ref.watch(supabaseServiceProvider);
+  try {
+    return await svc.fetchUserBooks(userId);
+  } catch (_) {
+    return [];
   }
 });
 
@@ -384,6 +399,18 @@ class _ProfileBody extends ConsumerWidget {
                         SliverToBoxAdapter(
                           child: _FavouritesSection(
                               profile: profile, userId: userId),
+                        ),
+
+                        // (6b) Read books — their library, as a horizontal
+                        // shelf; each cover taps through to the book details
+                        // (plot, genres…). Wears the owner's custom covers.
+                        SliverToBoxAdapter(
+                          child: _ReadBooksSection(userId: userId),
+                        ),
+
+                        // (6c) Reviews this reader has written (read-only).
+                        SliverToBoxAdapter(
+                          child: UserReviewsList(userId: userId),
                         ),
 
                         // (7) Posts timeline
@@ -768,6 +795,121 @@ class _FavouritesSection extends StatelessWidget {
           // custom favourite covers.
           FavBooksGrid(favBooks: favs, ownerUserId: userId),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Read books shelf (their library, horizontal) ────────────────────────────
+
+class _ReadBooksSection extends ConsumerWidget {
+  const _ReadBooksSection({required this.userId});
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final booksAsync = ref.watch(_userBooksProvider(userId));
+    return booksAsync.maybeWhen(
+      data: (books) {
+        if (books.isEmpty) return const SizedBox.shrink();
+        final it = Localizations.localeOf(context).languageCode == 'it';
+        return Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Row(
+                  children: [
+                    Text(it ? 'LIBRI LETTI' : 'READ BOOKS',
+                        style: ScriptaTextStyles.sectionTitle),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                        child: Divider(color: ScriptaColors.ruleFaint)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 172,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: books.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (ctx, i) {
+                    final b = books[i];
+                    final title = b['title']?.toString() ?? '';
+                    final author = b['author']?.toString() ?? '';
+                    if (title.isEmpty) return const SizedBox.shrink();
+                    // The owner's custom cover wins, else the stored cover_url,
+                    // else the procedural cover — same resolution as everywhere.
+                    final custom = ref
+                        .watch(favCoversProvider(userId))
+                        .asData
+                        ?.value[favCoverKey(title, author)];
+                    final cover = (custom != null && custom.isNotEmpty)
+                        ? custom
+                        : b['cover_url']?.toString();
+                    return _ReadBookTile(
+                        title: title, author: author, coverUrl: cover);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _ReadBookTile extends StatelessWidget {
+  const _ReadBookTile(
+      {required this.title, required this.author, this.coverUrl});
+  final String title;
+  final String author;
+  final String? coverUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              BookInfoScreen(title: title, author: author, coverUrl: coverUrl),
+        ),
+      ),
+      child: SizedBox(
+        width: 96,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: 96,
+                height: 132,
+                child: BookEditorialCover(
+                    title: title, author: author, coverUrl: coverUrl),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.manrope(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: ScriptaColors.ink,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

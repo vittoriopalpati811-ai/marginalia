@@ -160,7 +160,8 @@ class FavBookTile extends ConsumerWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => BookInfoScreen(title: title, author: author),
+          builder: (_) =>
+              BookInfoScreen(title: title, author: author, coverUrl: coverUrl),
         ),
       ),
       child: ClipRRect(

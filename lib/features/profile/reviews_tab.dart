@@ -114,6 +114,51 @@ class ReviewsTab extends ConsumerWidget {
   }
 }
 
+// ─── Visited-profile reviews (read-only) ──────────────────────────────────────
+
+/// A specific user's reviews, for the VISITED-profile screen. Renders the same
+/// cards as [ReviewsTab] — each card shows a Report option for non-owners and
+/// the review author's own custom covers — but with no composer or empty-state
+/// CTA. Collapses to nothing when the user has written no reviews (so the
+/// section header is only shown when there is something to show).
+class UserReviewsList extends ConsumerWidget {
+  const UserReviewsList({super.key, required this.userId});
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(userReviewsProvider(userId));
+    return async.maybeWhen(
+      data: (reviews) {
+        if (reviews.isEmpty) return const SizedBox.shrink();
+        final it = Localizations.localeOf(context).languageCode == 'it';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+              child: Row(
+                children: [
+                  Text(it ? 'RECENSIONI' : 'REVIEWS',
+                      style: ScriptaTextStyles.sectionTitle),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                      child: Divider(color: ScriptaColors.ruleFaint)),
+                ],
+              ),
+            ),
+            ...reviews.asMap().entries.map(
+                  (e) => _ReviewCard(review: e.value, index: e.key),
+                ),
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
 // ─── Compose chip (small pill, matches the "Scrivi" pill on the Post tab) ─────
 
 class _ComposeChip extends StatelessWidget {

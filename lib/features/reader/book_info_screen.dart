@@ -16,10 +16,16 @@ import '../library/book_cover.dart';
 /// free). Everything degrades gracefully: if the lookup fails or returns
 /// nothing, the cover + title + author still render.
 class BookInfoScreen extends StatefulWidget {
-  const BookInfoScreen({super.key, required this.title, required this.author});
+  const BookInfoScreen(
+      {super.key, required this.title, required this.author, this.coverUrl});
 
   final String title;
   final String author;
+
+  /// The reader's custom cover for this book (per-user, from user_book_covers),
+  /// so the detail screen shows the same cover the book wears everywhere else.
+  /// Null falls back to the procedural Scripta cover.
+  final String? coverUrl;
 
   @override
   State<BookInfoScreen> createState() => _BookInfoScreenState();
@@ -290,6 +296,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                         child: BookEditorialCover(
                           title: widget.title,
                           author: widget.author,
+                          coverUrl: widget.coverUrl,
                         ),
                       ),
                     ),
