@@ -140,8 +140,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   /// Null means "use the value from the loaded jam".
   String? _liveDescription;
 
-  /// Locally-applied theme colour (hex) after an owner edit, so the tint changes
-  /// instantly. Null means "use the value from the loaded jam".
+  /// Locally-applied theme colour after an owner edit, so the tint changes
+  /// instantly. Null = use the loaded jam value; '' = optimistically CLEARED
+  /// (back to default sage — deliberately NOT null, which would fall through to
+  /// the stale loaded colour); a hex string = a custom colour.
   String? _liveThemeColor;
 
   /// The title currently shown in the header — the freshest value we have.
@@ -2631,11 +2633,13 @@ class _MemberProfileSheet extends StatelessWidget {
               ),
               child: Text(
                 context.l10n.jamOwnerBadge,
-                style: TextStyle(
+                // The "owner" badge stays fixed (sienna family), NOT the jam
+                // theme colour — it's an identity marker, not jam chrome.
+                style: const TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
-                  color: JamTheme.of(context).dark,
+                  color: ScriptaColors.primaryDark,
                 ),
               ),
             ),
