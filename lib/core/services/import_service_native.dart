@@ -36,7 +36,8 @@ class ImportService {
   final String _userId;
   final SupabaseService? _supabase;
 
-  Future<ImportResult> importClippingsText(String rawText) async {
+  Future<ImportResult> importClippingsText(String rawText,
+      {bool skipCloudBackup = false}) async {
     final parser = MyClippingsParser();
     final clippings = parser.parse(rawText);
 
@@ -105,8 +106,10 @@ class ImportService {
     // survive a reinstall / a sign-in on a new device. Native imports used to
     // be LOCAL-ONLY (the founder lost highlights this way) — this is what makes
     // "Restore from cloud" possible. Fire-and-forget + best-effort so a slow or
-    // offline cloud never blocks or fails the fast local import.
-    unawaited(_backupToCloudSafe());
+    // offline cloud never blocks or fails the fast local import. Skipped for
+    // the DEMO import — sample data must never pollute the user's real cloud
+    // library (and then come back via Restore from cloud).
+    if (!skipCloudBackup) unawaited(_backupToCloudSafe());
 
     return ImportResult(
       booksAdded: booksAdded,
@@ -135,6 +138,11 @@ class ImportService {
         await _isar.books.filter().userIdEqualTo(_userId).findAll();
     final bookIdUpdates = <Book, String>{};
     final hlIdUpdates = <Highlight, String>{};
+    // The server enforces UNIQUE(user_id, content_hash) with
+    // content_hash = sha256("bookId content"). Two highlights of the SAME quote
+    // in the same book would collide on the 2nd upsert; skip the duplicate
+    // client-side so the upsert never throws (the content is already covered).
+    final seenHashes = <String>{};
     int synced = 0;
 
     for (final book in books) {
@@ -157,6 +165,13 @@ class ImportService {
           .book((q) => q.idEqualTo(book.id))
           .findAll();
       for (final h in hls) {
+        final contentHash = sha256
+            .convert(utf8.encode('$bookCloudId ${h.content}'))
+            .toString();
+        if (!seenHashes.add(contentHash)) {
+          synced++; // same quote already covered by another highlight
+          continue;
+        }
         final loc = h.location ?? '';
         final hlId =
             _stableUuid(bookCloudId, loc.isNotEmpty ? loc : h.content);
@@ -234,6 +249,12 @@ class ImportService {
             ..author = author
             ..coverUrl = b['cover_url'] as String?
             ..createdAt = DateTime.now();
+          await _isar.books.put(local);
+        } else if (local.supabaseId != cloudId) {
+          // Matched by (title, author): adopt the cloud UUID — its supabaseId
+          // was a local_ placeholder before its first cloud backup, so later
+          // cover/cloud writes target the right row.
+          local.supabaseId = cloudId;
           await _isar.books.put(local);
         }
         bookByCloudId[cloudId] = local;

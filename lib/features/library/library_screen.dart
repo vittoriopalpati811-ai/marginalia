@@ -526,7 +526,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       final isar    = ref.read(isarProvider);
       final supabase = ref.read(supabaseServiceProvider);
       final service = ImportService(isar, userId, supabaseService: supabase);
-      final result  = await service.importClippingsText(rawText);
+      // Demo data stays LOCAL — never mirror sample books to the user's cloud.
+      final result =
+          await service.importClippingsText(rawText, skipCloudBackup: true);
       await supabase.inferReadingSessionsFromHighlights();
       _invalidateAfterImport();
       if (mounted) {

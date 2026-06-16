@@ -29,7 +29,11 @@ class ImportService {
   final String _userId;
   final SupabaseService? _supabase;
 
-  Future<ImportResult> importClippingsText(String rawText) async {
+  Future<ImportResult> importClippingsText(String rawText,
+      {bool skipCloudBackup = false}) async {
+    // skipCloudBackup is ignored on web — there's no local DB to back up and
+    // web imports write straight to the cloud. The param exists only to mirror
+    // the native ImportService signature.
     final svc = _supabase;
     if (svc == null || !svc.isAuthenticated) {
       return const ImportResult(
