@@ -24,17 +24,52 @@ import '../quiz/quiz_screen.dart';
 /// the Ripasso leaderboard's flame colour).
 const _kFlameColor = Color(0xFFD9892F);
 
-/// Sage hero gradient for the Jam header — aligns the colored header with the
-/// Library look (the old `ScriptaDecorations.gradientHeader` was dark forest
-/// green). `primaryDark → primary` keeps the cream header text legible and
-/// matches the collapsed sage app-bar.
-const _kJamHeaderGradient = BoxDecoration(
-  gradient: LinearGradient(
-    colors: [ScriptaColors.primaryDark, ScriptaColors.primary],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  ),
-);
+/// Theme-colour swatches offered in the edit-jam sheet. `null` = the default
+/// sage (clears `theme_color`); the rest are stored as hex strings.
+const _kJamSwatches = <String?>[
+  null, // default sage
+  '#B9897A', // clay
+  '#C77B88', // rose
+  '#D4A24E', // amber
+  '#7E9CB5', // dusty blue
+  '#A88BBE', // lavender
+  '#6FA292', // teal
+  '#8C8FA3', // slate
+];
+
+/// Per-jam theme colour exposed to the whole jam-detail subtree, so the nested
+/// cards/boxes tint themselves without threading the colour through every
+/// constructor. Resolved ONCE in the screen build (default sage when the jam
+/// has no custom `theme_color`). [JamTheme.of] falls back to the default sage
+/// when there's no ancestor (e.g. a modal opened above the subtree), so it is
+/// always safe to call.
+class JamTheme extends InheritedWidget {
+  const JamTheme({
+    super.key,
+    required this.base,
+    required this.dark,
+    required this.faint,
+    required super.child,
+  });
+
+  final Color base;
+  final Color dark;
+  final Color faint;
+
+  static const JamTheme _fallback = JamTheme(
+    base: ScriptaColors.primary,
+    dark: ScriptaColors.primaryDark,
+    faint: ScriptaColors.primaryFaint,
+    child: SizedBox.shrink(),
+  );
+
+  static JamTheme of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<JamTheme>() ?? _fallback;
+
+  @override
+  bool updateShouldNotify(JamTheme old) =>
+      base != old.base || dark != old.dark || faint != old.faint;
+}
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -104,6 +139,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   /// Locally-applied description after an owner edit, so it shows instantly.
   /// Null means "use the value from the loaded jam".
   String? _liveDescription;
+
+  /// Locally-applied theme colour (hex) after an owner edit, so the tint changes
+  /// instantly. Null means "use the value from the loaded jam".
+  String? _liveThemeColor;
 
   /// The title currently shown in the header — the freshest value we have.
   String get _displayTitle => _liveTitle ?? widget.jamName;
@@ -236,14 +275,16 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     final l10n = context.l10n;
     final it = Localizations.localeOf(context).languageCode == 'it';
     final nameController = TextEditingController(text: _displayTitle);
-    // Seed the description from the freshest value we have (local override else
-    // the loaded jam row).
-    final loadedDesc = ref
-        .read(jamDetailProvider(widget.jamId))
-        .asData
-        ?.value?['description'] as String?;
-    final currentDesc = (_liveDescription ?? loadedDesc ?? '').trim();
+    // Seed description + theme colour from the freshest values we have (local
+    // override else the loaded jam row).
+    final loaded = ref.read(jamDetailProvider(widget.jamId)).asData?.value;
+    final currentDesc =
+        (_liveDescription ?? loaded?['description'] as String? ?? '').trim();
     final descController = TextEditingController(text: currentDesc);
+    final currentColor =
+        (_liveThemeColor ?? loaded?['theme_color'] as String?)?.trim();
+    String? selectedColor =
+        (currentColor == null || currentColor.isEmpty) ? null : currentColor;
 
     InputDecoration deco(String hint) => InputDecoration(
           hintText: hint,
@@ -263,56 +304,105 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide:
-                const BorderSide(color: ScriptaColors.primaryDark, width: 1.5),
+                BorderSide(color: JamTheme.of(context).dark, width: 1.5),
           ),
         );
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(
-          it ? 'Modifica jam' : 'Edit jam',
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              autofocus: true,
-              maxLength: 60,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-              decoration: deco(l10n.jamNameHint),
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (dialogCtx, setLocal) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Text(
+            it ? 'Modifica jam' : 'Edit jam',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  maxLength: 60,
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
+                  decoration: deco(l10n.jamNameHint),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descController,
+                  maxLength: 200,
+                  minLines: 2,
+                  maxLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: deco(it
+                      ? 'Descrizione (facoltativa)'
+                      : 'Description (optional)'),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  it ? 'COLORE TEMA' : 'THEME COLOUR',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: ScriptaColors.inkMuted,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (final hex in _kJamSwatches)
+                      GestureDetector(
+                        onTap: () => setLocal(() => selectedColor = hex),
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: hex == null
+                                ? ScriptaColors.primary
+                                : JamColor.parse(hex),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selectedColor == hex
+                                  ? ScriptaColors.ink
+                                  : ScriptaColors.rule,
+                              width: selectedColor == hex ? 2.5 : 1,
+                            ),
+                          ),
+                          child: selectedColor == hex
+                              ? const Icon(Icons.check,
+                                  size: 18, color: Colors.white)
+                              : null,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descController,
-              maxLength: 200,
-              minLines: 2,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: deco(
-                  it ? 'Descrizione (facoltativa)' : 'Description (optional)'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogCtx, true),
+              child: Text(l10n.save),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            child: Text(l10n.save),
-          ),
-        ],
       ),
     );
 
     final newTitle = nameController.text.trim();
     final newDesc = descController.text.trim();
+    final newColor = selectedColor;
     nameController.dispose();
     descController.dispose();
 
@@ -320,7 +410,8 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
 
     final titleChanged = newTitle.isNotEmpty && newTitle != _displayTitle;
     final descChanged = newDesc != currentDesc;
-    if (!titleChanged && !descChanged) return;
+    final colorChanged = (newColor ?? '') != (currentColor ?? '');
+    if (!titleChanged && !descChanged && !colorChanged) return;
 
     final svc = ref.read(supabaseServiceProvider);
     try {
@@ -332,6 +423,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
         final savedDesc =
             await svc.updateJamDescription(widget.jamId, newDesc);
         if (mounted) setState(() => _liveDescription = savedDesc);
+      }
+      if (colorChanged) {
+        await svc.updateJamColor(widget.jamId, newColor);
+        if (mounted) setState(() => _liveThemeColor = newColor ?? '');
       }
       if (!mounted) return;
       ref.invalidate(jamDetailProvider(widget.jamId));
@@ -477,9 +572,36 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           orElse: () => null,
         );
 
+    // Per-jam theme colour, resolved once. A NULL/empty theme_color keeps the
+    // EXACT current sage look (existing jams unchanged); a custom colour derives
+    // a cohesive dark accent + faint tint. Exposed to the subtree via JamTheme.
+    final jamThemeHex = _liveThemeColor ??
+        jamDetailAsync.maybeWhen(
+          data: (j) => (j?['theme_color'] as String?)?.trim(),
+          orElse: () => null,
+        );
+    final hasJamColor = jamThemeHex != null && jamThemeHex.isNotEmpty;
+    final jamColor =
+        hasJamColor ? JamColor.parse(jamThemeHex) : JamTheme.of(context).base;
+    final jamColorDark =
+        hasJamColor ? JamColor.darken(jamColor) : JamTheme.of(context).dark;
+    final jamColorFaint =
+        hasJamColor ? JamColor.faint(jamColor) : JamTheme.of(context).faint;
+    final headerGradient = BoxDecoration(
+      gradient: LinearGradient(
+        colors: [jamColorDark, jamColor],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: ScriptaColors.background,
-      body: CustomScrollView(
+      body: JamTheme(
+        base: jamColor,
+        dark: jamColorDark,
+        faint: jamColorFaint,
+        child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           // ── Header ────────────────────────────────────────────────────────
@@ -487,7 +609,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             expandedHeight: 210,
             pinned: true,
             stretch: true,
-            backgroundColor: ScriptaColors.primary,
+            backgroundColor: jamColor,
             // Header buttons (back + bell/edit/cover/share) pure white over the
             // cover image, per founder request.
             foregroundColor: Colors.white,
@@ -559,7 +681,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       children: [
                         Image.network(jamCoverUrl, fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) =>
-                                Container(decoration: _kJamHeaderGradient)),
+                                Container(decoration: headerGradient)),
                         // Top scrim — keeps status-bar icons visible over photos.
                         // Bottom scrim — ensures title text is readable.
                         Container(
@@ -579,7 +701,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       ],
                     )
                   : Container(
-                decoration: _kJamHeaderGradient,
+                decoration: headerGradient,
                 child: SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -826,10 +948,10 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
                       },
                     ),
                   ),
-            loading: () => const SliverFillRemaining(
+            loading: () => SliverFillRemaining(
               child: Center(
                 child: CircularProgressIndicator(
-                  color: ScriptaColors.primaryDark,
+                  color: JamTheme.of(context).dark,
                   strokeWidth: 1.5,
                 ),
               ),
@@ -839,10 +961,11 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
             ),
           ),
         ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _shareHighlight(),
-        backgroundColor: ScriptaColors.primary,
+        backgroundColor: jamColor,
         foregroundColor: const Color(0xFFF1EEE7),
         elevation: 4,
         icon: const Icon(Icons.add_comment_rounded),
@@ -1028,7 +1151,7 @@ class _WeeklyPromptBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
-          color: ScriptaColors.primary,
+          color: JamTheme.of(context).base,
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
             BoxShadow(
@@ -1128,7 +1251,7 @@ class _MembersStrip extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       avatarColor,
-                      ScriptaColors.primaryDark,
+                      JamTheme.of(context).dark,
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -1200,7 +1323,7 @@ class _MembersStrip extends StatelessWidget {
                                 width: 18,
                                 height: 18,
                                 decoration: BoxDecoration(
-                                  color: ScriptaColors.primary,
+                                  color: JamTheme.of(context).base,
                                   borderRadius:
                                       BorderRadius.circular(9),
                                   border: Border.all(
@@ -1271,13 +1394,13 @@ class _EmptyJamHighlights extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: ScriptaColors.primaryFaint,
+              color: JamTheme.of(context).faint,
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.auto_stories_rounded,
               size: 32,
-              color: ScriptaColors.primaryDark,
+              color: JamTheme.of(context).dark,
             ),
           ),
           const SizedBox(height: 20),
@@ -1330,10 +1453,10 @@ class _EmptyJamHighlights extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     inviteCode!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: ScriptaColors.primaryDark,
+                      color: JamTheme.of(context).dark,
                       letterSpacing: 5,
                     ),
                   ),
@@ -1354,7 +1477,7 @@ class _EmptyJamHighlights extends StatelessWidget {
                           icon: const Icon(Icons.copy_rounded, size: 16),
                           label: Text(context.l10n.copy),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: ScriptaColors.primaryDark,
+                            foregroundColor: JamTheme.of(context).dark,
                             side: const BorderSide(
                                 color: ScriptaColors.rule),
                           ),
@@ -1587,10 +1710,10 @@ class _BookGroupHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: ScriptaColors.primaryDark,
+                color: JamTheme.of(context).dark,
                 letterSpacing: 0.1,
               ),
               maxLines: 1,
@@ -1767,10 +1890,10 @@ class _JamHighlightCard extends ConsumerWidget {
                                   if (bookTitle.isNotEmpty) ...[
                                     Text(
                                       bookTitle,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
-                                        color: ScriptaColors.primaryDark,
+                                        color: JamTheme.of(context).dark,
                                         letterSpacing: 0.3,
                                       ),
                                       maxLines: 1,
@@ -1809,15 +1932,15 @@ class _JamHighlightCard extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: ScriptaColors.primaryFaint,
+                              color: JamTheme.of(context).faint,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               sharedBy,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: ScriptaColors.primaryDark,
+                                color: JamTheme.of(context).dark,
                               ),
                             ),
                           ),
@@ -1874,18 +1997,18 @@ class _JamHighlightCard extends ConsumerWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.auto_awesome_rounded,
                                   size: 14,
-                                  color: ScriptaColors.primaryDark,
+                                  color: JamTheme.of(context).dark,
                                 ),
                                 const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
                                     context.l10n.jamMatchCount(myMatchCount),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: ScriptaColors.primaryDark,
+                                      color: JamTheme.of(context).dark,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1981,7 +2104,7 @@ class _BookOfMonthCard extends ConsumerWidget {
           ),
           borderRadius: BorderRadius.circular(20),
           border:
-              Border.all(color: ScriptaColors.primary.withAlpha(90), width: 1),
+              Border.all(color: JamTheme.of(context).base.withAlpha(90), width: 1),
         ),
         child: Material(
           color: Colors.transparent,
@@ -1995,8 +2118,8 @@ class _BookOfMonthCard extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.auto_stories_rounded,
-                          size: 16, color: ScriptaColors.primaryDark),
+                      Icon(Icons.auto_stories_rounded,
+                          size: 16, color: JamTheme.of(context).dark),
                       const SizedBox(width: 8),
                       Text(
                         it ? 'LIBRO DEL MESE' : 'BOOK OF THE MONTH',
@@ -2004,7 +2127,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.2,
-                            color: ScriptaColors.primaryDark),
+                            color: JamTheme.of(context).dark),
                       ),
                       const Spacer(),
                       if (votes > 0)
@@ -2040,7 +2163,7 @@ class _BookOfMonthCard extends ConsumerWidget {
                     icon: const Icon(Icons.quiz_rounded, size: 18),
                     label: Text(it ? 'Quiz su questo libro' : 'Quiz this book'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: ScriptaColors.primaryDark,
+                      backgroundColor: JamTheme.of(context).dark,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(
@@ -2156,8 +2279,8 @@ class _JamResultsSection extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.emoji_events_rounded,
-                    size: 16, color: ScriptaColors.primaryDark),
+                Icon(Icons.emoji_events_rounded,
+                    size: 16, color: JamTheme.of(context).dark),
                 const SizedBox(width: 8),
                 Text(
                   it ? 'RISULTATI' : 'RESULTS',
@@ -2165,7 +2288,7 @@ class _JamResultsSection extends ConsumerWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
-                      color: ScriptaColors.primaryDark),
+                      color: JamTheme.of(context).dark),
                 ),
               ],
             ),
@@ -2276,20 +2399,20 @@ class _ResultPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: ScriptaColors.primaryFaint,
+        color: JamTheme.of(context).faint,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: iconColor ?? ScriptaColors.primaryDark),
+          Icon(icon, size: 12, color: iconColor ?? JamTheme.of(context).dark),
           const SizedBox(width: 4),
           Text(
             label,
             style: GoogleFonts.manrope(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                color: ScriptaColors.primaryDark),
+                color: JamTheme.of(context).dark),
           ),
         ],
       ),
@@ -2369,7 +2492,7 @@ class _JamFeaturesRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(f.icon,
-                          size: 20, color: ScriptaColors.primaryDark),
+                          size: 20, color: JamTheme.of(context).dark),
                       const Spacer(),
                       Text(
                         f.label,
@@ -2432,7 +2555,7 @@ class _MemberProfileSheet extends StatelessWidget {
       height: 80,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [avatarColor, ScriptaColors.primaryDark],
+          colors: [avatarColor, JamTheme.of(context).dark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -2508,11 +2631,11 @@ class _MemberProfileSheet extends StatelessWidget {
               ),
               child: Text(
                 context.l10n.jamOwnerBadge,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
-                  color: ScriptaColors.primaryDark,
+                  color: JamTheme.of(context).dark,
                 ),
               ),
             ),
@@ -2553,8 +2676,8 @@ class _MemberProfileSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_stories_rounded,
-                      size: 16, color: ScriptaColors.primaryDark),
+                  Icon(Icons.auto_stories_rounded,
+                      size: 16, color: JamTheme.of(context).dark),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -2606,7 +2729,7 @@ class _MemberProfileSheet extends StatelessWidget {
                 icon: const Icon(Icons.person_rounded, size: 16),
                 label: Text(context.l10n.jamViewProfile),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: ScriptaColors.primaryDark,
+                  foregroundColor: JamTheme.of(context).dark,
                   side: const BorderSide(color: ScriptaColors.rule),
                 ),
               ),

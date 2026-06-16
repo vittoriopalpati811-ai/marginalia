@@ -1696,6 +1696,22 @@ class SupabaseService {
     return trimmed;
   }
 
+  /// Owner-only: set/clear a Jam's theme colour (hex string, e.g. "#C0CFB2";
+  /// empty/null clears it → default sage). RLS keeps it owner-only. Throws if no
+  /// row was updated (not the owner).
+  Future<void> updateJamColor(String jamId, String? hexColor) async {
+    final trimmed = hexColor?.trim();
+    final rows = await _client
+        .from('jams')
+        .update({'theme_color': (trimmed == null || trimmed.isEmpty) ? null : trimmed})
+        .eq('id', jamId)
+        .eq('owner_id', userId!)
+        .select('id');
+    if ((rows as List).isEmpty) {
+      throw StateError('Not allowed to edit this jam');
+    }
+  }
+
   /// Owner-only: set/clear a Jam's free-text description (shown under the jam
   /// header). RLS + the explicit owner_id filter keep it owner-only. An empty
   /// string clears it (stored as NULL). Returns the trimmed value. Throws if the
