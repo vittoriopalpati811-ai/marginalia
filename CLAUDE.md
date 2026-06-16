@@ -193,9 +193,20 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   files are too large to hand-inline through the MCP). Mig 064 also
   adds length CHECKs on every user-text column and locks `amazon_sync_scripts`
   writes to service-role only.
-- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `064`. When you
+- Migrations live in `supabase/migrations/NNN_*.sql`. Latest = `071`. When you
   apply something live via MCP, **also write the migration file** (drift bit us
-  once — the live RPC existed but no migration captured it).
+  once — the live RPC existed but no migration captured it). Recent: `068`
+  jam_highlights DELETE, `069` jam_poll_candidates UPDATE, `070` jams.theme_color,
+  `071` captures `is_jam_member_or_owner` (was live-only — found by the audit).
+- **Security audit (2026-06-17, hack test):** 13-agent penetration-style audit
+  (RLS / edge fns / secrets / storage / auth / input) → **0 live-exploitable
+  vulns**. 7 findings already fixed & re-verified live (notifications-insert 032,
+  storage-upload 066, jam-cover IDOR is member-scoped, reviews authenticated-only
+  044, jam_highlights-delete 068, jam_poll_candidates-update 069, RPC anon-grants
+  043); 1 migration-drift fixed (`is_jam_member_or_owner` → mig 071); 1 residual
+  **decision pending the founder**: profile privacy is still APP-LEVEL/soft (see
+  §9 note) — a hard-RLS pass is feasible but risks breaking feed/search/post-author
+  for live users, so do it as a dedicated, tested change only if he asks.
 - Supabase MCP tools are available: `execute_sql`, `apply_migration`,
   `list/deploy_edge_function`, etc. Use them to verify live state.
 
