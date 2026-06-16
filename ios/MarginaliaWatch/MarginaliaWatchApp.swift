@@ -51,6 +51,57 @@ extension Color {
     static let mPrimary = Color(red: 0.227, green: 0.400, blue: 0.141) // #3A6624 matcha
     static let mAccent  = Color(red: 0.290, green: 0.478, blue: 0.204) // #4A7A35
     static let mMuted   = Color(red: 0.435, green: 0.459, blue: 0.431) // #6F756E
+    // Scripta logo palette (sage cards + red bookmark) — matches the app icon.
+    static let sCream    = Color(red: 0.914, green: 0.906, blue: 0.875) // #E9E7DF
+    static let sSage     = Color(red: 0.753, green: 0.812, blue: 0.698) // #C0CFB2
+    static let sSageDeep = Color(red: 0.561, green: 0.647, blue: 0.494)
+    static let sRed      = Color(red: 0.725, green: 0.290, blue: 0.255) // #B94A41
+}
+
+// ─── Scripta logo (SwiftUI vector — same mark as the app icon) ──────────────────
+//
+// Drawn in code (no asset-catalog entry) so the per-build watch-target
+// regeneration in CI can never drop it. Mirrors MarginaliaWidgets.ScriptaLogo:
+// three layered cream→sage "cards" with a red bookmark over the top card.
+
+private struct ScriptaLogo: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let card = h * 0.74
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: w * 0.26, style: .continuous)
+                    .fill(Color.sSageDeep)
+                    .frame(width: w, height: card)
+                    .offset(y: h * 0.26)
+                RoundedRectangle(cornerRadius: w * 0.26, style: .continuous)
+                    .fill(Color.sSage)
+                    .frame(width: w, height: card)
+                    .offset(y: h * 0.13)
+                RoundedRectangle(cornerRadius: w * 0.26, style: .continuous)
+                    .fill(Color.sCream)
+                    .frame(width: w, height: card)
+                ScriptaBookmark()
+                    .fill(Color.sRed)
+                    .frame(width: w * 0.22, height: h * 0.42)
+                    .offset(x: w * 0.26, y: -h * 0.03)
+            }
+        }
+    }
+}
+
+private struct ScriptaBookmark: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.minY))
+        p.addLine(to: CGPoint(x: r.maxX, y: r.maxY))
+        p.addLine(to: CGPoint(x: r.midX, y: r.maxY - r.height * 0.34))
+        p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
+        p.closeSubpath()
+        return p
+    }
 }
 
 // ─── WatchConnectivity session manager ─────────────────────────────────────────
@@ -186,14 +237,8 @@ struct ContentView: View {
 
                 // Brand header
                 HStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.mPrimary)
-                        .frame(width: 18, height: 18)
-                        .overlay(
-                            Text("S")
-                                .font(.system(size: 11, weight: .bold, design: .serif))
-                                .foregroundStyle(.white)
-                        )
+                    ScriptaLogo()
+                        .frame(width: 20, height: 20)
                     Text("Scripta")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.secondary)
