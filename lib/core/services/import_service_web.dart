@@ -144,6 +144,12 @@ class ImportService {
     );
   }
 
+  // On web there is no local Isar DB — the library reads straight from
+  // Supabase and web imports already upsert to the cloud — so backup + restore
+  // are no-ops here (they exist only to mirror the native ImportService API).
+  Future<int> backupToCloud() async => 0;
+  Future<int> restoreFromCloud() async => 0;
+
   // Stable UUID from two strings — idempotent across re-imports.
   // Formatted as UUID v4 shape for Supabase compatibility.
   String _stableUuid(String a, String b) {

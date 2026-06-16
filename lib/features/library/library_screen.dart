@@ -239,6 +239,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                 child: _EmptyLibrary(
                   onImport: _pickAndImportFile,
                   onDemo:   _loadDemoData,
+                  onRestore: _restoreFromCloud,
                   isFiltered: filter != _LibraryFilter.all,
                 ),
               )
@@ -549,6 +550,43 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+      }
+    } finally {
+      if (mounted) setState(() => _isImporting = false);
+    }
+  }
+
+  /// Pulls the user's books + highlights back down from Supabase into the local
+  /// library (for a fresh device / a sign-in that shows an empty library).
+  /// Idempotent — the service dedupes, so it never creates duplicates.
+  Future<void> _restoreFromCloud() async {
+    if (!_requireAuth()) return;
+    final it = Localizations.localeOf(context).languageCode == 'it';
+    setState(() => _isImporting = true);
+    try {
+      final userId = ref.read(currentUserProvider)?.id ?? 'local';
+      final isar = ref.read(isarProvider);
+      final supabase = ref.read(supabaseServiceProvider);
+      final service = ImportService(isar, userId, supabaseService: supabase);
+      final added = await service.restoreFromCloud();
+      _invalidateAfterImport();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(added > 0
+                ? (it
+                    ? 'Ripristinate $added frasi dal cloud'
+                    : 'Restored $added highlights from the cloud')
+                : (it
+                    ? 'Niente da ripristinare nel cloud'
+                    : 'Nothing to restore from the cloud')),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);
@@ -1139,15 +1177,18 @@ class _EmptyLibrary extends StatelessWidget {
   const _EmptyLibrary({
     required this.onImport,
     required this.onDemo,
+    required this.onRestore,
     this.isFiltered = false,
   });
 
   final VoidCallback onImport;
   final VoidCallback onDemo;
+  final VoidCallback onRestore;
   final bool isFiltered;
 
   @override
   Widget build(BuildContext context) {
+    final it = Localizations.localeOf(context).languageCode == 'it';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -1193,6 +1234,16 @@ class _EmptyLibrary extends StatelessWidget {
                 onPressed: onImport,
                 icon: const Icon(Icons.upload_file_outlined, size: 18),
                 label: Text(context.l10n.libraryImportClippings),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: onRestore,
+                icon: const Icon(Icons.cloud_download_outlined,
+                    size: 16, color: ScriptaColors.primaryDark),
+                label: Text(
+                  it ? 'Ripristina dal cloud' : 'Restore from cloud',
+                  style: const TextStyle(color: ScriptaColors.primaryDark),
+                ),
               ),
               const SizedBox(height: 12),
               TextButton.icon(
