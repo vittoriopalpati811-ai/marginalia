@@ -538,11 +538,21 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
     (path: '/profile',  icon: PhosphorIconsRegular.userCircle,      activeIcon: PhosphorIconsFill.userCircle,      label: 'Profile'),
   ];
 
+  // Drives the direction-aware MIRRORED slide between tabs: moving to a tab
+  // further RIGHT slides one way, moving LEFT slides the exact mirror. Computed
+  // per-build (not baked into a child) so both directions stay symmetric.
+  int _prevIndex = -1;
+  bool _slideReverse = false;
+
   @override
   Widget build(BuildContext context) {
     final routePath = widget.routePath;
     final selectedIndex =
         _tabs.indexWhere((t) => t.path == routePath).clamp(0, _tabs.length - 1);
+    if (_prevIndex != -1 && selectedIndex != _prevIndex) {
+      _slideReverse = selectedIndex < _prevIndex; // moving left → mirror
+    }
+    _prevIndex = selectedIndex;
 
     // Nuclear layout: previous attempts (StackFit.expand on AnimatedSwitcher,
     // 100dvh + flt-glass-pane sizing) didn't fix the navbar-floating-
@@ -583,12 +593,39 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                   bottom: navInset,
                 ),
               ),
-              // Tab switches are INSTANT (founder request 2026-06-11): no
-              // slide/fade between sections — the previous direction-aware
-              // PageTransitionSwitcher was removed on purpose.
-              child: KeyedSubtree(
-                key: ValueKey(routePath),
-                child: widget.child,
+              // Direction-aware MIRRORED slide between tabs, for both a tap and
+              // a horizontal SWIPE (founder request). Moving right slides one
+              // way, moving left mirrors it (PageTransitionSwitcher.reverse).
+              // The fling gesture changes tab; inner horizontal lists win their
+              // own drags via the gesture arena, so they keep scrolling.
+              child: GestureDetector(
+                onHorizontalDragEnd: (details) {
+                  final v = details.primaryVelocity ?? 0;
+                  if (v.abs() < 300) return; // only a deliberate fling
+                  final target = (selectedIndex + (v < 0 ? 1 : -1))
+                      .clamp(0, _tabs.length - 1);
+                  if (target != selectedIndex) {
+                    HapticFeedback.lightImpact();
+                    context.go(_tabs[target].path);
+                  }
+                },
+                child: PageTransitionSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  reverse: _slideReverse,
+                  transitionBuilder:
+                      (child, primaryAnimation, secondaryAnimation) =>
+                          SharedAxisTransition(
+                    animation: primaryAnimation,
+                    secondaryAnimation: secondaryAnimation,
+                    transitionType: SharedAxisTransitionType.horizontal,
+                    fillColor: Colors.transparent,
+                    child: child,
+                  ),
+                  child: KeyedSubtree(
+                    key: ValueKey(routePath),
+                    child: widget.child,
+                  ),
+                ),
               ),
             ),
           ),
