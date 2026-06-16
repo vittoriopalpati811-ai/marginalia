@@ -2,6 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Per-jam theme colour. A jam can store a `theme_color` hex string; the jam
+/// detail screen tints its cards / boxes / accents with it. A null/empty value
+/// means "use the default sage", in which case the screen keeps the exact
+/// current look (primary / primaryDark / primaryFaint). For a custom colour we
+/// derive a darker accent + a faint tint from the picked base in HSL space so
+/// any colour yields a cohesive family.
+class JamColor {
+  /// Parse a stored hex string ("#C0CFB2", "C0CFB2" or "0xFFC0CFB2") into a
+  /// Color. Returns [fallback] on null / empty / invalid input.
+  static Color parse(String? hex, {Color fallback = ScriptaColors.primary}) {
+    if (hex == null) return fallback;
+    var s = hex.trim().replaceAll('#', '').replaceAll('0x', '').toUpperCase();
+    if (s.isEmpty) return fallback;
+    if (s.length == 6) s = 'FF$s';
+    if (s.length != 8) return fallback;
+    final v = int.tryParse(s, radix: 16);
+    return v == null ? fallback : Color(v);
+  }
+
+  /// A darker, slightly more saturated shade — for accent text/icons.
+  static Color darken(Color c) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl
+        .withLightness((hsl.lightness - 0.22).clamp(0.0, 1.0))
+        .withSaturation((hsl.saturation + 0.05).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  /// A very light, desaturated tint — for chip / box backgrounds.
+  static Color faint(Color c) {
+    final hsl = HSLColor.fromColor(c);
+    return hsl
+        .withLightness((hsl.lightness + 0.28).clamp(0.0, 1.0))
+        .withSaturation((hsl.saturation * 0.55).clamp(0.0, 1.0))
+        .toColor();
+  }
+}
+
 // ─── Palette — Airbnb-clean (refined 2026-05-27) ───────────────────────────
 //
 // Design intent:
