@@ -5,6 +5,15 @@
          scoped storage via MediaStore and needs no permission). -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28"/>
+    <!-- Health Connect (Android's HealthKit equivalent): read-only access for the
+         daily-phrase personalisation — steps, sleep, workouts and (women only)
+         menstrual phase. On-device only, never uploaded — same model as iOS. -->
+    <uses-permission android:name="android.permission.health.READ_STEPS"/>
+    <uses-permission android:name="android.permission.health.READ_SLEEP"/>
+    <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
+    <uses-permission android:name="android.permission.health.READ_MENSTRUATION"/>
+    <!-- Native calendar (device_calendar) for the "what's on today" phrase context. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR"/>
     <application
         android:label="Scripta"
         android:name="${applicationName}"
@@ -44,7 +53,25 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="io.supabase.flutter" android:host="login-callback"/>
             </intent-filter>
+            <!-- Health Connect rationale (Android 13 and below, where Health
+                 Connect is a separate app): shown when the user is asked to grant
+                 health permissions. -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
         </activity>
+        <!-- Health Connect rationale on Android 14+ (Health Connect built into the
+             platform): surfaced via the standard permission-usage intent. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+            </intent-filter>
+        </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -61,5 +88,8 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- So the app can detect / open Health Connect (the health plugin needs
+             this package visible on Android 11+). -->
+        <package android:name="com.google.android.apps.healthdata"/>
     </queries>
 </manifest>
