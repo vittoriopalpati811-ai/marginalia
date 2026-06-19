@@ -24,3 +24,12 @@ final onboardingCompleteProvider = StateProvider<bool>((ref) => false);
 /// app_startup_native.dart / app_startup_web.dart, the same way as
 /// [onboardingCompleteProvider].
 final genderProvider = StateProvider<String?>((ref) => null);
+
+/// How the user tends to feel before something on their calendar, used ONLY
+/// locally to tailor the daily-phrase tone when an event is coming up. Values:
+/// 'calm' | 'focused' | 'anxious' (or null until chosen / skipped).
+///
+/// PRIVACY: stored ONLY on-device via [EventApproachService], NEVER uploaded.
+/// Seeded at startup via [ProviderScope.overrides] in app_startup_*.dart, the
+/// same way as [genderProvider].
+final eventApproachProvider = StateProvider<String?>((ref) => null);

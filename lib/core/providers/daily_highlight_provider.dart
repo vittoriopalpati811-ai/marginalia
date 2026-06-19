@@ -190,6 +190,25 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
     }
   }
 
+  // If something's coming up on the calendar today, lean the tone toward how the
+  // user said (in onboarding) they approach events — an on-device-only signal:
+  // anxiety → a steadier, gentler phrase; energy/focus → a more propositive one.
+  // 'calm' / unset leaves the health-derived tone untouched. This is what makes
+  // the daily phrase consider how a person meets what's on their calendar.
+  final eventApproach = ref.read(eventApproachProvider);
+  final hasUpcomingToday = calendar?.events.any((e) {
+        final s = e.start;
+        return s != null && s.isAfter(now) && s.difference(now).inHours <= 10;
+      }) ??
+      false;
+  if (hasUpcomingToday) {
+    if (eventApproach == 'anxious') {
+      tone = 'gentle';
+    } else if (eventApproach == 'focused') {
+      tone = 'uplifting';
+    }
+  }
+
   final contextPayload = <String, dynamic>{
     'hour': now.hour,
     if (weather != null) ...{

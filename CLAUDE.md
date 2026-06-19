@@ -348,6 +348,17 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 - **`set_jam_cover` RPC** (migration 062): jam photo is now editable by any
   member/owner (was owner-only → 403). Storage policies on `jam-covers` widened
   to members too.
+- **Daily-phrase personalization (2026-06-19)** — `daily_subtitle_provider` +
+  `daily_highlight_provider` weave these ON-DEVICE signals (never uploaded; only
+  an abstract "tone" word reaches the picker): steps, today's workout, **sleep
+  last night** (HealthKit `SLEEP_ASLEEP`, morning only), **menstrual phase**
+  (women only; inferred conservatively — needs ≥2 logged period starts + a
+  current cycle ≤33d, else null; say "fase mestruale"/"del mese", never bare
+  "ciclo"), native **calendar** events, and **event-approach** (`calm`/`focused`/
+  `anxious`, onboarding step 12 → `EventApproachService`/`eventApproachProvider`,
+  hydrated in app_startup_*). The **library greeting** (`_LibraryGreetings`)
+  agrees with `genderProvider` (feminine/masculine/neutral). Onboarding is now
+  **14 steps** (`_kTotalSteps`/`_kStepComplete=13`; EventApproach is step 12).
 
 ---
 

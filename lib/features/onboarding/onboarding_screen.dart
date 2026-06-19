@@ -15,6 +15,7 @@ import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
 import '../../core/providers/health_provider.dart';
 import '../../core/providers/calendar_provider.dart';
+import '../../core/services/event_approach_service.dart';
 import '../../core/services/gender_service.dart';
 import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
@@ -28,12 +29,12 @@ import 'steps/currently_reading_step.dart';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const _kTotalSteps = 13;
+const _kTotalSteps = 14;
 // Step indices (keep in sync with the PageView children below):
 // 0: Welcome   · 1: Auth      · 2: Username   · 3: ImportHighlights · 4: Name
 // 5: Bio       · 6: Avatar    · 7: Cover      · 8: Goal             · 9: Currently
-// 10: Permissions · 11: Gender · 12: Complete
-const _kStepComplete = 12;
+// 10: Permissions · 11: Gender · 12: EventApproach · 13: Complete
+const _kStepComplete = 13;
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Step 9 — Gender (privacy-sensitive, stored ONLY on-device)
   // 'female' | 'male' | 'unspecified', or null until the user chooses.
   String? _gender;
+  String? _eventApproach;
 
   // Step 10 — Completing
   bool _completing = false;
@@ -393,6 +395,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     // (and outside the Supabase calls) so the local write happens even if a
     // later network step fails. GenderService.write is internally guarded.
     await GenderService.write(_gender ?? 'unspecified');
+    // Same on-device-only treatment for the calendar-event approach (skipped ⇒
+    // left unset, so that axis simply doesn't colour the phrase).
+    if (_eventApproach != null) {
+      await EventApproachService.write(_eventApproach!);
+    }
 
     try {
       final svc = ref.read(supabaseServiceProvider);
@@ -592,6 +599,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ref.read(genderProvider.notifier).state = g;
                       _next();
                     },
+                  )),
+                  _StepScroll(child: _EventApproachStep(
+                    selected: _eventApproach,
+                    onSelect: (v) {
+                      setState(() => _eventApproach = v);
+                      ref.read(eventApproachProvider.notifier).state = v;
+                      _next();
+                    },
+                    onSkip: _next,
                   )),
                   _StepScroll(child: _CompleteStep(
                     username: _usernameCtrl.text.trim(),
@@ -2352,6 +2368,128 @@ class _GenderOption extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// How the user tends to approach something on their calendar. Feeds the daily
+// phrase: when an event is coming up, an 'anxious' reader gets a steadier,
+// reassuring tone, a 'focused' one a more propositive tone. Stored ONLY
+// on-device (EventApproachService / eventApproachProvider). Optional — a Skip
+// leaves it unset. Strings inlined it/en, matching _GenderStep.
+class _EventApproachStep extends StatelessWidget {
+  const _EventApproachStep({
+    required this.selected,
+    required this.onSelect,
+    required this.onSkip,
+  });
+
+  final String? selected;
+  final ValueChanged<String> onSelect;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    final isIt = Localizations.localeOf(context).languageCode == 'it';
+    final title = isIt
+        ? 'Prima di un impegno in agenda,\ncome ti senti di solito?'
+        : 'Before something on your calendar,\nhow do you usually feel?';
+    final note = isIt
+        ? 'Così le frasi sanno accompagnarti meglio nei giorni con impegni — resta sul tuo telefono.'
+        : 'So your phrases can meet you better on busy days — it stays on your phone.';
+    final calm = isIt ? 'Con calma' : 'Calm';
+    final focused = isIt ? 'Con energia' : 'Energised';
+    final anxious = isIt ? 'Con un po\' d\'ansia' : 'A little anxious';
+    final skip = isIt ? 'Salta' : 'Skip';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Spacer(),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.ebGaramond(
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+              height: 1.12,
+              color: ScriptaColors.ink,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            note,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: 13.5,
+              height: 1.6,
+              color: ScriptaColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 36),
+          _GenderOption(
+            label: calm,
+            value: 'calm',
+            isSelected: selected == 'calm',
+            onTap: () => onSelect('calm'),
+          )
+              .animate()
+              .fadeIn(delay: 140.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.12,
+                  end: 0,
+                  delay: 140.ms,
+                  duration: 400.ms,
+                  curve: AirbnbMotion.enter),
+          const SizedBox(height: 12),
+          _GenderOption(
+            label: focused,
+            value: 'focused',
+            isSelected: selected == 'focused',
+            onTap: () => onSelect('focused'),
+          )
+              .animate()
+              .fadeIn(delay: 220.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.12,
+                  end: 0,
+                  delay: 220.ms,
+                  duration: 400.ms,
+                  curve: AirbnbMotion.enter),
+          const SizedBox(height: 12),
+          _GenderOption(
+            label: anxious,
+            value: 'anxious',
+            isSelected: selected == 'anxious',
+            onTap: () => onSelect('anxious'),
+          )
+              .animate()
+              .fadeIn(delay: 300.ms, duration: 380.ms)
+              .slideY(
+                  begin: 0.12,
+                  end: 0,
+                  delay: 300.ms,
+                  duration: 400.ms,
+                  curve: AirbnbMotion.enter),
+          const SizedBox(height: 18),
+          Center(
+            child: TextButton(
+              onPressed: onSkip,
+              child: Text(
+                skip,
+                style: GoogleFonts.manrope(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: ScriptaColors.inkMuted,
+                ),
+              ),
+            ),
+          ),
+          const Spacer(),
+        ],
       ),
     );
   }

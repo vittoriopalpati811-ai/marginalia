@@ -36,6 +36,7 @@ final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
   final health = ref.watch(healthSnapshotProvider).asData?.value;
   final cal = ref.watch(calendarSnapshotProvider).asData?.value;
   final gender = ref.watch(genderProvider);
+  final eventApproach = ref.watch(eventApproachProvider);
   final en = ref.watch(localeProvider).languageCode == 'en';
 
   final now = DateTime.now();
@@ -90,6 +91,7 @@ final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
     phase: phase,
     sleepHours: sleepHours,
     morning: morning,
+    eventApproach: eventApproach,
     eventCount: count,
     next: next,
     last: last,
@@ -115,6 +117,7 @@ String _compose({
   CyclePhase? phase,
   double? sleepHours,
   bool morning = false,
+  String? eventApproach,
   required int eventCount,
   CalendarEvent? next,
   CalendarEvent? last,
@@ -161,8 +164,28 @@ String _compose({
     ]);
   }
 
-  // 2. Something coming up within a couple of hours.
+  // 2. Something coming up within a couple of hours — tuned to how the reader
+  // said they approach events (on-device signal): anxious → steadying, focused
+  // → propositive, otherwise a calm neutral framing.
   if (imminent && next != null) {
+    if (eventApproach == 'anxious') {
+      return pick([
+        '$when, con ${ev(next)} che si avvicina: respira, andrà bene — lascia che questa frase ti dia un appoggio prima di iniziare.',
+        '$when, e tra poco ${ev(next)}: un attimo di calma adesso, questa frase è qui per quello.',
+      ], [
+        '$when, with ${ev(next)} coming up: breathe — it\'ll be fine. Let this phrase steady you before you start.',
+        '$when, ${ev(next)} soon: a moment of calm first — that\'s what this phrase is here for.',
+      ]);
+    }
+    if (eventApproach == 'focused') {
+      return pick([
+        '$when, con ${ev(next)} tra poco: caricala bene — questa frase è lo slancio giusto prima di entrarci.',
+        '$when, e a breve ${ev(next)}: prendi questa frase come spinta, poi vai.',
+      ], [
+        '$when, with ${ev(next)} coming up: set the tone — let this phrase be the push before you dive in.',
+        '$when, ${ev(next)} soon: take this phrase as momentum, then go.',
+      ]);
+    }
     return pick([
       '$when, e tra poco ${ev(next)}: prenditi questa frase prima di rientrare nel ritmo.',
       '$when, con ${ev(next)} che si avvicina — un attimo per te adesso, prima di tutto il resto.',

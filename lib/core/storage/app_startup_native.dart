@@ -16,6 +16,7 @@ import '../models/daily_activity_native.dart';
 import '../providers/isar_provider_native.dart';
 import '../providers/locale_provider.dart';
 import '../providers/onboarding_provider.dart';
+import '../services/event_approach_service.dart';
 import '../services/gender_service.dart';
 import '../services/locale_service.dart';
 import '../services/onboarding_service.dart';
@@ -55,6 +56,14 @@ Future<void> launchApp() async {
   } catch (error) {
     debugPrint('[launchApp] gender read failed (non-fatal): $error');
   }
+  // Locally-stored "how I approach a calendar event" (never uploaded) so the
+  // daily-phrase personalisation can restore it across launches.
+  String? savedEventApproach;
+  try {
+    savedEventApproach = await EventApproachService.read();
+  } catch (error) {
+    debugPrint('[launchApp] event-approach read failed (non-fatal): $error');
+  }
 
   runApp(
     ProviderScope(
@@ -63,6 +72,7 @@ Future<void> launchApp() async {
         onboardingCompleteProvider.overrideWith((ref) => onboardingComplete),
         localeProvider.overrideWith((ref) => savedLocale),
         genderProvider.overrideWith((ref) => savedGender),
+        eventApproachProvider.overrideWith((ref) => savedEventApproach),
       ],
       child: const ScriptaApp(),
     ),
