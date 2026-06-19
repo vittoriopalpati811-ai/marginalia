@@ -167,14 +167,24 @@ final dailyHighlightProvider = FutureProvider<Highlight?>((ref) async {
         w.date.year == today.year &&
         w.date.month == today.month &&
         w.date.day == today.day);
+    // Last night's sleep, but only while it's still the morning (after that it no
+    // longer reflects how the day is actually going).
+    final sleepH = healthSnap.sleepHoursLastNight;
+    final isMorning = now.hour >= 5 && now.hour < 13;
+    final shortNight = isMorning && sleepH != null && sleepH < 6;
+    final goodNight = isMorning && sleepH != null && sleepH >= 7.5;
     if (phase == 'menstruation' || phase == 'luteal') {
       tone = 'gentle';
+    } else if (shortNight) {
+      tone = 'gentle'; // running on little sleep → a softer phrase
     } else if (phase == 'follicular' || phase == 'ovulation') {
       tone = 'uplifting';
     } else if (workedOutToday) {
       tone = 'uplifting'; // a workout today → an energetic, propositive tone
     } else if (steps != null && steps >= 8000) {
       tone = 'uplifting';
+    } else if (goodNight) {
+      tone = 'uplifting'; // well-rested → a brighter start
     } else if (steps != null && steps < 2000) {
       tone = 'reflective';
     }

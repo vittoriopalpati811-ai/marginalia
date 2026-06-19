@@ -39,6 +39,7 @@ class HealthSnapshot {
     this.stepsToday,
     this.workoutsThisWeek = const [],
     this.cyclePhase,
+    this.sleepHoursLastNight,
     this.isAvailable = false,
   });
 
@@ -51,12 +52,16 @@ class HealthSnapshot {
   /// Current menstrual cycle phase. Null if no cycle data or user skips it.
   final CyclePhase? cyclePhase;
 
+  /// Hours slept last night (from HealthKit sleep samples). Null if unavailable.
+  final double? sleepHoursLastNight;
+
   /// True only on iOS with HealthKit permission granted.
   final bool isAvailable;
 
   bool get hasSteps    => stepsToday != null;
   bool get hasWorkouts => workoutsThisWeek.isNotEmpty;
   bool get hasCycle    => cyclePhase != null && cyclePhase != CyclePhase.unknown;
+  bool get hasSleep    => sleepHoursLastNight != null;
 
   static const empty = HealthSnapshot();
 }

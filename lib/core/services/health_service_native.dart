@@ -30,8 +30,10 @@ class HealthService {
     HealthDataType.STEPS,
     HealthDataType.MENSTRUATION_FLOW,
     HealthDataType.WORKOUT,
+    HealthDataType.SLEEP_ASLEEP,
   ];
   static const _permissions = [
+    HealthDataAccess.READ,
     HealthDataAccess.READ,
     HealthDataAccess.READ,
     HealthDataAccess.READ,
@@ -85,13 +87,22 @@ class HealthService {
         debugPrint('[Health] workouts error: $e');
       }
 
+      double? sleepHours;
+      try {
+        sleepHours = await _fetchSleepHours(now);
+      } catch (e) {
+        debugPrint('[Health] sleep error: $e');
+      }
+
       debugPrint('[Health] stepsToday=$steps '
-          'cyclePhase=${cyclePhase?.name} workouts=${workouts.length}');
+          'cyclePhase=${cyclePhase?.name} workouts=${workouts.length} '
+          'sleepH=${sleepHours?.toStringAsFixed(1)}');
 
       return HealthSnapshot(
         stepsToday: steps,
         workoutsThisWeek: workouts,
         cyclePhase: cyclePhase,
+        sleepHoursLastNight: sleepHours,
         isAvailable: true,
       );
     } catch (e, st) {
@@ -158,6 +169,50 @@ class HealthService {
     if (daysSince <= 16) return CyclePhase.ovulation;
     if (daysSince <= 33) return CyclePhase.luteal; // within one plausible cycle
     return null; // overdue / not currently tracking — don't guess
+  }
+
+  // ── Sleep ─────────────────────────────────────────────────────────────────
+  //
+  // Hours actually asleep "last night": sum the SLEEP_ASLEEP samples in the
+  // window from yesterday evening to now. Like the other signals it stays
+  // on-device and is only distilled into the daily-phrase tone (a short night →
+  // a gentler phrase). Returns null when there's no sleep data.
+
+  Future<double?> _fetchSleepHours(DateTime now) async {
+    final today = DateTime(now.year, now.month, now.day);
+    final start = today.subtract(const Duration(hours: 6)); // ~yesterday 18:00
+    final points = await Health().getHealthDataFromTypes(
+      types: const [HealthDataType.SLEEP_ASLEEP],
+      startTime: start,
+      endTime: now,
+    );
+    if (points.isEmpty) return null;
+
+    // De-duplicate overlapping samples (Apple Watch + phone can both log) by
+    // merging intervals before summing, so double-counting can't inflate hours.
+    final intervals = <({DateTime a, DateTime b})>[];
+    for (final p in points) {
+      if (p.dateTo.isAfter(p.dateFrom)) {
+        intervals.add((a: p.dateFrom, b: p.dateTo));
+      }
+    }
+    if (intervals.isEmpty) return null;
+    intervals.sort((x, y) => x.a.compareTo(y.a));
+    var minutes = 0;
+    DateTime? curA = intervals.first.a;
+    DateTime? curB = intervals.first.b;
+    for (final iv in intervals.skip(1)) {
+      if (iv.a.isBefore(curB!) || iv.a.isAtSameMomentAs(curB)) {
+        if (iv.b.isAfter(curB)) curB = iv.b; // extend the merged interval
+      } else {
+        minutes += curB.difference(curA!).inMinutes;
+        curA = iv.a;
+        curB = iv.b;
+      }
+    }
+    minutes += curB!.difference(curA!).inMinutes;
+    if (minutes <= 0) return null;
+    return minutes / 60.0;
   }
 
   // ── Workouts ────────────────────────────────────────────────────────────────

@@ -65,6 +65,11 @@ final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
     phase = health!.cyclePhase;
   }
 
+  // Last night's sleep only colours the line while it's still "this morning" —
+  // by the afternoon it no longer frames the day.
+  final sleepHours = health?.sleepHoursLastNight;
+  final morning = now.hour >= 5 && now.hour < 13;
+
   // ── Calendar signals (with timings) ─────────────────────────────────────────
   final count = cal?.events.length ?? 0;
   final next = cal?.nextAfter(now);
@@ -83,6 +88,8 @@ final dailySubtitleProvider = Provider.autoDispose<String?>((ref) {
     stepsText: stepsText,
     workout: workout,
     phase: phase,
+    sleepHours: sleepHours,
+    morning: morning,
     eventCount: count,
     next: next,
     last: last,
@@ -106,6 +113,8 @@ String _compose({
   String? stepsText,
   String? workout,
   CyclePhase? phase,
+  double? sleepHours,
+  bool morning = false,
   required int eventCount,
   CalendarEvent? next,
   CalendarEvent? last,
@@ -137,6 +146,18 @@ String _compose({
     ], [
       '$when, in a more inward stretch of your cycle: this phrase is here to keep you company, softly.',
       '$when, with feelings a little closer to the surface these days — let these words sit with you.',
+    ]);
+  }
+
+  // 1b. A short night — be gentle. Only in the morning, when last night's sleep
+  // still frames the day.
+  if (morning && sleepHours != null && sleepHours < 6) {
+    return pick([
+      '$when, dopo una notte un po\' corta: nessuna pretesa oggi — questa frase è qui per accompagnarti piano.',
+      '$when, con poche ore di sonno alle spalle — prenditi questa frase con calma, va bene rallentare.',
+    ], [
+      '$when, after a short night: no pressure today — let this phrase keep you company, gently.',
+      '$when, running on little sleep — take this one slowly, it\'s alright to ease in.',
     ]);
   }
 
@@ -201,6 +222,17 @@ String _compose({
     ], [
       '$when, after $stepsText steps today: this phrase is your breather, chosen for you.',
       '$when, with plenty of ground covered already — stop here a moment, on these words.',
+    ]);
+  }
+
+  // 6b. A good night's sleep — start fresh (morning only).
+  if (morning && sleepHours != null && sleepHours >= 7.5) {
+    return pick([
+      '$when, dopo una bella dormita: parti con la mente sgombra — questa frase è il tuo buon inizio.',
+      '$when, con il sonno dalla tua parte oggi — lascia che questa frase dia il "la" alla giornata.',
+    ], [
+      '$when, after a good night\'s sleep: a clear head to start with — let this phrase set the tone.',
+      '$when, well-rested today — let these words open the day.',
     ]);
   }
 
