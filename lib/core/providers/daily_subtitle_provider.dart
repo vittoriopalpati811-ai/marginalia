@@ -123,7 +123,7 @@ String _compose({
   // 1. Cycle, tender phases — care comes first.
   if (phase == CyclePhase.menstruation) {
     return pick([
-      '$when, nei giorni del ciclo in cui il corpo chiede spazio: questa frase è qui per accoglierti, senza chiederti nulla.',
+      '$when, nei giorni della fase mestruale, quando il corpo chiede spazio: questa frase è qui per accoglierti, senza chiederti nulla.',
       '$when, mentre il corpo fa il suo lavoro silenzioso — prenditi questa frase con calma, è pensata per te.',
     ], [
       '$when, in the part of your cycle when the body asks for room: these words are here to hold you, gently, asking nothing.',
@@ -132,7 +132,7 @@ String _compose({
   }
   if (phase == CyclePhase.luteal) {
     return pick([
-      '$when, in una fase del ciclo più raccolta: questa frase è qui per starti vicino, piano.',
+      '$when, in una fase più raccolta del mese: questa frase è qui per starti vicino, piano.',
       '$when, con la sensibilità un po\' più accesa di questi giorni — lascia che questa frase ti faccia compagnia.',
     ], [
       '$when, in a more inward stretch of your cycle: this phrase is here to keep you company, softly.',
@@ -208,7 +208,7 @@ String _compose({
   if (phase == CyclePhase.follicular || phase == CyclePhase.ovulation) {
     return pick([
       '$when, con le energie in risalita di questi giorni: questa frase è benzina buona, prendila.',
-      '$when, in una fase luminosa del ciclo — lascia che questa frase assecondi lo slancio.',
+      '$when, in una fase più luminosa del mese — lascia che questa frase assecondi lo slancio.',
     ], [
       '$when, with your energy on the rise these days: this phrase is good fuel — take it.',
       '$when, in a bright stretch of your cycle — let these words ride the momentum.',

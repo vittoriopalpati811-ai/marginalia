@@ -26,6 +26,7 @@ import '../search/highlight_search_screen.dart';
 import '../review/review_entry_card.dart';
 import '../../core/providers/daily_highlight_provider.dart';
 import '../../core/providers/daily_subtitle_provider.dart';
+import '../../core/providers/onboarding_provider.dart';
 import '../stats/stats_screen.dart'
     show readingSessionsProvider, readingGoalProvider;
 
@@ -125,6 +126,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                 onImport:       _pickAndImportFile,
                 onForceReimport: () => _pickAndImportFile(forceClean: true),
                 userName: ref.watch(myDisplayNameProvider).asData?.value,
+                gender: ref.watch(genderProvider),
               ),
             ),
 
@@ -618,15 +620,33 @@ class _LibraryGreetings {
   /// Returns the greeting for the current day. The pick is stable across
   /// rebuilds (it only changes by calendar day), so the header doesn't flicker
   /// while the reader scrolls — the daily ritual stays put, like the pull-quote.
-  static String forToday(String? userName) {
+  ///
+  /// [gender] is the on-device choice ('female' | 'male' | anything else). A few
+  /// phrases carry Italian participles that must agree with the reader (e.g.
+  /// "Pronto/Pronta a rileggere te stesso/te stessa"): women get the feminine
+  /// form, men the masculine, and an unspecified/unknown gender a gender-neutral
+  /// rewrite — so a reader is never addressed with the wrong grammatical gender.
+  static String forToday(String? userName, [String? gender]) {
     final name = userName?.trim() ?? '';
     final now = DateTime.now();
     // Day-of-year as a stable rotation index.
     final dayOfYear =
         now.difference(DateTime(now.year)).inDays; // 0-based, stable per day.
     final phrase = _phrases[dayOfYear % _phrases.length];
-    if (name.isEmpty || phrase.named.isEmpty) return phrase.plain;
-    return phrase.named.replaceAll('{name}', name);
+    final String plain;
+    final String named;
+    if (gender == 'female') {
+      plain = phrase.plainF ?? phrase.plain;
+      named = phrase.namedF ?? phrase.named;
+    } else if (gender == 'male') {
+      plain = phrase.plainM ?? phrase.plain;
+      named = phrase.namedM ?? phrase.named;
+    } else {
+      plain = phrase.plain; // neutral default
+      named = phrase.named;
+    }
+    if (name.isEmpty || named.isEmpty) return plain;
+    return named.replaceAll('{name}', name);
   }
 
   /// Curated, non-generic set. Warm, a little witty, literary, and contextual
@@ -636,11 +656,15 @@ class _LibraryGreetings {
     // ── Reworked from the old time-of-day lines (clean punctuation) ──────────
     _Greeting('Così presto?', 'Così presto, {name}?'),
     _Greeting('Già di ritorno?', 'Già di ritorno, {name}?'),
-    _Greeting('Bentornato tra le righe.', 'Bentornato tra le righe, {name}.'),
+    _Greeting('Di nuovo tra le righe?', 'Di nuovo tra le righe, {name}?',
+        plainM: 'Bentornato tra le righe.', namedM: 'Bentornato tra le righe, {name}.',
+        plainF: 'Bentornata tra le righe.', namedF: 'Bentornata tra le righe, {name}.'),
     // ── New literary greetings ──────────────────────────────────────────────
     _Greeting('Le tue pagine ti aspettavano.', 'Le tue pagine ti aspettavano, {name}.'),
     _Greeting('Di nuovo qui, tra le righe?', 'Di nuovo qui tra le righe, {name}?'),
-    _Greeting('Ben tornato dove eri rimasto.', 'Ben tornato dove eri rimasto, {name}.'),
+    _Greeting('Si riprende da dove avevi lasciato?', 'Si riprende da dove avevi lasciato, {name}?',
+        plainM: 'Ben tornato dove eri rimasto.', namedM: 'Ben tornato dove eri rimasto, {name}.',
+        plainF: 'Ben tornata dove eri rimasta.', namedF: 'Ben tornata dove eri rimasta, {name}.'),
     _Greeting('Qualcosa da rileggere, oggi?', 'Qualcosa da rileggere oggi, {name}?'),
     _Greeting('I tuoi passaggi preferiti, di nuovo.', 'I tuoi passaggi preferiti, {name}.'),
     _Greeting('Riprendiamo da dove eravamo?', 'Riprendiamo da dove eravamo, {name}?'),
@@ -648,14 +672,18 @@ class _LibraryGreetings {
     _Greeting('Un altro giro fra i tuoi appunti?', 'Un altro giro fra i tuoi appunti, {name}?'),
     _Greeting('Si torna sempre ai buoni libri.', 'Si torna sempre ai buoni libri, vero {name}?'),
     _Greeting('Le righe migliori ti hanno aspettato.', 'Le righe migliori ti hanno aspettato, {name}.'),
-    _Greeting('Pronto a rileggere te stesso?', 'Pronto a rileggere te stesso, {name}?'),
+    _Greeting('Tempo di rileggerti?', 'Tempo di rileggerti, {name}?',
+        plainM: 'Pronto a rileggere te stesso?', namedM: 'Pronto a rileggere te stesso, {name}?',
+        plainF: 'Pronta a rileggere te stessa?', namedF: 'Pronta a rileggere te stessa, {name}?'),
     _Greeting('Ogni ritorno è una nuova lettura.', 'Ogni tuo ritorno è una nuova lettura, {name}.'),
     _Greeting('I margini si ricordano di te.', 'I margini si ricordano di te, {name}.'),
     _Greeting('Cosa avevi sottolineato, l’ultima volta?', 'Cosa avevi sottolineato, {name}?'),
     _Greeting('Un pensiero, prima di ripartire?', 'Un pensiero prima di ripartire, {name}?'),
     _Greeting('Le tue letture non vedevano l’ora.', 'Le tue letture non vedevano l’ora, {name}.'),
     _Greeting('Torna a trovare le parole che ami.', 'Le parole che ami sono qui, {name}.'),
-    _Greeting('Ben ritrovato fra le tue pagine.', 'Ben ritrovato fra le tue pagine, {name}.'),
+    _Greeting('Di nuovo fra le tue pagine.', 'Di nuovo fra le tue pagine, {name}.',
+        plainM: 'Ben ritrovato fra le tue pagine.', namedM: 'Ben ritrovato fra le tue pagine, {name}.',
+        plainF: 'Ben ritrovata fra le tue pagine.', namedF: 'Ben ritrovata fra le tue pagine, {name}.'),
     _Greeting('Qualche riga ti stava cercando.', 'Qualche riga ti stava cercando, {name}.'),
     _Greeting('Si ricomincia da un sottolineato?', 'Si ricomincia da un sottolineato, {name}?'),
     _Greeting('La tua biblioteca ti ha tenuto il posto.', 'La tua biblioteca ti ha tenuto il posto, {name}.'),
@@ -666,8 +694,20 @@ class _LibraryGreetings {
 
 /// A single greeting in two forms. [named] may be empty, meaning the phrase is
 /// never personalised with the reader's name.
+///
+/// [plain]/[named] are the gender-neutral default (also used when the reader's
+/// gender is unknown). Phrases that contain an Italian participle agreeing with
+/// the reader also supply masculine ([plainM]/[namedM]) and feminine
+/// ([plainF]/[namedF]) variants; when null they fall back to the neutral form.
 class _Greeting {
-  const _Greeting(this.plain, this.named);
+  const _Greeting(
+    this.plain,
+    this.named, {
+    this.plainM,
+    this.namedM,
+    this.plainF,
+    this.namedF,
+  });
 
   /// Used when the reader's name is unknown — complete and self-contained.
   final String plain;
@@ -675,6 +715,14 @@ class _Greeting {
   /// Used when the name is known. Contains exactly one `{name}` slot, or is
   /// empty to opt out of personalisation.
   final String named;
+
+  /// Masculine variants (null ⇒ use the neutral [plain]/[named]).
+  final String? plainM;
+  final String? namedM;
+
+  /// Feminine variants (null ⇒ use the neutral [plain]/[named]).
+  final String? plainF;
+  final String? namedF;
 }
 
 // ─── Header editoriale ────────────────────────────────────────────────────────
@@ -685,12 +733,14 @@ class _EditorialHeader extends StatelessWidget {
     required this.onImport,
     required this.onForceReimport,
     this.userName,
+    this.gender,
   });
 
   final bool isImporting;
   final VoidCallback onImport;
   final VoidCallback onForceReimport;
   final String? userName;
+  final String? gender;
 
   @override
   Widget build(BuildContext context) {
@@ -700,7 +750,7 @@ class _EditorialHeader extends StatelessWidget {
     // cleanly with the reader's name. See [_LibraryGreetings] for the full
     // set and the templating rules (each phrase carries its own punctuation,
     // so we never glue "!," together).
-    final greeting = _LibraryGreetings.forToday(userName);
+    final greeting = _LibraryGreetings.forToday(userName, gender);
 
     // Airbnb-clean header: small caption above + huge bold title below.
     // The greeting is the eyebrow ("Buongiorno, Vittorio"), the title is

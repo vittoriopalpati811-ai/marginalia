@@ -282,7 +282,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   // ── Scroll helpers ───────────────────────────────────────────────────────────
 
-  void _scrollToBottom({bool animated = true}) {
+  void _scrollToBottom({bool animated = true, bool aggressive = false}) {
     void run() {
       if (!mounted || !_scrollController.hasClients) return;
       final target = _scrollController.position.maxScrollExtent;
@@ -302,10 +302,23 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     // the first jump lands mid-chat because maxScrollExtent was still growing,
     // so opening a chat didn't reliably show the most recent message.
     WidgetsBinding.instance.addPostFrameCallback((_) => run());
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted || !_scrollController.hasClients) return;
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-    });
+
+    // Image bubbles resolve a signed URL and then decode the network image —
+    // both async, so a photo can grow the list hundreds of px AFTER the first
+    // jump. That left the chat opening on old photos instead of the newest
+    // message (founder, 2026-06-19). On the initial open we therefore re-pin to
+    // the bottom across the first ~1.6s so each late image growth is followed.
+    // (Only the initial open is aggressive, so this never fights a user who has
+    // deliberately scrolled up to read history later in the session.)
+    final delays = aggressive
+        ? const [120, 300, 600, 1000, 1600]
+        : const [300];
+    for (final ms in delays) {
+      Future.delayed(Duration(milliseconds: ms), () {
+        if (!mounted || !_scrollController.hasClients) return;
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      });
+    }
   }
 
   // ── Send message ─────────────────────────────────────────────────────────────
@@ -455,7 +468,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
                 if (!_initialScrollDone && merged.isNotEmpty) {
                   _initialScrollDone = true;
-                  _scrollToBottom(animated: false);
+                  _scrollToBottom(animated: false, aggressive: true);
                 }
 
                 if (merged.isEmpty) {

@@ -103,12 +103,17 @@ class HealthService {
   // ── Cycle-phase inference ───────────────────────────────────────────────────
   //
   // HealthKit exposes menstrual *flow* samples, not a ready phase. We read the
-  // last 120 days of MENSTRUATION_FLOW, find the most recent period's start day
-  // (first day of the latest run of flow days, tolerating a 1-day gap), and map
-  // the days elapsed onto the canonical four phases using a typical 28-day
-  // cycle. This is an approximation — good enough to gently colour the daily
-  // phrase, never presented as medical fact. Returns null when there's no data
-  // or it's too stale (>40 days) to be meaningful.
+  // last 120 days of MENSTRUATION_FLOW and map the days elapsed since the latest
+  // period start onto the canonical four phases using a typical 28-day cycle.
+  // It is an approximation — good enough to gently colour the daily phrase,
+  // never presented as medical fact.
+  //
+  // CONSERVATIVE BY DESIGN (fixes the founder's 2026-06-19 report of cycle
+  // phrasing shown to someone who doesn't have a cycle): we only return a phase
+  // when there's evidence of a *real, recurring* cycle — at least two logged
+  // period starts in the window — AND the latest period started within one
+  // plausible cycle (≤33 days). A single stale or one-off flow entry, or an
+  // overdue/irregular gap, yields null so the phrase stays neutral.
 
   Future<CyclePhase?> _fetchCyclePhase(DateTime now) async {
     final start = now.subtract(const Duration(days: 120));
@@ -128,17 +133,22 @@ class HealthService {
     final sorted = days.toList()..sort();
     if (sorted.isEmpty) return null;
 
-    // Walk back from the most recent flow day through consecutive days (≤2-day
-    // gap tolerated for sparse logging) to find this period's start.
-    var periodStart = sorted.last;
-    for (var i = sorted.length - 1; i > 0; i--) {
-      if (sorted[i].difference(sorted[i - 1]).inDays <= 2) {
-        periodStart = sorted[i - 1];
-      } else {
-        break;
+    // Identify period STARTS: a flow day that opens a new run — the first day,
+    // or one preceded by a gap of >9 days (flow days inside a period are close
+    // together; periods are ~3 weeks apart). An actively-tracked cycle shows
+    // several of these across 120 days; a one-off / stale log shows just one.
+    final starts = <DateTime>[];
+    for (var i = 0; i < sorted.length; i++) {
+      if (i == 0 || sorted[i].difference(sorted[i - 1]).inDays > 9) {
+        starts.add(sorted[i]);
       }
     }
+    // Require evidence of a real, recurring cycle. This is what stops a single
+    // stale flow entry from colouring weeks of phrases for someone who doesn't
+    // actually track a cycle.
+    if (starts.length < 2) return null;
 
+    final periodStart = starts.last;
     final today = DateTime(now.year, now.month, now.day);
     final daysSince = today.difference(periodStart).inDays;
     final flowToday = days.contains(today);
@@ -146,8 +156,8 @@ class HealthService {
     if (flowToday || daysSince <= 5) return CyclePhase.menstruation;
     if (daysSince <= 12) return CyclePhase.follicular;
     if (daysSince <= 16) return CyclePhase.ovulation;
-    if (daysSince <= 40) return CyclePhase.luteal;
-    return null; // last period too long ago — don't guess
+    if (daysSince <= 33) return CyclePhase.luteal; // within one plausible cycle
+    return null; // overdue / not currently tracking — don't guess
   }
 
   // ── Workouts ────────────────────────────────────────────────────────────────

@@ -4,9 +4,11 @@
 //      screen, not just when the user is on the Messages tab.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_provider.dart';
@@ -172,11 +174,58 @@ final inboxRealtimeProvider = Provider<void>((ref) {
 /// as unread, because the comparison below always uses the *latest* of the
 /// local and server read times.
 class LocallyReadConversations extends Notifier<Map<String, DateTime>> {
+  static const _prefsKey = 'locally_read_conversations_v1';
+
   @override
-  Map<String, DateTime> build() => const {};
+  Map<String, DateTime> build() {
+    // Hydrate from disk so a conversation the user already opened doesn't come
+    // back as unread after the app is killed and reopened (founder, 2026-06-19:
+    // "ogni volta che esco dall'app e rientro me lo da come nuovo messaggio").
+    // The overlay can only ever make a chat look READ — a genuinely newer
+    // incoming message is still after this timestamp, so nothing is hidden.
+    _load();
+    return const {};
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKey);
+      if (raw == null) return;
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final restored = <String, DateTime>{};
+      for (final e in decoded.entries) {
+        final t = DateTime.tryParse(e.value as String);
+        if (t != null) restored[e.key] = t;
+      }
+      if (restored.isEmpty) return;
+      // Merge: keep the later of any in-session value and the persisted one.
+      final merged = <String, DateTime>{...restored};
+      state.forEach((k, v) {
+        final prev = merged[k];
+        merged[k] = (prev == null || v.isAfter(prev)) ? v : prev;
+      });
+      state = merged;
+    } catch (_) {
+      // Best-effort: a corrupt/absent store just means no optimistic overlay.
+    }
+  }
 
   void markRead(String conversationId) {
     state = {...state, conversationId: DateTime.now().toUtc()};
+    _persist();
+  }
+
+  Future<void> _persist() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(
+        {for (final e in state.entries) e.key: e.value.toIso8601String()},
+      );
+      await prefs.setString(_prefsKey, encoded);
+    } catch (_) {
+      // Non-fatal: persistence is an optimisation over the server read state.
+    }
   }
 }
 
