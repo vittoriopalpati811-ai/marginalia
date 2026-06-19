@@ -153,9 +153,20 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   `quiz/`, `search/` (=Persone user search), `onboarding/`, `auth/`,
   `settings/`, `widget/`, `wrapped/`, `stats/`.
 - `lib/core/branding/scripta_mark.dart` — **`ScriptaMark`** widget = the brand
-  logo (`assets/brand/scripta_mark.png`, sage layered cards + red bookmark).
+  logo (`assets/brand/scripta_mark.png`, layered cream→sage cards + red bookmark).
   Single source for the badge everywhere (share cards, onboarding, etc.).
   The app icon comes from `assets/icon/app-icon.png` via flutter_launcher_icons.
+- **Logo (refreshed 2026-06-19).** Master = the founder's `logo iphone.png`
+  (4096², glassy 3-layer card + red bookmark) on the Desktop. Everything is
+  derived from it: `app-icon.png` (opaque square, card fills frame, CI runs
+  flutter_launcher_icons from it), `scripta_mark.png` (transparent badge, white
+  bg flood-filled away), the Watch app icon (`ios/MarginaliaWatch/Assets.xcassets/
+  AppIcon.appiconset/AppIcon.png`), and `docs/assets/*` (favicons/og/hero). The
+  iOS **widget + Watch** logo is no longer drawn in SwiftUI — it's the same PNG
+  embedded as a **base64 string** in `MarginaliaWidgets.swift` /
+  `MarginaliaWatchApp.swift` (`scriptaLogoPNGBase64` → `UIImage`), so the
+  per-build CI target regeneration can never drop it (no asset-catalog needed).
+  To change the logo: drop a new master, re-run the derivation, re-embed base64.
 
 ---
 
