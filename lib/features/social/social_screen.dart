@@ -68,17 +68,49 @@ class _SocialScreenState extends ConsumerState<SocialScreen>
             onSearch: () => context.push('/search'),
           ),
           // ── Tab content ───────────────────────────────────────────────
+          // The inner TabBarView's native swipe used to swallow ALL horizontal
+          // drags, so the bottom-tab swipe never worked inside Jam (founder,
+          // 2026-06-21). We disable its native swipe and drive horizontal flings
+          // ourselves: a fling switches the inner section, but AT THE EDGE it
+          // hands off to the adjacent bottom tab (section 0 → Library, section 1
+          // → Home) — same fling model the other tabs already use.
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _JamTabContent(
-                  onCreateJam: _showCreateJamSheet,
-                  onJoinJam: _showJoinJamSheet,
-                  onShareJam: _shareInviteCode,
-                ),
-                const AmiciTab(),
-              ],
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragEnd: (details) {
+                final v = details.primaryVelocity ?? 0;
+                if (v.abs() < 300) return; // deliberate fling only
+                final idx = _tabController.index;
+                if (v < 0) {
+                  // swipe left → next inner section, else next bottom tab
+                  if (idx == 0) {
+                    _tabController.animateTo(1);
+                  } else {
+                    HapticFeedback.lightImpact();
+                    context.go('/home');
+                  }
+                } else {
+                  // swipe right → previous inner section, else previous bottom tab
+                  if (idx == 1) {
+                    _tabController.animateTo(0);
+                  } else {
+                    HapticFeedback.lightImpact();
+                    context.go('/');
+                  }
+                }
+              },
+              child: TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _JamTabContent(
+                    onCreateJam: _showCreateJamSheet,
+                    onJoinJam: _showJoinJamSheet,
+                    onShareJam: _shareInviteCode,
+                  ),
+                  const AmiciTab(),
+                ],
+              ),
             ),
           ),
         ],

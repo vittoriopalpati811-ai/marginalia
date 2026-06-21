@@ -191,7 +191,11 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
         title: Text(context.l10n.settingsKindleSync),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+          // Navigator (not context.pop): this screen is pushed via go_router
+          // in-app BUT via a plain MaterialPageRoute during onboarding, where no
+          // GoRouter is mounted — so context.pop() was a no-op and the X did
+          // nothing (founder, 2026-06-21). Navigator.maybePop works for both.
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
       body: kIsWeb ? const _WebNotSupported() : _nativeBody(),
@@ -226,7 +230,7 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
         if (_syncState == _SyncState.done)
           _DoneOverlay(
             count: _highlightsImported,
-            onClose: () => context.pop(),
+            onClose: () => Navigator.of(context).maybePop(),
           ),
         if (_syncState == _SyncState.error)
           _ErrorOverlay(

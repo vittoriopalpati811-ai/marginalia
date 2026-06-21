@@ -618,26 +618,40 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                   // LEFT mirrors a tab to the RIGHT (no wrong-way slide — see the
                   // §7 direction gotcha). The fixed nav bar sits outside this, so
                   // only the content carousels.
+                  // CRITICAL: read the slide direction PER-FRAME inside the
+                  // AnimatedBuilder, not when each page is built.
+                  // PageTransitionSwitcher reuses a page's transition widget when
+                  // that page later LEAVES, so capturing `dir` at build time made
+                  // the outgoing page slide with its ENTRY direction — back
+                  // (tab2→tab1) then wasn't the mirror of forward (tab1→tab2).
+                  // (§7 direction gotcha.) Reading `_slideReverse` each frame keeps
+                  // the two directions exactly specular.
                   transitionBuilder:
                       (child, primaryAnimation, secondaryAnimation) {
-                    final dir = _slideReverse ? -1.0 : 1.0;
-                    final enter = Tween<Offset>(
-                      begin: Offset(dir, 0),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                        parent: primaryAnimation, curve: Curves.easeOutCubic));
-                    final leave = Tween<Offset>(
-                      begin: Offset.zero,
-                      end: Offset(-dir, 0),
-                    ).animate(CurvedAnimation(
-                        parent: secondaryAnimation, curve: Curves.easeInCubic));
-                    return SlideTransition(
-                      position: enter,
-                      child: SlideTransition(
-                        position: leave,
-                        child: FadeTransition(
-                            opacity: primaryAnimation, child: child),
-                      ),
+                    return AnimatedBuilder(
+                      animation: Listenable.merge(
+                          [primaryAnimation, secondaryAnimation]),
+                      child: child,
+                      builder: (context, inner) {
+                        final dir = _slideReverse ? -1.0 : 1.0;
+                        // Entering page: primary 0→1 slides it from `dir` → 0.
+                        final enter = (1 -
+                                Curves.easeOutCubic
+                                    .transform(primaryAnimation.value)) *
+                            dir;
+                        // Leaving page: primary holds at 1 (enter term = 0) while
+                        // secondary 0→1 slides it 0 → -dir (opposite edge).
+                        final leave = Curves.easeInCubic
+                                .transform(secondaryAnimation.value) *
+                            -dir;
+                        return FractionalTranslation(
+                          translation: Offset(enter + leave, 0),
+                          child: Opacity(
+                            opacity: primaryAnimation.value.clamp(0.0, 1.0),
+                            child: inner,
+                          ),
+                        );
+                      },
                     );
                   },
                   child: KeyedSubtree(
