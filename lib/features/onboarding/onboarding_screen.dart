@@ -63,6 +63,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // forever. The actual advance is funnelled through [_continueAfterSignIn].
   StreamSubscription<AuthState>? _authSub;
   bool _handlingSignIn = false;
+  // One-shot latch: the post-sign-in advance must run at most once. The auth
+  // listener AND the OTP's onVerified can both fire for the same signedIn event,
+  // and the in-flight lock below resets, so without this they could double-run
+  // (the post-signup loop the founder hit). Set once, never reset.
+  bool _advancedPastAuth = false;
 
   // Step 1 — Auth
   final _emailCtrl = TextEditingController();
@@ -134,25 +139,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   /// Username step. Idempotent-guarded via [_handlingSignIn] so the auth
   /// listener and an explicit caller can't both run it.
   Future<void> _continueAfterSignIn() async {
-    if (_handlingSignIn) return;
+    if (_handlingSignIn || _advancedPastAuth) return;
     _handlingSignIn = true;
     try {
       final svc = ref.read(supabaseServiceProvider);
       final profile = await svc.fetchProfile();
-      final hasUsername =
-          (profile?['username'] as String?)?.isNotEmpty ?? false;
+      final username = (profile?['username'] as String?) ?? '';
+      final hasUsername = username.isNotEmpty;
       if (!mounted) return;
-      // Pre-fill display name from existing profile if any
+      // Pre-fill display name + username from an existing profile, so the
+      // mandatory-username check on the Complete step can't bounce a returning
+      // user back to the Username step.
       final displayName = profile?['display_name'] as String? ?? '';
       if (displayName.isNotEmpty && _nameCtrl.text.isEmpty) {
         _nameCtrl.text = displayName;
       }
-      // Returning user with full profile → straight to Complete
-      // New user → start with Username (step 2)
+      if (hasUsername && _usernameCtrl.text.isEmpty) {
+        _usernameCtrl.text = username;
+      }
+      // Latch BEFORE navigating so neither the auth listener nor the OTP's
+      // onVerified can re-run this. Returning user with full profile → straight
+      // to Complete; new user → Username (step 2).
+      _advancedPastAuth = true;
       _goTo(hasUsername ? _kStepComplete : 2);
     } catch (_) {
       // If we can't load the profile, advance to Username step anyway so
       // the user isn't stuck on Welcome.
+      _advancedPastAuth = true;
       if (mounted) _goTo(2);
     } finally {
       _handlingSignIn = false;

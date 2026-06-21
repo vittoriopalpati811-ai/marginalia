@@ -45,6 +45,11 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
 
   bool _loading = false;
   bool _resending = false;
+  // One-shot: once a code verifies, never run _verify again. Autofill,
+  // onChanged-at-full-length and the Verify button could otherwise re-fire it
+  // after success (the OTP is single-use, so a 2nd attempt errors), which was a
+  // path into the post-signup loop.
+  bool _verified = false;
   String? _error;
   int _cooldown = 0;
   Timer? _cooldownTimer;
@@ -79,6 +84,7 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
   }
 
   Future<void> _verify() async {
+    if (_verified || _loading) return; // one-shot — never re-verify
     final code = _codeCtrl.text.trim();
     if (code.length < 6) {
       setState(() => _error = context.l10n.otpErrorInvalid);
@@ -95,6 +101,7 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
             token: code,
           );
       if (!mounted) return;
+      _verified = true; // lock before navigating so nothing re-enters _verify
       // Verified → a session now exists. In the onboarding flow there is no
       // go_router mounted yet, so the caller passes [onVerified]: pop back and
       // let it continue the onboarding steps. In the auth_screen flow the
