@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/errors.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -114,7 +115,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
       }
     } finally {
       if (mounted) setState(() => _followLoading = false);
@@ -150,7 +151,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.errorPrefix('$e'))),
+        SnackBar(content: Text(context.safeError(e))),
       );
     }
   }

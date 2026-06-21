@@ -11,6 +11,7 @@
 //   • Unblock calls `unblockUser(id)`, drops the row locally, and confirms.
 
 import 'package:flutter/material.dart';
+import '../../core/errors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme.dart';
@@ -89,7 +90,7 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
       if (!mounted) return;
       setState(() => _unblocking.remove(user.id));
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.errorPrefix('$e'))),
+        SnackBar(content: Text(context.safeError(e))),
       );
     }
   }

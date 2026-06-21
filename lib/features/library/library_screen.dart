@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../core/errors.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -424,7 +425,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+              .showSnackBar(SnackBar(content: Text(context.safeError(e))));
         }
         setState(() => _isImporting = false);
         return;
@@ -553,7 +554,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);
@@ -590,7 +591,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            SnackBar(content: Text(context.safeError(e))));
       }
     } finally {
       if (mounted) setState(() => _isImporting = false);

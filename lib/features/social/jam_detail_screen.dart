@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import '../../core/errors.dart';
 import 'package:flutter/material.dart';
 import '../../core/utils/share_helper.dart';
 import 'package:flutter/services.dart';
@@ -211,7 +212,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
       }
     } finally {
       if (mounted) setState(() => _uploadingCover = false);
@@ -265,7 +266,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(l10n.errorPrefix('$e'))));
+      messenger.showSnackBar(SnackBar(content: Text(context.safeError(e))));
     }
   }
 
@@ -500,7 +501,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+                  .showSnackBar(SnackBar(content: Text(context.safeError(e))));
             }
           }
         },
@@ -959,7 +960,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               ),
             ),
             error: (e, _) => SliverFillRemaining(
-              child: Center(child: Text(context.l10n.errorPrefix('$e'))),
+              child: Center(child: Text(context.safeError(e))),
             ),
           ),
         ],

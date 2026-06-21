@@ -1,4 +1,5 @@
-﻿import 'dart:async';
+import 'dart:async';
+import '../../core/errors.dart';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -539,7 +540,7 @@ class CreatePostSheetState extends ConsumerState<CreatePostSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
         setState(() => _posting = false);
       }
     }
@@ -2139,7 +2140,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
         setState(() => _submitting = false);
       }
     }
@@ -2195,7 +2196,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
         setState(() => _submitting = false);
       }
     }

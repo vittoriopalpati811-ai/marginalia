@@ -1,4 +1,5 @@
-﻿import 'dart:async';
+import 'dart:async';
+import '../../core/errors.dart';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -370,7 +371,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.errorPrefix('$e')),
+            content: Text(context.safeError(e)),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -401,7 +402,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+          SnackBar(content: Text(context.safeError(e))),
         );
       }
     } finally {
@@ -423,7 +424,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+          SnackBar(content: Text(context.safeError(e))),
         );
       }
     } finally {
@@ -896,7 +897,7 @@ class _ChatAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ref.invalidate(conversationsProvider);
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.errorPrefix('$e'))),
+        SnackBar(content: Text(context.safeError(e))),
       );
     }
   }

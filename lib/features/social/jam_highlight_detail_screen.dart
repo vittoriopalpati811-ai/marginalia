@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../../core/errors.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -102,7 +103,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+          SnackBar(content: Text(context.safeError(e))),
         );
       }
     } finally {
@@ -119,7 +120,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+        SnackBar(content: Text(context.safeError(e))),
       );
     }
   }
@@ -148,7 +149,7 @@ class _JamHighlightDetailScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+          SnackBar(content: Text(context.safeError(e))),
         );
       }
     } finally {
@@ -292,7 +293,7 @@ class _JamHighlightDetailScreenState
                         ),
                       ),
                     ),
-                    error: (e, _) => Text(context.l10n.errorPrefix('$e'),
+                    error: (e, _) => Text(context.safeError(e),
                         style: const TextStyle(color: ScriptaColors.inkMuted)),
                   ),
                 ],

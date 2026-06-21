@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/errors.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -125,7 +126,7 @@ class _ProfileListSheetState extends ConsumerState<_ProfileListSheet> {
       widget.onChanged?.call();
     } catch (e) {
       messenger.showSnackBar(SnackBar(
-          content: Text(it ? 'Errore: $e' : 'Error: $e')));
+          content: Text(safeErrorMessage(e, en: !it))));
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/errors.dart';
 import 'package:flutter/services.dart';
 import '../../core/utils/share_helper.dart';
 import 'blocked_users_screen.dart';
@@ -69,7 +70,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         setState(() => _privateOverride = !value);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
       }
     } finally {
       if (mounted) setState(() => _privacyBusy = false);
@@ -419,7 +420,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(
-            SnackBar(content: Text(context.l10n.errorPrefix('$e'))),
+            SnackBar(content: Text(context.safeError(e))),
           );
       }
     }

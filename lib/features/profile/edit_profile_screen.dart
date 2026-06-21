@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../core/errors.dart';
 import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
@@ -293,7 +294,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.errorPrefix('$e'))));
+            .showSnackBar(SnackBar(content: Text(context.safeError(e))));
         setState(() => _saving = false);
       }
     }
