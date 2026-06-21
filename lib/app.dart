@@ -610,17 +610,36 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
                   }
                 },
                 child: PageTransitionSwitcher(
-                  duration: const Duration(milliseconds: 320),
-                  reverse: _slideReverse,
+                  duration: const Duration(milliseconds: 300),
+                  // Instagram-style horizontal pager: the incoming page slides
+                  // in full-width from the side it's coming from while fading in
+                  // ("apparizione"), and the outgoing page slides off the
+                  // opposite edge. `dir` is read LIVE per build so a tab to the
+                  // LEFT mirrors a tab to the RIGHT (no wrong-way slide — see the
+                  // §7 direction gotcha). The fixed nav bar sits outside this, so
+                  // only the content carousels.
                   transitionBuilder:
-                      (child, primaryAnimation, secondaryAnimation) =>
-                          SharedAxisTransition(
-                    animation: primaryAnimation,
-                    secondaryAnimation: secondaryAnimation,
-                    transitionType: SharedAxisTransitionType.horizontal,
-                    fillColor: Colors.transparent,
-                    child: child,
-                  ),
+                      (child, primaryAnimation, secondaryAnimation) {
+                    final dir = _slideReverse ? -1.0 : 1.0;
+                    final enter = Tween<Offset>(
+                      begin: Offset(dir, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                        parent: primaryAnimation, curve: Curves.easeOutCubic));
+                    final leave = Tween<Offset>(
+                      begin: Offset.zero,
+                      end: Offset(-dir, 0),
+                    ).animate(CurvedAnimation(
+                        parent: secondaryAnimation, curve: Curves.easeInCubic));
+                    return SlideTransition(
+                      position: enter,
+                      child: SlideTransition(
+                        position: leave,
+                        child: FadeTransition(
+                            opacity: primaryAnimation, child: child),
+                      ),
+                    );
+                  },
                   child: KeyedSubtree(
                     key: ValueKey(routePath),
                     child: widget.child,
