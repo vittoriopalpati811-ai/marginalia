@@ -13,9 +13,15 @@ import '../../core/theme.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/auth_provider.dart';
 
+/// Length of the email OTP Supabase sends. The Auth dashboard is configured to
+/// 8 digits; the field's maxLength + auto-submit follow this constant, so if the
+/// dashboard length ever changes, update only here. (The earlier 6 truncated the
+/// 8-digit code, so signup could never be confirmed — founder, 2026-06-21.)
+const int _kOtpLength = 8;
+
 /// Email-confirmation OTP entry. Shown straight after signup when Supabase
 /// requires email confirmation (signUp returns a null session). The user types
-/// the 6-digit code from the email; we verify it directly against Supabase
+/// the code from the email; we verify it directly against Supabase
 /// (no magic-link round-trip), which yields a session and signs them in.
 class EmailOtpScreen extends ConsumerStatefulWidget {
   const EmailOtpScreen({super.key, required this.email, this.onVerified});
@@ -185,30 +191,33 @@ class _EmailOtpScreenState extends ConsumerState<EmailOtpScreen> {
               ).animate().fadeIn(delay: 140.ms, duration: 400.ms),
               const SizedBox(height: 30),
 
-              // 6-digit code field.
+              // One-time code field. Supabase sends an 8-digit email OTP (the
+              // length is set in the Auth dashboard); keep [_kOtpLength] in sync
+              // with it. A shorter config still works — the user just taps
+              // Verify instead of it auto-submitting.
               TextField(
                 controller: _codeCtrl,
                 focusNode: _focus,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                maxLength: 6,
+                maxLength: _kOtpLength,
                 autofillHints: const [AutofillHints.oneTimeCode],
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 12,
+                  letterSpacing: 6,
                   color: ScriptaColors.ink,
                 ),
                 onChanged: (v) {
                   if (_error != null) setState(() => _error = null);
-                  if (v.length == 6) _verify();
+                  if (v.length == _kOtpLength) _verify();
                 },
                 decoration: InputDecoration(
                   counterText: '',
-                  hintText: '••••••',
+                  hintText: '•' * _kOtpLength,
                   hintStyle: TextStyle(
-                    letterSpacing: 12,
+                    letterSpacing: 6,
                     color: ScriptaColors.inkFaint.withAlpha(120),
                   ),
                   filled: true,
