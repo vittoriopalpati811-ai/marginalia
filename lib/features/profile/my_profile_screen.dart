@@ -1328,6 +1328,16 @@ class _BookCell extends ConsumerWidget {
     final title  = book['title']  as String? ?? '';
     final author = book['author'] as String? ?? '';
 
+    // Resolve the custom cover the user picked (per-user cover store), falling
+    // back to the book's own cover_url, then to the generated editorial art.
+    // Without this the personal-area "Libreria" kept showing the default art
+    // even after the user chose a custom cover (founder, 2026-06-20).
+    final customCover =
+        ref.watch(favCoversProvider(null)).asData?.value[favCoverKey(title, author)];
+    final coverUrl = (customCover != null && customCover.isNotEmpty)
+        ? customCover
+        : book['cover_url'] as String?;
+
     // Profile book tiles open the keyless BookInfoScreen (cover + plot from
     // title/author). This works identically on own and others' profiles and
     // needs no local Isar id lookup — the old /book/:id bridge failed with
@@ -1335,7 +1345,7 @@ class _BookCell extends ConsumerWidget {
     final card = GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => BookInfoScreen(title: title, author: author),
+          builder: (_) => BookInfoScreen(title: title, author: author, coverUrl: coverUrl),
         ),
       ),
       child: Container(
@@ -1350,6 +1360,7 @@ class _BookCell extends ConsumerWidget {
               child: BookEditorialCover(
                 title:  title,
                 author: author,
+                coverUrl: coverUrl,
                 borderRadius: const BorderRadius.only(
                   topLeft:  Radius.circular(9.4),
                   topRight: Radius.circular(9.4),
