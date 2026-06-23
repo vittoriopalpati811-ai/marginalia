@@ -2300,7 +2300,8 @@ class _FavBookTile extends ConsumerWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => BookInfoScreen(title: title, author: author),
+          builder: (_) =>
+              BookInfoScreen(title: title, author: author, coverUrl: coverUrl),
         ),
       ),
       // Long-press → peek this book's highlights (like the library book sheet).

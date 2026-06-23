@@ -32,7 +32,7 @@ class _GP {
 const _kGradients = [
   _GP('sepia',    'Vintage Wine',  Color(0xFF694852), Color(0xFF2C0F17)),
   _GP('forest',   'Pastel Yellow', Color(0xFFF3E8B9), Color(0xFFCBC195)),
-  _GP('ocean',    'Reseda',        Color(0xFFB0BAA3), Color(0xFF7E8772)),
+  _GP('ocean',    'Matcha',        Color(0xFFB0BAA3), Color(0xFF7E8772)),
   _GP('dusk',     'Chive',         Color(0xFF686B53), Color(0xFF2B2E18)),
   _GP('rose',     'Powder Blue',   Color(0xFFA5BECD), Color(0xFF738B99)),
   _GP('graphite', 'Navy 2965C',    Color(0xFF476173), Color(0xFF0D2435)),

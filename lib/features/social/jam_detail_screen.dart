@@ -147,6 +147,13 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
   /// the stale loaded colour); a hex string = a custom colour.
   String? _liveThemeColor;
 
+  /// Resolved jam palette, cached on each build() so methods that push DIALOGS
+  /// (rename / delete) — which mount OUTSIDE the JamTheme InheritedWidget subtree
+  /// and so can't read JamTheme.of(context) — can still tint with the jam's
+  /// colour ("quel colore deve essere ovunque dentro la jam", founder 2026-06-24).
+  Color _jamDarkC = ScriptaColors.primaryDark;
+  Color _jamFaintC = ScriptaColors.primaryFaint;
+
   /// The title currently shown in the header — the freshest value we have.
   String get _displayTitle => _liveTitle ?? widget.jamName;
 
@@ -231,6 +238,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
+        backgroundColor: _jamFaintC,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(it ? 'Rimuovere la citazione?' : 'Remove highlight?',
             style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -315,6 +323,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (dialogCtx, setLocal) => AlertDialog(
+          backgroundColor: _jamFaintC,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: Text(
@@ -395,6 +404,7 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
               child: Text(l10n.cancel),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: _jamDarkC),
               onPressed: () => Navigator.pop(dialogCtx, true),
               child: Text(l10n.save),
             ),
@@ -590,6 +600,9 @@ class _JamDetailScreenState extends ConsumerState<JamDetailScreen> {
         hasJamColor ? JamColor.darken(jamColor) : JamTheme.of(context).dark;
     final jamColorFaint =
         hasJamColor ? JamColor.faint(jamColor) : JamTheme.of(context).faint;
+    // Cache for dialog methods (see _jamDarkC docs).
+    _jamDarkC = jamColorDark;
+    _jamFaintC = jamColorFaint;
     final headerGradient = BoxDecoration(
       gradient: LinearGradient(
         colors: [jamColorDark, jamColor],
@@ -1027,9 +1040,11 @@ class _TrendingSection extends StatelessWidget {
               final sharedBy =
                   profile?['display_name'] as String? ?? 'User';
 
-              final coverColor =
-                  ScriptaDecorations.bookCoverColor(
-                      bookTitle.isNotEmpty ? bookTitle : sharedBy);
+              // Trending ("di tendenza") cards take the JAM's theme colour (its
+              // darker shade, legible under the white text) so the whole jam —
+              // these cards included — reads in the chosen palette instead of
+              // per-book colours (founder, 2026-06-23).
+              final coverColor = JamTheme.of(context).dark;
 
               return GestureDetector(
                 onTap: () => onTap(data),
