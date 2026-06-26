@@ -302,6 +302,16 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 - **PostgrestException in poll vote**: upsert needed `onConflict`.
 - **Permanent deletion is prohibited** by safety rules — when cleaning files
   (e.g. old APKs) move to Recycle Bin, never hard-delete.
+- **`flutter create --platforms=ios .` PRESERVES the committed `ios/Runner/
+  Info.plist`** (empirically verified: a probe key survives a re-run). So the
+  Calendar (`NSCalendars*`), HealthKit (`NSHealthShare/Update`),
+  `NSPhotoLibraryAddUsageDescription`, and `ITSAppUsesNonExemptEncryption` keys
+  ship straight from the committed plist — they do **NOT** need CI re-injection,
+  and you should NOT add PlistBuddy `Set` lines for them (that would clobber the
+  committed wording with the CI string and create a divergence trap). The CI
+  only re-injects CFBundleDisplayName/Name (committed value resolves via a build
+  variable) and Camera/Photo. Don't "fix" a non-bug here — the purpose strings
+  already reach the IPA. (Investigated 2026-06-26 during store-readiness.)
 
 ---
 
