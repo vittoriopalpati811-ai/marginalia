@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -29,14 +28,18 @@ class PrivacyPolicyScreen extends StatefulWidget {
 }
 
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
-  // ONE controller for the lifetime of the screen. The EN/IT toggle reloads the
-  // other language's HTML into THIS SAME controller via loadHtmlString. The old
-  // approach recreated the controller on toggle, but the "set _controller=null"
-  // and "set _controller=new" setStates batched into one frame, so the WebView
-  // element was reused and kept showing the previous page → tapping EN did
-  // nothing. Reloading the live controller's content always re-renders.
+  // ONE controller for the screen's lifetime. The EN/IT toggle re-navigates it
+  // to the other language's bundled asset via loadFlutterAsset. We use
+  // loadFlutterAsset (a REAL asset URL) rather than loadHtmlString: re-calling
+  // loadHtmlString on the same controller did not reliably re-render on the
+  // Android WebView → "tapping EN did nothing". A real navigation always
+  // re-renders. If the main frame ever fails (it shouldn't — the asset ships in
+  // the app) we fall back to the hosted page so the screen is never blank.
   WebViewController? _controller;
   bool _loaded = false;
+  // Both sticky (set once, never reset) — see _load() + the delegate below.
+  bool _pageDone = false; // the asset page reached onPageFinished at least once
+  bool _triedHosted = false; // we already used the hosted fallback once
 
   late bool _isItalian;
 
@@ -50,6 +53,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       ? 'docs/privacy/it/index.html'
       : 'docs/privacy/index.html';
 
+  String get _hostedUrl =>
+      _isItalian ? PrivacyPolicyScreen._itUrl : PrivacyPolicyScreen._enUrl;
+
   @override
   void initState() {
     super.initState();
@@ -57,37 +63,60 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
     if (_webViewSupported) {
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.disabled)
-        ..setBackgroundColor(ScriptaColors.background);
-      _loadAsset();
+        ..setBackgroundColor(ScriptaColors.background)
+        ..setNavigationDelegate(NavigationDelegate(
+          onPageFinished: (_) {
+            _pageDone = true;
+            if (mounted && !_loaded) setState(() => _loaded = true);
+          },
+          onWebResourceError: (error) {
+            // Recover ONLY from a genuine first-load main-frame failure. Once
+            // the page has rendered once we never bounce again: sub-resource
+            // 404s (favicon / web-font) report isForMainFrame=false, and on
+            // Android isForMainFrame can be unreliable — bouncing to the hosted
+            // page while offline would just re-blank the screen.
+            if (!_pageDone &&
+                !_triedHosted &&
+                (error.isForMainFrame ?? false) &&
+                mounted) {
+              _triedHosted = true;
+              _controller?.loadRequest(Uri.parse(_hostedUrl));
+            }
+          },
+        ));
+      _load();
     }
   }
 
   void _toggleLanguage() {
-    setState(() => _isItalian = !_isItalian);
-    if (_webViewSupported) _loadAsset(); // reload the SAME controller
+    setState(() {
+      _isItalian = !_isItalian;
+      _loaded = false; // show the spinner over the webview during the reload
+    });
+    if (_webViewSupported) _load();
   }
 
-  Future<void> _loadAsset() async {
+  // loadFlutterAsset navigates to a real asset URL → reliable re-render on the
+  // toggle (unlike re-calling loadHtmlString). It throws a Dart ArgumentError
+  // (NOT a WebResourceError) if a key were ever missing, so we catch that and
+  // fall back to the hosted page. The watchdog guarantees the spinner can never
+  // hang forever if a page-load callback is ever missed.
+  Future<void> _load() async {
     final controller = _controller;
     if (controller == null) return;
     try {
-      final html = await rootBundle.loadString(_assetPath);
-      // Strip favicon/apple-touch + Open Graph/Twitter image tags: they point
-      // at /assets/ paths that can't resolve in a data-URI WebView.
-      final cleaned = html
-          .replaceAll(
-              RegExp(r'\s*<link[^>]*rel="(icon|apple-touch-icon)"[^>]*>',
-                  caseSensitive: false),
-              '')
-          .replaceAll(
-              RegExp(r'\s*<meta[^>]*(og:image|twitter:image|twitter:card)[^>]*>',
-                  caseSensitive: false),
-              '');
-      await controller.loadHtmlString(cleaned);
-      if (mounted) setState(() => _loaded = true);
+      await controller.loadFlutterAsset(_assetPath);
     } catch (_) {
-      // Keep the spinner on failure; harmless.
+      if (mounted && !_triedHosted) {
+        _triedHosted = true;
+        try {
+          await controller.loadRequest(Uri.parse(_hostedUrl));
+        } catch (_) {/* offline: the watchdog below still clears the spinner */}
+      }
     }
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && !_loaded) setState(() => _loaded = true);
+    });
   }
 
   @override
@@ -116,19 +145,20 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
           ),
         ],
       ),
-      body: _webViewSupported
-          ? (_controller == null || !_loaded
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: ScriptaColors.sienna,
-                    strokeWidth: 1.5,
+      body: !_webViewSupported
+          ? _BrowserFallback(url: _hostedUrl)
+          : Stack(
+              children: [
+                if (_controller != null)
+                  WebViewWidget(controller: _controller!),
+                if (!_loaded)
+                  const Center(
+                    child: CircularProgressIndicator(
+                      color: ScriptaColors.sienna,
+                      strokeWidth: 1.5,
+                    ),
                   ),
-                )
-              : WebViewWidget(controller: _controller!))
-          : _BrowserFallback(
-              url: _isItalian
-                  ? PrivacyPolicyScreen._itUrl
-                  : PrivacyPolicyScreen._enUrl,
+              ],
             ),
     );
   }
