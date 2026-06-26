@@ -122,6 +122,28 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
     run on Windows can flake → re-run.
 - Deliver to **`C:\Users\User\Desktop\Scripta_1.1.0.apk`**.
 
+### Android → Google Play (release, 2026-06-26)
+- Play needs an **App Bundle (`.aab`)**, not an APK, and a **real upload key**.
+  `Marginalia_ANDROID/android/app/build.gradle` now reads a release
+  `signingConfig` from a gitignored `android/key.properties` (template:
+  `android/key.properties.example`) and **falls back to the debug key** if it's
+  absent (so dev `flutter run --release` still works). `targetSdk = 35` (Play
+  mandate since 2025-08-31; compileSdk already 35).
+- The founder creates the upload keystore **once** with `keytool` and fills
+  `key.properties` — I do NOT create/own his signing key or enter passwords.
+- Build the bundle with **`Marginalia_ANDROID/build_appbundle.ps1`** (does
+  `flutter clean` + `flutter build appbundle --release`, copies
+  `Scripta.aab` to the Desktop). Verified build = **35.4 MB**.
+- Full publication handoff (keystore steps, Play Console, Data Safety, Health
+  Connect declaration text, store copy, iOS final steps) lives in
+  **`Desktop/Scripta/PUBBLICAZIONE - Play Store + ultimi passi App Store.md`**.
+  Play assets (512 icon + 1024×500 feature graphic) in
+  `Desktop/Scripta/PlayStore_Assets/`.
+- **Privacy policy** now covers sleep + calendar + Android Health Connect
+  (`docs/privacy/` EN+IT). Note: health/menstrual/sleep data is **on-device
+  only → NOT declared as "collected"** in Play Data Safety; calendar event
+  titles + city are the only personalization signals that leave the device.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT

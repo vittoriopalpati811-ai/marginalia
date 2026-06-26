@@ -640,10 +640,30 @@
             </div>
           </div>
           <div class="row">
+            <div class="label">Sonno</div>
+            <div class="value">
+              Le ore di sonno della notte scorsa influenzano il tono
+              dell'highlight del mattino (più dolce dopo una notte corta).
+              Letto sul dispositivo; mai caricato.
+              <br><span class="opt">Opzionale</span>
+            </div>
+          </div>
+          <div class="row">
             <div class="label">Fase del ciclo mestruale</div>
             <div class="value">
               Affina la scelta dell'highlight del giorno se — e solo se —
               dai esplicito consenso. Resta sul tuo dispositivo.
+              <br><span class="opt">Opzionale</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Eventi del calendario</div>
+            <div class="value">
+              I titoli degli eventi di oggi sono letti sul dispositivo per
+              adattare l'highlight alla tua giornata. Solo i titoli — non orari,
+              luoghi, partecipanti o identificatori — possono essere inviati al
+              selettore AI degli highlight (vedi <a href="#third">Groq</a> più
+              sotto). Nulla viene salvato sui nostri server.
               <br><span class="opt">Opzionale</span>
             </div>
           </div>
@@ -676,10 +696,11 @@
         </div>
 
         <p style="margin-top: 24px;">
-          I dati sanitari (passi, allenamenti, ciclo mestruale) sono letti
-          da Apple HealthKit sul tuo dispositivo, usati nell'istante per
-          scegliere un highlight, e poi scartati. <strong>Non arrivano mai
-          ai nostri server</strong>, e non sono mai condivisi con nessuno.
+          I dati sanitari (passi, allenamenti, sonno, ciclo mestruale) sono
+          letti da Apple HealthKit (iOS) o Health Connect (Android) sul tuo
+          dispositivo, usati nell'istante per scegliere un highlight, e poi
+          scartati. <strong>Non arrivano mai ai nostri server</strong>, e non
+          sono mai condivisi con nessuno.
         </p>
 
         <div class="scribble-fallback">— comunque sia, i dati sanitari restano sul tuo telefono. sempre.</div>
@@ -747,9 +768,11 @@
         </p>
         <p>
           <strong>Consenso (art. 6.1.a e art. 9.2.a)</strong> — i dati
-          sanitari sono trattati solo se concedi esplicitamente il permesso
-          HealthKit sul dispositivo. Puoi revocarlo in qualunque momento da
-          Impostazioni iOS → Privacy e sicurezza → Salute.
+          sanitari e del calendario sono trattati solo se concedi
+          esplicitamente il permesso sul dispositivo. Puoi revocarlo in
+          qualunque momento: su iOS da Impostazioni → Privacy e sicurezza →
+          Salute (e → Calendari); su Android da Impostazioni → Sicurezza e
+          privacy → Health Connect (e il permesso calendario in App → Scripta).
         </p>
         <p>
           <strong>Legittimo interesse (art. 6.1.f)</strong> — meteo a

@@ -696,10 +696,28 @@
             </div>
           </div>
           <div class="row">
+            <div class="label">Sleep</div>
+            <div class="value">
+              Last night's sleep duration nudges the morning highlight's tone
+              (gentler after a short night). Read on-device; never uploaded.
+              <br><span class="opt">Optional</span>
+            </div>
+          </div>
+          <div class="row">
             <div class="label">Menstrual cycle phase</div>
             <div class="value">
               Further personalises the daily highlight if — and only if — you enable it.
               Stays on your device.
+              <br><span class="opt">Optional</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="label">Calendar events</div>
+            <div class="value">
+              Today's event titles are read on-device to fit the daily highlight
+              to your day. Only the titles — no times, locations, attendees, or
+              identifiers — may be sent to the AI highlight selector (see
+              <a href="#third">Groq</a> below). Nothing is stored on our servers.
               <br><span class="opt">Optional</span>
             </div>
           </div>
@@ -732,10 +750,11 @@
         </div>
 
         <p style="margin-top: 24px;">
-          Health data (steps, workouts, menstrual cycle) is read from Apple
-          HealthKit on your device, used in the moment to choose a highlight,
-          and then discarded. It <strong>never reaches our servers</strong>,
-          and it is never shared with anyone.
+          Health data (steps, workouts, sleep, menstrual cycle) is read from
+          Apple HealthKit (iOS) or Health Connect (Android) on your device, used
+          in the moment to choose a highlight, and then discarded. It
+          <strong>never reaches our servers</strong>, and it is never shared
+          with anyone.
         </p>
 
         <div class="scribble-fallback">— anyway, health data stays on your phone. always.</div>
@@ -799,9 +818,12 @@
           necessary to provide the service you signed up for.
         </p>
         <p>
-          <strong>Consent (Art. 6.1.a &amp; Art. 9.2.a)</strong> — health data is
-          processed only if you explicitly grant HealthKit permission on your device.
-          You can revoke this at any time in iOS Settings → Privacy &amp; Security → Health.
+          <strong>Consent (Art. 6.1.a &amp; Art. 9.2.a)</strong> — health and
+          calendar data are processed only if you explicitly grant permission on
+          your device. You can revoke this at any time: on iOS in Settings →
+          Privacy &amp; Security → Health (and → Calendars); on Android in
+          Settings → Security &amp; privacy → Health Connect (and the calendar
+          permission under Apps → Scripta).
         </p>
         <p>
           <strong>Legitimate interest (Art. 6.1.f)</strong> — city-level weather via
