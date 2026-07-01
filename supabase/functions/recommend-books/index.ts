@@ -405,7 +405,10 @@ ISTRUZIONI:
 }`;
 }
 
-// ─── Groq API (llama-3.1-8b-instant — free tier) ─────────────────────────────
+// ─── Groq API (openai/gpt-oss-20b — free tier) ───────────────────────────────
+//
+// Migrated 2026-07 from llama-3.1-8b-instant (deprecated by Groq, decommissioned
+// 2026-08-16; recommended replacement = gpt-oss-20b). History below.
 //
 // Was llama-3.3-70b-versatile, which has a 100 K tokens-per-day cap on free.
 // One personalised recommendation request runs ~1.4 K tokens, so the 70B
@@ -430,18 +433,20 @@ async function callGroq(
       "authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
+      // gpt-oss-20b: Groq's recommended replacement for the deprecated
+      // llama-3.1-8b-instant (decommissioned 2026-08-16). Reasoning model, so
+      // reasoning_effort "low" keeps latency/cost down; its chain-of-thought
+      // goes to a separate field, leaving `content` as the JSON we parse.
+      model: "openai/gpt-oss-20b",
       messages: [{ role: "user", content: prompt }],
-      // 2800 reserved output tokens: enough for 5 recommendations each
-      // carrying title+author+year+reason (2-3 sentences) +plot (1-2
-      // sentences) +categories +pages +why, while keeping total per-call
-      // usage (input ~600-900 + output ≤2800 ≈ <3 700) under the 8B model's
-      // 6 000 TPM ceiling so a retry within the same minute does not 429.
-      // Was 4096, which — combined with a large input payload — pushed a
-      // single call over 6 K TPM → HTTP 429 → reason 'rate_limit', and the
-      // retry 429'd again. The salvage parser below recovers any complete
-      // objects if a response is still cut off at this lower ceiling.
-      max_tokens: 2800,
+      reasoning_effort: "low",
+      // Reserved completion budget: enough for 5 recommendations (each with
+      // title+author+year+reason+plot+categories+pages+why) PLUS gpt-oss-20b's
+      // low-effort reasoning tokens, which also count toward the completion.
+      // The salvage parser below recovers any complete objects if a long
+      // response is cut off. (Under llama-3.1-8b-instant this was 2800 to stay
+      // under a 6 K TPM ceiling; gpt-oss-20b has a higher allowance.)
+      max_completion_tokens: 4096,
       // Lower than 0.7 to reduce "anchor drift" — the model picking one book for
       // the blurb and an unrelated one for "why". Recs still vary day-to-day via
       // the per-call random library subset.

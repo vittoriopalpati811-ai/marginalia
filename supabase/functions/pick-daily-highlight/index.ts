@@ -155,9 +155,17 @@ async function callGroq(
       "authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      // gpt-oss-120b: Groq's recommended replacement for the deprecated
+      // llama-3.3-70b-versatile (decommissioned 2026-08-16). It is a REASONING
+      // model — the chain-of-thought goes to a separate `reasoning` field so
+      // `content` still holds just the index, BUT that reasoning consumes
+      // completion tokens: the old `max_tokens: 8` would truncate before any
+      // content is emitted. reasoning_effort "low" keeps it fast/cheap; the
+      // larger budget leaves room for the (tiny) final answer.
+      model: "openai/gpt-oss-120b",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 8,
+      max_completion_tokens: 2048,
+      reasoning_effort: "low",
       temperature: 0.4,
     }),
     signal: AbortSignal.timeout(20_000),
