@@ -1,6 +1,6 @@
 // ─── Daily Highlight Provider ─────────────────────────────────────────────────
 //
-// Uses Groq (Llama 3.3 70B) via the `pick-daily-highlight` Edge Function to
+// Uses Groq (openai/gpt-oss-120b) via the `pick-daily-highlight` Edge Function to
 // select the most contextually resonant highlight from the user's library.
 //
 // NOT autoDispose — the result is stable for the entire app session (doesn't
