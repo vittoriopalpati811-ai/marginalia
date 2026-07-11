@@ -214,6 +214,14 @@ jobs:
           ruby ios/scripts/add_watch_targets.rb
           echo "Watch target references:"
           grep -c "MarginaliaWatch" ios/Runner.xcodeproj/project.pbxproj || echo "  (watch NOT found — injection failed!)"
+          # iPhone-ONLY app (founder decision 2026-07-11): flutter create defaults
+          # TARGETED_DEVICE_FAMILY to "1,2" (iPhone+iPad), which forces iPad
+          # screenshots in App Store Connect for an app that has no iPad layout.
+          # Rewrite "1,2" -> 1 AFTER target injection so it also covers the
+          # widget extension; the Watch targets use 4 and are untouched.
+          perl -pi -e 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/g' ios/Runner.xcodeproj/project.pbxproj
+          echo "Device family after patch (expect no \"1,2\" left):"
+          grep -c 'TARGETED_DEVICE_FAMILY = "1,2"' ios/Runner.xcodeproj/project.pbxproj && { echo "::error title=iPad still targeted::TARGETED_DEVICE_FAMILY patch failed"; exit 1; } || echo "  OK — iPhone-only"
 
       - name: Set up Flutter deps
         run: |
