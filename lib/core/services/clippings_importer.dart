@@ -53,6 +53,28 @@ Future<ImportResult?> pickAndImportClippings(WidgetRef ref) async {
   return service.importClippingsText(rawText);
 }
 
+/// Builds one canonical "My Clippings" entry from a Kobo Bookmark row.
+/// Kobo rows have no Kindle-style location, and the importer dedups on
+/// book+location — without a synthetic location every same-book highlight
+/// collides with the first one and gets silently dropped. The stable
+/// content-hash location (same trick as the paste synthesizer) keeps distinct
+/// highlights distinct AND makes a re-import dedup instead of duplicating.
+/// The author's parentheses are sanitised because the parser reads the LAST
+/// '(...)' of the title line as the author. Exposed for unit testing.
+String buildKoboEntry({
+  String? title,
+  String? author,
+  required String text,
+  String? date,
+}) {
+  final safeTitle = ((title ?? '').trim().isEmpty ? 'Kobo' : title!.trim());
+  final safeAuthor =
+      (author ?? '').trim().replaceAll('(', '[').replaceAll(')', ']');
+  final location = text.hashCode.abs();
+  return '$safeTitle ($safeAuthor)\n'
+      '- Your Highlight | location $location | Added on ${date ?? ''}\n\n$text';
+}
+
 /// Lets the user pick their Kobo `KoboReader.sqlite` and imports its highlights
 /// (the Bookmark table joined with the book metadata in `content`). Returns the
 /// [ImportResult], or `null` if the user cancelled. Throws on a malformed file
@@ -78,12 +100,14 @@ Future<ImportResult?> pickAndImportKobo(WidgetRef ref) async {
       ORDER BY c.BookTitle, b.DateCreated
     ''');
     for (final row in rows) {
-      final title = ((row['title'] as String?) ?? 'Kobo').trim();
-      final author = ((row['author'] as String?) ?? '').trim();
       final text = ((row['text'] as String?) ?? '').trim();
       if (text.isEmpty) continue;
-      entries.add('$title ($author)\n'
-          '- Your Highlight | Added on ${row['date'] ?? ''}\n\n$text');
+      entries.add(buildKoboEntry(
+        title: row['title'] as String?,
+        author: row['author'] as String?,
+        text: text,
+        date: row['date']?.toString(),
+      ));
     }
   } finally {
     db.dispose();
