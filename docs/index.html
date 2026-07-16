@@ -32,6 +32,22 @@
     .pill { margin-top: 30px; background: var(--sage); color: var(--ink);
       font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 999px; }
     .note { margin-top: 14px; color: var(--ink-faint); font-size: 13px; }
+    .wl { margin-top: 30px; width: 100%; }
+    .wl-title { font-family: 'EB Garamond', Georgia, serif; font-weight: 600;
+      font-size: 22px; margin-bottom: 12px; }
+    .wl-form { display: flex; gap: 8px; width: 100%; }
+    .wl-input { flex: 1; min-width: 0; padding: 14px 18px; font: inherit; font-size: 15px;
+      color: var(--ink); background: #fff; border: 1px solid var(--rule);
+      border-radius: 999px; outline: none; }
+    .wl-input:focus { border-color: var(--sage-dark); }
+    .wl-btn { flex: none; background: var(--sage); color: var(--ink); border: 0;
+      font: inherit; font-weight: 800; font-size: 14px; padding: 14px 22px;
+      border-radius: 999px; cursor: pointer; }
+    .wl-btn:disabled { opacity: .6; cursor: default; }
+    .wl-msg { margin-top: 10px; font-size: 13.5px; min-height: 18px; }
+    .wl-msg.ok { color: var(--sage-dark); font-weight: 700; }
+    .wl-msg.err { color: #B94A41; }
+    .wl-hp { position: absolute; left: -9999px; opacity: 0; }
     .foot { margin-top: 64px; font-size: 12.5px; color: var(--ink-faint); }
     .foot a { color: var(--sage-dark); text-decoration: none; font-weight: 700; }
   </style>
@@ -42,12 +58,63 @@
     <h1>Scripta</h1>
     <div class="tagline">I tuoi highlight Kindle, reinventati.<br>
       Widget, ripasso quotidiano e cerchie di lettura.</div>
-    <div class="pill">Disponibile su TestFlight</div>
-    <div class="note">Your Kindle highlights, reinvented.</div>
+    <div class="wl">
+      <div class="wl-title">Entra in lista d’attesa</div>
+      <form class="wl-form" id="wl-form" novalidate>
+        <input class="wl-input" id="wl-email" type="email" inputmode="email"
+               autocomplete="email" placeholder="La tua email" required
+               aria-label="La tua email" />
+        <input class="wl-hp" id="wl-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <button class="wl-btn" id="wl-btn" type="submit">Iscrivimi</button>
+      </form>
+      <div class="wl-msg" id="wl-msg" role="status"></div>
+    </div>
+    <div class="note">Beta su TestFlight · Your Kindle highlights, reinvented.</div>
     <div class="foot">
       <a href="privacy/">Privacy</a> · <a href="terms/">Termini</a>
       &nbsp;·&nbsp; © 2026 Scripta
     </div>
   </div>
+<script>
+(function () {
+  var URL = "https://ibucvloawkfwobaelwbr.supabase.co/rest/v1/waitlist_signups";
+  var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
+  var form = document.getElementById("wl-form");
+  var input = document.getElementById("wl-email");
+  var btn = document.getElementById("wl-btn");
+  var msg = document.getElementById("wl-msg");
+  function show(text, cls) { msg.textContent = text; msg.className = "wl-msg " + cls; }
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (document.getElementById("wl-hp").value) return;   /* honeypot */
+    var email = (input.value || "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      show("Inserisci un’email valida.", "err"); return;
+    }
+    btn.disabled = true; show("…", "");
+    fetch(URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "apikey": KEY,
+        "authorization": "Bearer " + KEY,
+        "prefer": "return=minimal"
+      },
+      body: JSON.stringify({
+        email: email,
+        locale: (navigator.language || "").slice(0, 8),
+        source: "landing"
+      })
+    }).then(function (r) {
+      if (r.status === 201) { show("Sei in lista. A prestissimo ✓", "ok"); form.reset(); }
+      else if (r.status === 409) { show("Sei già in lista ✓", "ok"); }
+      else { show("Qualcosa è andato storto. Riprova.", "err"); btn.disabled = false; }
+    }).catch(function () {
+      show("Connessione assente. Riprova.", "err");
+      btn.disabled = false;
+    });
+  });
+})();
+</script>
 </body>
 </html>
