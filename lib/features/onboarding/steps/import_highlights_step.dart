@@ -58,7 +58,8 @@ class _ImportHighlightsStepState extends ConsumerState<ImportHighlightsStep> {
       if (res == null) return; // user cancelled
       ref.invalidate(allHighlightsProvider);
       messenger.showSnackBar(SnackBar(
-        content: Text(l10n.importSuccess(res.highlightsAdded, res.booksAdded)),
+        // gen-l10n orders the generated params ALPHABETICALLY: (books, highlights).
+        content: Text(l10n.importSuccess(res.booksAdded, res.highlightsAdded)),
       ));
     } catch (e) {
       messenger.showSnackBar(

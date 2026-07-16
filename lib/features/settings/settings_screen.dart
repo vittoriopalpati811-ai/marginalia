@@ -149,8 +149,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (res == null) return; // user cancelled
                     ref.invalidate(allHighlightsProvider);
                     messenger.showSnackBar(SnackBar(
+                      // gen-l10n param order is ALPHABETICAL: (books, highlights).
                       content: Text(l10n.importSuccess(
-                          res.highlightsAdded, res.booksAdded)),
+                          res.booksAdded, res.highlightsAdded)),
                     ));
                   } catch (e) {
                     messenger.showSnackBar(SnackBar(
@@ -179,8 +180,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (res == null) return; // user cancelled
                     ref.invalidate(allHighlightsProvider);
                     messenger.showSnackBar(SnackBar(
+                      // gen-l10n param order is ALPHABETICAL: (books, highlights).
                       content: Text(l10n.importSuccess(
-                          res.highlightsAdded, res.booksAdded)),
+                          res.booksAdded, res.highlightsAdded)),
                     ));
                   } catch (e) {
                     messenger.showSnackBar(SnackBar(

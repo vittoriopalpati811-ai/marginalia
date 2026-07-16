@@ -95,8 +95,9 @@ class _PasteImportScreenState extends ConsumerState<PasteImportScreen> {
       ref.invalidate(booksProvider);
 
       if (!mounted) return;
+      // gen-l10n orders the generated params ALPHABETICALLY: (books, highlights).
       final msg = result.highlightsAdded > 0
-          ? l10n.importSuccess(result.highlightsAdded, result.booksAdded)
+          ? l10n.importSuccess(result.booksAdded, result.highlightsAdded)
           : l10n.libraryImportNone(result.highlightsDeduplicated);
       messenger.showSnackBar(SnackBar(content: Text(msg)));
       Navigator.of(context).maybePop();

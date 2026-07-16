@@ -300,6 +300,15 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 - **Isar reads DateTime back as UTC** — always normalise to LOCAL date-only
   before comparing to "today" (a raw `!= today` silently reset streaks daily).
 - **PostgrestException in poll vote**: upsert needed `onConflict`.
+- **gen-l10n orders generated params ALPHABETICALLY, not by placeholder order
+  in the string.** `importSuccess` is "Importati {highlights} highlight da
+  {books} libri" but the generated signature is `importSuccess(books,
+  highlights)` — every call site passed `(highlightsAdded, booksAdded)` and the
+  snackbar showed the numbers swapped ("1 highlight da 2 libri" for 2
+  highlights/1 book). Import itself was always correct. Fixed 2026-07-17 (4
+  call sites) + regression test `test/l10n/import_success_order_test.dart`
+  that locks the slot order. Any new multi-placeholder ARB string: check the
+  generated signature before calling it.
 - **Permanent deletion is prohibited** by safety rules — when cleaning files
   (e.g. old APKs) move to Recycle Bin, never hard-delete.
 - **`flutter create --platforms=ios .` PRESERVES the committed `ios/Runner/
