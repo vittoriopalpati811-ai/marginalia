@@ -1,120 +1,419 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Scripta — i tuoi highlight Kindle, reinventati. Widget, ripasso quotidiano e cerchie di lettura.">
+  <meta name="description" content="Scripta — your Kindle highlights, back from the dead. One line finds you every morning. Join the waitlist.">
   <meta property="og:title" content="Scripta">
-  <meta property="og:description" content="I tuoi highlight Kindle, reinventati.">
+  <meta property="og:description" content="You read. You forget. Scripta remembers.">
   <meta property="og:image" content="assets/og-image.png">
   <meta name="theme-color" content="#F9F8F5">
   <link rel="icon" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  <title>Scripta — I tuoi highlight Kindle, reinventati</title>
+  <title>Scripta — you read. you forget. Scripta remembers.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@500;600&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;600;700;800&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --sage: #C0CFB2; --sage-dark: #8FA67E; --cream: #F9F8F5;
-      --ink: #2B2A26; --ink-muted: #6B6560; --ink-faint: #9E9689; --rule: #E8E4DC;
+      --sage: #C0CFB2; --sage-dark: #82966E; --sage-ink: #5D6E4E;
+      --cream: #F9F8F5; --paper: #FFFEF9;
+      --ink: #2B2A26; --ink-muted: #6B6560; --ink-faint: #9E9689;
+      --rule: #E8E4DC; --red: #B94A41;
+      --marker: rgba(192, 207, 178, .55);
+      --pencil: #8B8578;
+      --space-xs: 8px; --space-sm: 16px; --space-md: 28px; --space-lg: 48px; --space-xl: 88px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { min-height: 100%; background: var(--cream); color: var(--ink);
-      font-family: 'Manrope', -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    .wrap { max-width: 460px; margin: 0 auto; padding: 80px 24px 56px;
-      display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .mark { width: 96px; height: 96px; border-radius: 26px;
-      box-shadow: 0 10px 34px rgba(143,166,126,.4); }
-    h1 { font-family: 'EB Garamond', Georgia, serif; font-weight: 600;
-      font-size: 44px; letter-spacing: .4px; margin-top: 22px; }
-    .tagline { color: var(--ink-muted); font-size: 16px; margin-top: 8px; line-height: 1.5; }
-    .pill { margin-top: 30px; background: var(--sage); color: var(--ink);
-      font-weight: 800; font-size: 14px; padding: 13px 26px; border-radius: 999px; }
-    .note { margin-top: 14px; color: var(--ink-faint); font-size: 13px; }
-    .wl { margin-top: 30px; width: 100%; }
-    .wl-title { font-family: 'EB Garamond', Georgia, serif; font-weight: 600;
-      font-size: 22px; margin-bottom: 12px; }
-    .wl-form { display: flex; gap: 8px; width: 100%; }
-    .wl-input { flex: 1; min-width: 0; padding: 14px 18px; font: inherit; font-size: 15px;
-      color: var(--ink); background: #fff; border: 1px solid var(--rule);
-      border-radius: 999px; outline: none; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--cream); color: var(--ink);
+      font-family: 'Manrope', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      background-image: repeating-linear-gradient(
+        transparent, transparent 43px, rgba(43,42,38,.028) 43px, rgba(43,42,38,.028) 44px);
+    }
+    ::selection { background: var(--marker); }
+
+    .page { max-width: 640px; margin: 0 auto; padding: 0 26px 90px; position: relative; }
+
+    /* ── the dangling bookmark ─────────────────────────────── */
+    .bookmark {
+      position: fixed; top: -6px; right: clamp(18px, 7vw, 90px); z-index: 50;
+      width: 34px; height: 108px; background: var(--red);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+      transform-origin: top center;
+      animation: swing 5.2s ease-in-out infinite;
+      box-shadow: 0 4px 10px rgba(43,42,38,.18);
+    }
+    @keyframes swing {
+      0%, 100% { transform: rotate(-3.5deg); }
+      50% { transform: rotate(3.5deg); }
+    }
+
+    /* ── header ────────────────────────────────────────────── */
+    header { display: flex; align-items: center; gap: 12px; padding: 26px 0 0; }
+    .mark-sm { width: 40px; height: 40px; border-radius: 11px;
+      transition: transform .35s cubic-bezier(.2,.9,.3,1.2); }
+    .mark-sm:hover { transform: rotate(-8deg) scale(1.08); }
+    .brand { font-family: 'EB Garamond', Georgia, serif; font-weight: 600; font-size: 22px; }
+    .beta-chip { margin-left: auto; margin-right: 52px; font-size: 12px; font-weight: 800;
+      letter-spacing: .04em; color: var(--sage-ink);
+      background: var(--paper); border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 999px; white-space: nowrap; }
+
+    /* ── hero ──────────────────────────────────────────────── */
+    .hero { padding-top: clamp(54px, 9vw, 84px); text-align: left; }
+    h1 {
+      font-family: 'EB Garamond', Georgia, serif; font-weight: 500;
+      font-size: clamp(42px, 10.5vw, 64px); line-height: 1.08; letter-spacing: -0.015em;
+    }
+    h1 .dim { color: var(--ink-faint); }
+
+    /* the marker sweep — paints itself when .lit */
+    .hl { position: relative; white-space: nowrap; z-index: 0; }
+    .hl::before {
+      content: ""; position: absolute; z-index: -1;
+      left: -4px; right: -4px; top: 12%; bottom: 6%;
+      background: var(--marker); border-radius: 6px 14px 10px 6px;
+      transform: scaleX(0); transform-origin: left center;
+      transition: transform .8s cubic-bezier(.6,.05,.2,1) .25s;
+    }
+    .hl.lit::before { transform: scaleX(1); }
+
+    .hero-sub { margin-top: 20px; font-size: 17px; line-height: 1.6; color: var(--ink-muted);
+      max-width: 46ch; }
+
+    .note-pencil {
+      font-family: 'Caveat', cursive; font-size: 21px; color: var(--pencil);
+      transform: rotate(-3deg); display: inline-block; margin-top: 14px;
+    }
+
+    /* ── waitlist form ─────────────────────────────────────── */
+    .wl { margin-top: 30px; }
+    .wl-form { display: flex; gap: 8px; max-width: 460px; }
+    .wl-input { flex: 1; min-width: 0; padding: 15px 19px; font: inherit; font-size: 15.5px;
+      color: var(--ink); background: var(--paper); border: 1.5px solid var(--rule);
+      border-radius: 999px; outline: none; transition: border-color .2s; }
     .wl-input:focus { border-color: var(--sage-dark); }
-    .wl-btn { flex: none; background: var(--sage); color: var(--ink); border: 0;
-      font: inherit; font-weight: 800; font-size: 14px; padding: 14px 22px;
-      border-radius: 999px; cursor: pointer; }
-    .wl-btn:disabled { opacity: .6; cursor: default; }
-    .wl-msg { margin-top: 10px; font-size: 13.5px; min-height: 18px; }
-    .wl-msg.ok { color: var(--sage-dark); font-weight: 700; }
-    .wl-msg.err { color: #B94A41; }
+    .wl-input::placeholder { color: var(--ink-faint); }
+    .wl-btn { flex: none; background: var(--ink); color: var(--cream); border: 0;
+      font: inherit; font-weight: 800; font-size: 14.5px; padding: 15px 24px;
+      border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      transition: transform .18s ease, background .2s; }
+    .wl-btn:hover { transform: translateY(-1px); background: #403e38; }
+    .wl-btn:active { transform: translateY(0) scale(.98); }
+    .wl-btn:disabled { opacity: .55; cursor: default; }
+    .wl-btn .arr { display: inline-block; transition: transform .25s cubic-bezier(.2,.9,.3,1.4); }
+    .wl-btn:hover .arr { transform: translateX(4px); }
+    .wl-msg { margin-top: 10px; font-size: 14px; min-height: 20px; }
+    .wl-msg.ok { color: var(--sage-ink); font-weight: 700; }
+    .wl-msg.err { color: var(--red); }
+    .wl-under { margin-top: 8px; font-size: 13px; color: var(--ink-faint); }
     .wl-hp { position: absolute; left: -9999px; opacity: 0; }
-    .foot { margin-top: 64px; font-size: 12.5px; color: var(--ink-faint); }
-    .foot a { color: var(--sage-dark); text-decoration: none; font-weight: 700; }
+
+    /* ── the typing quote card ─────────────────────────────── */
+    .demo { margin-top: var(--space-xl); position: relative; }
+    .demo-label { font-size: 12.5px; font-weight: 800; letter-spacing: .16em;
+      color: var(--sage-ink); text-transform: uppercase; }
+    .demo-card {
+      margin-top: 14px; background: var(--paper); border: 1px solid var(--rule);
+      border-radius: 22px; padding: 30px 30px 26px;
+      box-shadow: 0 1px 3px rgba(43,42,38,.05), 0 10px 32px rgba(43,42,38,.05);
+      transform: rotate(-.4deg);
+    }
+    .demo-quote {
+      font-family: 'EB Garamond', Georgia, serif; font-style: italic; font-weight: 500;
+      font-size: clamp(22px, 5.4vw, 28px); line-height: 1.42; min-height: 3.6em;
+    }
+    .demo-caret { display: inline-block; width: 3px; height: 1.05em; background: var(--sage-dark);
+      vertical-align: -0.18em; margin-left: 2px; animation: blink 1.05s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .demo-by { margin-top: 12px; font-size: 14px; color: var(--ink-muted); min-height: 20px; }
+    .demo-circ {
+      position: absolute; top: -12px; right: -6px;
+      font-family: 'Caveat', cursive; font-size: 19px; color: var(--red);
+      transform: rotate(6deg);
+    }
+
+    /* ── how it works — editorial numbered ─────────────────── */
+    .how { margin-top: var(--space-xl); }
+    .kicker { font-size: 12.5px; font-weight: 800; letter-spacing: .16em;
+      color: var(--sage-ink); text-transform: uppercase; }
+    .how h2, .circles h2 { font-family: 'EB Garamond', Georgia, serif; font-weight: 500;
+      font-size: clamp(30px, 7vw, 40px); margin-top: 10px; line-height: 1.15; }
+    .steps { margin-top: 34px; display: flex; flex-direction: column; gap: 34px; }
+    .step { display: grid; grid-template-columns: 56px 1fr; gap: 18px; align-items: baseline;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+    .step.lit { opacity: 1; transform: none; }
+    .step-n { font-family: 'EB Garamond', Georgia, serif; font-size: 40px; color: var(--sage-dark); }
+    .step h3 { font-size: 17.5px; font-weight: 800; }
+    .step p { margin-top: 6px; font-size: 15.5px; line-height: 1.65; color: var(--ink-muted);
+      max-width: 52ch; }
+    .u-pencil { text-decoration: underline; text-decoration-color: var(--sage-dark);
+      text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-style: wavy; }
+    .aster { color: var(--red); display: inline-block; animation: spin 9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── floating paper slips ──────────────────────────────── */
+    .slips { margin-top: var(--space-xl); display: flex; flex-direction: column; gap: 20px; }
+    .slip {
+      background: var(--paper); border: 1px solid var(--rule); border-radius: 4px 18px 4px 16px;
+      padding: 20px 24px; max-width: 88%;
+      box-shadow: 0 2px 6px rgba(43,42,38,.06);
+      animation: bob 6s ease-in-out infinite;
+    }
+    .slip:nth-child(odd) { align-self: flex-start; transform: rotate(-1.6deg); }
+    .slip:nth-child(even) { align-self: flex-end; transform: rotate(1.3deg); animation-delay: 1.8s; }
+    .slip:nth-child(3) { animation-delay: 3.1s; }
+    @keyframes bob {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -7px; }
+    }
+    .slip q { font-family: 'EB Garamond', Georgia, serif; font-style: italic;
+      font-size: 18.5px; line-height: 1.45; quotes: "\201C" "\201D"; }
+    .slip .by { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 700;
+      letter-spacing: .06em; color: var(--ink-faint); text-transform: uppercase; }
+
+    /* ── circles / features line ───────────────────────────── */
+    .circles { margin-top: var(--space-xl); }
+    .circles p { margin-top: 14px; font-size: 16px; line-height: 1.7; color: var(--ink-muted);
+      max-width: 54ch; }
+    .feat-line { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px 8px; }
+    .feat { font-size: 13.5px; font-weight: 700; color: var(--ink);
+      background: var(--paper); border: 1px solid var(--rule);
+      padding: 9px 16px; border-radius: 999px;
+      transition: transform .2s ease, border-color .2s; cursor: default; }
+    .feat:hover { transform: rotate(-2deg) translateY(-2px); border-color: var(--sage); }
+
+    /* ── bottom cta ────────────────────────────────────────── */
+    .again { margin-top: var(--space-xl); text-align: center;
+      border-top: 1px solid var(--rule); padding-top: var(--space-lg); }
+    .again h2 { font-family: 'EB Garamond', Georgia, serif; font-weight: 500;
+      font-size: clamp(30px, 7.5vw, 42px); line-height: 1.15; }
+    .again .wl-form { margin: 26px auto 0; }
+    .again .wl-msg { text-align: center; }
+
+    /* ── footer ────────────────────────────────────────────── */
+    .foot { margin-top: var(--space-xl); font-size: 13px; color: var(--ink-faint);
+      display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+    .foot a { color: var(--sage-ink); text-decoration: none; font-weight: 700; }
+    .foot a:hover { text-decoration: underline wavy var(--sage-dark); }
+    .ps { font-family: 'Caveat', cursive; font-size: 19px; color: var(--pencil);
+      transform: rotate(-1.5deg); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bookmark, .slip, .aster, .demo-caret { animation: none; }
+      .step { opacity: 1; transform: none; transition: none; }
+      .hl::before { transition: none; }
+    }
+    @media (min-width: 700px) {
+      .page { max-width: 680px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <img class="mark" src="assets/scripta-mark.png" alt="Scripta">
-    <h1>Scripta</h1>
-    <div class="tagline">I tuoi highlight Kindle, reinventati.<br>
-      Widget, ripasso quotidiano e cerchie di lettura.</div>
-    <div class="wl">
-      <div class="wl-title">Entra in lista d’attesa</div>
-      <form class="wl-form" id="wl-form" novalidate>
-        <input class="wl-input" id="wl-email" type="email" inputmode="email"
-               autocomplete="email" placeholder="La tua email" required
-               aria-label="La tua email" />
-        <input class="wl-hp" id="wl-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
-        <button class="wl-btn" id="wl-btn" type="submit">Iscrivimi</button>
-      </form>
-      <div class="wl-msg" id="wl-msg" role="status"></div>
-    </div>
-    <div class="note">Beta su TestFlight · Your Kindle highlights, reinvented.</div>
+  <div class="bookmark" aria-hidden="true"></div>
+
+  <div class="page">
+    <header>
+      <img class="mark-sm" src="assets/scripta-mark.png" alt="Scripta logo">
+      <span class="brand">Scripta</span>
+      <span class="beta-chip">now in private beta</span>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <h1>
+        You read.<br>
+        <span class="dim">You forget.</span><br>
+        Scripta <span class="hl" id="hl-hero">remembers</span>.
+      </h1>
+      <p class="hero-sub">
+        Scripta takes the lines you highlight on Kindle and brings one back to you
+        every morning — on your home screen, picked for the day you're having.
+      </p>
+      <span class="note-pencil">← this is the whole app, honestly</span>
+
+      <div class="wl">
+        <form class="wl-form" novalidate>
+          <input class="wl-input" type="email" inputmode="email" autocomplete="email"
+                 placeholder="your@email.com" required aria-label="Your email">
+          <input class="wl-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="wl-btn" type="submit">Join the waitlist <span class="arr">→</span></button>
+        </form>
+        <div class="wl-msg" role="status"></div>
+        <div class="wl-under">Free · iOS · no spam, just one email when it's your turn</div>
+      </div>
+    </section>
+
+    <!-- TYPING DEMO -->
+    <section class="demo">
+      <div class="demo-label">Today's line</div>
+      <div class="demo-card">
+        <div class="demo-quote"><span id="demo-text"></span><span class="demo-caret" aria-hidden="true"></span></div>
+        <div class="demo-by" id="demo-by"></div>
+      </div>
+      <div class="demo-circ">every day, a different one ⟲</div>
+    </section>
+
+    <!-- HOW -->
+    <section class="how">
+      <div class="kicker">How it works</div>
+      <h2>Three steps. Zero effort.</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-n">01</div>
+          <div>
+            <h3>Bring your highlights in</h3>
+            <p>Sign in to your Amazon account inside the app and your Kindle highlights
+               <span class="u-pencil">import themselves</span>. Years of reading, back in one tap.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <div>
+            <h3>One line finds you every morning</h3>
+            <p>A widget on your home screen serves one highlight a day — chosen to fit
+               the day you're having. <span class="aster">✱</span> It's a little eerie how often it fits.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <div>
+            <h3>Share the ones worth sharing</h3>
+            <p>Reading circles with your friends: post your best lines, review books,
+               vote the book of the month, defend your <span class="u-pencil">terrible opinions</span>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIPS -->
+    <section class="slips" aria-label="Example highlights">
+      <div class="slip">
+        <q>We do not remember days, we remember moments.</q>
+        <span class="by">Cesare Pavese</span>
+      </div>
+      <div class="slip">
+        <q>Till this moment I never knew myself.</q>
+        <span class="by">Jane Austen</span>
+      </div>
+      <div class="slip">
+        <q>Manuscripts don't burn.</q>
+        <span class="by">Mikhail Bulgakov</span>
+      </div>
+    </section>
+
+    <!-- CIRCLES -->
+    <section class="circles">
+      <div class="kicker">And there's more</div>
+      <h2>A quiet little world for readers.</h2>
+      <p>Spaced-repetition review so the lines actually stick. An Apple Watch glance
+         for your daily quote. Streaks, if you're competitive. No ads, no feed-brain —
+         just your books, talking back to you.</p>
+      <div class="feat-line">
+        <span class="feat">📱 Home widgets</span>
+        <span class="feat">🧠 Smart review</span>
+        <span class="feat">📚 Reading circles</span>
+        <span class="feat">⌚ Apple Watch</span>
+        <span class="feat">✍️ Reviews</span>
+        <span class="feat">🔒 Private by design</span>
+      </div>
+    </section>
+
+    <!-- CTA AGAIN -->
+    <section class="again">
+      <h2>Your books miss you.<br>Get <span class="hl" id="hl-cta">on the list</span>.</h2>
+      <div class="wl">
+        <form class="wl-form" novalidate>
+          <input class="wl-input" type="email" inputmode="email" autocomplete="email"
+                 placeholder="your@email.com" required aria-label="Your email">
+          <input class="wl-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="wl-btn" type="submit">Join the waitlist <span class="arr">→</span></button>
+        </form>
+        <div class="wl-msg" role="status"></div>
+      </div>
+    </section>
+
     <div class="foot">
-      <a href="privacy/">Privacy</a> · <a href="terms/">Termini</a>
-      &nbsp;·&nbsp; © 2026 Scripta
+      <div><a href="privacy/">Privacy</a> · <a href="terms/">Terms</a> &nbsp;·&nbsp; © 2026 Scripta</div>
+      <div class="ps">p.s. the bookmark up there is decorative. the app is not.</div>
     </div>
   </div>
-<script>
-(function () {
-  var URL = "https://ibucvloawkfwobaelwbr.supabase.co/rest/v1/waitlist_signups";
-  var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
-  var form = document.getElementById("wl-form");
-  var input = document.getElementById("wl-email");
-  var btn = document.getElementById("wl-btn");
-  var msg = document.getElementById("wl-msg");
-  function show(text, cls) { msg.textContent = text; msg.className = "wl-msg " + cls; }
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    if (document.getElementById("wl-hp").value) return;   /* honeypot */
-    var email = (input.value || "").trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      show("Inserisci un’email valida.", "err"); return;
-    }
-    btn.disabled = true; show("…", "");
-    fetch(URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "apikey": KEY,
-        "authorization": "Bearer " + KEY,
-        "prefer": "return=minimal"
-      },
-      body: JSON.stringify({
-        email: email,
-        locale: (navigator.language || "").slice(0, 8),
-        source: "landing"
-      })
-    }).then(function (r) {
-      if (r.status === 201) { show("Sei in lista. A prestissimo ✓", "ok"); form.reset(); }
-      else if (r.status === 409) { show("Sei già in lista ✓", "ok"); }
-      else { show("Qualcosa è andato storto. Riprova.", "err"); btn.disabled = false; }
-    }).catch(function () {
-      show("Connessione assente. Riprova.", "err");
-      btn.disabled = false;
+
+  <script>
+  (function () {
+    /* ── waitlist (both forms) ── */
+    var URL = "https://ibucvloawkfwobaelwbr.supabase.co/rest/v1/waitlist_signups";
+    var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
+    document.querySelectorAll(".wl").forEach(function (wl) {
+      var form = wl.querySelector(".wl-form");
+      var input = wl.querySelector(".wl-input");
+      var hp = wl.querySelector(".wl-hp");
+      var btn = wl.querySelector(".wl-btn");
+      var msg = wl.querySelector(".wl-msg");
+      function show(t, c) { msg.textContent = t; msg.className = "wl-msg " + c; }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (hp.value) return;
+        var email = (input.value || "").trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { show("That email doesn't look right.", "err"); return; }
+        btn.disabled = true; show("…", "");
+        fetch(URL, {
+          method: "POST",
+          headers: { "content-type": "application/json", "apikey": KEY,
+                     "authorization": "Bearer " + KEY, "prefer": "return=minimal" },
+          body: JSON.stringify({ email: email, locale: (navigator.language || "").slice(0, 8), source: "landing" })
+        }).then(function (r) {
+          if (r.status === 201) { show("You're on the list. Talk soon ✓", "ok"); form.reset(); }
+          else if (r.status === 409) { show("You're already in ✓", "ok"); }
+          else { show("Something went sideways. Try again?", "err"); btn.disabled = false; }
+        }).catch(function () { show("No connection. Try again?", "err"); btn.disabled = false; });
+      });
     });
-  });
-})();
-</script>
+
+    /* ── typing demo: quotes rotate ── */
+    var QUOTES = [
+      ["We do not remember days, we remember moments.", "— Cesare Pavese · saved 2 years ago"],
+      ["Till this moment I never knew myself.", "— Jane Austen · Pride and Prejudice"],
+      ["Manuscripts don't burn.", "— Mikhail Bulgakov · The Master and Margarita"],
+      ["It is nothing to die; it is dreadful not to live.", "— Victor Hugo · Les Misérables"]
+    ];
+    var qi = 0, ci = 0, deleting = false;
+    var textEl = document.getElementById("demo-text");
+    var byEl = document.getElementById("demo-by");
+    function tick() {
+      var q = QUOTES[qi][0];
+      if (!deleting) {
+        ci++;
+        textEl.textContent = q.substring(0, ci);
+        if (ci === q.length) {
+          byEl.textContent = QUOTES[qi][1];
+          deleting = true;
+          setTimeout(tick, 2600);
+          return;
+        }
+        setTimeout(tick, 34 + Math.random() * 46);
+      } else {
+        ci -= 3;
+        if (ci <= 0) { ci = 0; deleting = false; byEl.textContent = ""; qi = (qi + 1) % QUOTES.length; }
+        textEl.textContent = q.substring(0, Math.max(0, ci));
+        setTimeout(tick, 14);
+      }
+    }
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) { tick(); }
+    else { textEl.textContent = QUOTES[0][0]; byEl.textContent = QUOTES[0][1]; }
+
+    /* ── scroll reveals: marker sweeps + steps ── */
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add("lit"); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.35 });
+    document.querySelectorAll(".hl, .step").forEach(function (el) { io.observe(el); });
+  })();
+  </script>
 </body>
 </html>
