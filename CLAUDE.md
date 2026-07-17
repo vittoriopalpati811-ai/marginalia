@@ -240,6 +240,15 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   **decision pending the founder**: profile privacy is still APP-LEVEL/soft (see
   §9 note) — a hard-RLS pass is feasible but risks breaking feed/search/post-author
   for live users, so do it as a dedicated, tested change only if he asks.
+- **Groq model migration COMPLETE (2026-07-17).** The two Groq-backed
+  functions are both live on the replacement models (old llama models are
+  decommissioned 2026-08-16): `pick-daily-highlight` v12 = `openai/gpt-oss-120b`,
+  `recommend-books` v30 = `openai/gpt-oss-20b` (deployed via MCP
+  `deploy_edge_function` — a 32 KB accented file survives the MCP round-trip
+  byte-perfect, verified by reading the live source back; E2E-tested with the
+  demo-account JWT, reason "ok" + 5 personalised recs). gpt-oss are REASONING
+  models: keep `max_completion_tokens` (not a tiny `max_tokens`) +
+  `reasoning_effort: "low"`. `deploy_recommend_books.ps1` is now just a fallback.
 - Supabase MCP tools are available: `execute_sql`, `apply_migration`,
   `list/deploy_edge_function`, etc. Use them to verify live state.
 
