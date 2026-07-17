@@ -153,7 +153,14 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Pinned to an EXACT version + Subresource Integrity: this page handles the
+       password-recovery session tokens, so a compromised CDN or a moved @2 dist
+       tag must not be able to run arbitrary JS here. The browser refuses the
+       script unless its bytes match the sha384 hash. -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.js"
+    integrity="sha384-hazsLVND17GNLVdtV19te6qbFT2YuLgl8SamcF+QR5eIOC+W4dGKrUNMxU1jH1zD"
+    crossorigin="anonymous"></script>
   <script>
     (function () {
       var SUPABASE_URL = 'https://ibucvloawkfwobaelwbr.supabase.co';

@@ -231,6 +231,42 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   once — the live RPC existed but no migration captured it). Recent: `068`
   jam_highlights DELETE, `069` jam_poll_candidates UPDATE, `070` jams.theme_color,
   `071` captures `is_jam_member_or_owner` (was live-only — found by the audit).
+- **Security audit (2026-07-17):** found + fixed a **P0 unauthenticated IDOR**:
+  `match_highlights(p_user_id, embedding, count)` is SECURITY DEFINER (bypasses
+  the `highlights` RLS) and filtered by the caller-supplied `p_user_id` with no
+  `auth.uid()` check, and was EXECUTE-granted to `anon`. So anyone with the public
+  anon key (ships in the binary) + a target UUID (world-readable `profiles`) could
+  read any user's private highlight text via `/rest/v1/rpc/match_highlights`, 50
+  rows/call — **verified live** before the fix. The only legit caller is the
+  `semantic-search` edge fn, which runs with SERVICE_ROLE and passes the verified
+  caller id. Fix = migration **074** revokes anon/authenticated/PUBLIC EXECUTE,
+  keeps service_role. Re-verified: anon call → 401 "permission denied"; legit
+  search still returns results. Lesson: a SECURITY DEFINER fn that trusts an id
+  PARAMETER must either check `auth.uid()` internally OR be revoked from
+  anon/authenticated (service_role-only). Audited every other anon-callable
+  DEFINER fn — all others scope to `auth.uid()`/membership correctly.
+  Same 2026-07-17 pass (multi-agent fan-out + adversarial verify) also found &
+  fixed 4 lower findings, all P3: (1) **send-push-notification** — client `data`
+  was spread AFTER the server `aps` in `sendApns`, so a caller who shares a
+  jam/conversation with the victim could pass `data.aps` and override the
+  verified-sender title/body (clean impersonation). Fixed: strip reserved `aps`
+  from `data`, spread `data` FIRST then `aps` (single choke point → all modes).
+  Deployed v12, live source verified byte-perfect. (2) **moderate-image** lacked
+  the per-user `check_rate_limit` every other expensive edge fn has → cost-abuse
+  once Sightengine is enabled. Added a 300/hr throttle after the not-configured
+  fail-open (deployed v5). (3) **`app-builds`** storage bucket was public=true
+  with no policy + undocumented + empty (78 MB limit fits an app binary) → made
+  private (mig **075**). (4) **docs/app.html** (password-reset page) loaded
+  supabase-js from jsDelivr with a floating `@2` tag and no SRI → pinned to
+  `@2.110.7/dist/umd/supabase.js` + `integrity` sha384 + `crossorigin`
+  (verified the pinned+SRI script still loads the `supabase` global, no console
+  errors). FOUNDER-ONLY residuals (I can't do these): revoke the old **Codemagic
+  API token** in `cm_watch.py` (gitignored/local-only, unused since GitHub
+  Actions, but unrotated); enable **Auth → leaked-password protection**
+  (HaveIBeenPwned) in the Supabase dashboard. The 0028/0029 advisor warnings on
+  the other anon/authenticated SECURITY DEFINER RPCs are advisor noise — they all
+  scope to `auth.uid()`/membership (verified), and several are RLS helpers whose
+  grants must NOT be narrowed.
 - **Security audit (2026-06-17, hack test):** 13-agent penetration-style audit
   (RLS / edge fns / secrets / storage / auth / input) → **0 live-exploitable
   vulns**. 7 findings already fixed & re-verified live (notifications-insert 032,

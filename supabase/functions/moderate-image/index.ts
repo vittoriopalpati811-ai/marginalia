@@ -6,6 +6,41 @@
 // configured or the API errors, returns flagged:false so uploads never break.
 // Activate by setting SIGHTENGINE_API_USER / SIGHTENGINE_API_SECRET secrets.
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Per-user throttle on the PAID Sightengine call, matching every other
+// expensive edge fn (recommend-books / pick-daily-highlight / semantic-search /
+// send-push all call check_rate_limit). verify_jwt already blocks anon, but a
+// signed-in account could otherwise loop ~12 MB uploads and run up the
+// moderation bill once the provider is configured. Fails OPEN so a limiter
+// glitch never blocks a legit upload. Checked AFTER the not-configured
+// fail-open, so while moderation is off there is no cost and no throttling.
+async function isRateLimited(
+  req: Request,
+  max: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  try {
+    const jwt = (req.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!jwt) return false;
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+    );
+    const { error } = await sb.rpc("check_rate_limit", {
+      p_action: "moderate_image",
+      p_max: max,
+      p_window_seconds: windowSeconds,
+    });
+    return !!error;
+  } catch (_) {
+    return false;
+  }
+}
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -37,6 +72,12 @@ Deno.serve(async (req: Request) => {
   // Not configured → fail open (don't block uploads).
   if (!apiUser || !apiSecret) {
     return json({ flagged: false, reason: "not-configured" });
+  }
+
+  // Configured → throttle per user before spending on the paid API. Generous
+  // (300/hr) so real bursts of uploads pass; fail-open never blocks a legit user.
+  if (await isRateLimited(req, 300, 3600)) {
+    return json({ flagged: false, reason: "rate-limited" });
   }
 
   // ONLY base64 image bytes are accepted. No URL fetching (SSRF-safe).

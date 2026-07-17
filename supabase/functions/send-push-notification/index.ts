@@ -159,13 +159,23 @@ async function sendApns(
   jwt: string,
   bundleId: string,
 ): Promise<{ ok: boolean; status: number }> {
+  // The caller-supplied `data` carries the app's tap-routing payload
+  // (conversation_id, jam_id, …) and is merged into the APNs body. It must NOT
+  // be able to override the server-composed `aps` block: alert.title/body are
+  // built from the VERIFIED sender (finalTitle/finalBody), so a client that
+  // slipped `data.aps` in would otherwise replace them and deliver a fully
+  // spoofed title/body (impersonation/phishing). Strip any reserved `aps` key
+  // from `data`, and compose so the server `aps` is always authoritative
+  // (spread `data` FIRST, then `aps`). Fixed at the single choke point so every
+  // send mode is covered.
+  const { aps: _reservedAps, ...safeData } = (data ?? {}) as Record<string, unknown>;
   const payload = {
+    ...safeData,
     aps: {
       alert: { title, body },
       sound: "default",
       badge: 1,
     },
-    ...data,
   };
 
   // Use production APNs; for sandbox change to api.sandbox.push.apple.com
