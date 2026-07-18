@@ -181,11 +181,23 @@
     .circles p { margin-top: 14px; font-size: 16px; line-height: 1.7; color: var(--ink-muted);
       max-width: 54ch; }
     .feat-line { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px 8px; }
-    .feat { font-size: 13.5px; font-weight: 700; color: var(--ink);
-      background: var(--paper); border: 1px solid var(--rule);
+    /* Feature pills coloured like faded highlighter tabs on paper — six muted
+       tints all drawn from Scripta's warm world (sage, ochre, terracotta, rose,
+       olive, clay-brown), never a saturated rainbow. Each pairs a soft fill with
+       a darker same-hue ink for AA-legible text. */
+    .feat { font-size: 13.5px; font-weight: 700;
+      color: var(--ink); background: var(--paper);
+      border: 1px solid var(--rule);
       padding: 9px 16px; border-radius: 999px;
-      transition: transform .2s ease, border-color .2s; cursor: default; }
-    .feat:hover { transform: rotate(-2deg) translateY(-2px); border-color: var(--sage); }
+      transition: transform .2s ease, box-shadow .2s ease; cursor: default; }
+    .feat:hover { transform: rotate(-2deg) translateY(-2px);
+      box-shadow: 0 4px 14px rgba(43, 42, 38, .1); }
+    .feat.c1 { background: #E7EEDF; border-color: #CBD8BC; color: #4F6040; } /* sage */
+    .feat.c2 { background: #F4ECD4; border-color: #E4D5AC; color: #7A6320; } /* ochre */
+    .feat.c3 { background: #F4E1DC; border-color: #E6C2B8; color: #9C4B3F; } /* terracotta */
+    .feat.c4 { background: #F1E3E7; border-color: #DEC5CC; color: #8A4E5C; } /* rose */
+    .feat.c5 { background: #EAEAD0; border-color: #D5D5AE; color: #61662F; } /* olive */
+    .feat.c6 { background: #ECE4D9; border-color: #D8C9B6; color: #6E5A44; } /* clay-brown */
 
     /* ── bottom cta ────────────────────────────────────────── */
     .again { margin-top: var(--space-xl); text-align: center;
@@ -314,12 +326,12 @@
          for your daily quote. Streaks, if you're competitive. No ads, no feed-brain —
          just your books, talking back to you.</p>
       <div class="feat-line">
-        <span class="feat">Home widgets</span>
-        <span class="feat">Smart review</span>
-        <span class="feat">Reading circles</span>
-        <span class="feat">Apple Watch</span>
-        <span class="feat">Reviews</span>
-        <span class="feat">Private by design</span>
+        <span class="feat c1">Home widgets</span>
+        <span class="feat c2">Smart review</span>
+        <span class="feat c3">Reading circles</span>
+        <span class="feat c4">Apple Watch</span>
+        <span class="feat c5">Reviews</span>
+        <span class="feat c6">Private by design</span>
       </div>
     </section>
 
