@@ -55,7 +55,17 @@ Founder develops on **Windows, no Mac**. Everything must build without a Mac.
 ## 2. STACK (current, accurate)
 
 - **Flutter 3.22.0** / Dart. iOS primary; Android secondary (free via Flutter).
-  Local dev/test on Windows desktop + Chrome.
+  **WEB IS NOT A TARGET — do not re-add it.** The `web/` folder was deleted
+  (2026-08-05) on the founder's instruction: "delistala, non deve essere
+  accessibile da altri". `flutter build web` now fails at once, which is the
+  point — the preview can no longer be published by accident. It had in any case
+  been uncompilable since 2026-06-02, when the Kobo importer pulled in `sqlite3`
+  (needs `dart:ffi`, absent in a browser). Verified before removal that nothing
+  was live: no Flutter bundle on get-scripta.app (every such path returns the
+  landing page, not JS) and `…github.io/marginalia/main.dart.js` is a 404.
+  ⚠️ The `*_web.dart` conditional stubs STAY — the analyzer resolves those by
+  default (see below), so deleting them would break `flutter analyze`.
+  Local dev/test on Windows: use the Android emulator.
 - **flutter_riverpod 2.x**, manual providers (no riverpod_generator).
 - **Isar 3.x** local DB, offline-first. ⚠️ `*.g.dart` are gitignored and
   regenerated: `dart run build_runner build --delete-conflicting-outputs`.
