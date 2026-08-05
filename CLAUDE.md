@@ -187,6 +187,23 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   a TextPainter, not guessed from string length — that is what keeps titles from
   ellipsising. Covered by `test/widgets/bookshelf_view_test.dart` (overflow,
   no-book-lost-while-rebalancing, empty + single-book cases).
+  ⚠️ **`Transform.rotate` does not take part in layout** — the leaning last book
+  used to sweep straight THROUGH its neighbour (founder reported it).
+  `_leanSweep()` computes the horizontal travel of the tilt and exactly that
+  width is reserved beside it, so the head comes to REST on the neighbour while
+  the foot slides away — which is what a real leaning book does. Don't
+  "simplify" that spacer away. `scale:` shrinks the whole shelf proportionally
+  (fonts, plank, padding); the shareable poster uses it.
+- `lib/features/library/shelf_share_sheet.dart` — **"Condividilo come post"**:
+  renders the shelf as a 4:5 poster (RepaintBoundary → `toImage(pixelRatio: 3)`)
+  → `uploadPostImage` → `createPost`, then invalidates `postsProvider`. The post
+  is INTERACTIVE by carrying a question; the default ("indovina quale ho
+  sottolineato di più") is playable because the shelf already encodes the answer
+  in spine thickness, and the caption states that rule so the game is fair.
+  The poster shows the 14 most-marked books re-sorted ALPHABETICALLY so the
+  fattest spine isn't first and giving it away. Its shelf is laid out at a FIXED
+  design width inside a `FittedBox` — laying it out against the live width would
+  change the row count per device and overflow the fixed 4:5 card.
 - `lib/core/branding/scripta_mark.dart` — **`ScriptaMark`** widget = the brand
   logo (`assets/brand/scripta_mark.png`, layered cream→sage cards + red bookmark).
   Single source for the badge everywhere (share cards, onboarding, etc.).

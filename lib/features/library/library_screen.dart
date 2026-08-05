@@ -20,6 +20,7 @@ import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
 import 'bookshelf_view.dart';
+import 'shelf_share_sheet.dart';
 import '../profile/profile_shared_widgets.dart'
     show favCoversProvider, favCoverKey;
 import 'recommendations_section.dart';
@@ -296,9 +297,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                 sliver: SliverToBoxAdapter(
-                  child: BookshelfView(
-                    entries: shelfEntries,
-                    onOpen: (b) => context.push('/book/${b.id}'),
+                  child: Column(
+                    children: [
+                      BookshelfView(
+                        entries: shelfEntries,
+                        onOpen: (b) => context.push('/book/${b.id}'),
+                      ),
+                      const SizedBox(height: 4),
+                      _ShelfShareButton(entries: shelfEntries),
+                    ],
                   ),
                 ),
               )
@@ -1175,6 +1182,52 @@ class _Chip extends StatelessWidget {
                     : ScriptaColors.inkMuted,
                 letterSpacing: 1.5,
                 fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Share the shelf ─────────────────────────────────────────────────────────
+//
+// Quiet by design: it borrows the "Vedi tutti" button's shape so it reads as
+// part of the shelf rather than as a call to action shouting over the books.
+
+class _ShelfShareButton extends StatelessWidget {
+  const _ShelfShareButton({required this.entries});
+
+  final List<ShelfEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: entries.isEmpty
+          ? null
+          : () => showShelfShareSheet(context, entries: entries),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        decoration: BoxDecoration(
+          color: ScriptaColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: ScriptaColors.rule, width: 0.8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.ios_share_rounded,
+                size: 16, color: ScriptaColors.primaryDark),
+            const SizedBox(width: 7),
+            Text(
+              context.l10n.libraryShelfShareCta,
+              style: GoogleFonts.manrope(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: ScriptaColors.primaryDark,
+                letterSpacing: -0.1,
               ),
             ),
           ],

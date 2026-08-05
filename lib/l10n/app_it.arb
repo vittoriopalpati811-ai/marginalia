@@ -788,6 +788,48 @@
   "libraryViewShelf": "Scaffale",
   "@libraryViewShelf": { "description": "Library view mode: books as spines on a shelf." },
 
+  "libraryShelfShareCta": "Condividilo come post",
+  "@libraryShelfShareCta": { "description": "Button under the shelf that shares it to the feed." },
+
+  "shelfShareTitle": "Condividi il tuo scaffale",
+  "@shelfShareTitle": {},
+
+  "shelfSharePromptLabel": "Fai una domanda",
+  "@shelfSharePromptLabel": {},
+
+  "shelfSharePromptGuess": "Indovina quale ho sottolineato di più.",
+  "@shelfSharePromptGuess": { "description": "Playable prompt: the answer is the thickest spine." },
+
+  "shelfSharePromptNext": "Quale leggo dopo?",
+  "@shelfSharePromptNext": {},
+
+  "shelfSharePromptRecommend": "Consigliami il prossimo.",
+  "@shelfSharePromptRecommend": {},
+
+  "shelfSharePromptNone": "Nessuna domanda",
+  "@shelfSharePromptNone": {},
+
+  "shelfShareGuessHint": "Indizio: più una costa è spessa, più l'ho sottolineato.",
+  "@shelfShareGuessHint": {},
+
+  "shelfSharePublish": "Pubblica",
+  "@shelfSharePublish": {},
+
+  "shelfSharePosted": "Scaffale pubblicato",
+  "@shelfSharePosted": {},
+
+  "shelfShareError": "Non sono riuscito a pubblicare. Riprova.",
+  "@shelfShareError": {},
+
+  "shelfSharePosterKicker": "Il mio scaffale",
+  "@shelfSharePosterKicker": {},
+
+  "shelfSharePosterFooter": "{count, plural, =1{1 libro} other{{count} libri}}",
+  "@shelfSharePosterFooter": { "description": "Book count printed on the shared poster.", "placeholders": { "count": { "type": "int" } } },
+
+  "shelfSharePostBody": "{count, plural, =1{Il mio scaffale su Scripta: 1 libro.} other{Il mio scaffale su Scripta: {count} libri.}}",
+  "@shelfSharePostBody": { "description": "First line of the shared post body.", "placeholders": { "count": { "type": "int" } } },
+
   "feedPhoto": "Foto",
   "@feedPhoto": {},
 
