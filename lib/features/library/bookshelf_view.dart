@@ -507,14 +507,14 @@ class _Spine extends StatelessWidget {
                 // clipped "Anna Kareni…" trades away the one thing the shelf
                 // exists to show. Two text layouts per spine; nothing compared
                 // to what a scroll frame does anyway.
-                // The 2px margin keeps a name off the very edge: measuring to
+                // The 3px margin keeps a name off the very edge: measuring to
                 // the exact pixel let a final letter clip when the laid-out
                 // width landed a hair over the boundary.
                 final showAuthor = surname.isNotEmpty &&
                     _measure(title, titleStyle) +
                             _kTitleAuthorGap * scale +
                             _measure(surname, authorStyle) <=
-                        box.maxWidth - 2;
+                        box.maxWidth - 3;
 
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -529,16 +529,13 @@ class _Spine extends StatelessWidget {
                     ),
                     if (showAuthor) ...[
                       SizedBox(width: _kTitleAuthorGap * scale),
-                      // Flexible + ellipsis so that if a name ever does run
-                      // long it shortens gracefully instead of being sliced.
-                      Flexible(
-                        child: Text(
-                          surname,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: authorStyle,
-                        ),
-                      ),
+                      // NOT Flexible. Two flexible children split the spine
+                      // evenly, which cut "Il Nome della Rosa" in half to make
+                      // room for three letters of "Eco". The title is the one
+                      // that may shrink; the name takes the width it needs, and
+                      // it is only ever printed once both have been measured to
+                      // fit whole.
+                      Text(surname, maxLines: 1, style: authorStyle),
                     ],
                   ],
                 );
