@@ -174,6 +174,19 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   (SocialScreen=Jam, feed_tab), `messages/`, `profile/`, `review/` (Ripasso),
   `quiz/`, `search/` (=Persone user search), `onboarding/`, `auth/`,
   `settings/`, `widget/`, `wrapped/`, `stats/`.
+- `lib/features/library/bookshelf_view.dart` — **`BookshelfView`**: the library
+  drawn as spines standing on wooden boards, a second view mode beside the cover
+  grid (toggle lives next to the TUTTI/PREFERITI chips; state in
+  `_libraryViewModeProvider`). Spine colour = the book's OWN cover palette via
+  `bookColorsFor()` in `book_cover.dart` (extracted with `bookArtSeed()` so the
+  spine and the generated cover can never drift apart — do NOT re-inline that
+  seed formula). Spine THICKNESS encodes highlight count; height is a stable
+  per-book draw. Rows are packed greedily with **widow control** (books get
+  pulled down so the bottom board is never left holding one lonely spine) and
+  the last book leans when there is room. Title/author fitting is MEASURED with
+  a TextPainter, not guessed from string length — that is what keeps titles from
+  ellipsising. Covered by `test/widgets/bookshelf_view_test.dart` (overflow,
+  no-book-lost-while-rebalancing, empty + single-book cases).
 - `lib/core/branding/scripta_mark.dart` — **`ScriptaMark`** widget = the brand
   logo (`assets/brand/scripta_mark.png`, layered cream→sage cards + red bookmark).
   Single source for the badge everywhere (share cards, onboarding, etc.).

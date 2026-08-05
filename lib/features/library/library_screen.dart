@@ -19,6 +19,7 @@ import '../../core/providers/highlights_provider.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/isar_provider.dart';
 import 'book_cover.dart';
+import 'bookshelf_view.dart';
 import '../profile/profile_shared_widgets.dart'
     show favCoversProvider, favCoverKey;
 import 'recommendations_section.dart';
@@ -37,6 +38,18 @@ enum _LibraryFilter { all, favorites }
 
 final _libraryFilterProvider =
     StateProvider<_LibraryFilter>((ref) => _LibraryFilter.all);
+
+// ─── View mode ────────────────────────────────────────────────────────────────
+//
+// Two ways to look at the same books. The GRID is the reference view: cover art
+// flat and large, best for finding one book. The SHELF stands the whole library
+// up on its edge, spines out — best for seeing what you have read at a glance.
+// Same data, same filter, same tap target; only the presentation differs.
+
+enum _LibraryViewMode { grid, shelf }
+
+final _libraryViewModeProvider =
+    StateProvider<_LibraryViewMode>((ref) => _LibraryViewMode.grid);
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -109,6 +122,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     final displayBooks = allBooks == null
         ? <Book>[]
         : (_showAllBooks ? allBooks : allBooks.take(3).toList());
+
+    // ── Shelf data ──────────────────────────────────────────────────────────
+    // The shelf always shows the WHOLE (filtered) library — a shelf holding
+    // three books is not a shelf, so it ignores the grid's collapse. Spine
+    // thickness comes from how heavily each book is marked, counted from the
+    // highlights this screen already watches (no extra query).
+    final viewMode = ref.watch(_libraryViewModeProvider);
+    final shelfEntries = <ShelfEntry>[];
+    if (viewMode == _LibraryViewMode.shelf && allBooks != null) {
+      final marks = <int, int>{};
+      for (final h in allHighlightsAsync.value ?? const <Highlight>[]) {
+        marks[h.bookId] = (marks[h.bookId] ?? 0) + 1;
+      }
+      for (final b in allBooks) {
+        shelfEntries
+            .add(ShelfEntry(book: b, highlightCount: marks[b.id] ?? 0));
+      }
+    }
 
     return Scaffold(
       backgroundColor: ScriptaColors.background,
@@ -215,10 +246,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: _FilterChips(
-                  selected: filter,
-                  onSelect: (f) =>
-                      ref.read(_libraryFilterProvider.notifier).state = f,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _FilterChips(
+                        selected: filter,
+                        onSelect: (f) =>
+                            ref.read(_libraryFilterProvider.notifier).state = f,
+                      ),
+                    ),
+                    // Grid ↔ shelf. Sits with the filters because it is the
+                    // same kind of control: it narrows nothing, it just changes
+                    // how the shelf below is drawn.
+                    _ViewModeToggle(
+                      mode: viewMode,
+                      onSelect: (m) => ref
+                          .read(_libraryViewModeProvider.notifier)
+                          .state = m,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -246,6 +292,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   isFiltered: filter != _LibraryFilter.all,
                 ),
               )
+            else if (viewMode == _LibraryViewMode.shelf)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                sliver: SliverToBoxAdapter(
+                  child: BookshelfView(
+                    entries: shelfEntries,
+                    onOpen: (b) => context.push('/book/${b.id}'),
+                  ),
+                ),
+              )
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -269,7 +325,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
               ),
 
             // ── "Vedi tutti / Nascondi" button ────────────────────────────
-            if (allBooks != null && allBooks.isNotEmpty && hasMoreBooks)
+            // Grid only: the shelf already stands the whole library up, so a
+            // collapse control there would have nothing to expand.
+            if (allBooks != null &&
+                allBooks.isNotEmpty &&
+                hasMoreBooks &&
+                viewMode == _LibraryViewMode.grid)
               SliverToBoxAdapter(
                 child: Padding(
                   padding:
@@ -1121,6 +1182,160 @@ class _Chip extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── View-mode toggle (grid ↔ shelf) ─────────────────────────────────────────
+//
+// Both glyphs are drawn here rather than pulled from the Material set: a stock
+// grid icon next to a stock "shelves" icon never share a stroke weight, and the
+// shelf mark should look like THIS shelf — ragged spines on a board.
+
+class _ViewModeToggle extends StatelessWidget {
+  const _ViewModeToggle({required this.mode, required this.onSelect});
+
+  final _LibraryViewMode mode;
+  final ValueChanged<_LibraryViewMode> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: ScriptaColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: ScriptaColors.rule, width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ViewModeButton(
+            isShelf: false,
+            active: mode == _LibraryViewMode.grid,
+            tooltip: context.l10n.libraryViewGrid,
+            onTap: () => onSelect(_LibraryViewMode.grid),
+          ),
+          const SizedBox(width: 2),
+          _ViewModeButton(
+            isShelf: true,
+            active: mode == _LibraryViewMode.shelf,
+            tooltip: context.l10n.libraryViewShelf,
+            onTap: () => onSelect(_LibraryViewMode.shelf),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewModeButton extends StatelessWidget {
+  const _ViewModeButton({
+    required this.isShelf,
+    required this.active,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final bool   isShelf;
+  final bool   active;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: active,
+      label: tooltip,
+      child: Tooltip(
+        message: tooltip,
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: AnimatedContainer(
+            duration: AirbnbMotion.fast,
+            curve: AirbnbMotion.enter,
+            width: 34,
+            height: 26,
+            decoration: BoxDecoration(
+              color: active ? ScriptaColors.surface : Colors.transparent,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Center(
+              child: CustomPaint(
+                size: const Size(15, 13),
+                painter: _ViewGlyphPainter(
+                  isShelf: isShelf,
+                  color: active
+                      ? ScriptaColors.primaryDark
+                      : ScriptaColors.inkFaint,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ViewGlyphPainter extends CustomPainter {
+  _ViewGlyphPainter({required this.isShelf, required this.color});
+
+  final bool  isShelf;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()..color = color;
+
+    if (!isShelf) {
+      // Four panes — the grid.
+      const gap = 2.5;
+      final w = (size.width - gap) / 2;
+      final h = (size.height - gap) / 2;
+      for (var row = 0; row < 2; row++) {
+        for (var col = 0; col < 2; col++) {
+          canvas.drawRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(col * (w + gap), row * (h + gap), w, h),
+              const Radius.circular(1.4),
+            ),
+            p,
+          );
+        }
+      }
+      return;
+    }
+
+    // Spines of unequal height standing on a board — the shelf, in miniature.
+    const heights = [0.72, 1.0, 0.58, 0.86];
+    const widths  = [2.6, 3.2, 2.4, 3.0];
+    const boardH  = 1.6;
+    final usable  = size.height - boardH - 1.2;
+    var x = 0.0;
+    for (var i = 0; i < heights.length; i++) {
+      final h = usable * heights[i];
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, usable - h, widths[i], h),
+          const Radius.circular(0.8),
+        ),
+        p,
+      );
+      x += widths[i] + 1.2;
+    }
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, size.height - boardH, size.width, boardH),
+        const Radius.circular(0.8),
+      ),
+      p,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ViewGlyphPainter old) =>
+      old.isShelf != isShelf || old.color != color;
 }
 
 // ─── Book grid card ───────────────────────────────────────────────────────────

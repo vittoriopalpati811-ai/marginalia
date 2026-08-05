@@ -782,6 +782,12 @@
   "libraryFilterFavorites": "Preferiti",
   "@libraryFilterFavorites": {},
 
+  "libraryViewGrid": "Griglia",
+  "@libraryViewGrid": { "description": "Library view mode: the cover grid." },
+
+  "libraryViewShelf": "Scaffale",
+  "@libraryViewShelf": { "description": "Library view mode: books as spines on a shelf." },
+
   "feedPhoto": "Foto",
   "@feedPhoto": {},
 

@@ -281,6 +281,8 @@
 
   "libraryFilterAll": "All",
   "libraryFilterFavorites": "Favorites",
+  "libraryViewGrid": "Grid",
+  "libraryViewShelf": "Shelf",
 
   "feedPhoto": "Photo",
   "feedHoldToPublishToast": "Hold to publish",

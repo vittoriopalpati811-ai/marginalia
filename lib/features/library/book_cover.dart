@@ -428,6 +428,47 @@ const _moodCompositions = <_Mood, List<_Composition>>{
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Shared colour identity
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// The seed + palette pick used to be inlined in `_doodle()`. They are now
+// extracted so OTHER surfaces can dress a book in the exact colours its cover
+// paints with — today the bookshelf spines (bookshelf_view.dart). Sharing one
+// derivation is the point: a book must not have two conflicting identities, and
+// a copy-pasted seed formula would silently drift the day one of them changes.
+
+/// Deterministic art seed for a book. Same title+author ⇒ same seed forever,
+/// so a book's colours never reshuffle between rebuilds or app launches.
+int bookArtSeed(String title, String author) =>
+    ((title.hashCode * 1315423911) ^ (author.hashCode * 2654435769)).abs();
+
+/// The three colours a book's generated cover is painted with.
+class BookColors {
+  const BookColors({
+    required this.base,
+    required this.ink,
+    required this.accent,
+  });
+
+  /// Dominant field colour of the cover — the book's "cloth".
+  final Color base;
+
+  /// The colour the cover's main shape is drawn in.
+  final Color ink;
+
+  /// Secondary accent used for the smaller motif.
+  final Color accent;
+}
+
+/// The palette a book's cover uses, for reuse on other surfaces.
+BookColors bookColorsFor(String title, String author) {
+  final seed = bookArtSeed(title, author);
+  final palettes = _palettes[_detectMood(title)]!;
+  final p = palettes[(seed ~/ 13) % palettes.length];
+  return BookColors(base: p.bg, ink: p.ink, accent: p.accent);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Public widget
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -470,7 +511,9 @@ class BookEditorialCover extends StatelessWidget {
   }
 
   Widget _doodle() {
-    final seed = ((title.hashCode * 1315423911) ^ (author.hashCode * 2654435769)).abs();
+    // Seed + palette come from the shared derivation above so the bookshelf
+    // spines and this cover can never disagree about a book's colours.
+    final seed = bookArtSeed(title, author);
     final mood        = _detectMood(title);
     final palettes    = _palettes[mood]!;
     final palette     = palettes[(seed ~/ 13) % palettes.length];
