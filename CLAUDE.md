@@ -35,8 +35,10 @@ Founder develops on **Windows, no Mac**. Everything must build without a Mac.
 
 - **Live in production.** ~87 users, ~1115 highlights, ~215 posts (real usage).
 - **App is FREE** — all paywall/premium code was removed (see §6). No gates.
-- Latest green iOS build: **TestFlight run #72, commit `1700007`** (build number
-  = unix timestamp). Latest APK: **`Scripta_1.1.0.apk` on the Desktop**.
+- Latest green iOS build: **TestFlight run #126, commit `ac53ba2`** (automatic
+  Kindle sync; build number = unix timestamp). Latest APK: **`Scripta_1.1.0.apk`
+  on the Desktop**, rebuilt from the same commit and smoke-tested on the emulator.
+  Suite is now **68 tests** (was 45) — `flutter test` green.
 - Active branch: **`feat/profile-ui-privacy`** (this is what CI builds — see §3).
 - The free-app + admin console + Apple/Google sign-in + animated-onboarding batch
   is **SHIPPED green on both platforms** (iOS #72 + APK rebuilt).
