@@ -585,11 +585,18 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                                   highlightCount: _marksOf(b),
                                 ),
                             ],
+                            // Carry the reader's own cover through, the way the
+                            // old grid cell did — the detail screen should show
+                            // the cover this book wears everywhere else.
                             onTap: (_, e) => Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => BookInfoScreen(
-                                  title:  e.title,
-                                  author: e.author,
+                                  title:    e.title,
+                                  author:   e.author,
+                                  coverUrl: ref
+                                      .read(favCoversProvider(null))
+                                      .asData
+                                      ?.value[favCoverKey(e.title, e.author)],
                                 ),
                               ),
                             ),

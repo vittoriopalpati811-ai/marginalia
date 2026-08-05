@@ -15,6 +15,14 @@ import '../library/book_cover.dart';
 /// The overview/metadata is fetched live from the Google Books API (keyless,
 /// free). Everything degrades gracefully: if the lookup fails or returns
 /// nothing, the cover + title + author still render.
+
+/// Ceiling for the whole metadata lookup — see [_BookInfoScreenState._run].
+const Duration _kLookupBudget = Duration(seconds: 7);
+
+/// Per-request ceiling. Three of these run in sequence, so each one has to be
+/// short enough that a couple of stalls still land inside the total budget.
+const Duration _kRequestTimeout = Duration(seconds: 4);
+
 class BookInfoScreen extends StatefulWidget {
   const BookInfoScreen(
       {super.key, required this.title, required this.author, this.coverUrl});
@@ -42,7 +50,24 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
   @override
   void initState() {
     super.initState();
-    _fetch();
+    _run();
+  }
+
+  /// One hard budget for the whole lookup.
+  ///
+  /// `_fetch` makes up to three calls IN SEQUENCE, each with its own 8s timeout,
+  /// so a slow — not failed, slow — network could leave the spinner turning for
+  /// the best part of half a minute. To a reader that is indistinguishable from
+  /// broken ("carica all'infinito"). The title, author and cover are on screen
+  /// from the first frame regardless; the extra metadata is a bonus, so it gets
+  /// a bonus-sized budget and the screen settles either way.
+  Future<void> _run() async {
+    try {
+      await _fetch().timeout(_kLookupBudget);
+    } catch (_) {
+      // Whatever arrived before the bell is what we show.
+    }
+    if (mounted) setState(() => _loading = false);
   }
 
   /// Kindle stores authors as "Surname, Firstname". Flip them to the natural
@@ -147,7 +172,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
             // soft hint that Google sometimes ignores).
             {'q': q, 'maxResults': '10', 'langRestrict': 'it', 'country': 'IT'},
           );
-          final resp = await http.get(uri).timeout(const Duration(seconds: 8));
+          final resp = await http.get(uri).timeout(_kRequestTimeout);
           if (resp.statusCode != 200) continue;
           // Decode UTF-8 explicitly: Google Books often omits `charset=utf-8`,
           // and Dart http then falls back to latin1 → accented Italian text
@@ -206,7 +231,7 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
             'limit': '1',
             'fields': 'number_of_pages_median,first_publish_year',
           });
-          final resp = await http.get(uri).timeout(const Duration(seconds: 8));
+          final resp = await http.get(uri).timeout(_kRequestTimeout);
           if (resp.statusCode == 200) {
             // UTF-8 explicit (Open Library may omit charset → latin1 mojibake).
             final data =
@@ -231,7 +256,6 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
     } catch (_) {
       // Keyless best-effort lookup — never fatal.
     }
-    if (mounted) setState(() => _loading = false);
   }
 
   @override
