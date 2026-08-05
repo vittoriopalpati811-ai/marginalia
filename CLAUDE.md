@@ -76,6 +76,20 @@ Founder develops on **Windows, no Mac**. Everything must build without a Mac.
 - **Amazon Kindle sync**: `webview_flutter` + JS injection on
   `read.amazon.com/.../notebook` (same approach as Readwise). Not supported on
   Windows desktop — use mock data locally.
+  **It runs BY ITSELF** (2026-08-05, founder: "a me non compila automaticamente
+  il myclippings… rendi tutto più automatico"). Two halves:
+  `core/services/kindle_auto_sync.dart` owns the WHEN (a `StateNotifier`: after
+  the first manual sync the device is `connected`; opening or resuming the app
+  re-syncs if the last run is older than `kKindleSyncInterval` = 6h), and
+  `features/library/kindle_sync_host.dart` owns the HOW (a 1×1, opacity-0,
+  pointer-ignoring WebView mounted in the app shell, built ONLY while a sync is
+  in flight, 90s watchdog refreshed by each progress message). Safe unattended
+  because the import is idempotent, the Amazon cookie outlives restarts, and an
+  expired session fails SILENTLY into a `needsRelogin` flag that the Settings
+  Kindle row (`_KindleTile`) surfaces — a background job must never hijack the
+  screen. ⚠️ The host is a `Positioned` child of the shell `Stack` **on
+  purpose**: a Stack sizes to its largest NON-positioned child, so mounting it
+  loose collapsed the whole shell and the app booted to a blank cream screen.
 - **google_fonts** (EB Garamond serif for editorial text, Manrope for UI).
 - **flutter_animate 4.x** for motion; `lib/core/motion/airbnb_motion.dart` has
   the shared duration/curve constants (fast 180 / standard 280 / emphasis 380 /
@@ -414,6 +428,17 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   call sites) + regression test `test/l10n/import_success_order_test.dart`
   that locks the slot order. Any new multi-placeholder ARB string: check the
   generated signature before calling it.
+- **Kindle-synced highlights were being destroyed in SERIALISATION, not in the
+  sync.** `toClippingEntry()` (amazon_sync_service.dart) wrote `location 0` for
+  every highlight Amazon reports without one, and `ImportService` dedups on
+  (book, location) — so a whole book collapsed to ONE highlight, silently, with
+  a success message. Same function wrote a raw `DateTime.now()` that matches
+  none of the parser's formats, so every Kindle highlight landed with a null
+  date (reading stats derive from that date). Both fixed: content-hash fallback
+  location + `DateFormat('EEEE, MMMM d, yyyy h:mm:ss a','en_US')` on
+  `.toUtc()` (the parser does `DateFormat.parse(str, true)`, i.e. it reads the
+  string AS UTC — format local time there and every timestamp shifts).
+  Locked by `test/services/amazon_clipping_entry_test.dart`.
 - **Permanent deletion is prohibited** by safety rules — when cleaning files
   (e.g. old APKs) move to Recycle Bin, never hard-delete.
 - **`flutter create --platforms=ios .` PRESERVES the committed `ios/Runner/

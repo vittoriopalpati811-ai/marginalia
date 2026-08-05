@@ -43,6 +43,8 @@ import 'features/profile/edit_profile_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/stats/stats_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
+import 'features/library/kindle_sync_host.dart';
+import 'core/services/kindle_auto_sync.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/auth/reset_password_screen.dart';
@@ -526,7 +528,8 @@ class _ScaffoldWithNav extends StatefulWidget {
   State<_ScaffoldWithNav> createState() => _ScaffoldWithNavState();
 }
 
-class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
+class _ScaffoldWithNavState extends State<_ScaffoldWithNav>
+    with WidgetsBindingObserver {
   // Tab order (left → right): Library · Jam · Home (centre) · Messages · Profile.
   // Phosphor Icons in Regular weight for inactive + Fill for active.
   // `label` is kept on the record but not rendered; Semantics() exposes it.
@@ -543,6 +546,34 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
   // per-build (not baked into a child) so both directions stay symmetric.
   int _prevIndex = -1;
   bool _slideReverse = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Opening the app is the trigger. The notifier decides whether anything
+    // actually happens (connected? stale? not already running?), so this is a
+    // no-op for everyone who has never linked a Kindle.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeSyncKindle());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _maybeSyncKindle();
+  }
+
+  void _maybeSyncKindle() {
+    final container = ProviderScope.containerOf(context, listen: false);
+    // Fire-and-forget on purpose: a background sync must never delay a frame,
+    // and its failures are already swallowed by the notifier.
+    unawaited(container.read(kindleAutoSyncProvider.notifier).maybeSyncInBackground());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -578,6 +609,21 @@ class _ScaffoldWithNavState extends State<_ScaffoldWithNav> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
+          // ── The invisible Kindle sync ───────────────────────────────
+          // Zero-size and only alive while a background sync is running.
+          //
+          // POSITIONED on purpose. A Stack sizes itself to its largest
+          // NON-positioned child, so dropping a 0×0 loose child in here
+          // collapsed the whole shell to nothing and the app came up blank —
+          // every sibling is `Positioned`, and this one has to be too.
+          const Positioned(
+            left: 0,
+            top: 0,
+            width: 1,
+            height: 1,
+            child: KindleSyncHost(),
+          ),
+
           // ── Route content fills the full Scaffold area ──────────────
           // MediaQuery override adds navInset to the bottom padding so
           // any descendant that respects safe-area (SafeArea, Scaffold,

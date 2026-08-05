@@ -17,6 +17,8 @@ import '../../core/services/export_service.dart';
 import '../../core/services/clippings_importer.dart';
 import '../import/paste_import_screen.dart';
 import '../../core/services/gender_service.dart';
+import '../../core/services/kindle_auto_sync.dart';
+import '../../generated/app_localizations.dart';
 import '../widget/widget_preview_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -131,12 +133,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           SliverList(
             delegate: SliverChildListDelegate([
-              _SettingsTile(
-                icon: Icons.sync_outlined,
-                label: context.l10n.settingsSyncWithKindle,
-                subtitle: context.l10n.settingsSyncWithKindleSubtitle,
-                onTap: () => context.push('/sync/kindle'),
-              ),
+              const _KindleTile(),
               _SettingsTile(
                 icon: Icons.upload_file_outlined,
                 label: context.l10n.importClippingsTile,
@@ -668,6 +665,74 @@ class _SettingsTile extends StatelessWidget {
               : null),
       onTap: onTap,
     );
+  }
+}
+
+// ─── Kindle ───────────────────────────────────────────────────────────────────
+
+/// The Kindle row, which reports what the automatic sync is actually doing.
+///
+/// The background sync is deliberately silent, and silence has one failure mode
+/// worth designing for: when the Amazon session expires it stops for good and
+/// nobody is told, so the library quietly goes stale and looks like a bug. This
+/// tile is where that surfaces — and tapping it goes to the same sign-in screen
+/// that repairs it.
+class _KindleTile extends ConsumerWidget {
+  const _KindleTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final sync = ref.watch(kindleAutoSyncProvider);
+
+    final String subtitle;
+    final bool warn;
+    if (sync.phase == KindleSyncPhase.needsRelogin) {
+      subtitle = l10n.kindleNeedsRelogin;
+      warn = true;
+    } else if (sync.phase == KindleSyncPhase.running) {
+      subtitle = l10n.kindleAutoSyncing;
+      warn = false;
+    } else if (sync.connected && sync.lastSync != null) {
+      subtitle = l10n.kindleAutoUpdated(_ago(l10n, sync.lastSync!));
+      warn = false;
+    } else {
+      subtitle = l10n.settingsSyncWithKindleSubtitle;
+      warn = false;
+    }
+
+    return ListTile(
+      leading: Icon(Icons.sync_outlined,
+          color: warn ? ScriptaColors.red : ScriptaColors.primary, size: 22),
+      title: Text(l10n.settingsSyncWithKindle,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          fontSize: 12,
+          color: warn ? ScriptaColors.red : ScriptaColors.inkMuted,
+        ),
+      ),
+      trailing: sync.phase == KindleSyncPhase.running
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: ScriptaColors.primary),
+            )
+          : const Icon(Icons.chevron_right,
+              color: ScriptaColors.inkFaint, size: 18),
+      onTap: () => context.push('/sync/kindle'),
+    );
+  }
+
+  /// Coarse on purpose: the exact minute of a background job is noise, and
+  /// rounding up keeps "updated 0h ago" off the screen.
+  String _ago(AppLocalizations l10n, DateTime when) {
+    final d = DateTime.now().difference(when);
+    if (d.inMinutes < 60) return l10n.kindleWhenNow;
+    if (d.inHours < 24) return l10n.kindleWhenHours(d.inHours);
+    return l10n.kindleWhenDays(d.inDays);
   }
 }
 

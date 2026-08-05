@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ─── AmazonSyncService ────────────────────────────────────────────────────────
@@ -346,9 +347,28 @@ class AmazonHighlight {
   /// highlights.
   String toClippingEntry() {
     final author = bookAuthor.trim().isEmpty ? 'Sconosciuto' : bookAuthor.trim();
-    final dateLine =
-        '- Your Highlight on location ${location ?? '0'} | Added on ${DateTime.now()}';
-    return '$bookTitle ($author)\n$dateLine\n\n$content';
+
+    // Location: NEVER a constant fallback. The importer dedups on
+    // (book, location), so writing '0' for every highlight Amazon gives no
+    // location for meant a whole book collapsed to its single longest
+    // highlight and the rest vanished without a word. A stable content hash
+    // keeps distinct highlights distinct AND keeps a re-sync idempotent — the
+    // same fix the paste and Kobo importers already use.
+    final loc = location ?? content.hashCode.abs().toString();
+
+    // Date: must be in a shape MyClippingsParser can actually read. Writing a
+    // raw `DateTime.now()` ("2026-08-05 12:34:56.789012") matched none of the
+    // parser's formats, so every Kindle-synced highlight landed with a null
+    // date — which is what the reading-session stats are derived from.
+    //
+    // In UTC, because the parser calls `DateFormat.parse(str, true)`, i.e. it
+    // reads whatever it is given AS UTC. Handing it local time would file every
+    // highlight off by the timezone offset.
+    final added = DateFormat('EEEE, MMMM d, yyyy h:mm:ss a', 'en_US')
+        .format(DateTime.now().toUtc());
+
+    return '$bookTitle ($author)\n'
+        '- Your Highlight on location $loc | Added on $added\n\n$content';
   }
 }
 

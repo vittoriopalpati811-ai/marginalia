@@ -11,7 +11,10 @@ import '../../core/l10n/l10n_extension.dart';
 import '../../core/services/amazon_sync_service.dart';
 import '../../core/services/import_service.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/books_provider.dart';
+import '../../core/providers/highlights_provider.dart';
 import '../../core/providers/isar_provider.dart';
+import '../../core/services/kindle_auto_sync.dart';
 
 enum _SyncState { browsing, extracting, done, error }
 
@@ -30,6 +33,10 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
   int _progressCount = 0;
   String? _progressBook;
   bool _importing = false;
+
+  /// Set once we have auto-navigated to the notebook, so a bounce back to a
+  /// sign-in page cannot start a navigation loop.
+  bool _autoOpened = false;
 
   // Fails the extraction with a clear message if the injected script goes silent
   // (e.g. an unexpected Amazon page / JS error) instead of spinning forever.
@@ -94,11 +101,33 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
     await _webController.loadRequest(Uri.parse(target));
   }
 
-  /// Fires when any page finishes loading. We only act once the user has reached
-  /// the (authenticated) notebook — at which point we inject the extractor.
+  /// True for an Amazon page that is NOT part of the sign-in flow — Amazon keeps
+  /// every step of that flow under /ap/ (signin, cvf, mfa, forgot password), so
+  /// anything else on an amazon host means the session is live.
+  static bool _looksSignedIn(String url) {
+    final u = url.toLowerCase();
+    if (!u.contains('amazon.')) return false;
+    return !u.contains('/ap/');
+  }
+
+  /// Fires when any page finishes loading. Opens the notebook as soon as the
+  /// sign-in is done, then injects the extractor once the notebook is up.
   Future<void> _onPageFinished(String url) async {
-    if (!AmazonSyncService.isOnNotebookPage(url)) return;
     if (_syncState != _SyncState.browsing) return;
+
+    // The reader used to have to tap "Estrai highlight ora" once Amazon let
+    // them in — a step that exists only because the app could not tell when the
+    // sign-in had finished. It can: the moment we are on an Amazon page that is
+    // not part of the sign-in flow, we are through, so open the notebook
+    // ourselves. The button stays as a manual fallback for the cases this
+    // heuristic misses (an interstitial, a regional oddity).
+    if (!AmazonSyncService.isOnNotebookPage(url)) {
+      if (!_autoOpened && _looksSignedIn(url)) {
+        _autoOpened = true;
+        await _openNotebook();
+      }
+      return;
+    }
 
     setState(() {
       _syncState = _SyncState.extracting;
@@ -165,8 +194,27 @@ class _AmazonLoginScreenState extends ConsumerState<AmazonLoginScreen> {
       final clippingsText = amazonHighlightsToClippingsText(highlights);
       final userId = ref.read(currentUserProvider)?.id ?? 'local';
       final isar = ref.read(isarProvider);
-      final service = ImportService(isar, userId);
+      // `supabaseService` is what mirrors the library to the cloud. Every other
+      // import path passed it; this one did not, so highlights that arrived by
+      // Kindle sync existed ONLY on the device and were gone for good on a
+      // reinstall — "Ripristina dal cloud" had nothing of them to restore.
+      final service = ImportService(
+        isar,
+        userId,
+        supabaseService: ref.read(supabaseServiceProvider),
+      );
       final result = await service.importClippingsText(clippingsText);
+
+      // From here on this device may sync unattended.
+      await ref
+          .read(kindleAutoSyncProvider.notifier)
+          .markConnected(imported: result.highlightsAdded);
+
+      // The library keeps `allHighlightsProvider` alive underneath this modal,
+      // so without this the reader returns to a screen that still shows the old
+      // counts.
+      ref.invalidate(allHighlightsProvider);
+      ref.invalidate(booksProvider);
 
       if (!mounted) return;
       setState(() {
