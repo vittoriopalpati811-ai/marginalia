@@ -22,6 +22,7 @@ import 'activity_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
 import '../library/bookshelf_view.dart';
+import '../library/shelf_poster.dart';
 import '../library/book_detail_screen.dart' show editBookCoverByKey;
 import '../reader/book_info_screen.dart';
 import '../stats/reading_stats_card.dart';
@@ -551,6 +552,20 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                               const Expanded(
                                   child: Divider(
                                       color: ScriptaColors.ruleFaint)),
+                              const SizedBox(width: 12),
+                              // Hands the shelf to the system share sheet —
+                              // which is how it reaches Instagram — as a 4:5
+                              // poster signed bottom-right.
+                              _ShelfShareButton(
+                                entries: [
+                                  for (final b in books)
+                                    ShelfEntry(
+                                      title:  (b['title']  as String?) ?? '',
+                                      author: (b['author'] as String?) ?? '',
+                                      highlightCount: _marksOf(b),
+                                    ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -1333,6 +1348,40 @@ class _SpotlightCard extends StatelessWidget {
 // top, title and author underneath. Without it the profile reads as
 // "anonymous art tiles," which is the opposite of what a library should
 // communicate.
+
+class _ShelfShareButton extends ConsumerWidget {
+  const _ShelfShareButton({required this.entries});
+
+  final List<ShelfEntry> entries;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (entries.isEmpty) return const SizedBox.shrink();
+    final name = ref.watch(myDisplayNameProvider).asData?.value ?? '';
+
+    return Semantics(
+      button: true,
+      label: context.l10n.shareImageCta,
+      child: GestureDetector(
+        onTap: () => showShelfImageShareSheet(
+          context,
+          entries: entries,
+          userName: name,
+        ),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: ScriptaColors.primaryFaint,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(Icons.ios_share,
+              size: 15, color: ScriptaColors.primaryDark),
+        ),
+      ),
+    );
+  }
+}
 
 class _PostsGrid extends StatelessWidget {
   const _PostsGrid({required this.posts});

@@ -1778,7 +1778,6 @@ class SupabaseService {
     String? jamId,
     String? imageUrl,
     List<String> mentions = const [],
-    Map<String, dynamic>? payload,
   }) async {
     final inserted = await _client.from('posts').insert({
       'user_id': userId,
@@ -1787,9 +1786,6 @@ class SupabaseService {
       if (jamId != null) 'jam_id': jamId,
       if (imageUrl != null) 'image_url': imageUrl,
       if (mentions.isNotEmpty) 'mentions': mentions,
-      // Structured content the feed renders LIVE rather than as a picture —
-      // today a playable shelf (see migration 076).
-      if (payload != null) 'payload': payload,
     }).select('id').single();
     final newId = inserted['id'] as String?;
 
@@ -1798,55 +1794,6 @@ class SupabaseService {
       // ignore: discarded_futures
       _notifyPostMentions(newId);
     }
-  }
-
-  // ─── Playable shelf posts ─────────────────────────────────────────────────
-  //
-  // A reader taps the spine they think is the most-highlighted book. The answer
-  // travels inside the post's payload, so the verdict is instant and offline —
-  // the round trip below only records the guess so the post can show what the
-  // crowd thought.
-
-  /// Records this user's guess. One per post (primary key); a repeat is a
-  /// silent no-op rather than an error the UI has to explain.
-  Future<void> submitShelfGuess(String postId, {required bool correct}) async {
-    if (!isAuthenticated) return;
-    try {
-      await _client.from('post_guesses').insert({
-        'post_id': postId,
-        'user_id': userId,
-        'correct': correct,
-      });
-    } on PostgrestException catch (e) {
-      // 23505 = already played. Everything else is worth surfacing upstream.
-      if (e.code != '23505') rethrow;
-    }
-  }
-
-  /// This user's own earlier guess, or null if they have not played yet.
-  /// RLS limits the read to their own row by design.
-  Future<bool?> myShelfGuess(String postId) async {
-    if (!isAuthenticated) return null;
-    final row = await _client
-        .from('post_guesses')
-        .select('correct')
-        .eq('post_id', postId)
-        .eq('user_id', userId!)
-        .maybeSingle();
-    return row == null ? null : row['correct'] as bool?;
-  }
-
-  /// How the crowd did: (total, correct). Aggregates only — the RPC never
-  /// reveals who answered what.
-  Future<(int, int)> shelfGuessStats(String postId) async {
-    final rows = await _client.rpc(
-      'post_guess_stats',
-      params: {'p_post_id': postId},
-    );
-    final list = (rows as List?) ?? const [];
-    if (list.isEmpty) return (0, 0);
-    final r = list.first as Map<String, dynamic>;
-    return ((r['total'] as int?) ?? 0, (r['correct'] as int?) ?? 0);
   }
 
   /// Uploads an image for a post and returns the public URL.

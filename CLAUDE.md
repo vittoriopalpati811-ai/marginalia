@@ -194,19 +194,22 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   the foot slides away — which is what a real leaning book does. Don't
   "simplify" that spacer away. `scale:` shrinks the whole shelf proportionally
   (fonts, plank, padding); the shareable poster uses it.
-- `lib/features/library/shelf_guess_card.dart` — the shared shelf is **PLAYABLE
-  in the feed**, not a screenshot. A post carries its books in `posts.payload`
-  (migration **076**), the feed renders real spines from it, and tapping the one
-  you think is the most-highlighted book answers you INSTANTLY — the counts
-  travel inside the post, so the verdict needs no round trip and works offline.
-  The answer is DERIVED (max highlight count), never stored, so it can't drift
-  from the spines being looked at. The correct spine then pops up out of the row
-  and the rest dim. `post_guesses` (one row per player, PK-deduped) backs the
-  "62% ha indovinato" line; RLS lets you read back only YOUR OWN guess, and the
-  crowd figure comes from `post_guess_stats()` which returns two integers and is
-  revoked from `anon`. The PNG is still uploaded as the fallback for older
-  clients, which is why the payload branch is checked FIRST in `_PostCard`.
-  Verified live: insert 201 / duplicate 409 / other-user 403 / anon 401.
+- **The shelf is drawn inside a CABINET, not on floating planks**
+  (`bookshelf_view.dart`): dark walnut carcass — uprights, top rail, plinth —
+  with the interior in shade and boards jointed wall-to-wall. The books pack
+  against the INTERIOR width (`maxWidth - 2*(_kStile + _kInnerPad)`), so any
+  change to the carcass metrics automatically re-flows the rows. Pastel spines
+  need the dark ground: on cream they drifted.
+- **Sharing is a picture, full stop.** A playable "guess the most-highlighted
+  book" post was built, shipped and then REMOVED at the founder's call ("non mi
+  piace questo livello di interazione") — migration **077** reverses 076, so
+  there is no `posts.payload` and no `post_guesses` any more. Don't rebuild it.
+  Two share paths, one poster (`shelf_poster.dart`, `ShelfPosterCard`, 4:5 for
+  Instagram, signed bottom-right with the mark + "Scripta"):
+  `showShelfShareSheet` publishes it to the feed as an ordinary image post, and
+  `showShelfImageShareSheet` (button in the profile's LIBRERIA header) hands the
+  PNG to the SYSTEM share sheet — which is how it reaches Instagram, with no
+  IG-specific scheme or entitlement.
 - `lib/features/library/shelf_share_sheet.dart` — **"Condividilo come post"**:
   renders the shelf as a 4:5 poster (RepaintBoundary → `toImage(pixelRatio: 3)`)
   → `uploadPostImage` → `createPost`, then invalidates `postsProvider`. The post

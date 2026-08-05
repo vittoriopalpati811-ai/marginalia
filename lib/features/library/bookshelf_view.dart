@@ -78,14 +78,35 @@ double _leanSweep(double height, double width) =>
 /// Breathing room between the title and the author along a spine.
 const double _kTitleAuthorGap = 7;
 
-/// The shelf board.
-const double _kPlankTop = 8;   // the face the books stand on
-const double _kPlankLip = 5;   // the front edge you see from slightly above
+// ─── The cabinet ─────────────────────────────────────────────────────────────
+//
+// The books do not float on loose planks any more: they stand inside a piece of
+// furniture. Dark walnut, because pastel spines need something to sit against —
+// on cream they drifted; against wood they read as objects on a shelf.
+//
+// Realistic, but built the way the rest of the app is built: flat planes, one
+// light direction, grain suggested with a few low-alpha strokes rather than a
+// photographic texture. No gloss, no bevel stacks, no drop-shadow pile.
 
-// Warm oak, muted so it sits beside the app's cream and sage instead of
-// shouting over them.
-const Color _kOakFace = Color(0xFFD8CDBA);
-const Color _kOakLip  = Color(0xFFBCAE99);
+/// Board the books stand on, and the front edge of it you see from below.
+const double _kBoardTop = 7;
+const double _kBoardLip = 4;
+
+/// The carcass: uprights either side, a rail on top, a deeper plinth beneath.
+const double _kStile   = 11;
+const double _kTopRail = 10;
+const double _kPlinth  = 14;
+
+/// Breathing room between the uprights and the first/last book.
+const double _kInnerPad = 5;
+
+// Walnut, warm and reddish, lit from above-left.
+const Color _kWalnutFace   = Color(0xFF4A3327); // stiles and rails
+const Color _kWalnutLit    = Color(0xFF5E4433); // the edge catching light
+const Color _kWalnutDeep   = Color(0xFF33231A); // where wood turns away
+const Color _kCabinetBack  = Color(0xFF2A1E18); // the interior, in shade
+const Color _kBoardFace    = Color(0xFF57402E); // top of a shelf board
+const Color _kBoardEdge    = Color(0xFF3C2B20); // its front edge
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -125,7 +146,6 @@ class BookshelfView extends StatelessWidget {
     required this.entries,
     required this.onTap,
     this.scale = 1.0,
-    this.poppedIndex,
   });
 
   final List<ShelfEntry> entries;
@@ -138,9 +158,6 @@ class BookshelfView extends StatelessWidget {
   /// the library; the shareable poster packs more books into less room.
   final double scale;
 
-  /// Pulls one spine up out of the row and pushes the rest back — how the
-  /// playable shelf answers "which one was it?".
-  final int? poppedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -148,9 +165,15 @@ class BookshelfView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Books are packed against the INSIDE of the carcass, not the widget's
+        // full width — the uprights own the rest.
+        final interior = constraints.maxWidth -
+            2 * _kStile * scale -
+            2 * _kInnerPad * scale;
+
         final specs =
             entries.map((e) => _SpineSpec.from(e, scale: scale)).toList();
-        final shelves = _packIntoShelves(specs, constraints.maxWidth);
+        final shelves = _packIntoShelves(specs, interior);
 
         // Free space left on the bottom shelf — the room a leaning book needs.
         // It also needs neighbours to fall against: a single book tipping over
@@ -161,8 +184,8 @@ class BookshelfView extends StatelessWidget {
         // It may only tip if the board can actually give it the room the tilt
         // needs; otherwise it would lean through the book beside it.
         final leanRoom = _leanSweep(last.last.height, last.last.width) + 6;
-        final leanLast = last.length >= 3 &&
-            (constraints.maxWidth - lastWidth) >= leanRoom;
+        final leanLast =
+            last.length >= 3 && (interior - lastWidth) >= leanRoom;
 
         var seen = 0;
         final rows = <Widget>[];
@@ -173,16 +196,12 @@ class BookshelfView extends StatelessWidget {
             leanLast:    leanLast && i == shelves.length - 1,
             onTap:       onTap,
             scale:       scale,
-            poppedIndex: poppedIndex,
-            anyPopped:   poppedIndex != null,
+            isLast:      i == shelves.length - 1,
           ));
           seen += shelves[i].length;
         }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: rows,
-        );
+        return _Cabinet(scale: scale, rows: rows);
       },
     );
   }
@@ -285,8 +304,7 @@ class _Shelf extends StatelessWidget {
     required this.leanLast,
     required this.onTap,
     required this.scale,
-    required this.poppedIndex,
-    required this.anyPopped,
+    required this.isLast,
   });
 
   final List<_SpineSpec> specs;
@@ -294,8 +312,9 @@ class _Shelf extends StatelessWidget {
   final bool             leanLast;
   final void Function(int index, ShelfEntry entry) onTap;
   final double           scale;
-  final int?             poppedIndex;
-  final bool             anyPopped;
+
+  /// The bottom row sits straight on the plinth, so it needs no gap under it.
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
@@ -318,14 +337,10 @@ class _Shelf extends StatelessWidget {
 
       final globalIndex = indexOffset + i;
       Widget spine = _Spine(
-        spec:   specs[i],
-        index:  globalIndex,
-        scale:  scale,
-        popped: poppedIndex == globalIndex,
-        // Once one spine is singled out the others step back, so the eye goes
-        // straight to the answer.
-        dimmed: anyPopped && poppedIndex != globalIndex,
-        onTap:  () => onTap(globalIndex, specs[i].entry),
+        spec:  specs[i],
+        index: globalIndex,
+        scale: scale,
+        onTap: () => onTap(globalIndex, specs[i].entry),
       );
 
       if (isLeaner) {
@@ -352,89 +367,225 @@ class _Shelf extends StatelessWidget {
               children: books,
             ),
           ),
-          _Plank(scale: scale),
-          SizedBox(height: 18 * scale),
+          _ShelfBoard(scale: scale),
+          if (!isLast) SizedBox(height: 16 * scale),
         ],
       ),
     );
   }
 }
 
-// ─── The board ───────────────────────────────────────────────────────────────
+// ─── The carcass ─────────────────────────────────────────────────────────────
 
-class _Plank extends StatelessWidget {
-  const _Plank({required this.scale});
+class _Cabinet extends StatelessWidget {
+  const _Cabinet({required this.scale, required this.rows});
+
+  final double       scale;
+  final List<Widget> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(7 * scale),
+        // One soft shadow, the same language as every card in the app — a piece
+        // of furniture standing on the page, not a sticker on it.
+        boxShadow: [
+          BoxShadow(
+            color: ScriptaColors.ink.withAlpha(38),
+            blurRadius: 18 * scale,
+            offset: Offset(0, 6 * scale),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7 * scale),
+        child: CustomPaint(
+          painter: _CarcassPainter(scale: scale),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              (_kStile + _kInnerPad) * scale,
+              _kTopRail * scale,
+              (_kStile + _kInnerPad) * scale,
+              _kPlinth * scale,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: rows,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Paints the walnut box the books live in: the interior in shade, the uprights
+/// and rails around it, and just enough grain to read as sawn wood.
+class _CarcassPainter extends CustomPainter {
+  _CarcassPainter({required this.scale});
+
+  final double scale;
+
+  /// Deterministic wobble so the grain is the same every frame — a shelf that
+  /// reshuffles its wood grain on scroll is worse than no grain at all.
+  double _n(int i) => ((i * 2654435761) % 1000) / 1000.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stile   = _kStile * scale;
+    final topRail = _kTopRail * scale;
+    final plinth  = _kPlinth * scale;
+
+    // 1 — the carcass, solid walnut.
+    canvas.drawRect(Offset.zero & size, Paint()..color = _kWalnutFace);
+
+    // 2 — grain. Long strokes with the run of the wood: vertical down the
+    //     uprights, horizontal along the rails. Low alpha, never a pattern.
+    final grain = Paint()..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 7; i++) {
+      final x = stile * (0.18 + 0.62 * _n(i * 3 + 1));
+      grain
+        ..color = (i.isEven ? _kWalnutDeep : _kWalnutLit).withAlpha(46)
+        ..strokeWidth = (0.7 + _n(i) * 0.9) * scale;
+      canvas.drawLine(Offset(x, topRail * 0.4),
+          Offset(x + (_n(i + 9) - 0.5) * 3, size.height - plinth * 0.3), grain);
+      canvas.drawLine(Offset(size.width - x, topRail * 0.5),
+          Offset(size.width - x + (_n(i + 4) - 0.5) * 3,
+              size.height - plinth * 0.4), grain);
+    }
+    for (var i = 0; i < 3; i++) {
+      final y = topRail * (0.25 + 0.5 * _n(i + 21));
+      grain
+        ..color = _kWalnutDeep.withAlpha(40)
+        ..strokeWidth = 0.8 * scale;
+      canvas.drawLine(Offset(size.width * 0.1 * _n(i + 5), y),
+          Offset(size.width * (0.55 + 0.4 * _n(i + 7)), y), grain);
+    }
+
+    // 3 — the interior, in shade: the inside of a cabinet never catches the
+    //     light its front does.
+    final inside = Rect.fromLTRB(
+      stile,
+      topRail,
+      size.width - stile,
+      size.height - plinth,
+    );
+    canvas.drawRect(inside, Paint()..color = _kCabinetBack);
+
+    // 4 — the reveal where the carcass turns into the opening: a lit edge on
+    //     the top and left, a dark one opposite. This single pair of lines is
+    //     what makes the box read as having depth.
+    final lit = Paint()
+      ..color = _kWalnutLit.withAlpha(190)
+      ..strokeWidth = 1.2 * scale;
+    canvas.drawLine(inside.topLeft, inside.topRight, lit);
+    canvas.drawLine(inside.topLeft, inside.bottomLeft, lit);
+
+    final dark = Paint()
+      ..color = _kWalnutDeep
+      ..strokeWidth = 1.2 * scale;
+    canvas.drawLine(inside.topRight, inside.bottomRight, dark);
+
+    // 5 — the plinth catches light along its top edge.
+    canvas.drawLine(
+      Offset(0, size.height - plinth),
+      Offset(size.width, size.height - plinth),
+      Paint()
+        ..color = _kWalnutLit.withAlpha(150)
+        ..strokeWidth = 1 * scale,
+    );
+
+    // 6 — the interior darkens into its corners, the way an unlit box does.
+    canvas.drawRect(
+      inside,
+      Paint()
+        ..shader = RadialGradient(
+          center: Alignment.topCenter,
+          radius: 1.1,
+          colors: [
+            const Color(0x00000000),
+            const Color(0x59000000),
+          ],
+        ).createShader(inside),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CarcassPainter old) => old.scale != scale;
+}
+
+// ─── A shelf board inside the carcass ────────────────────────────────────────
+
+class _ShelfBoard extends StatelessWidget {
+  const _ShelfBoard({required this.scale});
 
   final double scale;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: (_kPlankTop + _kPlankLip) * scale,
+      height: (_kBoardTop + _kBoardLip) * scale,
       child: CustomPaint(
-        painter: _PlankPainter(scale: scale),
+        painter: _BoardPainter(scale: scale),
         child: const SizedBox.expand(),
       ),
     );
   }
 }
 
-class _PlankPainter extends CustomPainter {
-  _PlankPainter({required this.scale});
+class _BoardPainter extends CustomPainter {
+  _BoardPainter({required this.scale});
 
   final double scale;
 
-  // The shadow the books cast where they meet the board.
+  /// The shadow the books cast where they meet the board.
   static const _contact = LinearGradient(
     begin: Alignment.topCenter,
     end:   Alignment.bottomCenter,
-    colors: [Color(0x1F1B1F1B), Color(0x001B1F1B)],
+    colors: [Color(0x4A000000), Color(0x00000000)],
   );
 
   @override
   void paint(Canvas canvas, Size size) {
-    final radius = Radius.circular(2.5 * scale);
-    final faceH  = _kPlankTop * scale;
-    final lipH   = _kPlankLip * scale;
+    final top = _kBoardTop * scale;
 
-    // Board face — the plane the books rest on.
-    final face = Rect.fromLTWH(0, 0, size.width, faceH);
-    canvas.drawRRect(
-      RRect.fromRectAndCorners(face, topLeft: radius, topRight: radius),
-      Paint()..color = _kOakFace,
+    // The board runs wall to wall — it is jointed into the uprights, not a
+    // plank resting in mid-air, so it has no rounded ends.
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, top),
+      Paint()..color = _kBoardFace,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(0, top, size.width, size.height - top),
+      Paint()..color = _kBoardEdge,
     );
 
-    // Front edge — one darker band is all the depth this needs.
-    final lip = Rect.fromLTWH(0, faceH, size.width, lipH);
-    canvas.drawRRect(
-      RRect.fromRectAndCorners(lip,
-          bottomLeft: radius, bottomRight: radius),
-      Paint()..color = _kOakLip,
-    );
-
-    // Contact shadow, only across the top third of the face.
-    final shade = Rect.fromLTWH(0, 0, size.width, faceH * 0.62);
+    // Where the books stand.
+    final shade = Rect.fromLTWH(0, 0, size.width, top * 0.6);
     canvas.drawRect(shade, Paint()..shader = _contact.createShader(shade));
 
-    // Two grain lines. Any more and it stops being furniture and starts
-    // being texture for its own sake.
+    // The front edge catches the light.
+    canvas.drawLine(
+      Offset(0, top),
+      Offset(size.width, top),
+      Paint()
+        ..color = _kWalnutLit.withAlpha(120)
+        ..strokeWidth = 0.9 * scale,
+    );
+
+    // Two strokes of grain along the run of the board.
     final grain = Paint()
-      ..color = ScriptaColors.ink.withAlpha(12)
-      ..strokeWidth = 0.8 * scale;
-    canvas.drawLine(
-      Offset(size.width * 0.08, faceH * 0.72),
-      Offset(size.width * 0.62, faceH * 0.72),
-      grain,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.55, faceH * 0.42),
-      Offset(size.width * 0.94, faceH * 0.42),
-      grain,
-    );
+      ..color = _kWalnutDeep.withAlpha(60)
+      ..strokeWidth = 0.7 * scale;
+    canvas.drawLine(Offset(size.width * 0.06, top * 0.68),
+        Offset(size.width * 0.58, top * 0.68), grain);
+    canvas.drawLine(Offset(size.width * 0.52, top * 0.34),
+        Offset(size.width * 0.95, top * 0.34), grain);
   }
 
   @override
-  bool shouldRepaint(covariant _PlankPainter old) => old.scale != scale;
+  bool shouldRepaint(covariant _BoardPainter old) => old.scale != scale;
 }
 
 // ─── One spine ───────────────────────────────────────────────────────────────
@@ -445,8 +596,6 @@ class _Spine extends StatelessWidget {
     required this.index,
     required this.scale,
     required this.onTap,
-    this.popped = false,
-    this.dimmed = false,
   });
 
   final _SpineSpec  spec;
@@ -454,11 +603,6 @@ class _Spine extends StatelessWidget {
   final double      scale;
   final VoidCallback onTap;
 
-  /// Slides this spine up out of the row, the way you pull a book off a shelf.
-  final bool popped;
-
-  /// Steps back so a popped neighbour reads as the one that matters.
-  final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
@@ -551,18 +695,7 @@ class _Spine extends StatelessWidget {
       label: '${book.title}, ${book.author}',
       child: PressableSpring(
         onPressed: onTap,
-        // The reveal: the chosen book rises out of the row the way you pull one
-        // off a shelf, and everything else recedes behind it.
-        child: AnimatedSlide(
-          offset: popped ? const Offset(0, -0.075) : Offset.zero,
-          duration: AirbnbMotion.emphasis,
-          curve: AirbnbMotion.enter,
-          child: AnimatedOpacity(
-            opacity: dimmed ? 0.42 : 1,
-            duration: AirbnbMotion.standard,
-            child: spine,
-          ),
-        ),
+        child: spine,
       ),
     )
         // The books slide up onto the shelf, first ones first. Capped so a

@@ -126,7 +126,6 @@
   "jamMembers": "Members",
   "jamHighlights": "Shared highlights",
 
-
   "onboardingWelcomeSubtitle": "Rediscover what you've read. Talk it over with the readers who read it with you.",
   "onboardingStart": "Start →",
   "onboardingHaveAccount": "Already have an account? Sign in",
@@ -185,7 +184,6 @@
 
   "share": "Share",
   "copy": "Copy",
-
 
   "highlightNotFound": "Highlight not found.",
   "bookNotFound": "Book not found.",
@@ -285,12 +283,6 @@
   "libraryViewShelf": "Shelf",
   "libraryShelfShareCta": "Share it as a post",
   "shelfShareTitle": "Share your shelf",
-  "shelfSharePromptLabel": "Ask a question",
-  "shelfSharePromptGuess": "Guess which one I've highlighted most.",
-  "shelfSharePromptNext": "Which one should I read next?",
-  "shelfSharePromptRecommend": "Recommend me the next one.",
-  "shelfSharePromptNone": "No question",
-  "shelfShareGuessHint": "Hint: the thicker the spine, the more I highlighted it.",
   "shelfSharePublish": "Publish",
   "shelfSharePosted": "Shelf published",
   "shelfShareError": "Couldn't publish. Try again.",
@@ -299,14 +291,6 @@
   "@shelfSharePosterFooter": { "placeholders": { "count": { "type": "int" } } },
   "shelfSharePostBody": "{count, plural, =1{My shelf on Scripta: 1 book.} other{My shelf on Scripta: {count} books.}}",
   "@shelfSharePostBody": { "placeholders": { "count": { "type": "int" } } },
-  "shelfGuessInvite": "Tap the spine you think has the most highlights.",
-  "shelfGuessRight": "Got it.",
-  "shelfGuessWrong": "Not quite.",
-  "shelfGuessOwner": "Your shelf",
-  "shelfGuessAnswer": "{title} — {count, plural, =1{1 highlight} other{{count} highlights}}",
-  "@shelfGuessAnswer": { "placeholders": { "title": { "type": "String" }, "count": { "type": "int" } } },
-  "shelfGuessCrowd": "{percent}% guessed right · {count, plural, =1{1 answer} other{{count} answers}}",
-  "@shelfGuessCrowd": { "placeholders": { "percent": { "type": "int" }, "count": { "type": "int" } } },
 
   "feedPhoto": "Photo",
   "feedHoldToPublishToast": "Hold to publish",
@@ -798,7 +782,6 @@
 
   "authTermsPrefix": "By creating an account you agree to our ",
   "authTermsSuffix": " and confirm you are 16 or older.",
-
 
   "chatUnableToLoad": "Unable to load messages",
   "chatEmptyBody": "Start the conversation\nby sending the first message.",
