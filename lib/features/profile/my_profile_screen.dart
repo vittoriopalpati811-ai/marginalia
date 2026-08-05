@@ -21,6 +21,7 @@ import 'reviews_tab.dart';
 import 'activity_tab.dart';
 import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
+import '../library/bookshelf_view.dart';
 import '../library/book_detail_screen.dart' show editBookCoverByKey;
 import '../reader/book_info_screen.dart';
 import '../stats/reading_stats_card.dart';
@@ -144,6 +145,19 @@ final _mySpotlightProvider =
   if (!svc.isAuthenticated || svc.userId == null) return null;
   try { return await svc.fetchMyHighlightSpotlight(); } catch (_) { return null; }
 });
+
+/// Highlight count for a book row, as returned by the embedded
+/// `highlights(count)` aggregate. Older cached rows simply have none, and a
+/// book with no count is drawn as a thin spine rather than not at all.
+int _marksOf(Map<String, dynamic> book) {
+  final hl = book['highlights'];
+  if (hl is List && hl.isNotEmpty) {
+    final first = hl.first;
+    if (first is Map) return (first['count'] as num?)?.toInt() ?? 0;
+  }
+  if (hl is Map) return (hl['count'] as num?)?.toInt() ?? 0;
+  return 0;
+}
 
 final _gradientKeyProvider = StateProvider<String>((ref) => 'sepia');
 final _patternKeyProvider   = StateProvider<String>((ref) => 'none');
@@ -540,28 +554,30 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                             ],
                           ),
                         ),
-                        // Grid (shrinkWrap inside SliverToBoxAdapter is fine for
-                        // the small number of books on a profile page).
-                        // Aspect 0.58 (was 0.62) because the cell now stacks
-                        // cover + title + author in a single card — the
-                        // labels take ~38% of the height, so the cards need
-                        // to be a bit taller for the cover to keep its
-                        // portrait proportions.
+                        // The shelf, not a grid of cards. A profile answers
+                        // "what has this person read?", and forty spines say
+                        // that in one glance where forty cards need a minute
+                        // of scrolling. The cover art still has its home in
+                        // the Library's grid view.
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                          child: GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.58,
-                            children: books
-                                .asMap()
-                                .entries
-                                .map((e) =>
-                                    _BookCell(book: e.value, index: e.key))
-                                .toList(),
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                          child: BookshelfView(
+                            entries: [
+                              for (final b in books)
+                                ShelfEntry(
+                                  title:  (b['title']  as String?) ?? '',
+                                  author: (b['author'] as String?) ?? '',
+                                  highlightCount: _marksOf(b),
+                                ),
+                            ],
+                            onTap: (_, e) => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => BookInfoScreen(
+                                  title:  e.title,
+                                  author: e.author,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -1317,102 +1333,6 @@ class _SpotlightCard extends StatelessWidget {
 // top, title and author underneath. Without it the profile reads as
 // "anonymous art tiles," which is the opposite of what a library should
 // communicate.
-
-class _BookCell extends ConsumerWidget {
-  const _BookCell({required this.book, required this.index});
-  final Map<String, dynamic> book;
-  final int index;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final title  = book['title']  as String? ?? '';
-    final author = book['author'] as String? ?? '';
-
-    // Resolve the custom cover the user picked (per-user cover store), falling
-    // back to the book's own cover_url, then to the generated editorial art.
-    // Without this the personal-area "Libreria" kept showing the default art
-    // even after the user chose a custom cover (founder, 2026-06-20).
-    final customCover =
-        ref.watch(favCoversProvider(null)).asData?.value[favCoverKey(title, author)];
-    final coverUrl = (customCover != null && customCover.isNotEmpty)
-        ? customCover
-        : book['cover_url'] as String?;
-
-    // Profile book tiles open the keyless BookInfoScreen (cover + plot from
-    // title/author). This works identically on own and others' profiles and
-    // needs no local Isar id lookup — the old /book/:id bridge failed with
-    // "Libro non trovato" because the Supabase UUID isn't the local int id.
-    final card = GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => BookInfoScreen(title: title, author: author, coverUrl: coverUrl),
-        ),
-      ),
-      child: Container(
-        decoration: ScriptaDecorations.quietCard(radius: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Cover — takes the upper ~63% of the card. ClipRRect so the
-            // geometric art is rounded at the top corners only.
-            Expanded(
-              flex: 62,
-              child: BookEditorialCover(
-                title:  title,
-                author: author,
-                coverUrl: coverUrl,
-                borderRadius: const BorderRadius.only(
-                  topLeft:  Radius.circular(9.4),
-                  topRight: Radius.circular(9.4),
-                ),
-              ),
-            ),
-            // Title + author — quiet, compact, never wraps to ridiculous
-            // heights. Same style family as the library card but scaled
-            // down for the smaller profile tile.
-            Expanded(
-              flex: 38,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: ScriptaTextStyles.bookTitle.copyWith(
-                        fontSize: 10.5,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      author.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ScriptaTextStyles.bookAuthor.copyWith(
-                        fontSize: 8,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    return card
-        .animate(delay: (index * 30).ms)
-        .fadeIn(duration: 260.ms, curve: Curves.easeOut);
-  }
-}
-
-// ─── Instagram-style posts grid ───────────────────────────────────────────────
 
 class _PostsGrid extends StatelessWidget {
   const _PostsGrid({required this.posts});

@@ -137,8 +137,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         marks[h.bookId] = (marks[h.bookId] ?? 0) + 1;
       }
       for (final b in allBooks) {
-        shelfEntries
-            .add(ShelfEntry(book: b, highlightCount: marks[b.id] ?? 0));
+        shelfEntries.add(ShelfEntry.fromBook(b, marks[b.id] ?? 0));
       }
     }
 
@@ -301,7 +300,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                     children: [
                       BookshelfView(
                         entries: shelfEntries,
-                        onOpen: (b) => context.push('/book/${b.id}'),
+                        onTap: (_, e) => context.push('/book/${e.bookId}'),
                       ),
                       const SizedBox(height: 4),
                       _ShelfShareButton(entries: shelfEntries),

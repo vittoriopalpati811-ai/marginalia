@@ -31,6 +31,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/theme.dart';
 import '../social/feed_tab.dart' show postsProvider;
 import 'bookshelf_view.dart';
+import 'shelf_guess_card.dart' show kShelfGuessPayloadType;
 
 /// How many books make it onto the poster.
 const int _kPosterBooks = 14;
@@ -78,8 +79,7 @@ class _ShelfShareSheetState extends ConsumerState<_ShelfShareSheet> {
     final sorted = [...widget.entries]
       ..sort((a, b) => b.highlightCount.compareTo(a.highlightCount));
     final top = sorted.take(_kPosterBooks).toList()
-      ..sort((a, b) =>
-          a.book.title.toLowerCase().compareTo(b.book.title.toLowerCase()));
+      ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     return top;
   }();
 
@@ -126,7 +126,23 @@ class _ShelfShareSheetState extends ConsumerState<_ShelfShareSheet> {
 
       final supabase = ref.read(supabaseServiceProvider);
       final url = await supabase.uploadPostImage(data.buffer.asUint8List(), 'png');
-      await supabase.createPost(body: caption, imageUrl: url);
+
+      // Both are sent on purpose. The payload is what the feed plays; the PNG
+      // is the fallback for clients that predate playable shelves and for any
+      // surface that can only show a picture.
+      await supabase.createPost(
+        body: caption,
+        imageUrl: url,
+        payload: {
+          'type': kShelfGuessPayloadType,
+          'question': _prompt.name,
+          'total': widget.entries.length,
+          'books': [
+            for (final e in _poster)
+              {'t': e.title, 'a': e.author, 'm': e.highlightCount},
+          ],
+        },
+      );
 
       ref.invalidate(postsProvider);
 
@@ -397,7 +413,7 @@ class _ShelfPoster extends StatelessWidget {
                       child: BookshelfView(
                         entries: entries,
                         scale: _kPosterScale,
-                        onOpen: (_) {},
+                        onTap: (_, __) {},
                       ),
                     ),
                   ),

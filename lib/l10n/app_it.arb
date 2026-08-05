@@ -830,6 +830,24 @@
   "shelfSharePostBody": "{count, plural, =1{Il mio scaffale su Scripta: 1 libro.} other{Il mio scaffale su Scripta: {count} libri.}}",
   "@shelfSharePostBody": { "description": "First line of the shared post body.", "placeholders": { "count": { "type": "int" } } },
 
+  "shelfGuessInvite": "Tocca la costa che credi abbia più frasi sottolineate.",
+  "@shelfGuessInvite": { "description": "Invitation shown on a playable shelf post before the reader taps." },
+
+  "shelfGuessRight": "Indovinato.",
+  "@shelfGuessRight": {},
+
+  "shelfGuessWrong": "Non ci sei.",
+  "@shelfGuessWrong": {},
+
+  "shelfGuessOwner": "Il tuo scaffale",
+  "@shelfGuessOwner": { "description": "Shown to the post's author, who cannot play." },
+
+  "shelfGuessAnswer": "{title} — {count, plural, =1{1 frase} other{{count} frasi}}",
+  "@shelfGuessAnswer": { "description": "The revealed answer.", "placeholders": { "title": { "type": "String" }, "count": { "type": "int" } } },
+
+  "shelfGuessCrowd": "{percent}% ha indovinato · {count, plural, =1{1 risposta} other{{count} risposte}}",
+  "@shelfGuessCrowd": { "description": "How the crowd did.", "placeholders": { "percent": { "type": "int" }, "count": { "type": "int" } } },
+
   "feedPhoto": "Foto",
   "@feedPhoto": {},
 

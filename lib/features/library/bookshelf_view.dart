@@ -90,11 +90,31 @@ const Color _kOakLip  = Color(0xFFBCAE99);
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 /// One book plus the only extra fact the shelf needs: how heavily it is marked.
+///
+/// Deliberately NOT an Isar `Book`. The same shelf is drawn from the local
+/// library and from a post's payload in someone else's feed, and the second
+/// case has no database rows to hand — only a title, an author and a count.
 class ShelfEntry {
-  const ShelfEntry({required this.book, required this.highlightCount});
+  const ShelfEntry({
+    required this.title,
+    required this.author,
+    required this.highlightCount,
+    this.bookId,
+  });
 
-  final Book book;
-  final int  highlightCount;
+  /// Builds an entry from a local library book.
+  ShelfEntry.fromBook(Book book, this.highlightCount)
+      : title  = book.title,
+        author = book.author,
+        bookId = book.id;
+
+  final String title;
+  final String author;
+  final int    highlightCount;
+
+  /// Local Isar id, when this shelf was built from the user's own library.
+  /// Null for a shelf reconstructed from a post.
+  final int? bookId;
 }
 
 // ─── Public widget ───────────────────────────────────────────────────────────
@@ -103,16 +123,24 @@ class BookshelfView extends StatelessWidget {
   const BookshelfView({
     super.key,
     required this.entries,
-    required this.onOpen,
+    required this.onTap,
     this.scale = 1.0,
+    this.poppedIndex,
   });
 
-  final List<ShelfEntry>      entries;
-  final void Function(Book)   onOpen;
+  final List<ShelfEntry> entries;
+
+  /// Called with the position of the spine that was touched. Position, not the
+  /// book, because a playable shelf cares about WHICH one you picked.
+  final void Function(int index, ShelfEntry entry) onTap;
 
   /// Shrinks the whole shelf proportionally. 1.0 is the reading size used in
   /// the library; the shareable poster packs more books into less room.
   final double scale;
+
+  /// Pulls one spine up out of the row and pushes the rest back — how the
+  /// playable shelf answers "which one was it?".
+  final int? poppedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -143,8 +171,10 @@ class BookshelfView extends StatelessWidget {
             specs:       shelves[i],
             indexOffset: seen,
             leanLast:    leanLast && i == shelves.length - 1,
-            onOpen:      onOpen,
+            onTap:       onTap,
             scale:       scale,
+            poppedIndex: poppedIndex,
+            anyPopped:   poppedIndex != null,
           ));
           seen += shelves[i].length;
         }
@@ -208,14 +238,14 @@ class BookshelfView extends StatelessWidget {
 
 class _SpineSpec {
   const _SpineSpec({
-    required this.book,
+    required this.entry,
     required this.width,
     required this.height,
     required this.colors,
     required this.seed,
   });
 
-  final Book       book;
+  final ShelfEntry entry;
   final double     width;
   final double     height;
   final BookColors colors;
@@ -224,8 +254,7 @@ class _SpineSpec {
   /// Every dimension is a pure function of the book, so a shelf looks the same
   /// on every rebuild, every launch and every device.
   factory _SpineSpec.from(ShelfEntry entry, {double scale = 1.0}) {
-    final book = entry.book;
-    final seed = bookArtSeed(book.title, book.author);
+    final seed = bookArtSeed(entry.title, entry.author);
 
     // Two independent pseudo-random draws from the one seed.
     double draw(int salt) => ((seed ~/ (3 + salt * 7)) % 997) / 997.0;
@@ -233,7 +262,7 @@ class _SpineSpec {
     final marked = math.min(entry.highlightCount, _kThickAt) / _kThickAt;
 
     return _SpineSpec(
-      book: book,
+      entry: entry,
       // Ragged tops — the single strongest cue that these are objects.
       height: (_kMinHeight + draw(1) * (_kMaxHeight - _kMinHeight)) * scale,
       // Mostly "how much did I mark this", plus a little natural variation.
@@ -241,7 +270,7 @@ class _SpineSpec {
               draw(2) * 8 +
               marked * (_kMaxWidth - _kMinWidth - 8)) *
           scale,
-      colors: bookColorsFor(book.title, book.author),
+      colors: bookColorsFor(entry.title, entry.author),
       seed:   seed,
     );
   }
@@ -254,15 +283,19 @@ class _Shelf extends StatelessWidget {
     required this.specs,
     required this.indexOffset,
     required this.leanLast,
-    required this.onOpen,
+    required this.onTap,
     required this.scale,
+    required this.poppedIndex,
+    required this.anyPopped,
   });
 
-  final List<_SpineSpec>    specs;
-  final int                 indexOffset;
-  final bool                leanLast;
-  final void Function(Book) onOpen;
-  final double              scale;
+  final List<_SpineSpec> specs;
+  final int              indexOffset;
+  final bool             leanLast;
+  final void Function(int index, ShelfEntry entry) onTap;
+  final double           scale;
+  final int?             poppedIndex;
+  final bool             anyPopped;
 
   @override
   Widget build(BuildContext context) {
@@ -283,11 +316,16 @@ class _Shelf extends StatelessWidget {
         ));
       }
 
+      final globalIndex = indexOffset + i;
       Widget spine = _Spine(
-        spec:  specs[i],
-        index: indexOffset + i,
-        scale: scale,
-        onTap: () => onOpen(specs[i].book),
+        spec:   specs[i],
+        index:  globalIndex,
+        scale:  scale,
+        popped: poppedIndex == globalIndex,
+        // Once one spine is singled out the others step back, so the eye goes
+        // straight to the answer.
+        dimmed: anyPopped && poppedIndex != globalIndex,
+        onTap:  () => onTap(globalIndex, specs[i].entry),
       );
 
       if (isLeaner) {
@@ -407,6 +445,8 @@ class _Spine extends StatelessWidget {
     required this.index,
     required this.scale,
     required this.onTap,
+    this.popped = false,
+    this.dimmed = false,
   });
 
   final _SpineSpec  spec;
@@ -414,9 +454,15 @@ class _Spine extends StatelessWidget {
   final double      scale;
   final VoidCallback onTap;
 
+  /// Slides this spine up out of the row, the way you pull a book off a shelf.
+  final bool popped;
+
+  /// Steps back so a popped neighbour reads as the one that matters.
+  final bool dimmed;
+
   @override
   Widget build(BuildContext context) {
-    final book = spec.book;
+    final book = spec.entry;
     final ink  = _readableInk(spec.colors.base);
 
     final title   = book.title.trim();
@@ -508,7 +554,18 @@ class _Spine extends StatelessWidget {
       label: '${book.title}, ${book.author}',
       child: PressableSpring(
         onPressed: onTap,
-        child: spine,
+        // The reveal: the chosen book rises out of the row the way you pull one
+        // off a shelf, and everything else recedes behind it.
+        child: AnimatedSlide(
+          offset: popped ? const Offset(0, -0.075) : Offset.zero,
+          duration: AirbnbMotion.emphasis,
+          curve: AirbnbMotion.enter,
+          child: AnimatedOpacity(
+            opacity: dimmed ? 0.42 : 1,
+            duration: AirbnbMotion.standard,
+            child: spine,
+          ),
+        ),
       ),
     )
         // The books slide up onto the shelf, first ones first. Capped so a

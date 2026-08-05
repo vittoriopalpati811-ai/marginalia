@@ -20,6 +20,7 @@ import '../../core/l10n/l10n_extension.dart';
 import '../messages/giphy_picker.dart';
 import 'report_sheet.dart';
 import 'share_post_sheet.dart';
+import '../library/shelf_guess_card.dart';
 
 // ─── Content-filter helpers ──────────────────────────────────────────────────
 
@@ -1267,6 +1268,9 @@ class _PostCardState extends ConsumerState<_PostCard> {
     final currentUserId = ref.read(supabaseServiceProvider).userId;
     final isOwner = currentUserId != null && currentUserId == userId;
 
+    // A shared shelf: null for every ordinary post.
+    final shelfGuess = shelfGuessFromPost(post);
+
     final card = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1393,8 +1397,22 @@ class _PostCardState extends ConsumerState<_PostCard> {
             ),
           ),
 
+        // ── Playable shelf — rendered live, not as a screenshot ────────────
+        // A shelf post carries its books in `payload`, so the feed can draw
+        // real spines the reader can touch. The PNG is still uploaded and is
+        // still what older clients (and link previews) fall back to, which is
+        // why this branch comes FIRST and skips the image when it fires.
+        if (shelfGuess != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(64, 10, 16, 0),
+            child: ShelfGuessCard(
+              postId:  post['id'] as String,
+              data:    shelfGuess,
+              isOwner: isOwner,
+            ),
+          )
         // ── Post image — smaller, rounded box, indented under the username ──
-        if (imageUrl != null && imageUrl.isNotEmpty)
+        else if (imageUrl != null && imageUrl.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(64, 10, 16, 0),
             child: ClipRRect(

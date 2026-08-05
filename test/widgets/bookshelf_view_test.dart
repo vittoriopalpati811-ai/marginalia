@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scripta/core/models/book.dart';
 import 'package:scripta/features/library/bookshelf_view.dart';
 
 // The shelf packs spines of varying width into rows by hand, so the two ways
@@ -11,17 +10,12 @@ import 'package:scripta/features/library/bookshelf_view.dart';
 //   • a "widow" — one lonely book left on the bottom board, which reads as a
 //     bug rather than as a shelf.
 
-Book _book(int id, String title, String author) => Book()
-  ..id = id
-  ..supabaseId = 's$id'
-  ..userId = 'u'
-  ..title = title
-  ..author = author;
-
 List<ShelfEntry> _library(int count) => List.generate(
       count,
       (i) => ShelfEntry(
-        book: _book(i + 1, 'Titolo numero ${i + 1}', 'Autore ${i + 1}'),
+        title: 'Titolo numero ${i + 1}',
+        author: 'Autore ${i + 1}',
+        bookId: i + 1,
         // Spread across the thickness range: thin, average and very marked-up.
         highlightCount: (i * 7) % 45,
       ),
@@ -38,7 +32,7 @@ Future<void> _pumpShelf(
         body: SingleChildScrollView(
           child: SizedBox(
             width: width,
-            child: BookshelfView(entries: entries, onOpen: (_) {}),
+            child: BookshelfView(entries: entries, onTap: (_, __) {}),
           ),
         ),
       ),

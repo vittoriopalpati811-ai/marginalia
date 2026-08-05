@@ -194,6 +194,19 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   the foot slides away — which is what a real leaning book does. Don't
   "simplify" that spacer away. `scale:` shrinks the whole shelf proportionally
   (fonts, plank, padding); the shareable poster uses it.
+- `lib/features/library/shelf_guess_card.dart` — the shared shelf is **PLAYABLE
+  in the feed**, not a screenshot. A post carries its books in `posts.payload`
+  (migration **076**), the feed renders real spines from it, and tapping the one
+  you think is the most-highlighted book answers you INSTANTLY — the counts
+  travel inside the post, so the verdict needs no round trip and works offline.
+  The answer is DERIVED (max highlight count), never stored, so it can't drift
+  from the spines being looked at. The correct spine then pops up out of the row
+  and the rest dim. `post_guesses` (one row per player, PK-deduped) backs the
+  "62% ha indovinato" line; RLS lets you read back only YOUR OWN guess, and the
+  crowd figure comes from `post_guess_stats()` which returns two integers and is
+  revoked from `anon`. The PNG is still uploaded as the fallback for older
+  clients, which is why the payload branch is checked FIRST in `_PostCard`.
+  Verified live: insert 201 / duplicate 409 / other-user 403 / anon 401.
 - `lib/features/library/shelf_share_sheet.dart` — **"Condividilo come post"**:
   renders the shelf as a 4:5 poster (RepaintBoundary → `toImage(pixelRatio: 3)`)
   → `uploadPostImage` → `createPost`, then invalidates `postsProvider`. The post
@@ -204,6 +217,10 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   fattest spine isn't first and giving it away. Its shelf is laid out at a FIXED
   design width inside a `FittedBox` — laying it out against the live width would
   change the row count per device and overflow the fixed 4:5 card.
+  The **profile** shows the shelf too (`my_profile_screen.dart`, replacing the
+  old flat 3-column cover grid — `_BookCell` was deleted with it); its spine
+  thickness comes from an embedded `highlights(count)` aggregate added to
+  `fetchMyBooks()`, so it means the same thing there as in the library.
 - `lib/core/branding/scripta_mark.dart` — **`ScriptaMark`** widget = the brand
   logo (`assets/brand/scripta_mark.png`, layered cream→sage cards + red bookmark).
   Single source for the badge everywhere (share cards, onboarding, etc.).
