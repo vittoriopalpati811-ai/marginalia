@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scripta/features/library/bookshelf_view.dart';
 import 'package:scripta/features/profile/profile_shared_widgets.dart';
+import 'package:scripta/features/profile/shelf_arrange_sheet.dart';
 
 // A reader arranges their shelf and other people see the result, so the order
 // has to be reproducible on a device that never made the choice. That is the
@@ -20,6 +21,45 @@ final _library = [
 String _k(ShelfEntry e) => favCoverKey(e.title, e.author);
 
 void main() {
+  // A hand arrangement is only as good as the drag that builds it, and this is
+  // where it was silently broken: `to` comes back measured against the list
+  // BEFORE the item moves, so decrementing it AND inserting into the unshortened
+  // list lands every DOWNWARD drag one slot early. Upward drags were correct,
+  // which is why a quick check on a real phone said it worked.
+  group('a drag lands where it was dropped', () {
+    const start = ['A', 'B', 'C', 'D', 'E'];
+
+    test('one slot down actually moves the item', () {
+      // The headline bug: this used to return ABCDE — the drag did nothing.
+      expect(applyReorder(start, 0, 2), ['B', 'A', 'C', 'D', 'E']);
+      expect(applyReorder(start, 1, 3), ['A', 'C', 'B', 'D', 'E']);
+      expect(applyReorder(start, 3, 5), ['A', 'B', 'C', 'E', 'D']);
+    });
+
+    test('the first book can be dragged all the way to the end', () {
+      expect(applyReorder(start, 0, 5), ['B', 'C', 'D', 'E', 'A']);
+    });
+
+    test('the last book can be dragged all the way to the front', () {
+      expect(applyReorder(start, 4, 0), ['E', 'A', 'B', 'C', 'D']);
+    });
+
+    test('upward drags keep working', () {
+      expect(applyReorder(start, 2, 0), ['C', 'A', 'B', 'D', 'E']);
+      expect(applyReorder(start, 4, 2), ['A', 'B', 'E', 'C', 'D']);
+    });
+
+    test('no drag ever loses or duplicates a book', () {
+      for (var from = 0; from < start.length; from++) {
+        for (var to = 0; to <= start.length; to++) {
+          final out = applyReorder(start, from, to);
+          expect(out.length, start.length, reason: '($from,$to) changed length');
+          expect(out.toSet(), start.toSet(), reason: '($from,$to) lost a book');
+        }
+      }
+    });
+  });
+
   test('every mode keeps every book', () {
     for (final s in ShelfSort.values) {
       final out = applyShelfOrder(_library, s, const []);

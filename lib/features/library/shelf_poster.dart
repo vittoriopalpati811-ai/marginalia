@@ -346,7 +346,7 @@ class _ShelfImageShareSheetState extends State<_ShelfImageShareSheet> {
 
 // ─── The poster ──────────────────────────────────────────────────────────────
 
-class ShelfPosterCard extends StatelessWidget {
+class ShelfPosterCard extends StatefulWidget {
   const ShelfPosterCard({
     super.key,
     required this.entries,
@@ -359,7 +359,39 @@ class ShelfPosterCard extends StatelessWidget {
   final int    totalBooks;
 
   @override
+  State<ShelfPosterCard> createState() => _ShelfPosterCardState();
+}
+
+class _ShelfPosterCardState extends State<ShelfPosterCard> {
+  /// The last room the design width was solved for, and the answer.
+  ///
+  /// `LayoutBuilder` re-runs its callback on every rebuild of the sheet even
+  /// when the constraints have not moved — measured at 32 rebuilds while the
+  /// share sheet settles — and the search packs the whole library 59 times. The
+  /// answer only depends on the room and the books, so it is computed once per
+  /// distinct room and reused.
+  Size? _solvedFor;
+  double _design = 320;
+
+  double _designWidthFor(Size room) {
+    if (_solvedFor != room) {
+      _solvedFor = room;
+      _design = posterDesignWidth(widget.entries, room);
+    }
+    return _design;
+  }
+
+  @override
+  void didUpdateWidget(ShelfPosterCard old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.entries, widget.entries)) _solvedFor = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final entries = widget.entries;
+    final userName = widget.userName;
+    final totalBooks = widget.totalBooks;
     return AspectRatio(
       aspectRatio: 4 / 5,
       child: Container(
@@ -433,10 +465,8 @@ class ShelfPosterCard extends StatelessWidget {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, room) {
-                    final design = posterDesignWidth(
-                      entries,
-                      Size(room.maxWidth, room.maxHeight),
-                    );
+                    final design =
+                        _designWidthFor(Size(room.maxWidth, room.maxHeight));
                     return Center(
                       child: FittedBox(
                         fit: BoxFit.scaleDown,

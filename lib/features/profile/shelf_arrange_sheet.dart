@@ -57,6 +57,19 @@ class ShelfLayout {
   final List<String> manualOrder;
 }
 
+/// Applies one drag from a [ReorderableListView] to [list].
+///
+/// Extracted so it can be tested without a gesture: the arithmetic here is
+/// asymmetric — `to` is reported against the list BEFORE the item moves — and a
+/// version that got it wrong shipped a hand-arrangement where every downward
+/// drag landed a slot short and a one-step drag down did nothing at all.
+List<T> applyReorder<T>(List<T> list, int from, int to) {
+  final next = [...list];
+  final moved = next.removeAt(from);
+  next.insert(to > from ? to - 1 : to, moved);
+  return next;
+}
+
 Future<void> showShelfArrangeSheet(
   BuildContext context, {
   required List<ShelfEntry> entries,
@@ -214,11 +227,15 @@ class _ShelfArrangeSheetState extends ConsumerState<_ShelfArrangeSheet> {
                   ? _ManualList(
                       entries: _manual,
                       controller: controller,
-                      onReorder: (from, to) => setState(() {
-                        if (to > from) to -= 1;
-                        _manual = [..._manual]..insert(to, _manual[from]);
-                        _manual.removeAt(from > to ? from + 1 : from);
-                      }),
+                      // REMOVE FIRST, then insert. ReorderableListView reports
+                      // `to` against the UNMODIFIED list, and the documented
+                      // `to -= 1` correction is only valid once the item is
+                      // already out — doing both against the full-length list
+                      // lands every DOWNWARD move one slot short, which makes a
+                      // one-step drag down a silent no-op. Upward drags looked
+                      // fine, which is exactly why it survived a device check.
+                      onReorder: (from, to) =>
+                          setState(() => _manual = applyReorder(_manual, from, to)),
                     )
                   : SingleChildScrollView(
                       controller: controller,

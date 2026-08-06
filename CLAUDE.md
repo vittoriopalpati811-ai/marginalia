@@ -279,6 +279,25 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   same cabinet. One shared `applyShelfOrder()` in `profile_shared_widgets.dart`
   serves both profiles — "by colour" needs no schema at all, since a spine's hue
   is a pure function of title+author and every device derives it identically.
+  ⚠️ Two defects the adversarial pass caught after this shipped green, both now
+  fixed (migration **079** + `applyReorder`), both worth remembering:
+  (1) `user_shelf_layout`'s read policy was `using (true)`. `manual_order` is
+  NOT an opaque preference — the client writes EVERY book whatever the sort
+  mode, so it is the reader's whole library, and an unfiltered
+  `GET /rest/v1/user_shelf_layout` handed it to any signed-in caller, private
+  accounts included. The gate was written carefully in `public_user_shelf` and
+  left open in the table beside it. 079 gives the policy the identical
+  predicate. Verified: private owner → 0 rows to a stranger, owner still reads
+  their own.
+  (2) `ReorderableListView` reports `newIndex` against the list BEFORE the item
+  moves, so the documented `-= 1` correction is only valid if you REMOVE first.
+  Doing both against the full-length list made every DOWNWARD drag land a slot
+  early and a one-step drag down a silent no-op — and upward drags were fine,
+  which is exactly why a quick check on a device said it worked. Use
+  `applyReorder()`; it is locked by an exhaustive from×to test.
+  Also: "Recenti" was a no-op (both queries ordered by title while the mode is
+  the identity), so the source now orders by `imported_at desc` — a filter that
+  silently returns alphabetical is worse than no filter.
 - **Sharing is a picture, full stop.** A playable "guess the most-highlighted
   book" post was built, shipped and then REMOVED at the founder's call ("non mi
   piace questo livello di interazione") — migration **077** reverses 076, so

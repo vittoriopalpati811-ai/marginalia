@@ -1498,7 +1498,12 @@ class SupabaseService {
         .from('books')
         .select('id, title, author, cover_url, highlights(count)')
         .eq('user_id', userId!)
-        .order('title') as List;
+        // Newest first, NOT alphabetical. The shelf re-sorts in Dart for every
+        // arrangement except "recent", which means "the order the rows arrived
+        // in" — so this is the only thing that gives that mode anything to be
+        // recent by. It was ordering by title, which made the filter a no-op
+        // that silently produced alphabetical.
+        .order('imported_at', ascending: false) as List;
     return List<Map<String, dynamic>>.from(rows);
   }
 
