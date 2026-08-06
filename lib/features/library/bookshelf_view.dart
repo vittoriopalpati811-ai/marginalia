@@ -62,6 +62,55 @@ const double _kMaxHeight = 192;
 const double _kMinWidth = 30;
 const double _kMaxWidth = 52;
 
+/// How big a spine is, so one shelf can be built to different ends.
+///
+/// The reading shelf wants generous spines. The shareable poster has to fit an
+/// ENTIRE library — forty-odd books — into one card and keep the titles
+/// readable, which is a different trade: slimmer, slightly shorter spines, more
+/// per row, fewer rows. These were constants shared by both, so tuning the
+/// poster silently shrank the library; they are a value object now.
+///
+/// Two floors are structural, not taste:
+///   • [minWidth] must stay ≥ 24. Inside a spine the title is rotated, so the
+///     spine's WIDTH becomes the text line's tight cross-axis: font 11.5 plus
+///     2×5 padding needs 21.5, and below that the row overflows — which in an
+///     exported PNG shows up as yellow-and-black stripes posted to Instagram,
+///     not as a console warning.
+///   • [minHeight] must stay ≥ ~130. Title capacity is about
+///     `(height − 22) / 5.29` characters; below 130 real titles start
+///     ellipsising, which is exactly what the height range exists to prevent.
+class ShelfMetrics {
+  const ShelfMetrics({
+    this.minHeight = _kMinHeight,
+    this.maxHeight = _kMaxHeight,
+    this.minWidth  = _kMinWidth,
+    this.maxWidth  = _kMaxWidth,
+  });
+
+  /// The reading shelf: library and profile.
+  static const ShelfMetrics reading = ShelfMetrics();
+
+  /// The poster, which has to hold a WHOLE library on one card.
+  ///
+  /// Slimmer spines, which is where the room comes from: more books per row
+  /// means fewer rows and less shrinking. Height is deliberately NOT cut as far
+  /// — measured, dropping the floor to 138 buys only 5% more rendered size and
+  /// costs 1.5 characters of title, so [minHeight] is held at the reading value
+  /// and no title ellipsises on a poster that would have fitted in the library.
+  /// Still 1.36× thick-to-thin, so a heavily marked book still reads as fatter.
+  static const ShelfMetrics poster = ShelfMetrics(
+    minHeight: 146,
+    maxHeight: 172,
+    minWidth:  25,
+    maxWidth:  34,
+  );
+
+  final double minHeight;
+  final double maxHeight;
+  final double minWidth;
+  final double maxWidth;
+}
+
 /// Highlights at which a spine reaches full thickness.
 const int _kThickAt = 40;
 
@@ -146,6 +195,7 @@ class BookshelfView extends StatelessWidget {
     required this.entries,
     required this.onTap,
     this.scale = 1.0,
+    this.metrics = ShelfMetrics.reading,
   });
 
   final List<ShelfEntry> entries;
@@ -157,6 +207,11 @@ class BookshelfView extends StatelessWidget {
   /// Shrinks the whole shelf proportionally. 1.0 is the reading size used in
   /// the library; the shareable poster packs more books into less room.
   final double scale;
+
+  /// How big the spines are. Defaults to the reading size; the poster passes
+  /// [ShelfMetrics.poster] so a whole library fits without shrinking the
+  /// library's own shelf.
+  final ShelfMetrics metrics;
 
 
   @override
@@ -171,8 +226,9 @@ class BookshelfView extends StatelessWidget {
             2 * _kStile * scale -
             2 * _kInnerPad * scale;
 
-        final specs =
-            entries.map((e) => _SpineSpec.from(e, scale: scale)).toList();
+        final specs = entries
+            .map((e) => _SpineSpec.from(e, scale: scale, metrics: metrics))
+            .toList();
         final shelves = _packIntoShelves(specs, interior);
 
         // Free space left on the bottom shelf — the room a leaning book needs.
@@ -204,6 +260,40 @@ class BookshelfView extends StatelessWidget {
         return _Cabinet(scale: scale, rows: rows);
       },
     );
+  }
+
+  /// What this shelf would MEASURE at [designWidth], without building it.
+  ///
+  /// The poster needs this to answer a question it cannot answer by trying: at
+  /// which design width does a whole library end up largest on a fixed card?
+  /// Wider means more books per row and fewer rows — a squat cabinet that runs
+  /// out of horizontal room — while narrower means a tall thin one that runs out
+  /// of vertical room. The best width is where the cabinet's proportions match
+  /// the space it has to fit into, and finding it means measuring several.
+  ///
+  /// Always in design units at scale 1.0; the caller scales the result.
+  static Size measureAt(
+    List<ShelfEntry> entries,
+    double designWidth, {
+    ShelfMetrics metrics = ShelfMetrics.reading,
+  }) {
+    if (entries.isEmpty) return Size.zero;
+
+    final interior = designWidth - 2 * _kStile - 2 * _kInnerPad;
+    final specs = entries
+        .map((e) => _SpineSpec.from(e, metrics: metrics))
+        .toList();
+    final shelves = _packIntoShelves(specs, interior);
+
+    // Mirrors _Cabinet + _Shelf exactly: a rail on top, a plinth beneath, and
+    // per row the tallest spine, its board, and a gap under all but the last.
+    var height = _kTopRail + _kPlinth;
+    for (var i = 0; i < shelves.length; i++) {
+      final tallest = shelves[i].fold<double>(0, (m, s) => math.max(m, s.height));
+      height += tallest + _kBoardTop + _kBoardLip;
+      if (i != shelves.length - 1) height += 16;
+    }
+    return Size(designWidth, height);
   }
 
   /// Greedy left-to-right packing. Leftover space stays on the RIGHT of each
@@ -272,7 +362,11 @@ class _SpineSpec {
 
   /// Every dimension is a pure function of the book, so a shelf looks the same
   /// on every rebuild, every launch and every device.
-  factory _SpineSpec.from(ShelfEntry entry, {double scale = 1.0}) {
+  factory _SpineSpec.from(
+    ShelfEntry entry, {
+    double scale = 1.0,
+    ShelfMetrics metrics = ShelfMetrics.reading,
+  }) {
     final seed = bookArtSeed(entry.title, entry.author);
 
     // Two independent pseudo-random draws from the one seed.
@@ -280,14 +374,20 @@ class _SpineSpec {
 
     final marked = math.min(entry.highlightCount, _kThickAt) / _kThickAt;
 
+    // The natural-variation slice of the width, kept proportional to the range
+    // so a slim poster spine doesn't spend most of its thickness on noise and
+    // lose the "thickness means highlights" signal entirely.
+    final range = metrics.maxWidth - metrics.minWidth;
+    final jitter = range * 0.36;
+
     return _SpineSpec(
       entry: entry,
       // Ragged tops — the single strongest cue that these are objects.
-      height: (_kMinHeight + draw(1) * (_kMaxHeight - _kMinHeight)) * scale,
+      height:
+          (metrics.minHeight + draw(1) * (metrics.maxHeight - metrics.minHeight)) *
+              scale,
       // Mostly "how much did I mark this", plus a little natural variation.
-      width: (_kMinWidth +
-              draw(2) * 8 +
-              marked * (_kMaxWidth - _kMinWidth - 8)) *
+      width: (metrics.minWidth + draw(2) * jitter + marked * (range - jitter)) *
           scale,
       colors: bookColorsFor(entry.title, entry.author),
       seed:   seed,

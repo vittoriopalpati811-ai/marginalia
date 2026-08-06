@@ -2289,13 +2289,65 @@ class SupabaseService {
     );
   }
 
+  /// Somebody else's read books.
+  ///
+  /// Goes through the `public_user_shelf` RPC, not a plain select: RLS on
+  /// `books` is `user_id = auth.uid()`, so the direct query this used to run
+  /// returned ZERO rows for every visitor — the "read books" section on a
+  /// visited profile has never rendered for anyone. The RPC crosses that
+  /// boundary deliberately and narrowly: titles, authors, covers and a highlight
+  /// COUNT, never the highlight text, and nothing at all for a private account
+  /// the viewer does not follow.
+  ///
+  /// Keys are shaped like `fetchMyBooks`' rows so the same shelf code reads
+  /// both — including `highlights(count)`, which is what gives a visitor's shelf
+  /// the same spine thickness the owner sees.
   Future<List<Map<String, dynamic>>> fetchUserBooks(String targetId) async {
     final rows = await _client
-            .from('books')
-            .select('id, title, author, cover_url')
-            .eq('user_id', targetId)
-            .order('title') as List;
-    return List<Map<String, dynamic>>.from(rows);
+        .rpc('public_user_shelf', params: {'target_id': targetId}) as List;
+    return [
+      for (final r in rows)
+        {
+          'title':      (r as Map)['title'],
+          'author':     r['author'],
+          'cover_url':  r['cover_url'],
+          'highlights': [
+            {'count': r['highlight_count'] ?? 0}
+          ],
+        },
+    ];
+  }
+
+  // ─── The shelf arrangement (public: other people see it too) ──────────────
+
+  /// How [targetUserId] has arranged their shelf. Empty map when they never
+  /// chose — the caller falls back to alphabetical.
+  Future<Map<String, dynamic>> fetchShelfLayout(String targetUserId) async {
+    try {
+      final row = await _client
+          .from('user_shelf_layout')
+          .select('sort_mode, manual_order')
+          .eq('user_id', targetUserId)
+          .maybeSingle();
+      return row == null ? {} : Map<String, dynamic>.from(row);
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Saves the caller's arrangement. [manualOrder] is a list of `title|author`
+  /// keys — NOT book ids, which are re-minted by every re-import.
+  Future<void> saveShelfLayout({
+    required String sortMode,
+    List<String>? manualOrder,
+  }) async {
+    if (!isAuthenticated || userId == null) return;
+    await _client.from('user_shelf_layout').upsert({
+      'user_id': userId,
+      'sort_mode': sortMode,
+      if (manualOrder != null) 'manual_order': manualOrder,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'user_id');
   }
 
   // ─── File upload (My Clippings.txt) ───────────────────────────────────────

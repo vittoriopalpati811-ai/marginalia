@@ -835,6 +835,13 @@ String _coverStorageKey(String title, String author) {
   return sha1.convert(utf8.encode(k)).toString();
 }
 
+/// The local library book behind a title+author, or null if this reader does
+/// not have it. Public because the profile shelf needs it too: its books come
+/// from Supabase and carry no local id, so this is the only bridge from a spine
+/// there to the screen that actually holds the highlights.
+Book? findLibraryBook(WidgetRef ref, String title, String author) =>
+    _findLibraryBook(ref, title, author);
+
 Book? _findLibraryBook(WidgetRef ref, String title, String author) {
   final list = ref.read(booksProvider).asData?.value;
   if (list == null) return null;

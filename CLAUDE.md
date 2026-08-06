@@ -226,6 +226,59 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   against the INTERIOR width (`maxWidth - 2*(_kStile + _kInnerPad)`), so any
   change to the carcass metrics automatically re-flows the rows. Pastel spines
   need the dark ground: on cream they drifted.
+- **The profile shelf and the library shelf must lead to the SAME place.** They
+  are the same widget in the same cabinet, so a reader expects the same
+  behaviour — but the profile's spines come from Supabase and carry no local id
+  (`ShelfEntry.bookId` is a local Isar int, null on that path), so it used to
+  push `BookInfoScreen`, a Google-Books metadata page with literally no
+  highlight code in it. Tapping a book there showed a cover, a title and nothing
+  else (founder: "non fa vedere le frasi salvate"). Fixed both ways:
+  `findLibraryBook(ref, title, author)` (promoted from private in
+  `book_detail_screen.dart`) resolves the local book and pushes `/book/:id`, and
+  `BookInfoScreen` is now a `ConsumerStatefulWidget` that renders the reader's
+  own highlights ABOVE the metadata loading gate. ⚠️ Never "simplify" the
+  profile tap to `context.push('/book/${e.bookId}')` — bookId is null there and
+  the route degrades to "Libro non trovato". The match rule is the pure,
+  tested `highlightBelongsToBook()`: exact title, case-folded — NOT a "core
+  title" match, which would pull a sibling volume's phrases in.
+- **The shelf poster shows the WHOLE library** (founder: "si devono vedere tutti
+  in maniera leggibile", plus a "[n] libri letti" headline). Two mechanisms:
+  `ShelfMetrics` makes spine sizes per-instance (`ShelfMetrics.poster` is
+  slimmer than `.reading`, so tuning the poster can no longer shrink the reading
+  shelf), and `posterDesignWidth()` SEARCHES for the design width whose cabinet
+  proportions best match the room, because the FittedBox factor it maximises
+  multiplies the title's point size directly. Measured: 43 books went from
+  ~2.7pt to ~5.3pt. Two floors are structural, not taste — `minWidth >= 24` (the
+  rotated title's line box overflows below ~21.5, which in an exported PNG means
+  yellow-and-black stripes posted to Instagram) and `minHeight` is held at the
+  reading value (dropping it buys 5% size and costs 1.5 characters of title).
+  `test/widgets/shelf_poster_test.dart` locks all of it, including that the
+  chosen width really is the best available.
+- **"Condividi su Instagram" reuses plumbing that was already here**:
+  `core/services/instagram_share.dart` + the `marginalia/instagram` MethodChannel
+  in `AppDelegate.swift` + the `LSApplicationQueriesSchemes` already committed in
+  `Info.plist`. No new dependency, no entitlement, no native code. The sheet
+  captures TWO nested, both-painted RepaintBoundaries: a 9:16 story frame
+  (360×640 ×3 = Instagram's native 1080×1920) for Instagram, which aspect-FILLS
+  its background and would otherwise crop the top rail and the "Scripta"
+  signature away, and the inner 4:5 card (×4) for the system sheet. Rasterising
+  an OFF-screen widget is what silently produced blank shares before — keep both
+  boundaries mounted. The button only renders when `instagramStoriesAvailable()`
+  (false on Android, so no dead button) and falls back to the system sheet.
+- **The shelf arrangement is public, and that needed a migration, not a button**
+  (`078_shelf_arrangement.sql`). `books` has ONE select policy,
+  `user_id = auth.uid()`, so a visitor could never read another user's books at
+  all — `_ReadBooksSection` on a visited profile had never rendered for anyone.
+  So: `user_shelf_layout` (one row per reader; `sort_mode` + a `manual_order`
+  array of `title|author` keys — NOT book ids, which `deleteAllBooks` re-mints on
+  every import) and `public_user_shelf(target_id)`, a SECURITY DEFINER window
+  returning titles/authors/covers/COUNTS only, never highlight text, revoked from
+  anon, honouring `profiles.is_private` internally. Verified live: direct select
+  0 rows, RPC 53 rows with counts, private target + non-follower 0 rows.
+  `fetchUserBooks` now goes through that RPC and the visited profile draws the
+  same cabinet. One shared `applyShelfOrder()` in `profile_shared_widgets.dart`
+  serves both profiles — "by colour" needs no schema at all, since a spine's hue
+  is a pure function of title+author and every device derives it identically.
 - **Sharing is a picture, full stop.** A playable "guess the most-highlighted
   book" post was built, shipped and then REMOVED at the founder's call ("non mi
   piace questo livello di interazione") — migration **077** reverses 076, so

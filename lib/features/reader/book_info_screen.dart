@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 
+import '../../core/models/highlight.dart';
+import '../../core/providers/highlights_provider.dart';
 import '../../core/theme.dart';
 import '../library/book_cover.dart';
 
@@ -16,6 +19,21 @@ import '../library/book_cover.dart';
 /// free). Everything degrades gracefully: if the lookup fails or returns
 /// nothing, the cover + title + author still render.
 
+/// Does this highlight belong to the book on screen?
+///
+/// Title-only, and EXACT after case-folding and trimming — the same rule
+/// [HighlightsPeekSheet] uses. Deliberately not a "core title" match that strips
+/// subtitles: that would pull "Il Signore degli Anelli — Le due torri" into "Il
+/// Signore degli Anelli" and show a reader phrases from a book they are looking
+/// at the sibling of. Authors are NOT compared: the same book reaches this
+/// screen from Supabase ("Umberto Eco") and from a Kindle import ("Eco,
+/// Umberto"), and requiring both to agree would hide every highlight.
+bool highlightBelongsToBook(String? highlightBookTitle, String screenTitle) {
+  final t = screenTitle.toLowerCase().trim();
+  if (t.isEmpty) return false;
+  return (highlightBookTitle ?? '').toLowerCase().trim() == t;
+}
+
 /// Ceiling for the whole metadata lookup — see [_BookInfoScreenState._run].
 const Duration _kLookupBudget = Duration(seconds: 7);
 
@@ -23,7 +41,7 @@ const Duration _kLookupBudget = Duration(seconds: 7);
 /// short enough that a couple of stalls still land inside the total budget.
 const Duration _kRequestTimeout = Duration(seconds: 4);
 
-class BookInfoScreen extends StatefulWidget {
+class BookInfoScreen extends ConsumerStatefulWidget {
   const BookInfoScreen(
       {super.key, required this.title, required this.author, this.coverUrl});
 
@@ -36,10 +54,10 @@ class BookInfoScreen extends StatefulWidget {
   final String? coverUrl;
 
   @override
-  State<BookInfoScreen> createState() => _BookInfoScreenState();
+  ConsumerState<BookInfoScreen> createState() => _BookInfoScreenState();
 }
 
-class _BookInfoScreenState extends State<BookInfoScreen> {
+class _BookInfoScreenState extends ConsumerState<BookInfoScreen> {
   bool _loading = true;
   String? _plot;
   List<String> _categories = const [];
@@ -258,6 +276,54 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
     }
   }
 
+  /// The reader's own highlights for this book. `allHighlightsProvider` eagerly
+  /// loads the book link, so `bookTitle` is populated by the time we read it.
+  List<Highlight> _saved(List<Highlight> all) => all
+      .where((h) => highlightBelongsToBook(h.bookTitle, widget.title))
+      .toList();
+
+  List<Widget> _savedSection(
+    BuildContext context,
+    bool it,
+    Widget Function(String) sectionHeader,
+  ) {
+    final marks = ref.watch(allHighlightsProvider).asData?.value;
+    if (marks == null) return const [];
+    final mine = _saved(marks);
+    if (mine.isEmpty) return const [];
+
+    return [
+      sectionHeader(it ? 'Frasi salvate' : 'Saved highlights'),
+      for (final h in mine)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                h.content,
+                style: GoogleFonts.ebGaramond(
+                  fontSize: 16,
+                  height: 1.5,
+                  color: ScriptaColors.ink,
+                ),
+              ),
+              if ((h.location ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '${it ? 'pos.' : 'loc.'} ${h.location}',
+                  style: GoogleFonts.manrope(
+                    fontSize: 11,
+                    color: ScriptaColors.inkFaint,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final it = Localizations.localeOf(context).languageCode == 'it';
@@ -350,6 +416,18 @@ class _BookInfoScreenState extends State<BookInfoScreen> {
                 ],
               ),
             ),
+
+            // ── The saved phrases ────────────────────────────────────────────
+            // What the reader actually came for, and the reason this screen
+            // exists at all. It sits ABOVE the loading gate on purpose: the
+            // highlights are already on the device, so they must never wait
+            // behind a network lookup for a plot summary. Founder: "se clicco
+            // su un libro nella libreria non fa vedere le frasi salvate".
+            //
+            // Hidden entirely when there are none — on a visitor's profile the
+            // local Isar holds only the current reader's rows, so this stays
+            // correctly empty rather than showing someone else's book as bare.
+            ..._savedSection(context, it, sectionHeader),
 
             if (_loading) ...[
               const SizedBox(height: 40),

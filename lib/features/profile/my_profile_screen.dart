@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme.dart';
+import '../../core/providers/books_provider.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/review_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
@@ -23,10 +24,13 @@ import '../social/feed_tab.dart';
 import '../library/book_cover.dart';
 import '../library/bookshelf_view.dart';
 import '../library/shelf_poster.dart';
-import '../library/book_detail_screen.dart' show editBookCoverByKey;
+import '../library/book_detail_screen.dart'
+    show editBookCoverByKey, findLibraryBook;
 import '../reader/book_info_screen.dart';
 import '../stats/reading_stats_card.dart';
-import 'profile_shared_widgets.dart' show favCoversProvider, favCoverKey;
+import 'profile_shared_widgets.dart'
+    show favCoversProvider, favCoverKey, applyShelfOrder, shelfMarksOf;
+import 'shelf_arrange_sheet.dart';
 import 'highlights_peek_sheet.dart';
 
 // ─── Gradient presets ─────────────────────────────────────────────────────────
@@ -150,16 +154,6 @@ final _mySpotlightProvider =
 /// Highlight count for a book row, as returned by the embedded
 /// `highlights(count)` aggregate. Older cached rows simply have none, and a
 /// book with no count is drawn as a thin spine rather than not at all.
-int _marksOf(Map<String, dynamic> book) {
-  final hl = book['highlights'];
-  if (hl is List && hl.isNotEmpty) {
-    final first = hl.first;
-    if (first is Map) return (first['count'] as num?)?.toInt() ?? 0;
-  }
-  if (hl is Map) return (hl['count'] as num?)?.toInt() ?? 0;
-  return 0;
-}
-
 final _gradientKeyProvider = StateProvider<String>((ref) => 'sepia');
 final _patternKeyProvider   = StateProvider<String>((ref) => 'none');
 
@@ -535,9 +529,35 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
           // ── Libreria header + books grid (single booksAsync.when to avoid
           //    duplicate render when the provider rebuilds) ──────────────────
           booksAsync.when(
-            data: (books) => books.isEmpty
-                ? const SliverToBoxAdapter(child: SizedBox.shrink())
-                : SliverToBoxAdapter(
+            data: (books) {
+              if (books.isEmpty) {
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              }
+              // Built once and shared by the shelf, the share poster and the
+              // arrange sheet, so all three are looking at the same library in
+              // the same order — the order the reader chose, which is also the
+              // order visitors see.
+              final layout = ref.watch(shelfLayoutProvider(null)).asData?.value ??
+                  const ShelfLayout.fallback();
+              // Warm the LOCAL library here, not at tap time. `findLibraryBook`
+              // reads it synchronously, so if nothing had ever watched it the
+              // lookup would miss on a cold profile and every book would open
+              // the leaner fallback screen — the two shelves would still behave
+              // differently, just less obviously than before.
+              ref.watch(booksProvider);
+              final shelf = applyShelfOrder(
+                [
+                  for (final b in books)
+                    ShelfEntry(
+                      title:  (b['title']  as String?) ?? '',
+                      author: (b['author'] as String?) ?? '',
+                      highlightCount: shelfMarksOf(b),
+                    ),
+                ],
+                layout.sort,
+                layout.manualOrder,
+              );
+              return SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -553,19 +573,14 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                                   child: Divider(
                                       color: ScriptaColors.ruleFaint)),
                               const SizedBox(width: 12),
+                              // Change how the books stand — and publish that
+                              // choice, so visitors see the same shelf.
+                              _ShelfArrangeButton(entries: shelf),
+                              const SizedBox(width: 4),
                               // Hands the shelf to the system share sheet —
                               // which is how it reaches Instagram — as a 4:5
                               // poster signed bottom-right.
-                              _ShelfShareButton(
-                                entries: [
-                                  for (final b in books)
-                                    ShelfEntry(
-                                      title:  (b['title']  as String?) ?? '',
-                                      author: (b['author'] as String?) ?? '',
-                                      highlightCount: _marksOf(b),
-                                    ),
-                                ],
-                              ),
+                              _ShelfShareButton(entries: shelf),
                             ],
                           ),
                         ),
@@ -577,34 +592,48 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                           child: BookshelfView(
-                            entries: [
-                              for (final b in books)
-                                ShelfEntry(
-                                  title:  (b['title']  as String?) ?? '',
-                                  author: (b['author'] as String?) ?? '',
-                                  highlightCount: _marksOf(b),
+                            entries: shelf,
+                            // Go where the LIBRARY shelf goes. These books come
+                            // from Supabase, so the spine carries no local id —
+                            // resolve it by title+author and open the real book
+                            // screen, the one with the saved highlights on it.
+                            // Founder: "se clicco su un libro nella libreria non
+                            // fa vedere le frasi salvate". Two identical-looking
+                            // shelves must not lead to two different places.
+                            //
+                            // NOTE: never push `/book/${e.bookId}` here — the
+                            // profile builds ShelfEntry with the bare
+                            // constructor, so bookId is null and the route
+                            // degrades to "Libro non trovato".
+                            onTap: (_, e) {
+                              final local =
+                                  findLibraryBook(ref, e.title, e.author);
+                              if (local != null) {
+                                context.push('/book/${local.id}');
+                                return;
+                              }
+                              // Not in the local library (an old cloud row, or a
+                              // fresh install) — the info screen is the fallback,
+                              // and it now shows whatever highlights we do have.
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => BookInfoScreen(
+                                    title:    e.title,
+                                    author:   e.author,
+                                    coverUrl: ref
+                                        .read(favCoversProvider(null))
+                                        .asData
+                                        ?.value[favCoverKey(e.title, e.author)],
+                                  ),
                                 ),
-                            ],
-                            // Carry the reader's own cover through, the way the
-                            // old grid cell did — the detail screen should show
-                            // the cover this book wears everywhere else.
-                            onTap: (_, e) => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => BookInfoScreen(
-                                  title:    e.title,
-                                  author:   e.author,
-                                  coverUrl: ref
-                                      .read(favCoversProvider(null))
-                                      .asData
-                                      ?.value[favCoverKey(e.title, e.author)],
-                                ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  );
+            },
             loading: () => const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(48),
@@ -1384,6 +1413,36 @@ class _ShelfShareButton extends ConsumerWidget {
           ),
           child: const Icon(Icons.ios_share,
               size: 15, color: ScriptaColors.primaryDark),
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens the arrange sheet. Sits beside the share button, because rearranging
+/// and showing off are the same impulse a beat apart.
+class _ShelfArrangeButton extends StatelessWidget {
+  const _ShelfArrangeButton({required this.entries});
+
+  final List<ShelfEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) return const SizedBox.shrink();
+    return Semantics(
+      button: true,
+      label: context.l10n.shelfArrangeTitle,
+      child: GestureDetector(
+        onTap: () => showShelfArrangeSheet(context, entries: entries),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: ScriptaColors.primaryFaint,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(Icons.swap_vert,
+              size: 16, color: ScriptaColors.primaryDark),
         ),
       ),
     );

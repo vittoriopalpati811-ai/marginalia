@@ -14,7 +14,8 @@ import 'posts_timeline.dart';
 import 'profile_shared_widgets.dart';
 import 'reviews_tab.dart';
 import '../reader/book_info_screen.dart';
-import '../library/book_cover.dart';
+import '../library/bookshelf_view.dart';
+import 'shelf_arrange_sheet.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -814,10 +815,29 @@ class _ReadBooksSection extends ConsumerWidget {
       data: (books) {
         if (books.isEmpty) return const SizedBox.shrink();
         final it = Localizations.localeOf(context).languageCode == 'it';
-        // Watch the owner's custom covers ONCE here (during build), not inside
-        // the lazy itemBuilder — ref.watch outside build asserts in Riverpod.
-        final covers = ref.watch(favCoversProvider(userId)).asData?.value ??
-            const <String, String>{};
+
+        // The SAME cabinet the owner sees, in the SAME order they arranged it.
+        // A horizontal strip of covers could show the order but not what the
+        // order is for — the arrangement only means something as a shelf, where
+        // a colour run or a wall of fat spines reads at a glance. Founder: "la
+        // disposizione scelta deve essere poi visibile anche agli altri."
+        final layout = ref.watch(shelfLayoutProvider(userId)).asData?.value ??
+            const ShelfLayout.fallback();
+        final shelf = applyShelfOrder(
+          [
+            for (final b in books)
+              if ((b['title']?.toString() ?? '').isNotEmpty)
+                ShelfEntry(
+                  title: b['title'].toString(),
+                  author: b['author']?.toString() ?? '',
+                  highlightCount: shelfMarksOf(b),
+                ),
+          ],
+          layout.sort,
+          layout.manualOrder,
+        );
+        if (shelf.isEmpty) return const SizedBox.shrink();
+
         return Padding(
           padding: const EdgeInsets.only(top: 24),
           child: Column(
@@ -836,27 +856,25 @@ class _ReadBooksSection extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              SizedBox(
-                height: 172,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: books.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (ctx, i) {
-                    final b = books[i];
-                    final title = b['title']?.toString() ?? '';
-                    final author = b['author']?.toString() ?? '';
-                    if (title.isEmpty) return const SizedBox.shrink();
-                    // The owner's custom cover wins, else the stored cover_url,
-                    // else the procedural cover — same resolution as everywhere.
-                    final custom = covers[favCoverKey(title, author)];
-                    final cover = (custom != null && custom.isNotEmpty)
-                        ? custom
-                        : b['cover_url']?.toString();
-                    return _ReadBookTile(
-                        title: title, author: author, coverUrl: cover);
-                  },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: BookshelfView(
+                  entries: shelf,
+                  // A visitor's tap opens the book's own page. Never the local
+                  // library route: these books are someone else's rows and have
+                  // no id in this device's database.
+                  onTap: (_, e) => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BookInfoScreen(
+                        title: e.title,
+                        author: e.author,
+                        coverUrl: ref
+                            .read(favCoversProvider(userId))
+                            .asData
+                            ?.value[favCoverKey(e.title, e.author)],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -864,55 +882,6 @@ class _ReadBooksSection extends ConsumerWidget {
         );
       },
       orElse: () => const SizedBox.shrink(),
-    );
-  }
-}
-
-class _ReadBookTile extends StatelessWidget {
-  const _ReadBookTile(
-      {required this.title, required this.author, this.coverUrl});
-  final String title;
-  final String author;
-  final String? coverUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              BookInfoScreen(title: title, author: author, coverUrl: coverUrl),
-        ),
-      ),
-      child: SizedBox(
-        width: 96,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                width: 96,
-                height: 132,
-                child: BookEditorialCover(
-                    title: title, author: author, coverUrl: coverUrl),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.manrope(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: ScriptaColors.ink,
-                height: 1.2,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

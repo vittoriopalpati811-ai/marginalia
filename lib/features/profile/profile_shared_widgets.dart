@@ -9,6 +9,7 @@ import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../library/book_cover.dart';
+import '../library/bookshelf_view.dart';
 import '../reader/book_info_screen.dart';
 
 /// Per-user custom book covers, keyed by [favCoverKey] ('title|author',
@@ -28,6 +29,108 @@ final favCoversProvider = FutureProvider.family
 /// SupabaseService.fetchBookCovers ('title|author', both lowercased + trimmed).
 String favCoverKey(String title, String author) =>
     '${title.toLowerCase().trim()}|${author.toLowerCase().trim()}';
+
+// ─── The shelf arrangement ───────────────────────────────────────────────────
+//
+// A reader can arrange their shelf, and what they choose is what visitors see.
+// Both profiles run this ONE function so the two can never disagree about what
+// "by colour" means — the same discipline that keeps a spine's colour and its
+// cover's colour derived from a single seed.
+
+/// How many highlights a books row carries.
+///
+/// PostgREST returns an embedded aggregate as either a one-element list or a
+/// bare map depending on the query shape, and the `public_user_shelf` RPC hands
+/// back a flat count that the service re-wraps — so all three shapes have to be
+/// tolerated in one place rather than guessed at each call site.
+int shelfMarksOf(Map<String, dynamic> book) {
+  final hl = book['highlights'];
+  if (hl is List && hl.isNotEmpty) {
+    final first = hl.first;
+    if (first is Map) return (first['count'] as num?)?.toInt() ?? 0;
+  }
+  if (hl is Map) return (hl['count'] as num?)?.toInt() ?? 0;
+  return 0;
+}
+
+/// Ways a shelf can be arranged. The names are persisted in
+/// `user_shelf_layout.sort_mode`, so they must match the CHECK in migration 078.
+enum ShelfSort { title, author, color, mostHighlighted, recent, manual }
+
+const _kShelfSortNames = {
+  ShelfSort.title: 'title',
+  ShelfSort.author: 'author',
+  ShelfSort.color: 'color',
+  ShelfSort.mostHighlighted: 'most_highlighted',
+  ShelfSort.recent: 'recent',
+  ShelfSort.manual: 'manual',
+};
+
+String shelfSortName(ShelfSort s) => _kShelfSortNames[s]!;
+
+ShelfSort shelfSortFromName(String? name) => _kShelfSortNames.entries
+    .firstWhere((e) => e.value == name,
+        orElse: () => const MapEntry(ShelfSort.title, 'title'))
+    .key;
+
+/// Arranges [books] and hands back a new list — never mutates the input, which
+/// belongs to a provider's cache.
+///
+/// `recent` is the order the rows arrived in (the server sends them by title, so
+/// a reader who has never re-imported sees no difference); `manual` follows
+/// [manualOrder], a list of [favCoverKey]s. Books missing from a manual order —
+/// imported after the arranging — append alphabetically rather than vanishing or
+/// landing somewhere random.
+List<ShelfEntry> applyShelfOrder(
+  List<ShelfEntry> books,
+  ShelfSort sort,
+  List<String> manualOrder,
+) {
+  final out = [...books];
+  int byTitle(ShelfEntry a, ShelfEntry b) =>
+      a.title.toLowerCase().compareTo(b.title.toLowerCase());
+
+  switch (sort) {
+    case ShelfSort.title:
+      out.sort(byTitle);
+    case ShelfSort.author:
+      out.sort((a, b) {
+        final c = a.author.toLowerCase().compareTo(b.author.toLowerCase());
+        return c != 0 ? c : byTitle(a, b);
+      });
+    case ShelfSort.color:
+      // Costs nothing to store: a spine's colour is a pure function of its
+      // title and author, so every device — the owner's and every visitor's —
+      // computes the identical hue and therefore the identical rainbow.
+      out.sort((a, b) {
+        final c = _hueOf(a).compareTo(_hueOf(b));
+        return c != 0 ? c : byTitle(a, b);
+      });
+    case ShelfSort.mostHighlighted:
+      out.sort((a, b) {
+        final c = b.highlightCount.compareTo(a.highlightCount);
+        return c != 0 ? c : byTitle(a, b);
+      });
+    case ShelfSort.recent:
+      break; // already in arrival order
+    case ShelfSort.manual:
+      final rank = <String, int>{
+        for (var i = 0; i < manualOrder.length; i++) manualOrder[i]: i,
+      };
+      out.sort((a, b) {
+        final ra = rank[favCoverKey(a.title, a.author)];
+        final rb = rank[favCoverKey(b.title, b.author)];
+        if (ra != null && rb != null) return ra.compareTo(rb);
+        if (ra != null) return -1; // arranged books first…
+        if (rb != null) return 1;
+        return byTitle(a, b); // …then the newcomers, in a stable order
+      });
+  }
+  return out;
+}
+
+double _hueOf(ShelfEntry e) =>
+    HSLColor.fromColor(bookColorsFor(e.title, e.author).base).hue;
 
 // ─── Favourite books Pinterest masonry grid ────────────────────────────────────
 
