@@ -652,6 +652,28 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   "Enforced" would be stricter but silently drops mail to servers without TLS.
   STILL MISSING and founder-only: `RESEND_API_KEY` as a Supabase edge secret
   (the welcome function no-ops without it), and the SMTP settings for auth mail.
+- **SENDING IS LIVE.** Resend domain `get-scripta.app` is **Verified**, and the
+  waiting-list welcome email was delivered end-to-end on 2026-08-25: insert →
+  trigger → function → Resend → `Delivered`, `FROM: Scripta
+  <support@get-scripta.app>`, subject "Sei in lista" (Italian picked from the
+  signup's locale). Test address is `delivered@resend.dev` — Resend's own sink,
+  which never bounces and never touches sender reputation. Use it, never a fake
+  domain.
+  Debug order that worked, in case it breaks: the function LOGS Resend's exact
+  error, so read `function_logs` rather than guessing — "API key is invalid"
+  (400) and "domain is not verified" (403) are different problems with different
+  fixes, and the pg_net response body only shows the status.
+  ⚠️ Resend's domain badge sits on "Not Started" until its checker runs; the
+  `POST /api/trpc/domains.verify` call is what triggers it. Records being live
+  in DNS is not enough on its own.
+- ⚠️ **The "Reset password" auth template has the WHOLE template file pasted into
+  it**, instruction header comments and all — not just BLOCCO A. Confirmed by
+  reading its Source in the dashboard. Very likely BLOCCO B (the signup-code
+  email) is in there too, which would make every reset email carry a second,
+  irrelevant template with a confirmation code; the dashboard refused to scroll
+  under automation so that half is UNVERIFIED. Clean, comment-free bodies are on
+  the Desktop as `SOLO-A-reset-password.html` and
+  `SOLO-B-conferma-registrazione.html`. "Confirm sign up" is already correct.
 - **Cloudflare CANNOT send email.** Email Routing receives and forwards only —
   that is the product, not a misconfiguration. Proof: the zone's SPF authorises
   only `_spf.mx.cloudflare.net`, and no sending provider has a DKIM selector on
