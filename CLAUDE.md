@@ -617,6 +617,33 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   read it. An `ADMIN_TOKEN` env var still wins if one is ever set, so adopting
   Supabase secrets later needs no code change. An EMPTY expected token is
   rejected outright — a missing secret must never become an open door.
+- **Waiting-list welcome email** (`supabase/functions/waitlist-welcome/`,
+  migration **082**). Hung off the ROW via a pg_net trigger, not off the landing
+  page's JavaScript: the page inserts straight into `waitlist_signups`, so a
+  fetch fired from there would cover that one form only and would die silently
+  when a page unloaded mid-request. pg_net QUEUES the call, so a slow email
+  provider can never delay or fail somebody's sign-up.
+  ⚠️ The copy is load-bearing. The sign-up form promises **"no spam, just one
+  email when it's your turn"** — a welcome email is therefore already the SECOND
+  one, and it earns itself only by restating that promise instead of quietly
+  breaking it ("Not a newsletter, not a countdown…"). Don't add another campaign
+  to this address without changing the form's promise first.
+  No duplicate welcomes: `waitlist_signups_email_key` is unique on lower(email),
+  so a repeat sign-up never becomes a row. Verified end-to-end BEFORE the API key
+  existed — insert → trigger → function → `200 {"skipped":"no api key"}` in
+  `net._http_response`. That graceful skip is deliberate: a missing key must
+  never look like a crash.
+- **Cloudflare CANNOT send email.** Email Routing receives and forwards only —
+  that is the product, not a misconfiguration. Proof: the zone's SPF authorises
+  only `_spf.mx.cloudflare.net`, and no sending provider has a DKIM selector on
+  the domain. `support@get-scripta.app` is the published contact address
+  (privacy + terms, IT/EN) and receives today. To SEND as it: the Resend domain
+  `get-scripta.app` (Ireland/eu-west-1, added 2026-08-25) needs its DNS records
+  live, then `RESEND_API_KEY` as a Supabase edge secret, plus SMTP settings for
+  auth mail. ⚠️ Driving the Cloudflare DNS dashboard by automation is BLOCKED —
+  use Resend's own "Auto configure" or its per-record Copy buttons.
+- **`admin_secrets` now holds two values**, neither in git: `console_token` and
+  `waitlist_hook_token` (the shared secret between the trigger and its function).
 - To rotate the token: `update public.admin_secrets set value = '<new>',
   updated_at = now() where name = 'console_token';` then update the founder's
   Desktop file. No redeploy — but the running instance caches the token for its
