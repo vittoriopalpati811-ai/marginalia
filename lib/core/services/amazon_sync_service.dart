@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+
+import 'import_match.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ─── AmazonSyncService ────────────────────────────────────────────────────────
@@ -354,7 +356,11 @@ class AmazonHighlight {
     // highlight and the rest vanished without a word. A stable content hash
     // keeps distinct highlights distinct AND keeps a re-sync idempotent — the
     // same fix the paste and Kobo importers already use.
-    final loc = location ?? content.hashCode.abs().toString();
+    // A stable digest, NOT String.hashCode: this value is persisted and
+    // compared on every later sync, and Dart makes no promise that hashCode
+    // survives an SDK upgrade. If it shifted, every locationless highlight
+    // would come back as new exactly once — silently, and for good.
+    final loc = location ?? contentFingerprint(content);
 
     // Date: must be in a shape MyClippingsParser can actually read. Writing a
     // raw `DateTime.now()` ("2026-08-05 12:34:56.789012") matched none of the

@@ -35,10 +35,13 @@ Founder develops on **Windows, no Mac**. Everything must build without a Mac.
 
 - **Live in production.** ~87 users, ~1115 highlights, ~215 posts (real usage).
 - **App is FREE** — all paywall/premium code was removed (see §6). No gates.
-- Latest green iOS build: **TestFlight run #126, commit `ac53ba2`** (automatic
-  Kindle sync; build number = unix timestamp). Latest APK: **`Scripta_1.1.0.apk`
-  on the Desktop**, rebuilt from the same commit and smoke-tested on the emulator.
-  Suite is now **68 tests** (was 45) — `flutter test` green.
+- Latest green iOS build: **TestFlight run #130, commit `a9c41f6`** (build
+  number = unix timestamp). Latest APK: **`Scripta_1.1.0.apk` on the Desktop**,
+  smoke-tested on the emulator. Suite is now **118 tests** (was 45) — green.
+  ⚠️ CI note: run #129 shows "failure" but was **cancelled**, not broken —
+  `concurrency.cancel-in-progress` on `github.ref` means a second push kills the
+  run the first one was still queueing. GitHub can take 30+ minutes to start a
+  run; pushing again to "re-trigger" destroys it. Wait.
 - Active branch: **`feat/profile-ui-privacy`** (this is what CI builds — see §3).
 - The free-app + admin console + Apple/Google sign-in + animated-onboarding batch
   is **SHIPPED green on both platforms** (iOS #72 + APK rebuilt).
@@ -513,6 +516,40 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   `.toUtc()` (the parser does `DateFormat.parse(str, true)`, i.e. it reads the
   string AS UTC — format local time there and every timestamp shifts).
   Locked by `test/services/amazon_clipping_entry_test.dart`.
+- **"The same book" is a NORMALISED match, never string equality**
+  (`lib/core/services/import_match.dart`). The two doors into the library
+  disagree by construction — `My Clippings.txt` writes `Il nome della rosa
+  (Eco, Umberto)` with location `1234-1236`, while the Kindle web notebook
+  gives `Umberto Eco` and location `1234` — so exact matching made the same
+  book a second book and the same quote a second quote. This was ALREADY LIVE:
+  two production accounts held "Il nome della rosa" (5 highlights) alongside
+  "Il Nome della Rosa" (21), split by one capital letter. Making the sync
+  automatic every 6h turned a nuisance into something that compounds unattended.
+  Rules: `bookMatchKey()` = lowercased/whitespace-collapsed title + author
+  reduced to a SORTED WORD SET (so "Eco, Umberto" == "Umberto Eco");
+  `isSameHighlight()` = identical normalised text, OR same starting location AND
+  one text contains the other (the "Kindle re-issued it with more words around
+  it" case). It deliberately errs towards keeping both — a duplicate is visible
+  and complainable, a wrongly merged highlight is a sentence that silently
+  disappears. Used by the native importer, the web variant, `restoreFromCloud`,
+  and the Amazon serialiser; `_mergeBookInto` folds already-split books together
+  at import time. ⚠️ Never key a persisted identity on `String.hashCode` —
+  `contentFingerprint()` (sha1) exists because Dart does not promise hashCode is
+  stable across SDK releases, and that value is compared on every later sync.
+- **The importer holds the library in memory for one import.** It used to run
+  two Isar queries per clipping (4000 queries for a 2000-line file) AND could
+  only ask exact-equality questions. Now it loads the user's books once and
+  matches in Dart, which is both faster and the only way to ask "which book has
+  this normalised key".
+- **`highlights` had NO unique constraint** despite a code comment asserting
+  "the server enforces UNIQUE(user_id, content_hash)". It had a primary key and
+  two foreign keys, full stop — so the only thing preventing cloud duplicates
+  was the deterministic row id, which a differently-capitalised book bypassed.
+  Migration **080** adds the index for real (verified creatable first: 2051/2051
+  rows had a hash, 0 conflicts). Don't trust a comment about a constraint —
+  query `pg_constraint`.
+- **`highlights.book_id` is ON DELETE CASCADE.** Move highlights BEFORE deleting
+  a book row, or they go with it.
 - **Permanent deletion is prohibited** by safety rules — when cleaning files
   (e.g. old APKs) move to Recycle Bin, never hard-delete.
 - **`flutter create --platforms=ios .` PRESERVES the committed `ios/Runner/

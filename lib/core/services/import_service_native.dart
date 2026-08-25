@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import '../models/book_native.dart';
 import '../models/highlight_native.dart';
 import '../parser/my_clippings_parser.dart';
+import 'import_match.dart';
 import 'supabase_service.dart';
 
 class ImportResult {
@@ -46,16 +47,43 @@ class ImportService {
     int highlightsDeduplicated = 0;
 
     await _isar.writeTxn(() async {
+      // Load the library ONCE and match in memory.
+      //
+      // Two reasons. The small one: this used to run two Isar queries per
+      // clipping, so a 2000-line clippings file meant 4000 queries. The load
+      // -bearing one: matching now has to be NORMALISED (see import_match.dart),
+      // and "find me the book whose normalised key is X" is not something the
+      // exact-equality query could ever ask.
+      final books =
+          await _isar.books.filter().userIdEqualTo(_userId).findAll();
+
+      // Books already in the library that are the same book written two ways
+      // are merged as we go, rather than left as two spines forever.
+      final byKey = <String, Book>{};
+      for (final b in books) {
+        final key = bookMatchKey(b.title, b.author);
+        final kept = byKey[key];
+        if (kept == null) {
+          byKey[key] = b;
+        } else {
+          await _mergeBookInto(kept, b);
+        }
+      }
+
+      // Highlights of each matched book, kept in memory for the same reason.
+      final marksOf = <int, List<Highlight>>{};
+      Future<List<Highlight>> marksFor(Book book) async =>
+          marksOf[book.id] ??= await _isar.highlights
+              .filter()
+              .userIdEqualTo(_userId)
+              .book((q) => q.idEqualTo(book.id))
+              .findAll();
+
       for (final clipping in clippings) {
         if (clipping.type == ClippingType.bookmark) continue;
 
-        // Find or create book
-        Book? book = await _isar.books
-            .filter()
-            .userIdEqualTo(_userId)
-            .titleEqualTo(clipping.bookTitle)
-            .authorEqualTo(clipping.bookAuthor)
-            .findFirst();
+        final key = bookMatchKey(clipping.bookTitle, clipping.bookAuthor);
+        var book = byKey[key];
 
         if (book == null) {
           book = Book()
@@ -65,22 +93,32 @@ class ImportService {
             ..author = clipping.bookAuthor
             ..createdAt = DateTime.now();
           await _isar.books.put(book);
+          byKey[key] = book;
+          marksOf[book.id] = <Highlight>[];
           booksAdded++;
         }
 
-        // Check if highlight already exists at this location
-        final existingHighlight = await _isar.highlights
-            .filter()
-            .userIdEqualTo(_userId)
-            .locationEqualTo(clipping.location)
-            .book((q) => q.idEqualTo(book!.id))
-            .findFirst();
+        final existing = await marksFor(book);
+        Highlight? twin;
+        for (final h in existing) {
+          if (isSameHighlight(
+            locationA: h.location,
+            contentA: h.content,
+            locationB: clipping.location,
+            contentB: clipping.content,
+          )) {
+            twin = h;
+            break;
+          }
+        }
 
-        if (existingHighlight != null) {
-          // Keep longer content on conflict
-          if (clipping.content.length > existingHighlight.content.length) {
-            existingHighlight.content = clipping.content;
-            await _isar.highlights.put(existingHighlight);
+        if (twin != null) {
+          // Kindle re-issues a highlight with more text around it; keep the
+          // fuller version, and take the location that came with it.
+          if (clipping.content.length > twin.content.length) {
+            twin.content = clipping.content;
+            twin.location = clipping.location ?? twin.location;
+            await _isar.highlights.put(twin);
           }
           highlightsDeduplicated++;
           continue;
@@ -97,6 +135,7 @@ class ImportService {
         await _isar.highlights.put(highlight);
         highlight.book.value = book;
         await highlight.book.save();
+        existing.add(highlight);
 
         highlightsAdded++;
       }
@@ -116,6 +155,42 @@ class ImportService {
       highlightsAdded: highlightsAdded,
       highlightsDeduplicated: highlightsDeduplicated,
     );
+  }
+
+  /// Folds [loser] into [keeper]: every highlight moves across unless [keeper]
+  /// already has it, then the empty book row goes.
+  ///
+  /// Called during an import, inside its transaction. Nothing is thrown away —
+  /// a highlight is only dropped when the SAME highlight is already on the book
+  /// it is moving to.
+  Future<void> _mergeBookInto(Book keeper, Book loser) async {
+    final kept = await _isar.highlights
+        .filter()
+        .userIdEqualTo(_userId)
+        .book((q) => q.idEqualTo(keeper.id))
+        .findAll();
+    final moving = await _isar.highlights
+        .filter()
+        .userIdEqualTo(_userId)
+        .book((q) => q.idEqualTo(loser.id))
+        .findAll();
+
+    for (final h in moving) {
+      final duplicate = kept.any((k) => isSameHighlight(
+            locationA: k.location,
+            contentA: k.content,
+            locationB: h.location,
+            contentB: h.content,
+          ));
+      if (duplicate) {
+        await _isar.highlights.delete(h.id);
+        continue;
+      }
+      h.book.value = keeper;
+      await h.book.save();
+      kept.add(h);
+    }
+    await _isar.books.delete(loser.id);
   }
 
   Future<void> _backupToCloudSafe() async {
@@ -138,10 +213,12 @@ class ImportService {
         await _isar.books.filter().userIdEqualTo(_userId).findAll();
     final bookIdUpdates = <Book, String>{};
     final hlIdUpdates = <Highlight, String>{};
-    // The server enforces UNIQUE(user_id, content_hash) with
-    // content_hash = sha256("bookId content"). Two highlights of the SAME quote
-    // in the same book would collide on the 2nd upsert; skip the duplicate
-    // client-side so the upsert never throws (the content is already covered).
+    // Two highlights of the SAME quote in the same book would collide on the
+    // 2nd upsert; skip the duplicate client-side so the upsert never throws
+    // (the content is already covered). The server backs this up with a UNIQUE
+    // index on (user_id, content_hash) — added in migration 080, because this
+    // comment used to CLAIM the server enforced it and the constraint simply
+    // was not there.
     final seenHashes = <String>{};
     int synced = 0;
 
@@ -224,6 +301,12 @@ class ImportService {
 
     await _isar.writeTxn(() async {
       final bookByCloudId = <String, Book>{};
+      // The local library indexed the way books are actually identified.
+      final localByKey = <String, Book>{
+        for (final b
+            in await _isar.books.filter().userIdEqualTo(_userId).findAll())
+          bookMatchKey(b.title, b.author): b,
+      };
       for (final b in cloudBooks) {
         final cloudId = b['id'] as String?;
         if (cloudId == null) continue;
@@ -235,12 +318,11 @@ class ImportService {
             .userIdEqualTo(_userId)
             .supabaseIdEqualTo(cloudId)
             .findFirst();
-        local ??= await _isar.books
-            .filter()
-            .userIdEqualTo(_userId)
-            .titleEqualTo(title)
-            .authorEqualTo(author)
-            .findFirst();
+        // Fall back to a NORMALISED match, not exact equality. The cloud can
+        // legitimately hold the same book twice — that is precisely the mess
+        // this restore has to land on top of without making it worse — and an
+        // exact title match would faithfully recreate both spines locally.
+        local ??= localByKey[bookMatchKey(title, author)];
         if (local == null) {
           local = Book()
             ..supabaseId = cloudId
@@ -250,6 +332,7 @@ class ImportService {
             ..coverUrl = b['cover_url'] as String?
             ..createdAt = DateTime.now();
           await _isar.books.put(local);
+          localByKey[bookMatchKey(title, author)] = local;
         } else if (local.supabaseId != cloudId) {
           // Matched by (title, author): adopt the cloud UUID — its supabaseId
           // was a local_ placeholder before its first cloud backup, so later
@@ -278,25 +361,39 @@ class ImportService {
         // Same (book, location) already local (e.g. a prior native import)?
         // Adopt the cloud id onto it instead of duplicating.
         final loc = h['location'] as String?;
-        if (loc != null && loc.isNotEmpty) {
-          final byLoc = await _isar.highlights
-              .filter()
-              .userIdEqualTo(_userId)
-              .locationEqualTo(loc)
-              .book((q) => q.idEqualTo(book.id))
-              .findFirst();
-          if (byLoc != null) {
-            if (byLoc.supabaseId == null) {
-              byLoc.supabaseId = cloudId;
-              await _isar.highlights.put(byLoc);
-            }
-            continue;
+        final content = h['content'] as String? ?? '';
+        // Same highlight already here under another location shape? Adopt the
+        // cloud id onto it rather than shelving the quote a second time. Exact
+        // location equality used to be the only test, which missed the whole
+        // clippings-vs-sync family of mismatches.
+        final localMarks = await _isar.highlights
+            .filter()
+            .userIdEqualTo(_userId)
+            .book((q) => q.idEqualTo(book.id))
+            .findAll();
+        Highlight? twin;
+        for (final k in localMarks) {
+          if (isSameHighlight(
+            locationA: k.location,
+            contentA: k.content,
+            locationB: loc,
+            contentB: content,
+          )) {
+            twin = k;
+            break;
           }
+        }
+        if (twin != null) {
+          if (twin.supabaseId == null) {
+            twin.supabaseId = cloudId;
+            await _isar.highlights.put(twin);
+          }
+          continue;
         }
 
         final hl = Highlight()
           ..supabaseId = cloudId
-          ..content = h['content'] as String? ?? ''
+          ..content = content
           ..location = loc
           ..addedAt = DateTime.tryParse(h['added_at'] as String? ?? '')
           ..color = h['color'] as String?

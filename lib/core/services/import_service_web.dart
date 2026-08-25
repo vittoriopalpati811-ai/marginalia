@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../parser/my_clippings_parser.dart';
+import 'import_match.dart';
 import 'supabase_service.dart';
 
 class ImportResult {
@@ -49,7 +50,12 @@ class ImportService {
     final existingBooks = await svc.fetchBooks();
     final bookTitleAuthorToId = <String, String>{};
     for (final b in existingBooks) {
-      final key = '${b['title']}|${b['author']}';
+      // Normalised, exactly like the native importer — see import_match.dart.
+      // A raw 'title|author' key made "Il nome della rosa" and "Il Nome della
+      // Rosa" two different books, which is how two production accounts ended
+      // up holding the same book twice.
+      final key = bookMatchKey(
+          (b['title'] as String?) ?? '', (b['author'] as String?) ?? '');
       bookTitleAuthorToId[key] = b['id'] as String;
     }
 
@@ -74,7 +80,7 @@ class ImportService {
       if (clipping.type == ClippingType.bookmark) continue;
 
       // ── Find or create book ──────────────────────────────────────────────
-      final bookKey = '${clipping.bookTitle}|${clipping.bookAuthor}';
+      final bookKey = bookMatchKey(clipping.bookTitle, clipping.bookAuthor);
       String? bookId = bookTitleAuthorToId[bookKey];
 
       if (bookId == null) {
