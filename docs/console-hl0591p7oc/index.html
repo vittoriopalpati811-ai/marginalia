@@ -122,11 +122,17 @@
     <div class="grid" id="g-waitlist"></div>
     <div class="wl-actions">
       <button onclick="loadWaitlist()">Mostra gli indirizzi</button>
+      <button id="wl-mail" onclick="mailWaitlist()" style="display:none">Scrivi a tutti</button>
       <button class="ghost" id="wl-copy" onclick="copyWaitlist()" style="display:none">Copia tutte le email</button>
       <button class="ghost" id="wl-csv" onclick="downloadWaitlist()" style="display:none">Scarica CSV</button>
       <span id="wl-status" style="font-size:12.5px;color:var(--ink-muted)"></span>
     </div>
     <div id="wl-body"></div>
+    <p class="wl-privacy"><b>Per scrivere a tutti:</b> "Scrivi a tutti" apre il tuo
+    programma di posta con gli iscritti in <b>CCN</b> — nessuno vede gli indirizzi
+    degli altri. Va bene fino a una quarantina di iscritti; oltre, usa "Scarica CSV"
+    e importa il file in un servizio di newsletter (Brevo, Mailchimp, Substack), che
+    aggiunge anche il link di disiscrizione richiesto per legge.</p>
     <p class="wl-privacy">Gli indirizzi sono dati personali: vengono richiesti solo quando premi
     "Mostra gli indirizzi", non a ogni apertura della console. La tabella <b>waitlist_signups</b>
     non è leggibile da nessuno con la chiave pubblica dell'app — solo da questa pagina e dal
@@ -266,8 +272,10 @@ function loadWaitlist() {
 
 function renderWaitlist() {
   const box = document.getElementById('wl-body');
-  document.getElementById('wl-copy').style.display = waitlist.length ? '' : 'none';
-  document.getElementById('wl-csv').style.display = waitlist.length ? '' : 'none';
+  const show = waitlist.length ? '' : 'none';
+  document.getElementById('wl-mail').style.display = show;
+  document.getElementById('wl-copy').style.display = show;
+  document.getElementById('wl-csv').style.display = show;
   if (!waitlist.length) {
     box.innerHTML = '<p class="wl-empty">Ancora nessun iscritto.</p>';
     return;
@@ -282,6 +290,35 @@ function renderWaitlist() {
   box.innerHTML =
     '<table class="wl-table"><thead><tr><th>Email</th><th>Iscritto il</th>' +
     '<th>Da dove</th><th>Lingua</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+// Opens the computer's mail app with everyone in BCC and nothing in To.
+//
+// BCC is not a detail: putting a waiting list in To or Cc shows every
+// subscriber every other subscriber's address, which is a data breach performed
+// by hand — and the single most common way small mailing lists leak.
+//
+// mailto: is fine up to a few dozen addresses; past that, mail clients and the
+// operating system start truncating the URL silently, so above the threshold
+// this refuses to open a half-filled draft and sends you to the CSV instead.
+const MAILTO_SAFE_LIMIT = 40;
+
+function mailWaitlist() {
+  const st = document.getElementById('wl-status');
+  if (!waitlist.length) return;
+  if (waitlist.length > MAILTO_SAFE_LIMIT) {
+    st.textContent = 'Troppi indirizzi (' + waitlist.length + ') per aprire ' +
+      'il programma di posta senza rischiare di troncarli: usa "Scarica CSV" ' +
+      'e importali in Brevo, Mailchimp o simili.';
+    return;
+  }
+  const bcc = waitlist.map(s => s.email).join(',');
+  const subject = 'Scripta';
+  const link = 'mailto:?bcc=' + encodeURIComponent(bcc) +
+               '&subject=' + encodeURIComponent(subject);
+  window.location.href = link;
+  st.textContent = 'Bozza aperta con ' + waitlist.length +
+    ' destinatari in CCN (nessuno vede gli altri).';
 }
 
 function copyWaitlist() {

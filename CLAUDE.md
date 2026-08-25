@@ -567,10 +567,23 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
 
 ## 8. ADMIN CONSOLE (founder metrics)
 
-- Page: `docs/console-hl0591p7oc/` (unlisted, `noindex`, served at
-  **https://get-scripta.app/console-hl0591p7oc/** after the next site deploy —
-  `docs/` is the GitHub Pages root, custom domain `get-scripta.app` confirmed
-  live). Nothing links to it; the slug is the obscurity layer.
+- Page: `docs/console-hl0591p7oc/` (unlisted, `noindex`). Nothing links to it;
+  the slug is the obscurity layer.
+- ⚠️ **`get-scripta.app` IS NOT GITHUB PAGES.** This file used to say the custom
+  domain pointed at the `docs/` Pages site. It does not: the apex is served by
+  **Cloudflare** (`Server: cloudflare`, `cf-cache-status: DYNAMIC`, Cloudflare
+  IPs), from a SEPARATE copy that has to be uploaded by hand, and that copy is
+  stale. Proven by fetching both: github.io served the new console (16,068
+  chars, waiting-list panel present) while get-scripta.app served the old one
+  (10,669 chars) at the same moment — so a push updates Pages and never touches
+  the apex.
+  **The live, always-current console is
+  `https://vittoriopalpati811-ai.github.io/marginalia/console-hl0591p7oc/`** —
+  same page, same `noindex`, same token gate, and it updates on every push.
+  Refreshing the Cloudflare copy needs the founder's Cloudflare session
+  (`wrangler` is installed but NOT authenticated, and logging into his accounts
+  is founder-only). Don't sit waiting for a Pages build to appear on the apex:
+  it never will.
 - Auth: a 48-char random token, sent only in the **`x-admin-token` header**
   (header-only after this batch — query-param form was removed so it can't land
   in logs). 403 on mismatch. The token is **NOT in the repo** — it lives only in
