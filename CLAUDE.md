@@ -633,6 +633,25 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   existed — insert → trigger → function → `200 {"skipped":"no api key"}` in
   `net._http_response`. That graceful skip is deliberate: a missing key must
   never look like a crash.
+- **Sending is set up on Resend** (account `vittorio.scripta@gmail.com`, domain
+  `get-scripta.app`, region **Ireland/eu-west-1**, added 2026-08-25). DNS records
+  live and confirmed against 8.8.8.8:
+  `resend._domainkey` TXT (DKIM) · `send` MX → `feedback-smtp.eu-west-1.amazonses.com` (10)
+  · `send` TXT → `v=spf1 include:amazonses.com ~all` · `_dmarc` via Cloudflare
+  DMARC Management (`p=none` + rua to Cloudflare's report collector).
+  Receiving is untouched: the three root MX and the root SPF are intact.
+  ⚠️ **Email Routing LOCKS the zone's DNS records** ("DNS records: Locked" on the
+  Email Routing overview). That is why MX records fight back in the dashboard —
+  the add succeeds but often only after a retry, and the table lags. Always
+  confirm with a real DNS query, never with the dashboard table.
+  ⚠️ Resend's own domain status stays "Not Started" for a while after the records
+  are live — its verification is asynchronous. Do not re-add records because of
+  that badge.
+  Click/open tracking is NOT configured on the domain, which is the right state
+  for this product — no tracking subdomain, no pixel. TLS is "Opportunistic";
+  "Enforced" would be stricter but silently drops mail to servers without TLS.
+  STILL MISSING and founder-only: `RESEND_API_KEY` as a Supabase edge secret
+  (the welcome function no-ops without it), and the SMTP settings for auth mail.
 - **Cloudflare CANNOT send email.** Email Routing receives and forwards only —
   that is the product, not a misconfiguration. Proof: the zone's SPF authorises
   only `_spf.mx.cloudflare.net`, and no sending provider has a DKIM selector on
