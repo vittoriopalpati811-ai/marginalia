@@ -68,6 +68,18 @@
   }
   #dash { display: none; }
   .revnote { font-size: 12px; color: var(--ink-muted); margin-top: 10px; line-height: 1.5; }
+  .wl-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0 4px; }
+  button.ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--sage); }
+  .wl-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13.5px; }
+  .wl-table th {
+    text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-muted); font-weight: 800; padding: 0 10px 8px; border-bottom: 1px solid var(--sage);
+  }
+  .wl-table td { padding: 9px 10px; border-bottom: 1px solid rgba(27,31,27,0.06); }
+  .wl-table td.email { font-weight: 600; }
+  .wl-table td.dim { color: var(--ink-muted); font-size: 12.5px; }
+  .wl-empty { color: var(--ink-muted); font-size: 13px; padding: 14px 2px; }
+  .wl-privacy { font-size: 12px; color: var(--ink-muted); margin-top: 12px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -105,6 +117,20 @@
 
     <div class="section">Contenuti <small>totali dalla nascita dell'app</small></div>
     <div class="grid" id="g-content"></div>
+
+    <div class="section">Lista d'attesa <small>iscritti dal sito get-scripta.app</small></div>
+    <div class="grid" id="g-waitlist"></div>
+    <div class="wl-actions">
+      <button onclick="loadWaitlist()">Mostra gli indirizzi</button>
+      <button class="ghost" id="wl-copy" onclick="copyWaitlist()" style="display:none">Copia tutte le email</button>
+      <button class="ghost" id="wl-csv" onclick="downloadWaitlist()" style="display:none">Scarica CSV</button>
+      <span id="wl-status" style="font-size:12.5px;color:var(--ink-muted)"></span>
+    </div>
+    <div id="wl-body"></div>
+    <p class="wl-privacy">Gli indirizzi sono dati personali: vengono richiesti solo quando premi
+    "Mostra gli indirizzi", non a ogni apertura della console. La tabella <b>waitlist_signups</b>
+    non è leggibile da nessuno con la chiave pubblica dell'app — solo da questa pagina e dal
+    pannello Supabase.</p>
 
     <div class="controls">
       <button onclick="load()">Aggiorna</button>
@@ -196,6 +222,11 @@ function render(body) {
     card(eur(mau * PRICE * 0.10), 'Scenario eccellente (10%)', `Se il 10% dei ${mau} MAU pagasse €19,99/anno.`, 'red') +
     card(eur(mau * PRICE), 'Tetto teorico', 'Se il 100% dei MAU pagasse: il massimo assoluto, irrealistico ma utile come riferimento.', 'red');
 
+  document.getElementById('g-waitlist').innerHTML =
+    card(body.waitlist_count != null ? body.waitlist_count : '—', "Iscritti in lista d'attesa",
+         'Indirizzi lasciati sul sito. Il numero si aggiorna da solo; gli indirizzi si vedono solo su richiesta.',
+         'sage');
+
   const c = m.content;
   document.getElementById('g-content').innerHTML =
     card(c.highlights, 'Highlights', 'Frasi sincronizzate dai Kindle degli utenti: il cuore dell\'app.') +
@@ -210,6 +241,91 @@ function render(body) {
     card(c.follows, 'Follow', 'Relazioni di follow tra utenti.') +
     card(c.reviews, 'Recensioni', 'Recensioni scritte sui libri letti.') +
     card(c.covers_custom, 'Copertine personalizzate', 'Copertine caricate dagli utenti al posto di quelle generate.');
+}
+
+let waitlist = [];
+
+function loadWaitlist() {
+  const token = localStorage.getItem(KEY);
+  if (!token) { showGate(); return; }
+  const st = document.getElementById('wl-status');
+  st.textContent = 'Carico…';
+  fetch(FN + '?section=waitlist', { headers: { 'x-admin-token': token } })
+    .then(r => r.status === 403
+      ? (localStorage.removeItem(KEY), showGate('Chiave non valida.'), null)
+      : r.json())
+    .then(body => {
+      if (!body) return;
+      if (body.error) { st.textContent = 'Errore: ' + body.error; return; }
+      waitlist = body.signups || [];
+      renderWaitlist();
+      st.textContent = '';
+    })
+    .catch(e => { st.textContent = 'Errore di rete: ' + e; });
+}
+
+function renderWaitlist() {
+  const box = document.getElementById('wl-body');
+  document.getElementById('wl-copy').style.display = waitlist.length ? '' : 'none';
+  document.getElementById('wl-csv').style.display = waitlist.length ? '' : 'none';
+  if (!waitlist.length) {
+    box.innerHTML = '<p class="wl-empty">Ancora nessun iscritto.</p>';
+    return;
+  }
+  const rows = waitlist.map(s => {
+    const when = s.created_at ? new Date(s.created_at).toLocaleString('it-IT') : '—';
+    return '<tr><td class="email">' + esc(s.email) + '</td>' +
+           '<td class="dim">' + esc(when) + '</td>' +
+           '<td class="dim">' + esc(s.source || '—') + '</td>' +
+           '<td class="dim">' + esc(s.locale || '—') + '</td></tr>';
+  }).join('');
+  box.innerHTML =
+    '<table class="wl-table"><thead><tr><th>Email</th><th>Iscritto il</th>' +
+    '<th>Da dove</th><th>Lingua</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function copyWaitlist() {
+  // Comma-separated: the shape every mail tool accepts in a "recipients" box.
+  const list = waitlist.map(s => s.email).join(', ');
+  const done = () => { document.getElementById('wl-status').textContent =
+    waitlist.length + ' email copiate.'; };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(list).then(done, () => fallbackCopy(list, done));
+  } else {
+    fallbackCopy(list, done);
+  }
+}
+
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) {
+    document.getElementById('wl-status').textContent = 'Copia non riuscita.';
+  }
+  document.body.removeChild(ta);
+}
+
+function downloadWaitlist() {
+  // Quoted CSV with a UTF-8 BOM so Excel opens accented text correctly, and
+  // `email` first because that is the column every import wizard asks for.
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [['email', 'created_at', 'source', 'locale'].join(',')];
+  for (const s of waitlist) {
+    lines.push([q(s.email), q(s.created_at), q(s.source), q(s.locale)].join(','));
+  }
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'scripta-waitlist-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  document.getElementById('wl-status').textContent = 'CSV scaricato.';
 }
 
 function showGate(err) {

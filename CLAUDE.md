@@ -581,6 +581,22 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   only — no PII**: users (total/DAU/WAU/MAU/new/push-enabled), 7-day engagement,
   content totals, and computed revenue scenarios (2/5/10% of MAU × €19,99). Each
   metric has an Italian explanation in the UI.
+- **Waiting list** (`waitlist_signups`, migration 073, fed by the form on
+  `docs/index.html`). Its RLS grants INSERT to anon and **no SELECT policy at
+  all**, so the list is unreadable with the public anon key — by design. The
+  console reads it via `admin-metrics?section=waitlist` (service role): the
+  COUNT rides along with the ordinary metrics, but the addresses are a separate,
+  explicit request, so personal data travels because someone pressed a button
+  rather than on every page load. The panel offers "Copia tutte le email"
+  (comma-separated, the shape a recipients box wants) and a CSV download
+  (quoted, UTF-8 BOM so Excel handles accents).
+- **`admin-metrics` source now LIVES IN THE REPO** (`supabase/functions/
+  admin-metrics/index.ts`), which it did not before — and the reason it did not
+  is real: the deployed function HARDCODES the admin token and this repo is
+  public. The committed copy therefore reads `Deno.env.get("ADMIN_TOKEN")`
+  instead. ⚠️ Redeploying straight from the repo file will lock the console out
+  until an `ADMIN_TOKEN` secret is set. The token stays in the deployed function
+  and the founder's Desktop file only.
 - If asked to rotate the token: change `ADMIN_TOKEN` in the deployed function and
   update the Desktop file.
 
