@@ -590,15 +590,21 @@ To find WHY a run failed: `…/actions/runs/<id>/jobs` → inspect `steps[].conc
   rather than on every page load. The panel offers "Copia tutte le email"
   (comma-separated, the shape a recipients box wants) and a CSV download
   (quoted, UTF-8 BOM so Excel handles accents).
-- **`admin-metrics` source now LIVES IN THE REPO** (`supabase/functions/
-  admin-metrics/index.ts`), which it did not before — and the reason it did not
-  is real: the deployed function HARDCODES the admin token and this repo is
-  public. The committed copy therefore reads `Deno.env.get("ADMIN_TOKEN")`
-  instead. ⚠️ Redeploying straight from the repo file will lock the console out
-  until an `ADMIN_TOKEN` secret is set. The token stays in the deployed function
-  and the founder's Desktop file only.
-- If asked to rotate the token: change `ADMIN_TOKEN` in the deployed function and
-  update the Desktop file.
+- **`admin-metrics` lives in the repo and matches production byte for byte**
+  (`supabase/functions/admin-metrics/index.ts`). It could not before, because
+  the token was a constant in the source and the repo is public — so the source
+  drifted out of version control, which CLAUDE.md §5 already listed as a
+  problem. The token moved to **`public.admin_secrets`** (migration 081): RLS
+  on, NO policies, all grants revoked, so it is unreachable through PostgREST
+  for anon and authenticated and only the service role the function runs as can
+  read it. An `ADMIN_TOKEN` env var still wins if one is ever set, so adopting
+  Supabase secrets later needs no code change. An EMPTY expected token is
+  rejected outright — a missing secret must never become an open door.
+- To rotate the token: `update public.admin_secrets set value = '<new>',
+  updated_at = now() where name = 'console_token';` then update the founder's
+  Desktop file. No redeploy — but the running instance caches the token for its
+  lifetime, so the change lands on the next cold start (or redeploy to force it).
+  There is no MCP tool for Supabase secrets, which is why the table exists.
 
 ---
 
