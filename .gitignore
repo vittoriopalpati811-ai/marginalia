@@ -93,3 +93,11 @@ AuthKey_*.p8
 # ─── Claude Code locale ──────────────────────
 .claude/cache/
 .claude/sessions/
+
+# The admin console's URL path. Rotated 2026-08-25 because the old one had
+# been sitting in three commits of PUBLIC history — an obscurity layer that is
+# published is not one. Never commit this.
+.console-slug
+
+# wrangler's local state - never useful in git
+.wrangler/

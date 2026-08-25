@@ -9,7 +9,12 @@
 #                         SAME URL the reset emails already point to, so no
 #                         dashboard change is needed for old emails to work
 #   privacy/ terms/       legal pages (IT + EN)
-#   console-hl0591p7oc/   unlisted founder metrics console
+# The founder console is NOT here any more. GitHub Pages serves docs/, and this
+# repo is public, so a folder named after the console's secret path published
+# that path to anyone who opened the repository — and Pages served a second
+# copy of the page besides the real one on get-scripta.app. It now lives in
+# admin-console/ and is assembled onto its (rotated, gitignored) path by
+# deploy_site.ps1, which publishes to Cloudflare Pages.
 #
 # Deploys from the ACTIVE branch (feat/profile-ui-privacy) on site changes —
 # master is stale and pushing it would also trigger an iOS build of old code.
