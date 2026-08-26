@@ -20,12 +20,20 @@
 # master is stale and pushing it would also trigger an iOS build of old code.
 name: Deploy static site → GitHub Pages
 
+# Automatic deploys are OFF (founder request: "togli le vecchie versioni da
+# GitHub"). get-scripta.app is served by Cloudflare Pages via deploy_site.ps1,
+# and Pages was publishing a second, competing copy of the same docs/ folder.
+#
+# Held back until 2026-08-26 for one reason: password-reset emails carried
+# `redirect_to` at the old github.io address, so switching Pages off would have
+# broken recovery for anyone holding a link. Supabase's Site URL now points at
+# https://get-scripta.app/app (verified by sending a real reset and reading the
+# delivered mail), the app no longer hardcodes the old address, and reset links
+# expire after an hour — so nothing depends on Pages any more.
+#
+# Kept runnable by hand rather than deleted: if Cloudflare ever fails, this is
+# a working fallback that is one click away.
 on:
-  push:
-    branches: [feat/profile-ui-privacy]
-    paths:
-      - 'docs/**'
-      - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
 permissions:
