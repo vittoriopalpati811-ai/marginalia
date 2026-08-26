@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="You've been invited to Scripta — your Kindle highlights, back from the dead. One line finds you every morning.">
+  <meta property="og:title" content="You're invited to Scripta">
+  <meta property="og:description" content="You read. You forget. Scripta remembers.">
+  <meta property="og:image" content="../assets/og-image.png">
+  <meta name="theme-color" content="#F9F8F5">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="../assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <title>You're invited to Scripta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;600;700;800&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sage: #C0CFB2; --sage-dark: #82966E; --sage-ink: #5D6E4E;
+      --cream: #F9F8F5; --paper: #FFFEF9;
+      --ink: #2B2A26; --ink-muted: #6B6560; --ink-faint: #9E9689;
+      --rule: #E8E4DC; --red: #B94A41;
+      --marker: rgba(192, 207, 178, .55);
+      --pencil: #8B8578;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--cream); color: var(--ink);
+      font-family: 'Manrope', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      background-image: repeating-linear-gradient(
+        transparent, transparent 43px, rgba(43,42,38,.028) 43px, rgba(43,42,38,.028) 44px);
+    }
+    ::selection { background: var(--marker); }
+    .page { max-width: 560px; margin: 0 auto; padding: 0 26px 72px; }
+
+    .bookmark {
+      position: fixed; top: -6px; right: clamp(18px, 7vw, 90px); z-index: 50;
+      width: 34px; height: 108px; background: var(--red);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+      transform-origin: top center;
+      animation: swing 5.2s ease-in-out infinite;
+      box-shadow: 0 4px 10px rgba(43,42,38,.18);
+    }
+    @keyframes swing { 0%,100% { transform: rotate(-3.5deg); } 50% { transform: rotate(3.5deg); } }
+
+    header { display: flex; align-items: center; gap: 12px; padding: 26px 0 0; }
+    .mark-sm { width: 40px; height: 40px; border-radius: 11px; }
+    .brand { font-family: 'EB Garamond', Georgia, serif; font-weight: 600; font-size: 22px; }
+
+    /* ── the invite slip ───────────────────────────────────── */
+    .from {
+      margin-top: clamp(44px, 9vw, 70px);
+      font-size: 14px; font-weight: 700; letter-spacing: .04em;
+      color: var(--sage-ink); text-transform: uppercase;
+    }
+    h1 {
+      font-family: 'EB Garamond', Georgia, serif; font-weight: 500;
+      font-size: clamp(38px, 9.5vw, 56px); line-height: 1.1; letter-spacing: -0.015em;
+      margin-top: 10px;
+    }
+    h1 .dim { color: var(--ink-faint); }
+    .hl { position: relative; white-space: nowrap; z-index: 0; }
+    .hl::before {
+      content: ""; position: absolute; z-index: -1;
+      left: -4px; right: -4px; top: 12%; bottom: 6%;
+      background: var(--marker); border-radius: 6px 14px 10px 6px;
+      transform: scaleX(0); transform-origin: left center;
+      transition: transform .8s cubic-bezier(.6,.05,.2,1) .3s;
+    }
+    .hl.lit::before { transform: scaleX(1); }
+
+    .lede { margin-top: 20px; font-size: 17px; line-height: 1.62; color: var(--ink-muted); max-width: 44ch; }
+    .note-pencil {
+      font-family: 'Caveat', cursive; font-size: 21px; color: var(--pencil);
+      transform: rotate(-2.5deg); display: inline-block; margin-top: 16px;
+    }
+
+    /* ── the highlight, as it would arrive ─────────────────── */
+    .card {
+      margin-top: 38px; background: var(--paper);
+      border: 1px solid var(--rule); border-radius: 16px;
+      padding: 26px 24px 20px;
+      box-shadow: 0 1px 0 var(--rule);
+    }
+    .card-when { font-size: 12px; font-weight: 800; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--ink-faint); }
+    blockquote {
+      font-family: 'EB Garamond', Georgia, serif; font-style: italic;
+      font-size: clamp(20px, 5vw, 24px); line-height: 1.42; margin-top: 12px;
+    }
+    .cite { margin-top: 12px; font-size: 13px; color: var(--ink-faint); }
+
+    /* ── waitlist ──────────────────────────────────────────── */
+    .wl { margin-top: 40px; }
+    .wl-form { display: flex; gap: 10px; flex-wrap: wrap; }
+    .wl-input {
+      flex: 1 1 210px; min-width: 0; background: var(--paper);
+      border: 1px solid var(--rule); border-radius: 12px;
+      padding: 14px 15px; font: inherit; font-size: 15px; color: var(--ink);
+    }
+    .wl-input:focus-visible { outline: 2px solid var(--sage-dark); outline-offset: 1px; }
+    .wl-input::placeholder { color: var(--ink-faint); }
+    .wl-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+    .wl-btn {
+      flex: none; background: var(--ink); color: var(--cream); border: 0;
+      border-radius: 12px; padding: 14px 20px; font: inherit; font-weight: 800;
+      font-size: 15px; cursor: pointer; transition: transform .2s, background .2s;
+    }
+    .wl-btn:hover { transform: translateY(-1px); background: #403e38; }
+    .wl-btn:active { transform: translateY(0) scale(.98); }
+    .wl-btn:disabled { opacity: .55; cursor: default; transform: none; }
+    .wl-btn .arr { display: inline-block; transition: transform .25s cubic-bezier(.2,.9,.3,1.4); }
+    .wl-btn:hover .arr { transform: translateX(4px); }
+    .wl-msg { margin-top: 12px; font-size: 14px; font-weight: 700; min-height: 20px; }
+    .wl-msg.ok { color: var(--sage-ink); }
+    .wl-msg.err { color: var(--red); }
+    .wl-under { margin-top: 10px; font-size: 13px; color: var(--ink-faint); }
+
+    .foot { margin-top: 64px; font-size: 13px; color: var(--ink-faint);
+      display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
+    .foot a { color: var(--sage-ink); text-decoration: none; font-weight: 700; }
+    .foot a:hover { text-decoration: underline wavy var(--sage-dark); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bookmark { animation: none; }
+      .hl::before { transition: none; transform: scaleX(1); }
+      .wl-btn, .wl-btn .arr { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bookmark" aria-hidden="true"></div>
+
+  <div class="page">
+    <header>
+      <img class="mark-sm" src="../assets/scripta-mark.png" alt="" width="40" height="40">
+      <span class="brand">Scripta</span>
+    </header>
+
+    <p class="from" id="from"></p>
+
+    <h1 id="headline"></h1>
+
+    <p class="lede" id="lede"></p>
+    <span class="note-pencil" id="pencil"></span>
+
+    <div class="card">
+      <div class="card-when" id="cardWhen"></div>
+      <blockquote id="quote"></blockquote>
+      <div class="cite" id="cite"></div>
+    </div>
+
+    <div class="wl">
+      <form class="wl-form" novalidate>
+        <input class="wl-input" type="email" inputmode="email" autocomplete="email" required id="wlInput">
+        <input class="wl-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="wl-btn" type="submit"><span id="btnText"></span> <span class="arr">&rarr;</span></button>
+      </form>
+      <div class="wl-msg" role="status"></div>
+      <div class="wl-under" id="under"></div>
+    </div>
+
+    <div class="foot">
+      <div>
+        <a href="../privacy/">Privacy</a> &nbsp;·&nbsp; <a href="../terms/">Terms</a>
+        &nbsp;·&nbsp; &copy; 2026 Scripta
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    var params = null;
+    try { params = new URLSearchParams(location.search); } catch (e) { params = null; }
+
+    /* Language follows the recipient's browser. ?lang=it / ?lang=en forces it,
+       which is how both versions get previewed without changing browser settings. */
+    var forced = params ? (params.get("lang") || "") : "";
+    var IT = (forced || navigator.language || "en").toLowerCase().indexOf("it") === 0;
+    document.documentElement.lang = IT ? "it" : "en";
+
+    /* The inviter's name arrives in ?u=. It is attacker-controllable, so it is
+       only ever written with textContent — never innerHTML — and it is capped
+       so a pathological name cannot wreck the layout. */
+    function inviter() {
+      var raw = params ? (params.get("u") || "") : "";
+      raw = Array.prototype.filter.call(raw, function (ch) { var n = ch.charCodeAt(0); return n >= 32 && n !== 127; }).join("").trim();
+      if (raw.length > 32) raw = raw.slice(0, 32).trim() + "…";
+      return raw;
+    }
+    var who = inviter();
+
+    var T = IT ? {
+      from:     who ? who + " ti ha invitato" : "Sei stato invitato",
+      head1:    "Leggi. ", head2: "Dimentichi.", head3: "Scripta ricorda.",
+      lede:     who
+                  ? who + " usa Scripta per non perdere le frasi che sottolinea su Kindle. Una torna a trovarti ogni mattina, sulla schermata di blocco."
+                  : "Scripta prende le frasi che sottolinei su Kindle e te ne riporta una ogni mattina, sulla schermata di blocco.",
+      pencil:   "← è tutta qui, l'app",
+      cardWhen: "La frase di oggi",
+      quote:    "Non ricordiamo i giorni, ricordiamo gli attimi.",
+      cite:     "Cesare Pavese · sottolineata 2 anni fa",
+      btn:      "Entra in lista",
+      ph:       "latua@email.com",
+      under:    "Gratis · iOS · niente spam, solo una mail quando tocca a te",
+      bad:      "Questa email non sembra giusta.",
+      ok:       "Ci sei. A presto ✓",
+      dup:      "Sei già in lista ✓",
+      oops:     "Qualcosa è andato storto. Riprovi?",
+      off:      "Nessuna connessione. Riprovi?"
+    } : {
+      from:     who ? who + " invited you" : "You've been invited",
+      head1:    "You read. ", head2: "You forget.", head3: "Scripta remembers.",
+      lede:     who
+                  ? who + " uses Scripta to keep the lines they highlight on Kindle. One of them comes back every morning, on the home screen."
+                  : "Scripta takes the lines you highlight on Kindle and brings one back to you every morning, on your home screen.",
+      pencil:   "← that's the whole app, honestly",
+      cardWhen: "Today's line",
+      quote:    "We do not remember days, we remember moments.",
+      cite:     "Cesare Pavese · saved 2 years ago",
+      btn:      "Join the waitlist",
+      ph:       "your@email.com",
+      under:    "Free · iOS · no spam, just one email when it's your turn",
+      bad:      "That email doesn't look right.",
+      ok:       "You're on the list. Talk soon ✓",
+      dup:      "You're already in ✓",
+      oops:     "Something went sideways. Try again?",
+      off:      "No connection. Try again?"
+    };
+
+    function set(id, text) { document.getElementById(id).textContent = text; }
+    set("from", T.from);
+    set("lede", T.lede);
+    set("pencil", T.pencil);
+    set("cardWhen", T.cardWhen);
+    set("quote", "“" + T.quote + "”");
+    set("cite", T.cite);
+    set("btnText", T.btn);
+    set("under", T.under);
+    document.title = T.from + " — Scripta";
+
+    /* Headline: three spans so the middle one can carry the marker sweep. */
+    var h = document.getElementById("headline");
+    var a = document.createElement("span"); a.textContent = T.head1;
+    var b = document.createElement("span"); b.className = "hl dim"; b.textContent = T.head2;
+    var c = document.createElement("span"); c.textContent = " " + T.head3;
+    h.appendChild(a); h.appendChild(b); h.appendChild(c);
+    requestAnimationFrame(function () { b.classList.add("lit"); });
+
+    var input = document.getElementById("wlInput");
+    input.placeholder = T.ph;
+    input.setAttribute("aria-label", T.ph);
+
+    /* ── waitlist ── same table and anon key as the landing page ── */
+    var URL_ = "https://ibucvloawkfwobaelwbr.supabase.co/rest/v1/waitlist_signups";
+    var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
+
+    /* source is CHECKed at <= 40 chars in Postgres, so the referrer name is
+       trimmed to fit rather than letting the insert fail. */
+    function source() {
+      var s = who ? "invite:" + who : "invite";
+      return s.length > 40 ? s.slice(0, 40) : s;
+    }
+
+    var wl = document.querySelector(".wl");
+    var form = wl.querySelector(".wl-form");
+    var hp = wl.querySelector(".wl-hp");
+    var btn = wl.querySelector(".wl-btn");
+    var msg = wl.querySelector(".wl-msg");
+    function show(t, cls) { msg.textContent = t; msg.className = "wl-msg " + cls; }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (hp.value) return;
+      var email = (input.value || "").trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { show(T.bad, "err"); return; }
+      btn.disabled = true; show("…", "");
+      fetch(URL_, {
+        method: "POST",
+        headers: { "content-type": "application/json", "apikey": KEY,
+                   "authorization": "Bearer " + KEY, "prefer": "return=minimal" },
+        body: JSON.stringify({
+          email: email,
+          locale: (navigator.language || "").slice(0, 8),
+          source: source()
+        })
+      }).then(function (r) {
+        if (r.status === 201) { show(T.ok, "ok"); form.reset(); }
+        else if (r.status === 409) { show(T.dup, "ok"); }
+        else { show(T.oops, "err"); btn.disabled = false; }
+      }).catch(function () { show(T.off, "err"); btn.disabled = false; });
+    });
+  })();
+  </script>
+</body>
+</html>

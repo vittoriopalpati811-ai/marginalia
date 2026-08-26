@@ -200,11 +200,13 @@ class _MyProfileScreenState extends ConsumerState<MyProfileScreen> {
   void _shareProfile(Map<String, dynamic>? profile) {
     final name = profile?['display_name'] as String? ?? 'Scripta';
     // Share a WEB invite link (not an in-app deep link): it opens a public
-    // landing page that greets the recipient with "Unisciti a <name> su
-    // Scripta!" and a download CTA. The page (web/u/index.html) reads the
-    // name from the ?u= query param. NOTE: the get-scripta.app domain must be
-    // pointed at GitHub Pages for this to resolve (see launch notes); until
-    // then the same page is reachable at the github.io URL.
+    // landing page that greets the recipient by the inviter's name and offers
+    // the waitlist. The page is docs/u/index.html; it reads the name from the
+    // ?u= query param and picks Italian or English from the recipient's
+    // browser. It ships with the rest of the site via deploy_site.ps1 —
+    // get-scripta.app is a Cloudflare Pages project with NO git integration,
+    // so editing this page and pushing publishes nothing until that script
+    // runs.
     final link =
         'https://get-scripta.app/u/?u=${Uri.encodeComponent(name)}';
     Share.share(

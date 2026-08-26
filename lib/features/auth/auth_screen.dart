@@ -248,7 +248,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                           // /reset-password. Don't add a hash here or the
                           // two hashes collide and break the parse.
                           redirectTo:
-                              'https://vittoriopalpati811-ai.github.io/marginalia/app.html',
+                              'https://get-scripta.app/app',
                         );
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
