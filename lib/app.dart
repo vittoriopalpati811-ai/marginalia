@@ -45,6 +45,11 @@ import 'features/stats/stats_screen.dart';
 import 'features/onboarding/amazon_login_screen.dart';
 import 'features/library/kindle_sync_host.dart';
 import 'core/services/kindle_auto_sync.dart';
+import 'core/services/import_service.dart';
+import 'core/providers/isar_provider.dart';
+import 'core/providers/books_provider.dart';
+import 'core/providers/highlights_provider.dart';
+import 'core/providers/daily_highlight_provider.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/auth/auth_screen.dart';
 import 'features/auth/reset_password_screen.dart';
@@ -371,6 +376,10 @@ class _ScriptaAppState extends ConsumerState<ScriptaApp> {
         if (data.session != null) {
           _pushService.start();
 
+          // Bring the reader's library back on a device that doesn't have it
+          // yet. See _restoreLibraryIfEmpty.
+          _restoreLibraryIfEmpty();
+
           // Engagement nudge: schedule the daily "frase del giorno" local
           // notification (native iOS, reuses the push authorization). Fires at
           // 09:00 every morning. Idempotent — the native side reuses the
@@ -404,6 +413,52 @@ class _ScriptaAppState extends ConsumerState<ScriptaApp> {
     } catch (error) {
       debugPrint(
           '[ScriptaApp] auth listener not attached (Supabase unavailable): $error');
+    }
+  }
+
+  /// Guards against two auth events (the initial session and a sign-in) each
+  /// starting their own restore.
+  bool _restoringLibrary = false;
+
+  /// Pull the reader's library down when this device doesn't have it.
+  ///
+  /// The profile shelf reads books straight from Supabase, but highlights live
+  /// in local Isar — which a fresh install starts empty. So signing in on a new
+  /// phone produced a shelf full of books that opened onto nothing: "se clicco
+  /// su un libro nella libreria non fa vedere le frasi salvate". The restore
+  /// already existed, but only behind a button in the library that nobody
+  /// finds.
+  ///
+  /// Only runs when the user has no highlights on this device, so a populated
+  /// device never pays for the round trip. `restoreFromCloud()` deduplicates by
+  /// supabaseId AND by (book, location), so even a mistimed second run cannot
+  /// duplicate anything. On web it is a no-op that returns 0.
+  Future<void> _restoreLibraryIfEmpty() async {
+    if (_restoringLibrary) return;
+    _restoringLibrary = true;
+    try {
+      final userId = ref.read(currentUserProvider)?.id;
+      if (userId == null) return;
+      final existing = await ref.read(allHighlightsProvider.future);
+      if (existing.isNotEmpty) return;
+
+      final added = await ImportService(
+        ref.read(isarProvider),
+        userId,
+        supabaseService: ref.read(supabaseServiceProvider),
+      ).restoreFromCloud();
+      if (added == 0) return;
+
+      debugPrint('[ScriptaApp] restored $added highlights from the cloud');
+      ref.invalidate(booksProvider);
+      ref.invalidate(allHighlightsProvider);
+      ref.invalidate(dailyHighlightProvider);
+    } catch (error) {
+      // Offline, or no backend at all. The manual restore in the library is
+      // still there; this must never be able to break launch.
+      debugPrint('[ScriptaApp] cloud restore skipped: $error');
+    } finally {
+      _restoringLibrary = false;
     }
   }
 

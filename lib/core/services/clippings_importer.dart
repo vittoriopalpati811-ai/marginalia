@@ -14,6 +14,7 @@ import 'package:sqlite3/sqlite3.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/isar_provider.dart';
+import 'import_match.dart';
 import 'import_service.dart';
 
 /// Strips a UTF-8 BOM if present, decodes as UTF-8, falls back to latin1.
@@ -61,6 +62,22 @@ Future<ImportResult?> pickAndImportClippings(WidgetRef ref) async {
 /// highlights distinct AND makes a re-import dedup instead of duplicating.
 /// The author's parentheses are sanitised because the parser reads the LAST
 /// '(...)' of the title line as the author. Exposed for unit testing.
+/// A stable, numeric synthetic location for a Kobo highlight.
+///
+/// It has to be BOTH:
+///   * stable across SDK upgrades — it is persisted as the highlight's location
+///     and compared on every later import, so `String.hashCode` (what this used
+///     to be) would silently duplicate a reader's whole Kobo library the first
+///     time Dart changed its hashing. The Amazon sync already moved to a
+///     digest for exactly this reason; Kobo had been left behind.
+///   * numeric — MyClippingsParser reads `[\d-]+` out of a location line, so a
+///     hex digest parses as no location at all, and every same-book highlight
+///     would collide on the null key and be dropped.
+///
+/// So: fold the first 48 bits of the content digest into an integer.
+int koboLocation(String text) =>
+    int.parse(contentFingerprint(text).substring(0, 12), radix: 16);
+
 String buildKoboEntry({
   String? title,
   String? author,
@@ -70,8 +87,15 @@ String buildKoboEntry({
   final safeTitle = ((title ?? '').trim().isEmpty ? 'Kobo' : title!.trim());
   final safeAuthor =
       (author ?? '').trim().replaceAll('(', '[').replaceAll(')', ']');
-  final location = text.hashCode.abs();
-  return '$safeTitle ($safeAuthor)\n'
+  final location = koboLocation(text);
+  // Kobo can hand us a bookmark whose `content` row is gone, so there is no
+  // author at all. MyClippingsParser REJECTS an entry whose first line is not
+  // "Title (Author)" — empty parentheses do not match either, its pattern needs
+  // a character inside — so those highlights used to be dropped on the floor
+  // without a word. Naming the source beats losing the sentence; the reader can
+  // correct it, they cannot recover what never arrived.
+  final titleLine = '$safeTitle (${safeAuthor.isEmpty ? 'Kobo' : safeAuthor})';
+  return '$titleLine\n'
       '- Your Highlight | location $location | Added on ${date ?? ''}\n\n$text';
 }
 
@@ -79,15 +103,18 @@ String buildKoboEntry({
 /// (the Bookmark table joined with the book metadata in `content`). Returns the
 /// [ImportResult], or `null` if the user cancelled. Throws on a malformed file
 /// or when no highlights are found — callers should surface it.
-Future<ImportResult?> pickAndImportKobo(WidgetRef ref) async {
-  final picked = await FilePicker.platform.pickFiles(type: FileType.any);
-  if (picked == null || picked.files.isEmpty) return null;
-  final path = picked.files.first.path;
-  if (path == null) return null;
-
-  // Read the Kobo annotations DB (read-only). Each Bookmark row with non-empty
-  // Text is a highlight; join `content` (the book-level row, ContentID ==
-  // VolumeID) for the title + author.
+/// Reads a Kobo `KoboReader.sqlite` and returns one canonical "My Clippings"
+/// entry per highlight, in book/date order.
+///
+/// Split out of [pickAndImportKobo] on purpose: this half depends only on the
+/// file, so a test can run it against a real SQLite database and catch a wrong
+/// assumption about Kobo's schema (the `Bookmark`/`content` tables and the
+/// `VolumeID` → `ContentID` join). Inside the picker it was unreachable from
+/// any test.
+///
+/// Each `Bookmark` row with non-empty `Text` is a highlight; `content` holds
+/// the book-level row that carries the title and author.
+List<String> koboEntriesFromDb(String path) {
   final entries = <String>[];
   final db = sqlite3.open(path, mode: OpenMode.readOnly);
   try {
@@ -112,6 +139,16 @@ Future<ImportResult?> pickAndImportKobo(WidgetRef ref) async {
   } finally {
     db.dispose();
   }
+  return entries;
+}
+
+Future<ImportResult?> pickAndImportKobo(WidgetRef ref) async {
+  final picked = await FilePicker.platform.pickFiles(type: FileType.any);
+  if (picked == null || picked.files.isEmpty) return null;
+  final path = picked.files.first.path;
+  if (path == null) return null;
+
+  final entries = koboEntriesFromDb(path);
 
   if (entries.isEmpty) {
     throw Exception('Nessun highlight trovato in questo file Kobo.');

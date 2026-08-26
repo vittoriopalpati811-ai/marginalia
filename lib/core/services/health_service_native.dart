@@ -15,6 +15,8 @@
 // HealthKit capability on the App ID. Menstrual flow is a standard HKCategoryType
 // — no extra clinical-records entitlement is needed.
 
+import 'dart:io' show Platform;
+
 import 'health_service_web.dart' show HealthSnapshot, WorkoutActivity, CyclePhase;
 
 export 'health_service_web.dart'
@@ -58,8 +60,27 @@ class HealthService {
 
   Future<HealthSnapshot> fetchSnapshot() async {
     try {
-      // Prompt for Health read access on first run (iOS shows the sheet once).
-      await Health().requestAuthorization(_types, permissions: _permissions);
+      // Asking here is safe on iOS: HealthKit shows its sheet once, remembers
+      // the answer, and deliberately refuses to report read-permission status —
+      // so there is nothing to check first and re-asking costs nothing.
+      //
+      // Android is the opposite, and assuming otherwise locked readers out of
+      // the app. Health Connect LAUNCHES its permission screen every time it is
+      // asked while a permission is missing, and this runs on every daily-phrase
+      // read — so someone who declined was thrown from the app into the system
+      // dialog on launch, declined again, and was thrown out again, forever.
+      // There, ask for nothing: read only what has already been granted, and
+      // leave requesting to the single explicit step in onboarding.
+      if (Platform.isAndroid) {
+        final granted =
+            await Health().hasPermissions(_types, permissions: _permissions);
+        if (granted != true) {
+          debugPrint('[Health] Android permissions not granted — skipping read');
+          return HealthSnapshot.empty;
+        }
+      } else {
+        await Health().requestAuthorization(_types, permissions: _permissions);
+      }
 
       final now = DateTime.now();
       final midnight = DateTime(now.year, now.month, now.day);
