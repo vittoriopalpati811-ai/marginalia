@@ -272,14 +272,23 @@ contradicted requesting those permissions.
 cycle data, and `READ_MENSTRUATION` is the permission it scrutinises most — a
 follow-up request for justification or a demo video is likely.
 
-⚠️ **The release still cannot be confirmed**: the review step reports *"Devi
-completare la dichiarazione relativa all'integrità"* (link → `app-content/health`)
-even after the declaration was re-answered and saved. Meanwhile *Invia app per
-la revisione* stays disabled on the publishing overview. The two appear to wait
-on each other: Play wants the declaration **in effect**, and it only becomes
-effective once the pending changes are submitted. Nothing further can be done
-from the console — retry the release confirmation after Play has had a few
-hours to apply the saved declaration.
+⚠️ **The release cannot be confirmed — deadlock confirmed, not a missing
+answer.** The review step reports *"Devi completare la dichiarazione relativa
+all'integrità"* (link → `app-content/health`) even after the declaration was
+re-answered, saved and re-validated. The mechanism is now proven: *App content*
+says **"Non hai niente in sospeso"** (every declaration answered), and the
+publishing overview lists **"App per la salute · Dichiarazione relativa alle app
+per la salute completata"** among the changes **not yet submitted for review**.
+So the declaration is complete but not yet IN EFFECT, the release validator
+requires it in effect, and *Invia app per la revisione* — the only thing that
+would put it in effect — is itself disabled until the dashboard checklist is
+finished. Each waits on the other.
+Ruled out while chasing it: it is NOT Play Integrity (that section moved to
+*Protetto con Play*, whose only inactive item is the optional
+"Impedisci le installazioni su dispositivi rischiosi"), NOT a stale validation
+snapshot (going back to step 1 and forward re-runs it with the same result), and
+NOT missing content. Nothing else can be done from the console; expect it to
+clear once Play applies the saved declaration, otherwise it is a support case.
 
 **Still founder-only**: add the remaining tester emails (Google needs **12
 testers × 14 consecutive days** for a personal developer account), upload
