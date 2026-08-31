@@ -245,10 +245,32 @@ Verified on device: the header reads "Here again between the lines, Scripta
 Demo?". `Desktop/Scripta.aab` was rebuilt on this fix (37.4 MB, upload key
 SHA1 `DF:DE:F3:04:…:8A:D5`) so the binary matches the screenshots.
 
-**Closed-test channel "Alpha" is configured** (2026-08-27, *Completate 2 di 4*):
-countries = **all 177**, tester list **"Scripta - test chiuso"** created and
-attached (holds the founder's two addresses so far), feedback address
-`support@get-scripta.app`. Track id `4700201154477441116`.
+**Closed-test channel "Alpha"** (track id `4700201154477441116`): countries =
+**all 177**, tester list **"Scripta - test chiuso"** attached (the founder's two
+addresses so far), feedback address `support@get-scripta.app`, and the **app
+bundle is uploaded** — dashboard reads *Completate 3 di 5*, Play parsed it as
+`1 (1.1.0)`, API 26+, target 35, 14.4 MB install / 8 s download.
+
+**Uploading a 37 MB bundle with a 10 MB tool limit**: `split -b 9437184` into
+four chunks, `file_upload` each into an injected `<input type=file>`, absorb
+each one's `arrayBuffer()` into a JS array, then `new File([...parts], ...)` and
+assign it to Play's own `input[type=file][accept=".aab"]` via `DataTransfer`.
+**Verify before handing it over** — the page computes `crypto.subtle.digest`
+over the welded blob and refuses unless it matches the on-disk sha256; a
+silently truncated upload would be far worse than a failed one.
+
+⚠️ **The release cannot be confirmed yet**: the review step reports *"Devi
+completare la dichiarazione relativa all'integrità"*, whose link points at
+`app-content/health`. That form IS complete and saved (step 1 = "Altro" with an
+accurate 244-char description, step 2 says no regional statement is required,
+and its Salva is disabled because nothing is dirty). The likely cause is that
+Play wants the health declaration **in effect**, not merely drafted, while
+*Invia app per la revisione* is itself gated on the dashboard — so the two wait
+on each other. Worth re-testing after the pending changes are submitted; the
+other possibility is that Play rejects "no health features" from an app that
+requests Health Connect permissions, which would mean ticking a real category
+(a compliance decision for the founder, since e.g. *Monitoraggio del ciclo
+mestruale* would make Scripta a cycle-tracking app for policy purposes).
 
 **Still founder-only**: add the remaining tester emails (Google needs **12
 testers × 14 consecutive days** for a personal developer account), upload
@@ -284,6 +306,23 @@ across 905 rows on the demo account).
   in Supabase (`is_favorite` = 2 rows), the list shows "2 saved highlights /
   Only you can see this list", un-saving from the list updates it to the
   singular form.
+
+### App Store — SUBMITTED 2026-08-31
+**iOS 1.0 is "In attesa di verifica"** (waiting for review; Apple quotes up to
+48 h). Submitted build **1.1.0 (1788203346)** from commit `f91228d`, i.e. the
+one carrying the bookmark fix, the Saved screen and the English greetings.
+- ⚠️ The version record had build **1783726117 from July** still attached.
+  Submitting it would have shipped the dead bookmark and two months of stale
+  code. **Always check the attached build before submitting** — remove it by
+  hovering the row (a red minus appears at the far right), then *Aggiungi build*
+  → pick the new one → **Salva** (the review button stays greyed until the page
+  is saved) → *Aggiungi alla verifica* → *Invia per la verifica*.
+- Everything else on the version page was already in place: 7 screenshots,
+  demo account `review@get-scripta.app`, IT+EN reviewer notes with the
+  My Clippings.zip attachment, age 13+ (16+ in 2 regions), encryption and DSA
+  answered.
+- CI is healthy again — runs #140–#143 all green, so the Apple
+  license-agreement block from 2026-07-11 is gone.
 
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
