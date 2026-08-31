@@ -259,18 +259,27 @@ assign it to Play's own `input[type=file][accept=".aab"]` via `DataTransfer`.
 over the welded blob and refuses unless it matches the on-disk sha256; a
 silently truncated upload would be far worse than a failed one.
 
-⚠️ **The release cannot be confirmed yet**: the review step reports *"Devi
-completare la dichiarazione relativa all'integrità"*, whose link points at
-`app-content/health`. That form IS complete and saved (step 1 = "Altro" with an
-accurate 244-char description, step 2 says no regional statement is required,
-and its Salva is disabled because nothing is dirty). The likely cause is that
-Play wants the health declaration **in effect**, not merely drafted, while
-*Invia app per la revisione* is itself gated on the dashboard — so the two wait
-on each other. Worth re-testing after the pending changes are submitted; the
-other possibility is that Play rejects "no health features" from an app that
-requests Health Connect permissions, which would mean ticking a real category
-(a compliance decision for the founder, since e.g. *Monitoraggio del ciclo
-mestruale* would make Scripta a cycle-tracking app for policy purposes).
+**Health declaration now names the real categories** (founder's call,
+2026-08-31: *"deve esserci la cosa del ciclo"*). The manifest requests exactly
+four Health Connect permissions — `READ_STEPS`, `READ_EXERCISE`, `READ_SLEEP`,
+`READ_MENSTRUATION` — and each is now covered by a ticked category:
+*Attività fisica e fitness*, *Gestione del sonno*, **Monitoraggio del ciclo
+mestruale**, plus *Altro* carrying the honest description ("Read-only
+personalisation… nothing is stored or uploaded; declining any permission still
+works"). The previous answer said "no health features are offered", which
+contradicted requesting those permissions.
+⚠️ Consequence to expect: Google now treats Scripta as a health app that reads
+cycle data, and `READ_MENSTRUATION` is the permission it scrutinises most — a
+follow-up request for justification or a demo video is likely.
+
+⚠️ **The release still cannot be confirmed**: the review step reports *"Devi
+completare la dichiarazione relativa all'integrità"* (link → `app-content/health`)
+even after the declaration was re-answered and saved. Meanwhile *Invia app per
+la revisione* stays disabled on the publishing overview. The two appear to wait
+on each other: Play wants the declaration **in effect**, and it only becomes
+effective once the pending changes are submitted. Nothing further can be done
+from the console — retry the release confirmation after Play has had a few
+hours to apply the saved declaration.
 
 **Still founder-only**: add the remaining tester emails (Google needs **12
 testers × 14 consecutive days** for a personal developer account), upload
