@@ -20,6 +20,7 @@ import '../../core/services/gender_service.dart';
 import '../../core/services/kindle_auto_sync.dart';
 import '../../generated/app_localizations.dart';
 import '../widget/widget_preview_screen.dart';
+import 'saved_highlights_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
@@ -133,6 +134,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           SliverList(
             delegate: SliverChildListDelegate([
+              // The reader's own saved highlights come first: this is content,
+              // not configuration, and it is the one row people come looking
+              // for. Private — see SavedHighlightsScreen.
+              _SettingsTile(
+                icon: Icons.bookmark_outline_rounded,
+                label: context.l10n.savedHighlightsTile,
+                subtitle: context.l10n.savedHighlightsSubtitle,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const SavedHighlightsScreen()),
+                ),
+              ),
               const _KindleTile(),
               _SettingsTile(
                 icon: Icons.upload_file_outlined,

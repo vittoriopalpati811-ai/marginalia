@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import '../models/highlight_native.dart';
@@ -52,44 +53,87 @@ class HighlightFavoriteNotifier extends Notifier<void> {
   @override
   void build() {}
 
-  Future<void> toggleFavorite(Id highlightId) async {
+  /// Flips the saved/bookmarked flag and returns the value that is ACTUALLY on
+  /// disk afterwards — or null if nothing could be written.
+  ///
+  /// It returns the persisted value rather than the intended one because this
+  /// button spent a release doing nothing: the write was wrapped in a bare
+  /// `catch (_) {}`, so whatever went wrong was thrown away and the icon simply
+  /// never changed. A storage error still must not crash the app, but it must
+  /// not be invisible either — the caller surfaces it, and the value handed
+  /// back is re-read from Isar so the UI can never claim a save that did not
+  /// happen.
+  Future<bool?> toggleFavorite(Id highlightId) async {
     final isar = ref.read(isarProvider);
-    // Guarded like grade(): a storage error must never crash the UI. The
-    // favorites stream stays consistent with whatever actually persisted.
     String? supabaseId;
-    bool? newValue;
+    bool? persisted;
     try {
-      await isar.writeTxn(() async {
-        final highlight = await isar.highlights.get(highlightId);
-        if (highlight == null) return;
+      // SYNC api inside the transaction, and saveLinks:FALSE — this is the
+      // whole bug. The async `put()` has no saveLinks flag, so it ALWAYS writes
+      // the object's links back, and saving a link opens its own transaction:
+      // "IsarError: Cannot perform this operation from within an active
+      // transaction. Isar does not support nesting transactions." The highlight
+      // detail screen loads `book` before showing the row, so by the time the
+      // reader tapped the bookmark the link was attached and every single
+      // toggle threw — silently, because the old code swallowed it. Nothing
+      // here touches links, so there is nothing to save.
+      isar.writeTxnSync(() {
+        final highlight = isar.highlights.getSync(highlightId);
+        if (highlight == null) {
+          debugPrint('[favorite] highlight $highlightId non trovato in Isar');
+          return;
+        }
         highlight.isFavorite = !highlight.isFavorite;
-        await isar.highlights.put(highlight);
-        // Capture what to mirror remotely once the local write succeeds.
+        isar.highlights.putSync(highlight, saveLinks: false);
         supabaseId = highlight.supabaseId;
-        newValue = highlight.isFavorite;
       });
-    } catch (_) {
-      // swallow — non-critical
+      // Read back OUTSIDE the transaction: this is the value the rest of the
+      // app will see, so it is the only one worth reporting.
+      persisted = (await isar.highlights.get(highlightId))?.isFavorite;
+      debugPrint('[favorite] $highlightId -> $persisted');
+    } catch (e, st) {
+      debugPrint('[favorite] scrittura fallita per $highlightId: $e\n$st');
+      return null;
     }
-    // Refresh the providers the UI watches so the bookmark/favourite state
-    // flips immediately (the web variant does the same). Without this the Isar
-    // row updates but the highlight-detail icon + favourites list show stale
-    // data — the "mark as favourite" button looked broken.
+    // Refresh the providers the UI watches so the bookmark/saved state flips
+    // immediately (the web variant does the same).
     ref.invalidate(highlightByIdProvider(highlightId));
     ref.invalidate(allHighlightsProvider);
-    // Best-effort remote sync so "save to favourites" actually persists for the
-    // user (and survives a reinstall). Never crash the UI if it fails offline.
+    ref.invalidate(favoriteHighlightsProvider);
+    // Best-effort remote mirror so "saved" survives a reinstall. Never crash
+    // the UI if it fails offline — the local row is the source of truth.
     final id = supabaseId;
-    final value = newValue;
+    final value = persisted;
     if (id != null && id.isNotEmpty && value != null) {
       try {
         await ref.read(supabaseServiceProvider).updateHighlightFavorite(id, value);
-      } catch (_) {
-        // swallow — non-critical, the local Isar write is the source of truth
+      } catch (e) {
+        debugPrint('[favorite] mirror remoto non riuscito: $e');
       }
     }
+    return persisted;
   }
 }
+
+/// The reader's saved highlights, newest first — the backing list of the
+/// private "Saved" screen. Scoped to [currentUserProvider] like every other
+/// library query, so one account never sees another's saves.
+final favoriteHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
+  (ref) async {
+    final isar = ref.watch(isarProvider);
+    final userId = ref.watch(currentUserProvider)?.id;
+    if (userId == null) return [];
+    final saved = await isar.highlights
+        .filter()
+        .userIdEqualTo(userId)
+        .isFavoriteEqualTo(true)
+        .findAll();
+    saved.sort((a, b) =>
+        (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
+    await Future.wait(saved.map((h) => h.book.load()));
+    return saved;
+  },
+);
 
 final highlightFavoriteNotifierProvider =
     NotifierProvider<HighlightFavoriteNotifier, void>(HighlightFavoriteNotifier.new);

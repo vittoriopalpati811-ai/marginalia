@@ -694,13 +694,21 @@ class _LibraryGreetings {
   /// "Pronto/Pronta a rileggere te stesso/te stessa"): women get the feminine
   /// form, men the masculine, and an unspecified/unknown gender a gender-neutral
   /// rewrite — so a reader is never addressed with the wrong grammatical gender.
-  static String forToday(String? userName, [String? gender]) {
+  /// [english] picks the English set. The greeting is the first line of the
+  /// app's main screen, and it was Italian-only — so every English reader was
+  /// welcomed in a language they had not chosen, on the one screen that opens
+  /// first. The two sets are separate lists rather than ARB entries because a
+  /// greeting is not a translation: the English lines are written to sound
+  /// like English, not to mirror the Italian word for word.
+  static String forToday(String? userName,
+      [String? gender, bool english = false]) {
     final name = userName?.trim() ?? '';
     final now = DateTime.now();
     // Day-of-year as a stable rotation index.
     final dayOfYear =
         now.difference(DateTime(now.year)).inDays; // 0-based, stable per day.
-    final phrase = _phrases[dayOfYear % _phrases.length];
+    final set = english ? _phrasesEn : _phrases;
+    final phrase = set[dayOfYear % set.length];
     final String plain;
     final String named;
     if (gender == 'female') {
@@ -757,6 +765,38 @@ class _LibraryGreetings {
     _Greeting('La tua biblioteca ti ha tenuto il posto.', 'La tua biblioteca ti ha tenuto il posto, {name}.'),
     _Greeting('Rieccoti dove le storie ti aspettano.', 'Rieccoti, {name}, dove le storie ti aspettano.'),
     _Greeting('Hai lasciato una frase a metà, ieri.', 'Avevi lasciato una frase a metà, {name}.'),
+  ];
+
+  /// The English set, same length so the day-of-year rotation lands on the
+  /// matching mood. English has no participles agreeing with the reader, so
+  /// none of these need the masculine/feminine variants the Italian ones carry.
+  static const List<_Greeting> _phrasesEn = [
+    _Greeting('So soon?', 'So soon, {name}?'),
+    _Greeting('Back already?', 'Back already, {name}?'),
+    _Greeting('Between the lines again?', 'Between the lines again, {name}?'),
+    _Greeting('Your pages were waiting for you.', 'Your pages were waiting for you, {name}.'),
+    _Greeting('Here again, between the lines?', 'Here again between the lines, {name}?'),
+    _Greeting('Picking up where you left off?', 'Picking up where you left off, {name}?'),
+    _Greeting('Anything to reread today?', 'Anything to reread today, {name}?'),
+    _Greeting('Your favorite passages, again.', 'Your favorite passages, {name}.'),
+    _Greeting('Shall we carry on where we were?', 'Shall we carry on where we were, {name}?'),
+    _Greeting('The words you underlined are still here.', ''),
+    _Greeting('Another wander through your notes?', 'Another wander through your notes, {name}?'),
+    _Greeting('We always come back to good books.', 'We always come back to good books, don’t we {name}?'),
+    _Greeting('The best lines waited for you.', 'The best lines waited for you, {name}.'),
+    _Greeting('Time to reread yourself?', 'Time to reread yourself, {name}?'),
+    _Greeting('Every return is a new reading.', 'Every return of yours is a new reading, {name}.'),
+    _Greeting('The margins remember you.', 'The margins remember you, {name}.'),
+    _Greeting('What did you underline last time?', 'What did you underline, {name}?'),
+    _Greeting('A thought before you set off again?', 'A thought before you set off, {name}?'),
+    _Greeting('Your reading couldn’t wait.', 'Your reading couldn’t wait, {name}.'),
+    _Greeting('Come back to the words you love.', 'The words you love are right here, {name}.'),
+    _Greeting('Among your pages again.', 'Among your pages again, {name}.'),
+    _Greeting('A few lines were looking for you.', 'A few lines were looking for you, {name}.'),
+    _Greeting('Start again from something you marked?', 'Start again from something you marked, {name}?'),
+    _Greeting('Your library kept your seat.', 'Your library kept your seat, {name}.'),
+    _Greeting('Here you are, where the stories wait.', 'Here you are, {name}, where the stories wait.'),
+    _Greeting('You left a sentence half-finished yesterday.', 'You’d left a sentence half-finished, {name}.'),
   ];
 }
 
@@ -818,7 +858,11 @@ class _EditorialHeader extends StatelessWidget {
     // cleanly with the reader's name. See [_LibraryGreetings] for the full
     // set and the templating rules (each phrase carries its own punctuation,
     // so we never glue "!," together).
-    final greeting = _LibraryGreetings.forToday(userName, gender);
+    final greeting = _LibraryGreetings.forToday(
+      userName,
+      gender,
+      Localizations.localeOf(context).languageCode == 'en',
+    );
 
     // Airbnb-clean header: small caption above + huge bold title below.
     // The greeting is the eyebrow ("Buongiorno, Vittorio"), the title is

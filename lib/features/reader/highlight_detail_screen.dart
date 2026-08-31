@@ -53,8 +53,12 @@ class HighlightDetailScreen extends ConsumerWidget {
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Bookmark
+                      // Bookmark = "save this highlight". The saved ones are
+                      // gathered in the private Saved screen (Settings).
                       IconButton(
+                        tooltip: h.isFavorite
+                            ? context.l10n.savedHighlightsRemoved
+                            : context.l10n.savedHighlightsTitle,
                         icon: Icon(
                           h.isFavorite
                               ? Icons.bookmark_rounded
@@ -64,9 +68,23 @@ class HighlightDetailScreen extends ConsumerWidget {
                               : ScriptaColors.inkFaint,
                           size: 22,
                         ),
-                        onPressed: () => ref
-                            .read(highlightFavoriteNotifierProvider.notifier)
-                            .toggleFavorite(highlightId),
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final l10n = context.l10n;
+                          final saved = await ref
+                              .read(highlightFavoriteNotifierProvider.notifier)
+                              .toggleFavorite(highlightId);
+                          // null = nothing was written. Say so instead of
+                          // leaving a button that looks broken.
+                          messenger.showSnackBar(SnackBar(
+                            content: Text(saved == null
+                                ? l10n.savedHighlightsError
+                                : saved
+                                    ? l10n.savedHighlightsTitle
+                                    : l10n.savedHighlightsRemoved),
+                            duration: const Duration(seconds: 2),
+                          ));
+                        },
                       ),
                       // (The dedicated Instagram-story icon was moved OUT of the
                       // app bar into a prominent green CTA in the body below.)

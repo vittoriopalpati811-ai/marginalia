@@ -54,23 +54,40 @@ class HighlightFavoriteNotifier extends Notifier<void> {
   @override
   void build() {}
 
-  Future<void> toggleFavorite(int highlightId) async {
+  /// Mirrors the native signature: returns the value that was actually stored,
+  /// or null when nothing could be written, so the caller can tell the reader
+  /// the truth instead of leaving a dead button.
+  Future<bool?> toggleFavorite(int highlightId) async {
     final service = ref.read(supabaseServiceProvider);
     final all = await ref.read(allHighlightsProvider.future);
     final highlight = all.where((h) => h.id == highlightId).firstOrNull;
-    if (highlight == null || highlight.supabaseId == null) return;
+    if (highlight == null || highlight.supabaseId == null) return null;
+    final next = !highlight.isFavorite;
     try {
-      await service.updateHighlightFavorite(
-        highlight.supabaseId!,
-        !highlight.isFavorite,
-      );
+      await service.updateHighlightFavorite(highlight.supabaseId!, next);
       ref.invalidate(allHighlightsProvider);
-    } catch (_) {}
+      ref.invalidate(favoriteHighlightsProvider);
+      return next;
+    } catch (_) {
+      return null;
+    }
   }
 }
 
 final highlightFavoriteNotifierProvider =
     NotifierProvider<HighlightFavoriteNotifier, void>(HighlightFavoriteNotifier.new);
+
+/// Web twin of the native provider — the reader's saved highlights, newest
+/// first. Keeps the conditional export surface identical (see CLAUDE.md §2).
+final favoriteHighlightsProvider = FutureProvider.autoDispose<List<Highlight>>(
+  (ref) async {
+    final all = await ref.watch(allHighlightsProvider.future);
+    final saved = all.where((h) => h.isFavorite).toList()
+      ..sort((a, b) =>
+          (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
+    return saved;
+  },
+);
 
 // ─── Shared conversion helpers (used by books_provider_web too) ──────────────
 
