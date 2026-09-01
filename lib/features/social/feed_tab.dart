@@ -93,8 +93,15 @@ class FeedTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final svc = ref.watch(supabaseServiceProvider);
-    if (!svc.isAuthenticated) return const _NotLoggedIn();
+    // Watch the AUTH STATE, not the service. `supabaseServiceProvider` is a
+    // plain Provider whose value never changes, so watching it and then reading
+    // the live `svc.isAuthenticated` getter gives Riverpod nothing to rebuild
+    // on: this screen froze on whatever it rendered first. Signing in with
+    // Apple worked (Supabase returned a session) and the screen still showed
+    // "Sign in to view profile" — the Guideline 2.1(a) symptom App Review would
+    // have hit again. isAuthenticatedProvider derives from the onAuthStateChange
+    // stream, so it actually fires.
+    if (!ref.watch(isAuthenticatedProvider)) return const _NotLoggedIn();
 
     final postsAsync    = ref.watch(postsProvider);
     final followingAsync = ref.watch(followingProfilesProvider);

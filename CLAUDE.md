@@ -450,6 +450,33 @@ Apple rejected it a second time, and this one is a **real bug**:
   the bundle id, so Supabase rejects it otherwise). Then a fresh build and a
   resubmission.
 
+### The screen that never noticed you signed in (2026-09-01)
+After the native Apple fix landed, sign-in **worked** and the app still said
+*"Sign in to view profile"*. The Supabase auth logs settled it in one query —
+`POST /token grant_type=id_token → 200` twice, with `Login provider=apple` — so
+the session existed and the UI simply never heard about it.
+- **The bug**, in `my_profile_screen.dart` and `social/feed_tab.dart`:
+  ```dart
+  final svc = ref.watch(supabaseServiceProvider);   // value NEVER changes
+  if (!svc.isAuthenticated) return const _NotLoggedIn();  // live getter
+  ```
+  `supabaseServiceProvider` is a plain `Provider`, so Riverpod has nothing to
+  rebuild on; `isAuthenticated` is read once, at first build, and the screen
+  freezes in that state for good. Watching a provider and then reading mutable
+  state *through* it is the trap — the watch looks reactive and is not.
+- **Fix**: `ref.watch(isAuthenticatedProvider)`, which derives from
+  `currentUserProvider` → `authStateProvider` (a `StreamProvider` over
+  `onAuthStateChange`). `social_screen.dart` and `settings_screen.dart` already
+  did it this way; those two screens were the outliers.
+- Why it hid for so long: the email path drives navigation itself
+  (`_continueAfterSignIn` → `_goTo`), and the old OAuth path returned through a
+  deep link that rebuilt the route stack. The native Apple sheet returns without
+  either, so it was the first flow to expose it — and it would have looked to
+  App Review exactly like the previous rejection.
+- **Debugging move worth repeating**: `query_logs` on `auth_logs` via the
+  Supabase MCP answers "did the sign-in actually succeed?" in seconds, and it
+  splits an auth problem from a UI problem before you touch any code.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT
