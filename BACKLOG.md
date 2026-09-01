@@ -19,6 +19,28 @@
 
 ---
 
+## ⏳ Da fare DOPO l'approvazione App Store (non prima)
+
+### ITMS-90068 — alzare MinimumOSVersion da 13.0 a 15.0
+Apple manda l'avviso `ITMS-90068: MinimumOSVersion too low` a **ogni** upload:
+la consegna riesce comunque, ma **da primavera 2027** un binario con
+MinimumOSVersion < 15.0 non sarà più accettato.
+
+- Dove: `.github/workflows/ios-testflight.yml` righe **174-175** — il progetto
+  iOS è rigenerato a ogni build con `flutter create`, quindi il target vive lì,
+  non in un file committato. Servono due sostituzioni: `platform :ios, '13.0'`
+  → `'15.0'` nel Podfile e `IPHONEOS_DEPLOYMENT_TARGET = 13.0;` → `15.0;` nel
+  pbxproj (la regex sorgente `1[12]\.0` va allargata a `1[1-4]\.0`).
+  L'estensione widget è già a 17.0 (`ios/scripts/add_widgets_extension.rb`).
+- **NON farlo mentre una versione è in verifica**: cambia il binario, quindi
+  richiede una build nuova, il ri-aggancio alla versione e la ripartenza della
+  review. Le note per Apple dichiarano "iPhone, iOS 13.0+" e devono restare
+  coerenti con la build inviata.
+- Da rifare quando si tocca: aggiornare la stringa "iOS 13.0+" nelle Note delle
+  Informazioni per la revisione.
+
+---
+
 ## ✅ Sprint 1 — Foundation (COMPLETATO sessione 1)
 
 > Tutto il codice sotto è stato scritto in blind compile il 2026-05-10.
