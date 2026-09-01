@@ -92,6 +92,15 @@ dependencies:
   phosphor_flutter: ^2.1.0
   sentry: ^8.14.2
 
+  # NATIVE Sign in with Apple. Apple's *web* sign-in page renders BLANK
+  # inside the in-app Safari sheet that signInWithOAuth opens — that is the
+  # bug App Review hit (Guideline 2.1(a), 2026-09-01, screenshot attached to
+  # the submission). On iOS the only supported path is the system sheet from
+  # ASAuthorizationAppleIDProvider, which this package wraps; the resulting
+  # identity token goes to Supabase via signInWithIdToken. Web and Android
+  # keep the OAuth redirect (see supabase_service.signInWithApple).
+  sign_in_with_apple: ^7.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

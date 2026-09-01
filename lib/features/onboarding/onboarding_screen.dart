@@ -16,6 +16,7 @@ import '../../core/providers/onboarding_provider.dart';
 import '../../core/providers/health_provider.dart';
 import '../../core/providers/calendar_provider.dart';
 import '../../core/services/event_approach_service.dart';
+import '../../core/services/supabase_service.dart' show AppleSignInCancelled;
 import '../../core/services/gender_service.dart';
 import '../../core/services/locale_service.dart';
 import '../../core/services/onboarding_service.dart';
@@ -1089,6 +1090,9 @@ class _AuthStepState extends ConsumerState<_AuthStep> {
     });
     try {
       await op();
+    } on AppleSignInCancelled {
+      // Dismissing the native Apple sheet is a choice, not an error: say
+      // nothing and leave the step untouched.
     } catch (e) {
       if (!mounted) return;
       // Specific case: provider not enabled in Supabase dashboard.

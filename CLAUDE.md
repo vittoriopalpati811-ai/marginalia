@@ -412,6 +412,44 @@ fix, because it will come back on every new app:
   before/after) — under the 10 MB `file_upload` cap, so one call does it.
   Every screen stays legible at that size; don't re-encode smaller.
 
+### App Store — REJECTED AGAIN 2.1(a): Sign in with Apple was broken (2026-09-01)
+The information rejection was answered and the app went back in; hours later
+Apple rejected it a second time, and this one is a **real bug**:
+*"the app content failed to load while we tried to Sign in with Apple"*
+(reviewed on iPad Air 11-inch M4 and iPhone 17 Pro Max, iOS 26.6.1).
+- **Read Apple's attachment before theorising.** The rejected item carries a
+  `Screenshot-…png` with a *Scarica* button, and it settled the question in one
+  look: an in-app Safari sheet titled **appleid.apple.com, completely blank**.
+  (The download button builds a blob; you can capture it with a hooked
+  `URL.createObjectURL` and render it in-page instead of writing it to disk.)
+- **Root cause**: `signInWithApple()` called `signInWithOAuth(OAuthProvider.apple)`,
+  which opens Apple's **web** sign-in page in the in-app browser. That page does
+  not render there. It has nothing to do with the client secret (checked: valid
+  to 2026-12-08), the Service ID (checked: `/auth/authorize` returns a working
+  page for `io.marginalia.web`), or the redirect allow-list (checked: GoTrue
+  302s for `io.supabase.flutter://login-callback/`).
+- **Why it could never have worked**: App ID `io.marginalia.app` had
+  **`APPLE_ID_AUTH` unchecked** — Sign In with Apple was not enabled on the app
+  at all, so the native sheet was impossible and the web page was the only path.
+- **The fix, three parts that must all line up**:
+  1. `sign_in_with_apple` + `signInWithIdToken` on iOS
+     (`supabase_service._signInWithAppleNative`). Web and Android keep the OAuth
+     redirect — a real browser renders Apple's page fine. Nonce discipline: Apple
+     gets the **SHA-256**, Supabase gets the **raw** value.
+  2. `com.apple.developer.applesignin` in `ios/Runner/Runner.entitlements`.
+  3. Sign In with Apple enabled on App ID `io.marginalia.app`, **grouped under
+     the primary `io.marginalia.signin`** — the same group the web Service ID
+     uses, so one person gets the SAME Apple user id whichever way they sign in.
+     Saving this invalidates provisioning profiles; CI regenerates them because
+     every run calls `app-store-connect fetch-signing-files … --create`.
+- Cancelling the native sheet throws `AppleSignInCancelled`, which both sign-in
+  screens swallow: backing out of a system sheet is a decision, not an error.
+- ⏳ **Still required, founder-only login**: in Supabase → Authentication →
+  Providers → Apple, add the **bundle id `io.marginalia.app`** to the client ids
+  (the Service ID alone is not enough — a native identity token's audience is
+  the bundle id, so Supabase rejects it otherwise). Then a fresh build and a
+  resubmission.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT

@@ -11,6 +11,18 @@
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<!--
+	  Sign in with Apple. REQUIRED for the native ASAuthorizationAppleIDProvider
+	  sheet: without this entitlement the sheet never appears and the only way in
+	  is Apple's web page, which renders blank inside the in-app browser (the
+	  Guideline 2.1(a) rejection of 2026-09-01). The matching capability is
+	  enabled on App ID io.marginalia.app, grouped under the primary
+	  io.marginalia.signin so the Apple user id matches the web Service ID.
+	-->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
 	<key>com.apple.developer.healthkit.access</key>

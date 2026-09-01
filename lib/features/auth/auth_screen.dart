@@ -15,6 +15,7 @@ import '../../core/branding/scripta_mark.dart';
 import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/supabase_service.dart' show AppleSignInCancelled;
 import '../../core/l10n/l10n_extension.dart';
 import '../onboarding/shared/social_auth_buttons.dart';
 
@@ -99,6 +100,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       } else {
         await service.signInWithGoogle();
       }
+    } on AppleSignInCancelled {
+      // Backing out of the native Apple sheet is a decision, not a failure —
+      // leave the screen exactly as it was.
+      _socialFlowInFlight = false;
     } on AuthException catch (e) {
       _socialFlowInFlight = false;
       if (mounted) setState(() => _error = _mapError(e.message));

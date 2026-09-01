@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:http/http.dart' as http;
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/book.dart';
 import '../models/highlight.dart';
@@ -13,6 +15,15 @@ import '../models/highlight.dart';
 /// (the moderate-image edge function flagged it as NSFW / gore / violent).
 class ImageModerationException implements Exception {
   const ImageModerationException();
+}
+
+/// Thrown when the reader dismisses the native Sign in with Apple sheet.
+///
+/// Backing out of a system sheet is not a failure, and the sign-in screens key
+/// off this type to stay silent instead of accusing someone of an error they
+/// did not make.
+class AppleSignInCancelled implements Exception {
+  const AppleSignInCancelled();
 }
 
 // Thin wrapper around Supabase client. Encapsulates table names and RLS
@@ -83,8 +94,23 @@ class SupabaseService {
   // ios/Runner/Info.plist (CFBundleURLSchemes). The web build uses the
   // current origin as the redirect.
 
-  /// Initiates Sign in with Apple. Returns true if the redirect started.
+  /// Signs the reader in with Apple.
+  ///
+  /// On iOS this uses the NATIVE sheet and returns only once a Supabase session
+  /// exists. Everywhere else it starts the OAuth redirect and returns as soon as
+  /// the browser opens — the session then lands through the deep link and the
+  /// auth-state listeners pick it up.
   Future<bool> signInWithApple() {
+    // iOS gets the system sheet, and it is not a preference. Apple's *web*
+    // sign-in page renders BLANK inside the in-app Safari sheet that
+    // signInWithOAuth opens: App Review hit exactly that and rejected the app
+    // under Guideline 2.1(a) on 2026-09-01, with a screenshot of an empty
+    // appleid.apple.com. The web flow is fine in a real browser, which is why
+    // the redirect below stays for web (and for Android, where there is no
+    // native Apple sheet at all).
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      return _signInWithAppleNative();
+    }
     return _client.auth.signInWithOAuth(
       OAuthProvider.apple,
       // On web, return to the same page (Supabase parses the hash). On native,
@@ -93,6 +119,55 @@ class SupabaseService {
       // completes without the user re-opening the app manually.
       redirectTo: kIsWeb ? null : 'io.supabase.flutter://login-callback/',
     );
+  }
+
+  /// The native iOS path: ASAuthorizationAppleIDProvider's sheet, then the
+  /// identity token straight to Supabase.
+  ///
+  /// Requires all three of these to line up, or it fails at a different step:
+  ///   * the `com.apple.developer.applesignin` entitlement (ios/Runner),
+  ///   * Sign In with Apple on App ID io.marginalia.app, grouped under the
+  ///     primary io.marginalia.signin so the Apple user id is the SAME one the
+  ///     web Service ID (io.marginalia.web) already issues,
+  ///   * the bundle id io.marginalia.app listed among the Apple provider's
+  ///     client ids in Supabase — the identity token's audience is the bundle
+  ///     id, not the Service ID, so without it Supabase rejects the token.
+  Future<bool> _signInWithAppleNative() async {
+    // Apple only ever sees the SHA-256 of the nonce, while Supabase compares
+    // the RAW value against the hash inside the token. Sending the same string
+    // to both is the classic way to earn a "nonce mismatch".
+    final rawNonce = _client.auth.generateRawNonce();
+    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: const [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        throw const AppleSignInCancelled();
+      }
+      rethrow;
+    }
+
+    final idToken = credential.identityToken;
+    if (idToken == null) {
+      // Nothing to send Supabase — surface it rather than returning a
+      // cheerful `true` that leaves the caller waiting for a session.
+      throw const AuthException('Apple returned no identity token.');
+    }
+
+    await _client.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
+    );
+    return true;
   }
 
   /// Initiates Sign in with Google.
