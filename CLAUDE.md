@@ -524,6 +524,25 @@ of `username` use `?? ''`), the profile simply had no handle, for good.
   updates: only DELETING the app shows onboarding again. Any "onboarding is
   being skipped" report is that file first, a code path second.
 
+### RESUBMITTED 2026-09-02 with build 1.1.0 (1788297918)
+Second resubmission, this time carrying real code fixes rather than answers.
+`In attesa di verifica`. What went in, and the order that worked:
+1. Version page → hover the build row → red minus (the ref-based click only
+   reveals it; click the coordinates) → *Aggiungi build* → pick the build →
+   **OK**. Verify the radio is actually selected before OK: the first click
+   missed and nothing was chosen, which is how the July build nearly shipped.
+2. Rewrote the Notes so they stay TRUE against the new binary — the old text
+   claimed the recording's build was identical to the submitted one, which the
+   new build made false. It now says the recording predates the fixes.
+3. Replied on the thread naming the exact cause (Apple's web page inside the
+   in-app browser), the two defects that fix uncovered, and the two things that
+   could otherwise mislead (the recording's age, the empty-library-by-design).
+4. Version page → **Aggiorna la verifica** → the item flips to *Pronto per la
+   verifica* → submission page → **Invia di nuovo al team di verifica**.
+- Swapping the build moves the version from *Respinta* to *In preparazione per
+  l'invio* on save; the Resolution Center reply link survives that, so reply
+  BEFORE resubmitting or you lose the chance until Apple writes again.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT
