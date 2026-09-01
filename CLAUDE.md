@@ -349,6 +349,49 @@ one carrying the bookmark fix, the Saved screen and the English greetings.
 - CI is healthy again — runs #140–#143 all green, so the Apple
   license-agreement block from 2026-07-11 is gone.
 
+### App Store — REJECTED 2.1, answered and RESUBMITTED 2026-09-01
+Apple rejected the first submission the same night: **Guideline 2.1 –
+Information Needed – New App Submission** (item state `2.1.0 Performance: App
+Completeness`). **No bug was found** — it is the boilerplate Apple now sends to
+new apps, and it asks for seven things in the App Review reply. Anatomy of the
+fix, because it will come back on every new app:
+- The rejection reads as scary ("La tua versione dell'app è stata respinta e
+  nessun altro elemento inviato può essere accettato") but nothing about the
+  binary is wrong. Read the message body, not the banner.
+- The seven items are: (1) a screen recording **made on a physical device**,
+  (2) devices + OS the app was tested on, (3) what the app does and for whom,
+  (4) setup instructions + credentials, (5) external services, (6) regional
+  differences, (7) regulated industry / third-party material.
+- Item 2 does not have to be guessed: **TestFlight → Tester** lists every
+  tester's real device and OS. Ours: Vittorio *iPhone 16 Pro Max / iOS 27.0* and
+  Sara *iPhone 17 / iOS 26.6*, 727 sessions, 0 crashes — a much better answer
+  than a claim.
+- Item 4 was the weak spot of the first submission: highlights live in local
+  Isar, so a reviewer who signs in on a clean device sees an **empty library**.
+  The answer was already in the app and nobody had told them about it —
+  `LibraryScreen._loadDemoData()` behind the empty-state button **"Try with
+  demo data"** imports the bundled `assets/demo/My Clippings.txt` (≈1,000
+  highlights / 40 books) with one tap, and "Restore from cloud" pulls the
+  account's own rows back (the demo account has 43 books / 905 highlights
+  server-side). Say this first, before the file-import path.
+- The whole answer now lives in **App Review Information → Note** (hard limit
+  **4000 characters** — the field shows the remaining count) and was posted as a
+  reply on the review-submission page.
+- Verified before resubmitting rather than asserted: the demo account really
+  signs in (`/auth/v1/token?grant_type=password` → 200), and
+  `get-scripta.app`, `/delete-account/`, `/privacy/`, `/terms/` all return 200.
+- Resubmission is **three** clicks, not one: on the review-submission page
+  *Invia di nuovo al team di verifica* stays **disabled** until the version item
+  is refreshed. Go to the version page → **Aggiorna la verifica** → a dialog
+  offers the newer build ("Build più recente disponibile"; ours was
+  1788207772 = commit `1e98463`, docs-only on top of `f91228d`, so the app code
+  is identical) → *Invia* → the item flips to *Pronto per la verifica* → only
+  now the resubmit button on the submission page lights up.
+- ⏳ STILL OWED TO APPLE: the screen recording. It has to be captured on a real
+  iPhone, so the founder records it; the reply says it follows on the thread.
+  Compress it and attach it to the same thread (the 10 MB upload cap is beaten
+  with the chunked `DataTransfer` reassembly documented for Play).
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT
