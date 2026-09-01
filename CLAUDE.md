@@ -477,6 +477,28 @@ the session existed and the UI simply never heard about it.
   Supabase MCP answers "did the sign-in actually succeed?" in seconds, and it
   splits an auth problem from a UI problem before you touch any code.
 
+### "GoError: There is nothing to pop" after Sign in with Apple (2026-09-01)
+The very next build crashed on device the moment Apple sign-in succeeded, with
+the full-screen *"Non siamo riusciti ad aprire l'app"*. The stack named the
+culprit exactly: `_AuthScreenState.initState.<anonymous closure>` →
+`GoRouterHelper.pop`.
+- `AuthScreen`'s auth-state listener called a bare `context.pop()`. Almost every
+  route into `/auth` is a `push` (poppable), but **`settings_screen.dart` uses
+  `context.go('/auth')` after deleting an account**, and `go()` REPLACES the
+  stack — nothing underneath, so go_router throws.
+- Thrown inside a stream listener it is an **uncaught async error**, and
+  `main.dart`'s `runZonedGuarded` handler swaps the entire app for
+  `BootstrapErrorApp`. That screen says "durante l'avvio", but the handler is
+  global: it fires for any uncaught async error at any time. Don't read the copy
+  as proof the crash happened at startup.
+- Fixed with `_leaveAuthScreen()`: `context.canPop() ? pop() : go('/')`, used by
+  both the social listener and the email path. `book_detail_screen`,
+  `chat_screen` and `messages_screen` already guarded their pops — auth_screen
+  was the outlier.
+- Why the native Apple sheet exposed it and the old flow did not: the web OAuth
+  return came through a deep link that rebuilt the route stack, so there was
+  always something to pop. The native sheet returns in-process.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT

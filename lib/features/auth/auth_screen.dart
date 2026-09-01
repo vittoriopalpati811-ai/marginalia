@@ -54,16 +54,37 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     super.initState();
     _tab = TabController(length: 2, vsync: this);
     _tab.addListener(() => setState(() => _error = null));
-    // Social OAuth returns via deep link: when the session lands, leave the
-    // auth screen exactly like the email path does (context.pop on success).
+    // Social sign-in finishes asynchronously: when the session lands, leave the
+    // auth screen exactly like the email path does.
     _authSub =
         Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (!mounted) return;
       if (data.event == AuthChangeEvent.signedIn && _socialFlowInFlight) {
         _socialFlowInFlight = false;
-        context.pop();
+        _leaveAuthScreen();
       }
     });
+  }
+
+  /// Leaves this screen after a successful sign-in.
+  ///
+  /// A bare `context.pop()` is not safe here. Settings sends the reader to
+  /// `/auth` with `go()` after an account deletion, and `go()` REPLACES the
+  /// stack — so nothing sits underneath and go_router throws
+  /// "GoError: There is nothing to pop". Thrown from the auth-state listener it
+  /// is an uncaught async error, which the bootstrap gate catches and turns
+  /// into the full-screen "Non siamo riusciti ad aprire l'app" — a real device
+  /// hit exactly that on 2026-09-01, right after Sign in with Apple succeeded.
+  /// The native Apple sheet is what exposed it: the old web flow came back
+  /// through a deep link that rebuilt the stack, so there was always something
+  /// to pop.
+  void _leaveAuthScreen() {
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
   }
 
   @override
@@ -159,7 +180,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           return;
         }
       }
-      if (mounted) context.pop();
+      _leaveAuthScreen();
     } on AuthException catch (e) {
       setState(() => _error = _mapError(e.message));
     } catch (e) {
