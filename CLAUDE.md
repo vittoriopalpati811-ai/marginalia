@@ -387,10 +387,30 @@ fix, because it will come back on every new app:
   1788207772 = commit `1e98463`, docs-only on top of `f91228d`, so the app code
   is identical) → *Invia* → the item flips to *Pronto per la verifica* → only
   now the resubmit button on the submission page lights up.
-- ⏳ STILL OWED TO APPLE: the screen recording. It has to be captured on a real
-  iPhone, so the founder records it; the reply says it follows on the thread.
-  Compress it and attach it to the same thread (the 10 MB upload cap is beaten
-  with the chunked `DataTransfer` reassembly documented for Play).
+- **The screen recording is delivered** (2026-09-01, founder-shot on his
+  iPhone 16 Pro Max / iOS 27.0, 4 min 55 s). It covers launch, sign-up with
+  email confirmation, the whole onboarding *including the HealthKit and
+  Calendar system prompts*, "Try with demo data" (the toast reads "896
+  highlights from 40 books"), library, daily highlight, creating a Jam and
+  sharing a highlight, posting, **Report post** and **Block user**, the private
+  Saved list, and Settings down to the Delete Account confirmation. The only
+  thing it does not show is the final *Delete permanently* tap, so the notes say
+  "through to the Delete Account confirmation" and claim nothing more.
+- **Where it went, and why not the thread**: once the item is *In attesa di
+  verifica* the **"Rispondi al team di verifica delle app" link disappears** —
+  you cannot message Apple again until they message you. What *is* still
+  editable is the version page ("Puoi modificare alcune informazioni mentre la
+  tua versione è in attesa di verifica"), so the video went into **App Review
+  Information → Allegato**, replacing `My Clippings.zip` (one file only; hover
+  the row → `button[aria-label="Elimina"]`, then the input
+  `#appStoreReviewAttachments_undefined` accepts the file directly — no
+  `accept` filter, so .mp4 is fine). Item 1 and item 4 of the notes were
+  rewritten to point at the attachment and to stop referencing the zip.
+- **No chunking was needed**: the founder sent it through WhatsApp, which had
+  already crushed it to 384x848 / 60 fps / 31 MB. `ffmpeg -vf fps=30 -crf 25`
+  brings it to **5.5 MB with no visible loss** (verified by diffing a frame
+  before/after) — under the 10 MB `file_upload` cap, so one call does it.
+  Every screen stays legible at that size; don't re-encode smaller.
 
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
