@@ -16,6 +16,8 @@ import '../../core/motion/airbnb_motion.dart';
 import '../../core/theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/supabase_service.dart' show AppleSignInCancelled;
+import '../../core/providers/onboarding_provider.dart';
+import '../../core/services/onboarding_service.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../onboarding/shared/social_auth_buttons.dart';
 
@@ -61,9 +63,45 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       if (!mounted) return;
       if (data.event == AuthChangeEvent.signedIn && _socialFlowInFlight) {
         _socialFlowInFlight = false;
-        _leaveAuthScreen();
+        unawaited(_finishSignIn());
       }
     });
+  }
+
+  /// Decides where the reader goes once a session exists.
+  ///
+  /// This screen only exists AFTER onboarding was completed on this device, so
+  /// nothing here would ever ask a brand-new account for a username — and a
+  /// social sign-in does not just sign people in, it CREATES the account. Both
+  /// Apple accounts made on 2026-09-01 ended up with `username = null` for
+  /// exactly that reason. So: no username means this is really a sign-UP, and
+  /// the reader is sent through onboarding instead of being dropped into the
+  /// app with a half-made profile. A username means it was a plain login and we
+  /// simply leave.
+  Future<void> _finishSignIn() async {
+    if (!mounted) return;
+    String username = '';
+    try {
+      final profile = await ref.read(supabaseServiceProvider).fetchProfile();
+      username = (profile?['username'] as String?)?.trim() ?? '';
+    } catch (_) {
+      // Never trap someone in onboarding because the profile fetch hiccuped:
+      // on any doubt, treat it as a normal login.
+      if (mounted) _leaveAuthScreen();
+      return;
+    }
+    if (!mounted) return;
+    if (username.isNotEmpty) {
+      _leaveAuthScreen();
+      return;
+    }
+    // Clear BOTH the in-memory flag and the marker file: the flag swaps the app
+    // to OnboardingScreen right now, and the file keeps it that way if the app
+    // is killed before the profile is finished. No pop here — the route this
+    // screen lives on disappears along with the router.
+    await OnboardingService.resetComplete();
+    if (!mounted) return;
+    ref.read(onboardingCompleteProvider.notifier).state = false;
   }
 
   /// Leaves this screen after a successful sign-in.
@@ -180,7 +218,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           return;
         }
       }
-      _leaveAuthScreen();
+      await _finishSignIn();
     } on AuthException catch (e) {
       setState(() => _error = _mapError(e.message));
     } catch (e) {

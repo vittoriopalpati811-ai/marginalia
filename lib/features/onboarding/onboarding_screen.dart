@@ -132,6 +132,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (_step > 1) return;
       _continueAfterSignIn();
     });
+
+    // Runs after the first frame so _goTo has a PageController to drive.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _skipAuthIfAlreadySignedIn());
+  }
+
+  /// Advances past Welcome/Auth when a session ALREADY exists.
+  ///
+  /// AuthScreen sends a reader whose profile has no username back through
+  /// onboarding, and no `signedIn` event ever fires for someone who is signed
+  /// in already — without this they would sit on Welcome being asked to sign in
+  /// again. Waits for the language choice, because until then the PageView is
+  /// not mounted and _goTo would have no controller to move.
+  /// [_continueAfterSignIn] is latched, so calling this twice is harmless.
+  void _skipAuthIfAlreadySignedIn() {
+    if (!mounted || !_languageChosen) return;
+    if (Supabase.instance.client.auth.currentSession == null) return;
+    _continueAfterSignIn();
   }
 
   /// Advances the onboarding once a session exists, regardless of HOW the user
@@ -197,6 +215,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (mounted) {
       ref.read(localeProvider.notifier).state = locale;
       setState(() => _languageChosen = true);
+      // The PageView exists only now, so this is the earliest moment an
+      // already-signed-in reader can be moved off the Welcome step.
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _skipAuthIfAlreadySignedIn());
     }
   }
 

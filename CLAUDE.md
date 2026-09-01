@@ -499,6 +499,31 @@ culprit exactly: `_AuthScreenState.initState.<anonymous closure>` →
   return came through a deep link that rebuilt the route stack, so there was
   always something to pop. The native sheet returns in-process.
 
+### Signing UP from the in-app auth screen left the account with no username
+`AuthScreen` only exists AFTER onboarding was completed on this device, so
+nothing on it ever asked for a username — and a social sign-in does not merely
+sign you in, it **creates** the account. Both Apple accounts made on 2026-09-01
+ended up with `username = null` because of that. Nothing crashed (all 14 reads
+of `username` use `?? ''`), the profile simply had no handle, for good.
+- Fix: `AuthScreen._finishSignIn()` reads the profile once a session exists. A
+  username means it was a login → leave the screen. **No** username means it was
+  really a sign-up → clear `OnboardingService` + `onboardingCompleteProvider`,
+  which swaps the whole app to `OnboardingScreen` (see `app.dart`'s
+  `if (!onboardingComplete)`). Do NOT pop on that path: the route this screen
+  lives on disappears with the router.
+- `OnboardingScreen` had to learn to handle an EXISTING session:
+  `_skipAuthIfAlreadySignedIn()` runs post-frame and after the language choice
+  (until then the PageView is not mounted and `_goTo` has no controller). No
+  `signedIn` event fires for someone already signed in, so without it they sat
+  on Welcome being asked to sign in again.
+- Not review-blocking, and the demo account is unaffected — `review@get-scripta.app`
+  has `username = scriptademo`, so a reviewer goes straight to Complete and no
+  shared state is touched.
+- **The onboarding flag is a device file**, `.onboarding_complete` in the app's
+  Documents dir (`onboarding_service_native.dart`). It survives TestFlight
+  updates: only DELETING the app shows onboarding again. Any "onboarding is
+  being skipped" report is that file first, a code path second.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT
