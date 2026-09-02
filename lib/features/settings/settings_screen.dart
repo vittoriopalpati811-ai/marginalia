@@ -482,11 +482,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               body: ctx.l10n.settingsDataHighlightsBody,
             ),
             _DataRow(
-              icon: Icons.favorite_border,
-              title: ctx.l10n.settingsDataHealthTitle,
-              body: ctx.l10n.settingsDataHealthBody,
-            ),
-            _DataRow(
               icon: Icons.location_on_outlined,
               title: ctx.l10n.settingsDataWeatherTitle,
               body: ctx.l10n.settingsDataWeatherBody,

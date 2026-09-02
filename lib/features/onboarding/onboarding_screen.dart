@@ -13,7 +13,6 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/providers/onboarding_provider.dart';
-import '../../core/providers/health_provider.dart';
 import '../../core/providers/calendar_provider.dart';
 import '../../core/services/event_approach_service.dart';
 import '../../core/services/supabase_service.dart' show AppleSignInCancelled;
@@ -251,13 +250,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _next() => _goTo(_step + 1);
 
-  // Triggers the iOS Health + Calendar permission prompts from the permissions
-  // onboarding step, so the system sheets appear WITH context (the step explains
-  // why) instead of silently on first library load.
+  // Triggers the iOS Calendar permission prompt from the permissions onboarding
+  // step, so the system sheet appears WITH context (the step explains why)
+  // instead of silently on first library load. HealthKit used to be requested
+  // here too; it was removed on 2026-09-02 after the Guideline 2.5.1 rejection.
   Future<void> _requestContextPermissions() async {
-    try {
-      await requestHealthPermissions();
-    } catch (_) {/* non-fatal */}
     try {
       // Reading the provider runs CalendarService.fetchTodayEvents(), which
       // triggers the EventKit permission prompt.
@@ -2113,8 +2110,8 @@ class _PermissionsStep extends StatelessWidget {
         ? 'Una frase cucita\nsul tuo momento'
         : 'A highlight tuned\nto your moment';
     final body = isIt
-        ? 'Col tuo permesso, Scripta usa i passi di oggi (Salute) e gli impegni in calendario per scegliere la citazione giusta per l’ora, il meteo e il ritmo della tua giornata.'
-        : 'With your permission, Scripta uses today’s steps (Health) and your calendar to pick the right quote for the time, weather and rhythm of your day.';
+        ? 'Col tuo permesso, Scripta legge gli impegni di oggi in calendario per scegliere la citazione giusta per l’ora, il meteo e il ritmo della tua giornata.'
+        : 'With your permission, Scripta reads today’s calendar events to pick the right quote for the time, weather and rhythm of your day.';
     final note = isIt
         ? 'Tutto resta sul tuo iPhone. Niente viene caricato.'
         : 'Everything stays on your iPhone. Nothing is uploaded.';

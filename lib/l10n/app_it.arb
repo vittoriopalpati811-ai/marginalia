@@ -1,354 +1,287 @@
 ﻿{
   "@@locale": "it",
-
   "appTitle": "Scripta",
-  "@appTitle": { "description": "App name" },
-
+  "@appTitle": {
+    "description": "App name"
+  },
   "cancel": "Annulla",
   "@cancel": {},
-
   "save": "Salva",
   "@save": {},
-
   "delete": "Elimina",
   "@delete": {},
-
   "confirm": "Conferma",
   "@confirm": {},
-
   "close": "Chiudi",
   "@close": {},
-
   "retry": "Riprova",
   "@retry": {},
-
   "loading": "Caricamento…",
   "@loading": {},
-
   "errorPrefix": "Errore: {message}",
   "@errorPrefix": {
-    "placeholders": { "message": { "type": "String" } }
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
   },
-
   "timeNow": "adesso",
   "@timeNow": {},
-
   "timeMinutesAgo": "{count}m fa",
   "@timeMinutesAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "timeHoursAgo": "{count}h fa",
   "@timeHoursAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "timeDaysAgo": "{count}g fa",
   "@timeDaysAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "timeWeeksAgo": "{count}sett fa",
   "@timeWeeksAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "libraryTitle": "La tua libreria",
   "@libraryTitle": {},
-
   "libraryBooks": "Libri",
   "@libraryBooks": {},
-
   "libraryHighlights": "Highlight",
   "@libraryHighlights": {},
-
   "librarySearchHint": "Cerca nei tuoi highlight…",
   "@librarySearchHint": {},
-
   "libraryNoBooks": "Nessun libro ancora",
   "@libraryNoBooks": {},
-
   "libraryNoBooksBody": "Importa il file My Clippings.txt\ndal tuo Kindle per cominciare.",
   "@libraryNoBooksBody": {},
-
   "libraryNoFavorites": "Nessun preferito ancora",
   "@libraryNoFavorites": {},
-
   "libraryNoFavoritesBody": "Aggiungi un segnalibro a qualche highlight per vederlo qui.",
   "@libraryNoFavoritesBody": {},
-
   "libraryImportKindle": "Importa da Kindle",
   "@libraryImportKindle": {},
-
   "libraryImportClippings": "Importa Clippings",
   "@libraryImportClippings": {},
-
   "libraryTryDemo": "Prova con dati demo",
   "@libraryTryDemo": {},
-
   "libraryHighlightCount": "{count, plural, =0{nessun highlight} =1{1 highlight} other{{count} highlight}}",
   "@libraryHighlightCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "libraryBookCount": "{count, plural, =0{nessun libro} =1{1 libro} other{{count} libri}}",
   "@libraryBookCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "searchTitle": "Persone",
   "@searchTitle": {},
-
   "searchSubtitle": "lettori · autori",
   "@searchSubtitle": {},
-
   "searchHint": "Cerca per nome o @username…",
   "@searchHint": {},
-
   "searchEmpty": "Cerca altri lettori",
   "@searchEmpty": {},
-
   "searchEmptyBody": "Digita un nome o @username\nper trovare lettori su Scripta.",
   "@searchEmptyBody": {},
-
   "searchNoResults": "Nessun lettore trovato per {query}",
   "@searchNoResults": {
-    "placeholders": { "query": { "type": "String" } }
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
   },
-
   "feedComments": "Commenti",
   "@feedComments": {},
-
   "feedCommentHint": "Scrivi un commento…",
   "@feedCommentHint": {},
-
   "feedReplyHint": "Rispondi a {name}…",
   "@feedReplyHint": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
   "feedNoComments": "Nessun commento ancora.\nSii il primo!",
   "@feedNoComments": {},
-
   "feedReplyingTo": "Rispondendo a {name}",
   "@feedReplyingTo": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
   "feedPostPublished": "Post pubblicato!",
   "@feedPostPublished": {},
-
   "feedWritePost": "Scrivi qualcosa…",
   "@feedWritePost": {},
-
   "feedPublish": "Pubblica",
   "@feedPublish": {},
-
   "feedHoldToPublish": "Tieni premuto per pubblicare",
   "@feedHoldToPublish": {},
-
   "feedNoPostsYet": "Nessun post ancora.",
   "@feedNoPostsYet": {},
   "socialTabJams": "Jam",
   "socialTabFriends": "Amici",
   "feedEmptyFollowing": "Segui altri lettori dalla scheda Amici\nper vedere qui i loro post.",
   "@feedEmptyFollowing": {},
-
   "feedEmptyFeed": "Non hai ancora seguito nessuno.\nVai nella tab Amici per iniziare!",
   "@feedEmptyFeed": {},
-
   "feedMyPostsNoPostsYet": "Non hai ancora pubblicato nessun post.",
   "@feedMyPostsNoPostsYet": {},
-
   "feedReport": "Segnala post",
   "@feedReport": {},
-
   "feedReported": "Post segnalato. Grazie!",
   "@feedReported": {},
-
   "feedEdit": "Modifica post",
   "@feedEdit": {},
-
   "feedDeletePost": "Elimina post",
   "@feedDeletePost": {},
-
   "feedDeleteConfirmTitle": "Elimina post",
   "@feedDeleteConfirmTitle": {},
-
   "feedDeleteConfirmBody": "Vuoi davvero eliminare questo post? L'azione non è reversibile.",
   "@feedDeleteConfirmBody": {},
-
   "amiciFollowingSection": "SEGUITI",
   "@amiciFollowingSection": {},
-
   "amiciSuggestedSection": "SUGGERITI",
   "@amiciSuggestedSection": {},
-
   "amiciSuggestedSubtitle": "Dai tuoi Jam",
   "@amiciSuggestedSubtitle": {},
-
   "amiciNoFriends": "Nessun amico ancora",
   "@amiciNoFriends": {},
-
   "amiciNoFriendsBody": "Unisciti a una Jam per trovare\naltri lettori da seguire.",
   "@amiciNoFriendsBody": {},
-
   "amiciFollow": "Segui",
   "@amiciFollow": {},
-
   "amiciUnfollow": "Smetti",
   "@amiciUnfollow": {},
-
   "amiciNotReading": "Nessun libro in corso",
   "@amiciNotReading": {},
-
   "profileCurrentlyReading": "IN LETTURA",
   "@profileCurrentlyReading": {},
-
   "profileSpotlight": "HIGHLIGHT IN EVIDENZA",
   "@profileSpotlight": {},
-
   "profilePostsSection": "POST",
   "@profilePostsSection": {},
-
   "profileLibrarySection": "LIBRERIA",
   "@profileLibrarySection": {},
-
   "profileFollowers": "Follower",
   "@profileFollowers": {},
-
   "profileFollowing": "Seguiti",
   "@profileFollowing": {},
-
   "profileHighlightsStat": "Highlight",
   "@profileHighlightsStat": {},
-
   "profileBooksStat": "Libri",
   "@profileBooksStat": {},
-
   "profileSharedStat": "Condivisi",
   "@profileSharedStat": {},
-
   "profileShareProfile": "Condividi profilo",
   "@profileShareProfile": {},
-
   "profileEditProfile": "Modifica profilo",
   "@profileEditProfile": {},
-
   "profileSettings": "Impostazioni",
   "@profileSettings": {},
-
   "profileLoginRequired": "Accedi per vedere il profilo",
   "@profileLoginRequired": {},
-
   "profileLoginBody": "Il profilo richiede un account Scripta.",
   "@profileLoginBody": {},
-
   "profileLoginCta": "Accedi",
   "@profileLoginCta": {},
-
   "profileNotFound": "Profilo non trovato.",
   "@profileNotFound": {},
-
   "profileErrorLoading": "Errore caricamento profilo.",
   "@profileErrorLoading": {},
-
   "profileFollowingButton": "Stai seguendo",
   "@profileFollowingButton": {},
-
   "profileFollowButton": "Segui",
   "@profileFollowButton": {},
-
   "profileNoFollowers": "Nessun follower ancora",
   "@profileNoFollowers": {},
-
   "profileNoFollowing": "Non segui ancora nessuno",
   "@profileNoFollowing": {},
-
   "profileNoBooksImported": "Nessun libro importato",
   "@profileNoBooksImported": {},
-
   "followersTitle": "Follower",
   "@followersTitle": {},
-
   "followingTitle": "Seguiti",
   "@followingTitle": {},
-
   "booksTitle": "Libri letti",
   "@booksTitle": {},
-
   "settingsTitle": "Account",
   "@settingsTitle": {},
-
   "settingsSignOut": "Disconnetti",
   "@settingsSignOut": {},
-
   "settingsKindleSync": "Sync Kindle",
   "@settingsKindleSync": {},
-
   "settingsExport": "Esporta highlight",
   "@settingsExport": {},
-
   "settingsWidget": "Anteprima Widget",
   "@settingsWidget": {},
-
   "messagesTitle": "Messaggi",
   "@messagesTitle": {},
-
   "messagesSearchHint": "Cerca una conversazione…",
   "@messagesSearchHint": {},
-
   "messagesInputHint": "Scrivi un messaggio…",
   "@messagesInputHint": {},
-
   "messagesNoConversations": "Nessuna conversazione ancora",
   "@messagesNoConversations": {},
-
   "authSignIn": "Accedi",
   "@authSignIn": {},
-
   "authSignUp": "Registrati",
   "@authSignUp": {},
-
   "authEmail": "Email",
   "@authEmail": {},
-
   "authPassword": "Password",
   "@authPassword": {},
-
   "authName": "Il tuo nome",
   "@authName": {},
-
   "authForgotPassword": "Password dimenticata?",
   "@authForgotPassword": {},
-
   "authCheckEmail": "Controlla la tua email",
   "@authCheckEmail": {},
-
   "authConfirmEmailBody": "Ti abbiamo inviato un link di conferma.\nControlla la tua email per completare la registrazione.",
   "@authConfirmEmailBody": {},
-
   "jamTitle": "Jam",
   "@jamTitle": {},
-
   "jamCreate": "Crea Jam",
   "@jamCreate": {},
-
   "jamNoJams": "Nessuna Jam ancora",
   "@jamNoJams": {},
-
   "jamJoinCode": "Codice di accesso",
   "@jamJoinCode": {},
-
   "jamMembers": "Membri",
   "@jamMembers": {},
-
   "jamHighlights": "Highlight condivisi",
   "@jamHighlights": {},
-
   "onboardingWelcomeSubtitle": "Riscopri quello che hai letto. Parlane con chi lo sta leggendo con te.",
   "@onboardingWelcomeSubtitle": {},
-
   "recsNotAuth": "Accedi al tuo account per ricevere consigli personalizzati.",
   "recsRateLimit": "I consigli di oggi saranno pronti più tardi — torna tra qualche ora.",
   "recsAiEmpty": "Nessun consiglio al momento. Riprova fra poco.",
@@ -428,200 +361,154 @@
   "resetDone": "Password aggiornata!",
   "resetRedirecting": "Stai per essere reindirizzato…",
   "resetErrGeneric": "Impossibile reimpostare la password. Riprova.",
-
   "onboardingStart": "Inizia →",
   "@onboardingStart": {},
-
   "onboardingHaveAccount": "Hai già un account? Accedi",
   "@onboardingHaveAccount": {},
-
   "onboardingAuthCreateTitle": "Crea il tuo account",
   "@onboardingAuthCreateTitle": {},
-
   "onboardingAuthLoginTitle": "Accedi",
   "@onboardingAuthLoginTitle": {},
-
   "onboardingAuthCreateSubtitle": "Il tuo profilo letterario ti aspetta.",
   "@onboardingAuthCreateSubtitle": {},
-
   "onboardingAuthLoginSubtitle": "Bentornato in Scripta.",
   "@onboardingAuthLoginSubtitle": {},
-
   "onboardingContinue": "Continua →",
   "@onboardingContinue": {},
-
   "onboardingSkip": "Salta",
   "@onboardingSkip": {},
-
   "onboardingUsernameTitle": "Scegli il tuo @username",
   "@onboardingUsernameTitle": {},
-
   "onboardingUsernameSubtitle": "Gli altri ti troveranno con questo nome.",
   "@onboardingUsernameSubtitle": {},
-
   "onboardingUsernameTaken": "Username già in uso. Prova un altro.",
   "@onboardingUsernameTaken": {},
-
   "onboardingNameTitle": "Come ti chiami?",
   "@onboardingNameTitle": {},
-
   "onboardingNameSubtitle": "Questo nome apparirà sul tuo profilo.",
   "@onboardingNameSubtitle": {},
-
   "onboardingAvatarTitle": "Aggiungi una foto profilo",
   "@onboardingAvatarTitle": {},
-
   "onboardingAvatarSubtitle": "Facoltativa, puoi aggiungerla in seguito.",
   "@onboardingAvatarSubtitle": {},
-
   "onboardingAvatarPick": "Scegli foto",
   "@onboardingAvatarPick": {},
-
   "onboardingCoverTitle": "Aggiungi una foto copertina",
   "@onboardingCoverTitle": {},
-
   "onboardingCoverSubtitle": "Appare in cima al tuo profilo.",
   "@onboardingCoverSubtitle": {},
-
   "onboardingCoverPlaceholder": "Foto copertina",
   "@onboardingCoverPlaceholder": {},
-
   "onboardingCoverPick": "Scegli immagine",
   "@onboardingCoverPick": {},
-
   "onboardingCompleteTitle": "Tutto pronto.",
   "@onboardingCompleteTitle": {},
-
   "onboardingCompleteBody": "Benvenuto in Scripta, {username}",
   "@onboardingCompleteBody": {
-    "placeholders": { "username": { "type": "String" } }
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
   },
-
   "onboardingCompleteBodyAnon": "Benvenuto in Scripta",
   "@onboardingCompleteBodyAnon": {},
-
   "onboardingEnter": "Entra nella tua libreria →",
   "@onboardingEnter": {},
-
   "onboardingCheckEmailTitle": "Controlla la tua email",
   "@onboardingCheckEmailTitle": {},
-
   "onboardingCheckEmailBody": "Abbiamo inviato un link di conferma a {email}.\nClicca il link e poi torna ad accedere.",
   "@onboardingCheckEmailBody": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
-
   "onboardingCheckEmailCta": "Ok, vado ad accedere",
   "@onboardingCheckEmailCta": {},
-
   "authSubtitle": "I tuoi highlight Kindle, reinventati.",
   "@authSubtitle": {},
-
   "authContinueWithoutAccount": "Continua senza account",
   "@authContinueWithoutAccount": {},
-
   "authForgotPasswordTitle": "Reimposta password",
   "@authForgotPasswordTitle": {},
-
   "authForgotPasswordBody": "Inserisci la tua email e ti mandiamo un link per reimpostare la password.",
   "@authForgotPasswordBody": {},
-
   "authForgotPasswordSend": "Invia link",
   "@authForgotPasswordSend": {},
-
   "authForgotPasswordSent": "Link inviato a {email} — controlla la posta.",
   "@authForgotPasswordSent": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
-
   "authNameRequired": "Inserisci il tuo nome",
   "@authNameRequired": {},
-
   "authEmailRequired": "Inserisci la tua email",
   "@authEmailRequired": {},
-
   "authEmailInvalid": "Email non valida",
   "@authEmailInvalid": {},
-
   "authPasswordRequired": "Inserisci la password",
   "@authPasswordRequired": {},
-
   "authPasswordTooShort": "Almeno 6 caratteri",
   "@authPasswordTooShort": {},
-
   "authCreateAccount": "Crea account",
   "@authCreateAccount": {},
-
   "authErrInvalidLogin": "Email o password errati.",
   "@authErrInvalidLogin": {},
-
   "authErrNotConfirmed": "Conferma la tua email prima di accedere.",
   "@authErrNotConfirmed": {},
-
   "authErrAlreadyRegistered": "Questa email è già registrata. Prova ad accedere.",
   "@authErrAlreadyRegistered": {},
-
   "authErrWeakPassword": "La password deve essere di almeno 6 caratteri.",
   "@authErrWeakPassword": {},
-
   "authErrGeneric": "Errore imprevisto. Riprova.",
   "@authErrGeneric": {},
-
   "share": "Condividi",
   "@share": {},
-
   "copy": "Copia",
   "@copy": {},
-
   "highlightNotFound": "Highlight non trovato.",
   "@highlightNotFound": {},
-
   "bookNotFound": "Libro non trovato.",
   "@bookNotFound": {},
-
   "bookNoHighlights": "Nessun highlight per questo libro.",
   "@bookNoHighlights": {},
-
   "jamCopiedToClipboard": "Codice copiato negli appunti!",
   "@jamCopiedToClipboard": {},
-
   "jamCoverUpdated": "Copertina Jam aggiornata!",
   "@jamCoverUpdated": {},
-
   "jamHighlightShared": "Highlight condiviso nella Jam!",
   "@jamHighlightShared": {},
-
   "jamShareSyncFailed": "Impossibile sincronizzare questo highlight. Riprova.",
   "@jamShareSyncFailed": {},
-
   "jamNoHighlightsAvailable": "Nessun highlight disponibile. Importa prima un file Kindle.",
   "@jamNoHighlightsAvailable": {},
-
   "jamShareHighlightCta": "Condividi un highlight",
   "@jamShareHighlightCta": {},
-
   "jamShareCode": "Condividi questo codice con i tuoi amici",
   "@jamShareCode": {},
-
   "jamPickHighlight": "Scegli un highlight",
   "@jamPickHighlight": {},
-
   "jamNoHighlightsFound": "Nessun highlight trovato",
   "@jamNoHighlightsFound": {},
-
   "jamSearchHint": "Cerca per testo o libro…",
   "@jamSearchHint": {},
-
   "jamMemberCount": "{count, plural, =1{membro} other{membri}}",
   "@jamMemberCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "jamFeatureRipasso": "Ripasso",
   "@jamFeatureRipasso": {},
   "jamFeatureRipassoSubtitle": "Classifica ripassi",
   "@jamFeatureRipassoSubtitle": {},
-
   "jamRipassoTitle": "Ripasso",
   "@jamRipassoTitle": {},
   "jamRipassoSubtitle": "Tieni viva la tua serie di ripassi e scala la classifica con gli amici della Jam.",
@@ -629,7 +516,13 @@
   "jamRipassoYouBadge": "TU",
   "@jamRipassoYouBadge": {},
   "jamRipassoBest": "Record {count}",
-  "@jamRipassoBest": { "placeholders": { "count": { "type": "int" } } },
+  "@jamRipassoBest": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "jamRipassoDoneToday": "Ripassato oggi",
   "@jamRipassoDoneToday": {},
   "jamRipassoAnonymous": "Lettore",
@@ -638,154 +531,146 @@
   "@jamRipassoEmptyTitle": {},
   "jamRipassoEmptyBody": "Sii il primo a ripassare oggi. Continua giorno dopo giorno e guiderai la classifica.",
   "@jamRipassoEmptyBody": {},
-
   "jamFeatureVoting": "Libro del mese",
   "@jamFeatureVoting": {},
-
   "jamFeatureVotingSubtitle": "Vota il prossimo libro",
   "@jamFeatureVotingSubtitle": {},
-
   "jamFeatureChallenges": "Sfide",
   "@jamFeatureChallenges": {},
-
   "jamFeatureChallengesSubtitle": "Obiettivi condivisi",
   "@jamFeatureChallengesSubtitle": {},
-
   "jamFeaturePolls": "Sondaggi",
   "@jamFeaturePolls": {},
-
   "jamFeaturePollsSubtitle": "Vota gli highlight",
   "@jamFeaturePollsSubtitle": {},
-
   "jamMemberCurrentlyReading": "In lettura",
   "@jamMemberCurrentlyReading": {},
-
   "notificationsTitle": "Notifiche",
   "@notificationsTitle": {},
-
   "notificationsEmpty": "Nessuna notifica",
   "@notificationsEmpty": {},
-
   "notificationsEmptyBody": "Le attività nelle tue Jam appariranno qui.",
   "@notificationsEmptyBody": {},
-
   "notificationsMarkAllRead": "Segna tutto come letto",
   "@notificationsMarkAllRead": {},
-
   "libraryPickedForYou": "SCELTO PER TE",
   "@libraryPickedForYou": {},
-
   "libraryRecent": "RECENTI",
   "@libraryRecent": {},
-
   "libraryRead": "Leggi",
   "@libraryRead": {},
-
   "libraryViewAll": "{count, plural, =1{Vedi 1 libro} other{Vedi tutti {count} libri}}",
-  "@libraryViewAll": { "placeholders": { "count": { "type": "int" } } },
-
+  "@libraryViewAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "libraryHide": "Comprimi",
   "@libraryHide": {},
-
   "librarySignInToImport": "Accedi per importare i tuoi highlight.",
   "@librarySignInToImport": {},
-
   "librarySignIn": "Accedi",
   "@librarySignIn": {},
-
   "libraryClearReimportTitle": "Svuota e reimporta?",
   "@libraryClearReimportTitle": {},
-
   "libraryClearReimportBody": "Tutti i tuoi highlight e libri verranno eliminati, poi reimportati dal file selezionato. Utile per correggere problemi di codifica da importazioni precedenti.",
   "@libraryClearReimportBody": {},
-
   "libraryClearAction": "Svuota e reimporta",
   "@libraryClearAction": {},
-
   "libraryImportPartial": "{count} highlight importati ({errors} errori).",
-  "@libraryImportPartial": { "placeholders": { "count": { "type": "int" }, "errors": { "type": "int" } } },
-
+  "@libraryImportPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "errors": {
+        "type": "int"
+      }
+    }
+  },
   "libraryImportSuccess": "{highlights} highlight da {books} libri.",
-  "@libraryImportSuccess": { "placeholders": { "highlights": { "type": "int" }, "books": { "type": "int" } } },
-
+  "@libraryImportSuccess": {
+    "placeholders": {
+      "highlights": {
+        "type": "int"
+      },
+      "books": {
+        "type": "int"
+      }
+    }
+  },
   "libraryImportNone": "Nessun nuovo highlight ({count} già presenti).",
-  "@libraryImportNone": { "placeholders": { "count": { "type": "int" } } },
-
+  "@libraryImportNone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "libraryImportRecsHint": "Aggiorno le tue raccomandazioni AI in base ai nuovi highlight…",
   "@libraryImportRecsHint": {},
-
   "libraryImportError": "Errore importazione: {message}",
-  "@libraryImportError": { "placeholders": { "message": { "type": "String" } } },
-
+  "@libraryImportError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "recsTitle": "LIBRI CONSIGLIATI",
   "@recsTitle": {},
-
   "recsTagline": "Selezionati da Scripta, solo per te",
   "@recsTagline": {},
-
   "recsSubtitle": "Selezionati in base ai tuoi highlight.",
   "@recsSubtitle": {},
-
   "recsSubtitleWeather": "Selezionati in base ai tuoi highlight e al meteo di oggi.",
   "@recsSubtitleWeather": {},
-
   "recsSubtitleActivity": "Selezionati in base ai tuoi highlight e alla tua attività recente.",
   "@recsSubtitleActivity": {},
-
   "recsSubtitleBoth": "Selezionati in base ai tuoi highlight, meteo e attività recente.",
   "@recsSubtitleBoth": {},
-
   "recsEmpty": "Importa i tuoi highlight Kindle per ricevere suggerimenti personalizzati in base ai tuoi temi di lettura.",
   "@recsEmpty": {},
-
   "recsLoading": "Scripta sta analizzando i tuoi highlight…",
   "@recsLoading": {},
-
   "recsFallback": "Consigliato in base ai tuoi gusti di lettura.",
   "@recsFallback": {},
-
   "bookMyNotes": "LE MIE NOTE",
   "@bookMyNotes": {},
-
   "bookNotesHint": "Scrivi le tue note personali su questo libro…",
   "@bookNotesHint": {},
-
   "bookNotesSaved": "Note salvate",
   "@bookNotesSaved": {},
-
   "bookBuyOnAmazon": "Acquista su Amazon",
   "@bookBuyOnAmazon": {},
-
   "bookAmazonEarningsHint": "~€0,70 a vendita · Amazon Associates",
   "@bookAmazonEarningsHint": {},
-
   "libraryFilterAll": "Tutti",
   "@libraryFilterAll": {},
-
   "libraryFilterFavorites": "Preferiti",
   "@libraryFilterFavorites": {},
-
   "libraryViewGrid": "Griglia",
-  "@libraryViewGrid": { "description": "Library view mode: the cover grid." },
-
+  "@libraryViewGrid": {
+    "description": "Library view mode: the cover grid."
+  },
   "libraryViewShelf": "Scaffale",
-  "@libraryViewShelf": { "description": "Library view mode: books as spines on a shelf." },
-
+  "@libraryViewShelf": {
+    "description": "Library view mode: books as spines on a shelf."
+  },
   "libraryShelfShareCta": "Condividilo come post",
-  "@libraryShelfShareCta": { "description": "Button under the shelf that shares it to the feed." },
-
+  "@libraryShelfShareCta": {
+    "description": "Button under the shelf that shares it to the feed."
+  },
   "shelfShareTitle": "Condividi il tuo scaffale",
   "@shelfShareTitle": {},
-
   "shelfSharePublish": "Pubblica",
   "@shelfSharePublish": {},
-
   "shelfSharePosted": "Scaffale pubblicato",
   "@shelfSharePosted": {},
-
   "shelfShareError": "Non sono riuscito a pubblicare. Riprova.",
   "@shelfShareError": {},
-
   "shelfArrangeTitle": "Sistema la libreria",
   "@shelfArrangeTitle": {},
   "shelfArrangeSubtitle": "Scegli come stanno i tuoi libri. Chi visita il tuo profilo vedrà la libreria così.",
@@ -809,72 +694,100 @@
   "shelfSortManual": "A mano",
   "@shelfSortManual": {},
   "shelfSharePosterHeadline": "{count, plural, =1{1 libro letto} other{{count} libri letti}}",
-  "@shelfSharePosterHeadline": { "description": "Book-count headline on the shared poster.", "placeholders": { "count": { "type": "int" } } },
+  "@shelfSharePosterHeadline": {
+    "description": "Book-count headline on the shared poster.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "shelfShareInstagram": "Condividi su Instagram",
-  "@shelfShareInstagram": { "description": "Button that hands the shelf poster to Instagram Stories." },
+  "@shelfShareInstagram": {
+    "description": "Button that hands the shelf poster to Instagram Stories."
+  },
   "shelfSharePosterKicker": "Il mio scaffale",
   "@shelfSharePosterKicker": {},
-
-
   "shelfSharePostBody": "{count, plural, =1{Il mio scaffale su Scripta: 1 libro.} other{Il mio scaffale su Scripta: {count} libri.}}",
-  "@shelfSharePostBody": { "description": "First line of the shared post body.", "placeholders": { "count": { "type": "int" } } },
-
+  "@shelfSharePostBody": {
+    "description": "First line of the shared post body.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "feedPhoto": "Foto",
   "@feedPhoto": {},
-
   "feedHoldToPublishToast": "Tieni premuto per pubblicare",
   "@feedHoldToPublishToast": {},
-
   "feedDeleteAction": "Elimina",
   "@feedDeleteAction": {},
-
   "feedEditAction": "Modifica",
   "@feedEditAction": {},
-
   "feedSaveAction": "Salva",
   "@feedSaveAction": {},
-
   "feedErrorPrefix": "Errore: {message}",
-  "@feedErrorPrefix": { "placeholders": { "message": { "type": "String" } } },
-
+  "@feedErrorPrefix": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "settingsDeleteAccountTitle": "Eliminare l'account?",
   "@settingsDeleteAccountTitle": {},
-
   "settingsDeleteAccountBody": "Eliminerai definitivamente il tuo account, tutti i tuoi highlight, i libri e le iscrizioni alle Jam. Questa azione è irreversibile.",
   "@settingsDeleteAccountBody": {},
-
   "settingsDeleteAccountConfirm": "Elimina definitivamente",
   "@settingsDeleteAccountConfirm": {},
-
   "settingsDeleteAccountError": "Errore eliminazione account: {message}",
-  "@settingsDeleteAccountError": { "placeholders": { "message": { "type": "String" } } },
-
+  "@settingsDeleteAccountError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "settingsPreparingFile": "Preparazione file…",
   "@settingsPreparingFile": {},
-
   "settingsEditProfileTitle": "Modifica profilo",
   "@settingsEditProfileTitle": {},
-
   "settingsSyncWithKindle": "Sincronizza con Kindle",
   "@settingsSyncWithKindle": {},
-
   "settingsImportClippings": "Importa My Clippings.txt",
   "@settingsImportClippings": {},
-
   "settingsPrivacyPolicy": "Informativa Privacy",
   "@settingsPrivacyPolicy": {},
-
   "settingsResetOnboarding": "Reset onboarding (debug)",
   "settingsSyncWithKindleSubtitle": "Accedi ad Amazon e importa gli highlight",
   "kindleAutoUpdated": "Automatico — aggiornato {when}",
-  "@kindleAutoUpdated": { "placeholders": { "when": { "type": "String" } } },
+  "@kindleAutoUpdated": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "kindleAutoSyncing": "Sto aggiornando i tuoi highlight…",
   "kindleNeedsRelogin": "Sessione Amazon scaduta — tocca per riconnettere",
   "kindleWhenNow": "poco fa",
   "kindleWhenHours": "{hours} ore fa",
-  "@kindleWhenHours": { "placeholders": { "hours": { "type": "int" } } },
+  "@kindleWhenHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "kindleWhenDays": "{days} giorni fa",
-  "@kindleWhenDays": { "placeholders": { "days": { "type": "int" } } },
+  "@kindleWhenDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "settingsVersion": "Versione",
   "settingsPrivacyDataSection": "PRIVACY E DATI",
   "settingsYourData": "I tuoi dati",
@@ -885,112 +798,82 @@
   "settingsDataEmailBody": "Usato solo per l'autenticazione dell'account.",
   "settingsDataHighlightsTitle": "Highlight e libri",
   "settingsDataHighlightsBody": "Salvati nel nostro database per sincronizzarli tra i dispositivi. Puoi esportarli o eliminarli quando vuoi.",
-  "settingsDataHealthTitle": "Dati salute (passi, allenamenti, ciclo mestruale)",
-  "settingsDataHealthBody": "Elaborati solo sul dispositivo per personalizzare la frase del giorno. Mai caricati.",
   "settingsDataWeatherTitle": "Posizione meteo",
   "settingsDataWeatherBody": "Usata solo sul dispositivo per recuperare il contesto meteo della frase del giorno. Mai memorizzata.",
   "settingsDataPledge": "Niente pubblicità. Nessun tracciamento. Nessun dato ceduto.",
   "@settingsResetOnboarding": {},
-
   "editProfileDisplayName": "Nome visibile",
   "@editProfileDisplayName": {},
-
   "editProfileName": "Nome",
   "@editProfileName": {},
-
   "editProfileCurrentlyReadingLabel": "IN LETTURA",
   "@editProfileCurrentlyReadingLabel": {},
-
   "editProfileBookTitleHint": "Titolo libro",
   "@editProfileBookTitleHint": {},
-
   "editProfileAuthorHint": "Autore (opzionale)",
   "@editProfileAuthorHint": {},
-
   "commonRetry": "Riprova",
   "@commonRetry": {},
-
   "commonProfile": "Profilo",
   "@commonProfile": {},
-
   "commonScrivi": "Scrivi",
   "@commonScrivi": {},
-
   "homeFeedSubtitle": "Il tuo feed di lettura",
   "@homeFeedSubtitle": {},
-
   "feedPublishLabel": "Pubblica",
   "@feedPublishLabel": {},
-
   "feedKeepHolding": "Mantieni il tuo dito fermo!",
   "@feedKeepHolding": {},
-
   "onboardingGoalTitle": "Imposta il tuo obiettivo di lettura {year}",
-  "@onboardingGoalTitle": { "placeholders": { "year": { "type": "int" } } },
-
+  "@onboardingGoalTitle": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "onboardingGoalSubtitle": "Quanti libri vuoi leggere quest'anno? (Tranquillo, puoi sempre cambiarlo!)",
   "@onboardingGoalSubtitle": {},
-
   "onboardingGoalFieldLabel": "Numero di libri",
   "@onboardingGoalFieldLabel": {},
-
   "onboardingGoalSuffix": "Libri",
   "@onboardingGoalSuffix": {},
-
   "onboardingGoalLow": "Un ritmo rilassato: meglio la qualità della quantità.",
   "@onboardingGoalLow": {},
-
   "onboardingGoalMedium": "Un buon obiettivo: circa un libro al mese.",
   "@onboardingGoalMedium": {},
-
   "onboardingGoalCommitted": "Hai grandi ambizioni! Vorresti leggere più libri al mese.",
   "@onboardingGoalCommitted": {},
-
   "onboardingGoalCta": "Imposta obiettivo",
   "@onboardingGoalCta": {},
-
   "onboardingGoalSkip": "Lo imposto dopo",
   "@onboardingGoalSkip": {},
-
   "onboardingCurrentlyReadingTitle": "Cosa stai leggendo?",
   "@onboardingCurrentlyReadingTitle": {},
-
   "onboardingCurrentlyReadingHint": "Cerca titolo o autore",
   "@onboardingCurrentlyReadingHint": {},
-
   "onboardingCurrentlyReadingNothing": "Non sto leggendo nulla al momento",
   "@onboardingCurrentlyReadingNothing": {},
-
   "onboardingCurrentlyReadingNext": "Avanti",
   "@onboardingCurrentlyReadingNext": {},
-
   "onboardingScanBarcode": "Scansiona il codice a barre",
   "@onboardingScanBarcode": {},
-
   "onboardingScanWebUnsupported": "Per ora inserisci qui sotto il codice ISBN.",
   "@onboardingScanWebUnsupported": {},
-
   "onboardingIsbnHint": "Codice del libro (ISBN, es. 978...)",
   "@onboardingIsbnHint": {},
-
   "onboardingIsbnLookup": "Trova",
   "@onboardingIsbnLookup": {},
-
   "onboardingIsbnLookingUp": "Cerco il libro…",
   "@onboardingIsbnLookingUp": {},
-
   "onboardingIsbnNotFound": "Nessun libro trovato con questo codice.",
   "@onboardingIsbnNotFound": {},
-
   "onboardingIsbnInvalid": "Inserisci un codice valido di 10 o 13 cifre.",
   "@onboardingIsbnInvalid": {},
-
   "statsTitle": "Le tue statistiche",
   "@statsTitle": {},
-
   "profileDetailedStats": "Statistiche di lettura",
   "@profileDetailedStats": {},
-
   "profileReadingSection": "La tua lettura",
   "@profileReadingSection": {},
   "profileSeeAll": "Vedi tutto",
@@ -1007,279 +890,241 @@
   "@profileStatsGoalReached": {},
   "profileStatsGoalRemaining": "{count} ancora",
   "@profileStatsGoalRemaining": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-
   "accountDeleted": "Account eliminato",
-  "@accountDeleted": {"description": "Tombstone label shown in chats when a participant has deleted their account"},
-
+  "@accountDeleted": {
+    "description": "Tombstone label shown in chats when a participant has deleted their account"
+  },
   "statsGoalSection": "OBIETTIVO {year}",
-  "@statsGoalSection": { "placeholders": { "year": { "type": "int" } } },
-
+  "@statsGoalSection": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "statsGoalProgress": "{done} di {target} libri",
-  "@statsGoalProgress": { "placeholders": { "done": { "type": "int" }, "target": { "type": "int" } } },
-
+  "@statsGoalProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
   "statsGoalEditCta": "Modifica obiettivo",
   "@statsGoalEditCta": {},
-
   "statsGoalSetCta": "Imposta obiettivo",
   "@statsGoalSetCta": {},
-
   "statsOverviewSection": "PANORAMICA",
   "@statsOverviewSection": {},
-
   "statsStreak": "Streak di lettura",
   "@statsStreak": {},
-
   "statsStreakDays": "{count, plural, =0{Nessuna streak} =1{1 giorno} other{{count} giorni}}",
-  "@statsStreakDays": { "placeholders": { "count": { "type": "int" } } },
-
+  "@statsStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsThisMonth": "Questo mese",
   "@statsThisMonth": {},
-
   "statsThisMonthMinutes": "{count} min letti",
-  "@statsThisMonthMinutes": { "placeholders": { "count": { "type": "int" } } },
-
+  "@statsThisMonthMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsThisYear": "Quest'anno",
   "@statsThisYear": {},
-
   "statsThisYearBooks": "{count} libri finiti",
-  "@statsThisYearBooks": { "placeholders": { "count": { "type": "int" } } },
-
+  "@statsThisYearBooks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "statsMonthlySection": "LETTURA — ULTIMI 12 MESI",
   "@statsMonthlySection": {},
-
   "statsMonthlyTotalCaption": "tempo di lettura · 12 mesi",
   "@statsMonthlyTotalCaption": {},
-
   "statsMonthlyPeakCaption": "mese più letto",
   "@statsMonthlyPeakCaption": {},
-
   "statsMonthlyTapHint": "Tocca una barra per i minuti del mese.",
   "@statsMonthlyTapHint": {},
-
   "statsMonthlyNoReading": "nessuna lettura",
   "@statsMonthlyNoReading": {},
-
   "statsRecentSection": "SESSIONI RECENTI",
   "@statsRecentSection": {},
-
   "statsAddSession": "Aggiungi sessione",
   "@statsAddSession": {},
-
   "statsEmpty": "Nessuna sessione ancora. Tocca il + per registrare la prima.",
   "@statsEmpty": {},
-
   "statsAddTitle": "Registra una sessione di lettura",
   "@statsAddTitle": {},
-
   "statsAddHint": "Aggiungi a mano solo i libri senza highlight su Kindle — per gli altri le sessioni vengono stimate in automatico.",
   "@statsAddHint": {},
-
   "statsInferredBadge": "Stimato",
   "@statsInferredBadge": {},
-
   "statsMethodologyNote": "Kindle non condivide il tempo di lettura. Quando importi gli highlight, contiamo una sessione per libro per ogni giorno in cui hai evidenziato qualcosa, e stimiamo i minuti come highlight × 8 (limitato fra 10 min e 4 ore). I valori marcati “Stimato” sono indicativi.",
   "@statsMethodologyNote": {},
-
   "statsAddBookTitle": "Titolo libro",
   "@statsAddBookTitle": {},
-
   "statsAddBookAuthor": "Autore (opzionale)",
   "@statsAddBookAuthor": {},
-
   "statsAddMinutes": "Minuti letti",
   "@statsAddMinutes": {},
-
   "statsAddPages": "Pagine lette (opzionale)",
   "@statsAddPages": {},
-
   "statsAddDate": "Data",
   "@statsAddDate": {},
-
   "statsAddSaveCta": "Registra sessione",
   "@statsAddSaveCta": {},
-
   "statsErrorSaving": "Impossibile salvare la sessione. Riprova.",
   "@statsErrorSaving": {},
-
   "statsGoalEditTitle": "Obiettivo annuale di lettura",
   "@statsGoalEditTitle": {},
-
   "statsGoalEditSaveCta": "Salva",
   "@statsGoalEditSaveCta": {},
-
   "jamJoinTitle": "Unisciti a una Jam",
   "@jamJoinTitle": {},
-
   "jamJoinHint": "Codice invito (es. ABC123)",
   "@jamJoinHint": {},
-
   "jamJoinCta": "Entra",
   "@jamJoinCta": {},
-
   "jamInvalidCode": "Codice non valido.",
   "@jamInvalidCode": {},
-
   "editProfilePhotoUpdated": "Foto profilo aggiornata!",
   "@editProfilePhotoUpdated": {},
-
   "editProfileCoverUpdated": "Foto copertina aggiornata!",
   "@editProfileCoverUpdated": {},
-
   "editProfilePhotoReadFailed": "Non sono riuscito a leggere la foto. Prova con un'immagine più piccola (<5MB) o un altro formato.",
   "@editProfilePhotoReadFailed": {},
-
   "editProfilePhotoUpdateError": "Errore caricamento foto",
   "@editProfilePhotoUpdateError": {},
-
   "editProfileCoverUpdateError": "Errore caricamento copertina",
   "@editProfileCoverUpdateError": {},
-
   "editProfileUsernameUnavailable": "Username non disponibile, scegline un altro.",
   "@editProfileUsernameUnavailable": {},
-
   "editProfilePreviewLabel": "Anteprima",
   "@editProfilePreviewLabel": {},
-
   "jamNoJamsBody": "Crea una Jam o\nunisciti al circolo di un amico.",
   "@jamNoJamsBody": {},
-
   "jamCreateFirst": "Crea la tua prima Jam",
   "@jamCreateFirst": {},
-
   "jamJoinWithCode": "Entra con codice",
   "@jamJoinWithCode": {},
-
   "jamProposeBook": "Proponi un libro",
   "@jamProposeBook": {},
-
   "jamCreateChallenge": "Crea sfida",
   "@jamCreateChallenge": {},
-
   "jamCreatePoll": "Crea sondaggio",
   "@jamCreatePoll": {},
-
   "jamAddYourHighlight": "Aggiungi il tuo highlight",
   "@jamAddYourHighlight": {},
-
   "jamChallengeBooks": "Libri",
   "@jamChallengeBooks": {},
-
   "jamChallengeHighlights": "Highlight",
   "@jamChallengeHighlights": {},
-
   "jamChallengeChapters": "Capitoli",
   "@jamChallengeChapters": {},
-
   "socialTitle": "Social",
   "@socialTitle": {},
-
   "messagesEnterGroupName": "Inserisci un nome per il gruppo.",
   "@messagesEnterGroupName": {},
-
   "messagesAddParticipant": "Aggiungi almeno un partecipante.",
   "@messagesAddParticipant": {},
-
   "editProfileGoToJams": "Vai alle Jam",
   "@editProfileGoToJams": {},
-
   "amazonGoToManualImport": "Importazione manuale",
   "@amazonGoToManualImport": {},
-
   "amazonGoToLibrary": "Vai alla libreria",
   "@amazonGoToLibrary": {},
-
   "amazonRetry": "Riprova",
   "@amazonRetry": {},
-
   "highlightCopiedToClipboard": "Highlight copiato negli appunti",
   "@highlightCopiedToClipboard": {},
-
   "jamDiscussionTitle": "Discussione",
   "@jamDiscussionTitle": {},
-
   "jamViewProfile": "Visualizza profilo",
   "@jamViewProfile": {},
-
   "jamExtractHighlights": "Estrai highlight ora",
   "@jamExtractHighlights": {},
-
   "authContinueWithApple": "Continua con Apple",
   "@authContinueWithApple": {},
-
   "authContinueWithGoogle": "Continua con Google",
   "@authContinueWithGoogle": {},
-
   "authContinueWithPhone": "Continua con numero di telefono",
   "@authContinueWithPhone": {},
-
   "authContinueWithEmail": "Continua con email",
   "@authContinueWithEmail": {},
-
   "authOrDivider": "oppure",
   "@authOrDivider": {},
-
   "authPhoneTitle": "Inserisci il tuo numero",
   "@authPhoneTitle": {},
-
   "authPhoneSubtitle": "Ti invieremo un codice di verifica.",
   "@authPhoneSubtitle": {},
-
   "authPhonePlaceholder": "+39 333 1234567",
   "@authPhonePlaceholder": {},
-
   "authPhoneSend": "Invia codice",
   "@authPhoneSend": {},
-
   "authPhoneInvalid": "Inserisci un numero valido (es. +39 333 1234567).",
   "@authPhoneInvalid": {},
-
   "authPhoneCodeTitle": "Inserisci il codice",
   "@authPhoneCodeTitle": {},
-
   "authPhoneCodeSubtitle": "Abbiamo inviato un codice a 6 cifre a {phone}.",
-  "@authPhoneCodeSubtitle": { "placeholders": { "phone": { "type": "String" } } },
-
+  "@authPhoneCodeSubtitle": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
   "authPhoneCodeVerify": "Verifica",
   "@authPhoneCodeVerify": {},
-
   "authPhoneCodeResend": "Reinvia codice",
   "@authPhoneCodeResend": {},
-
   "authOauthFailed": "Accesso non riuscito. Prova un altro metodo.",
   "@authOauthFailed": {},
-
   "authProviderNotEnabled": "Login con Google non ancora configurato. Per ora usa l'email.",
   "@authProviderNotEnabled": {},
-
   "authPhoneOtpFailed": "Verifica codice non riuscita. Riprova.",
   "@authPhoneOtpFailed": {},
-
   "greetingEarlyMorning": "Così presto!",
   "@greetingEarlyMorning": {},
-
   "greetingMorning": "Buongiorno",
   "@greetingMorning": {},
-
   "greetingBreak": "Prenditi una pausa",
   "@greetingBreak": {},
-
   "greetingAfternoon": "Buon pomeriggio",
   "@greetingAfternoon": {},
-
   "greetingEvening": "Buona sera",
   "@greetingEvening": {},
-
   "greetingNight": "Buonanotte",
   "@greetingNight": {},
-
   "jamVoteTitle": "Libro del mese",
   "@jamVoteTitle": {},
   "jamVoteProposeBook": "Proponi un libro",
   "@jamVoteProposeBook": {},
   "jamVoteProposedBy": "Proposto da {name}",
-  "@jamVoteProposedBy": { "placeholders": { "name": { "type": "String" } } },
+  "@jamVoteProposedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "jamVoteNoProposals": "Nessuna proposta ancora",
   "@jamVoteNoProposals": {},
   "jamVoteNoProposalsBody": "Suggerisci il prossimo libro da leggere insieme.",
@@ -1292,7 +1137,6 @@
   "@jamVoteWhyFieldHint": {},
   "jamVoteProposeCta": "Proponi",
   "@jamVoteProposeCta": {},
-
   "jamPollTitle": "Sondaggi highlight",
   "@jamPollTitle": {},
   "jamPollNewPollTooltip": "Nuovo sondaggio",
@@ -1302,9 +1146,21 @@
   "jamPollStatusOpen": "Aperto",
   "@jamPollStatusOpen": {},
   "jamPollEndedOn": "Terminato il {date}",
-  "@jamPollEndedOn": { "placeholders": { "date": { "type": "String" } } },
+  "@jamPollEndedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "jamPollEndsOn": "Scade il {date}",
-  "@jamPollEndsOn": { "placeholders": { "date": { "type": "String" } } },
+  "@jamPollEndsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "jamPollNoCandidates": "Nessun highlight ancora. Aggiungi il tuo!",
   "@jamPollNoCandidates": {},
   "jamPollNoPolls": "Nessun sondaggio ancora",
@@ -1318,22 +1174,45 @@
   "jamPollTitleFieldHint": "Titolo del sondaggio *",
   "@jamPollTitleFieldHint": {},
   "jamPollEndsOnLabel": "Scade il: {date}",
-  "@jamPollEndsOnLabel": { "placeholders": { "date": { "type": "String" } } },
+  "@jamPollEndsOnLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "jamPollCreateCta": "Crea",
   "@jamPollCreateCta": {},
   "jamPollChooseHighlightTitle": "Scegli il tuo highlight",
   "@jamPollChooseHighlightTitle": {},
   "jamPollAddToPollCta": "Aggiungi al sondaggio",
   "@jamPollAddToPollCta": {},
-
   "jamChallengeTitle": "Sfide di lettura",
   "@jamChallengeTitle": {},
   "jamChallengeCreateTooltip": "Crea sfida",
   "@jamChallengeCreateTooltip": {},
   "jamChallengeDeadline": "Scadenza: {date}",
-  "@jamChallengeDeadline": { "placeholders": { "date": { "type": "String" } } },
+  "@jamChallengeDeadline": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "jamChallengeProgress": "{progress} / {target} {unit}",
-  "@jamChallengeProgress": { "placeholders": { "progress": { "type": "int" }, "target": { "type": "int" }, "unit": { "type": "String" } } },
+  "@jamChallengeProgress": {
+    "placeholders": {
+      "progress": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "jamChallengeNoChallenges": "Nessuna sfida attiva",
   "@jamChallengeNoChallenges": {},
   "jamChallengeNoChallengesBody": "Crea una sfida condivisa e motiva i tuoi compagni di lettura.",
@@ -1351,10 +1230,15 @@
   "jamChallengeSetDeadline": "Imposta scadenza (opzionale)",
   "@jamChallengeSetDeadline": {},
   "jamChallengeDeadlineLabel": "Scadenza: {date}",
-  "@jamChallengeDeadlineLabel": { "placeholders": { "date": { "type": "String" } } },
+  "@jamChallengeDeadlineLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "jamChallengeCreateCta": "Crea",
   "@jamChallengeCreateCta": {},
-
   "msgSubtitle": "Conversazioni e gruppi",
   "@msgSubtitle": {},
   "msgErrorLoading": "Errore di caricamento",
@@ -1364,7 +1248,13 @@
   "msgPhoto": "Foto",
   "@msgPhoto": {},
   "msgParticipantCount": "{count} partecipanti",
-  "@msgParticipantCount": { "placeholders": { "count": { "type": "int" } } },
+  "@msgParticipantCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "msgEmptyBody": "Inizia una conversazione con un lettore\no crea un gruppo di lettura.",
   "@msgEmptyBody": {},
   "msgNewConversation": "Nuova conversazione",
@@ -1393,25 +1283,28 @@
   "@msgSearchUserToAdd": {},
   "msgCreateGroupCta": "Crea gruppo",
   "@msgCreateGroupCta": {},
-
   "giphySearchHint": "Cerca GIF…",
   "@giphySearchHint": {},
   "giphyError": "Errore {code}",
-  "@giphyError": { "placeholders": { "code": { "type": "String" } } },
+  "@giphyError": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "giphyNetworkUnavailable": "Rete non disponibile",
   "@giphyNetworkUnavailable": {},
   "giphyNoResults": "Nessun risultato",
   "@giphyNoResults": {},
   "giphyLoading": "Caricamento…",
   "@giphyLoading": {},
-
   "onboardingLangChoose": "Scegli la tua lingua",
   "@onboardingLangChoose": {},
   "onboardingLangChangeLater": "Puoi cambiarla in seguito nelle Impostazioni",
   "@onboardingLangChangeLater": {},
   "onboardingLangUsernameHint": "username",
   "@onboardingLangUsernameHint": {},
-
   "profileWriteButton": "Scrivi",
   "profileYourProfile": "Il tuo profilo",
   "profileFavouriteBooksSection": "LIBRI DEL CUORE",
@@ -1430,9 +1323,14 @@
   "pinnedFeaturedTitle": "Highlight in evidenza",
   "pinnedSyncFirst": "Sincronizza prima i tuoi highlight per poterli mettere in evidenza.",
   "pinnedSelectUpTo": "Seleziona fino a 3  ({count}/3)",
-  "@pinnedSelectUpTo": { "placeholders": { "count": { "type": "int" } } },
+  "@pinnedSelectUpTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "bookUntitled": "Senza titolo",
-
   "gradientSepia": "Vintage Wine",
   "gradientForest": "Giallo Pastello",
   "gradientOcean": "Matcha",
@@ -1446,7 +1344,6 @@
   "patternLines": "Linee",
   "patternGrid": "Griglia",
   "patternCircles": "Cerchi",
-
   "editProfilePhotosLabel": "FOTO",
   "editProfileInformationLabel": "INFORMAZIONI",
   "editProfileDisplayNameHint": "es. Marco Rossi",
@@ -1461,16 +1358,29 @@
   "editProfileUsernameLabel": "Username",
   "editProfileUsernameHint": "es. marco_legge",
   "editProfileUsernameAvailable": "Username disponibile!",
-
   "socialNewJamTitle": "Nuova Jam",
   "socialNewJamSubtitle": "Crea un nuovo circolo di lettura",
   "socialJamNameHint": "es. «Classici del Novecento»",
   "socialJamCreateHint": "Riceverai un codice invito da condividere con gli amici.",
   "socialShareJamBody": "Unisciti alla mia Jam «{name}» su Scripta.\n\nCodice invito: {code}",
-  "@socialShareJamBody": { "placeholders": { "name": { "type": "String" }, "code": { "type": "String" } } },
+  "@socialShareJamBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "socialShareJamSubject": "Scripta Jam – {name}",
-  "@socialShareJamSubject": { "placeholders": { "name": { "type": "String" } } },
-
+  "@socialShareJamSubject": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "feedComposerHint": "Cosa stai leggendo? Condividi un pensiero…",
   "feedNewPostTitle": "Nuovo post",
   "feedImageUnavailable": "Immagine non disponibile",
@@ -1480,7 +1390,6 @@
   "feedCommentsSection": "COMMENTI",
   "postDetailTitle": "Post",
   "postUnavailable": "Post non disponibile",
-
   "jamChangeCover": "Cambia copertina Jam",
   "jamInviteFriends": "Invita amici",
   "jamAllHighlightsSection": "TUTTI GLI HIGHLIGHT",
@@ -1492,18 +1401,53 @@
   "jamInviteCodeLabel": "CODICE INVITO",
   "jamOwnerBadge": "PROPRIETARIO",
   "jamReadingNow": "Sta leggendo: {title}",
-  "@jamReadingNow": { "placeholders": { "title": { "type": "String" } } },
+  "@jamReadingNow": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "jamSharedBy": "Condiviso da {name}",
-  "@jamSharedBy": { "placeholders": { "name": { "type": "String" } } },
+  "@jamSharedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "jamResultCount": "{count, plural, =1{1 risultato} other{{count} risultati}}",
-  "@jamResultCount": { "placeholders": { "count": { "type": "int" } } },
+  "@jamResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "jamMatchCount": "{count, plural, =1{Hai 1 citazione da questo libro · Rispondi} other{Hai {count} citazioni da questo libro · Rispondi}}",
-  "@jamMatchCount": { "placeholders": { "count": { "type": "int" } } },
+  "@jamMatchCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "jamShareBody": "Unisciti alla mia Jam su Scripta.\n\nCodice: {code}\n\nScarica l'app: https://get-scripta.app",
-  "@jamShareBody": { "placeholders": { "code": { "type": "String" } } },
+  "@jamShareBody": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "jamShareSubject": "Unisciti alla Jam «{title}»",
-  "@jamShareSubject": { "placeholders": { "title": { "type": "String" } } },
-
+  "@jamShareSubject": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "weeklyPrompt1": "Condividi un highlight che questa settimana ti ha fatto cambiare idea.",
   "weeklyPrompt2": "Una citazione che ti ha fatto ridere di recente — condividila con la Jam.",
   "weeklyPrompt3": "L'idea più scomoda che hai sottolineato di recente.",
@@ -1516,7 +1460,6 @@
   "weeklyPrompt10": "La citazione più «difficile» che hai sottolineato. Spiegala in 2 righe.",
   "weeklyPrompt11": "Un passaggio che hai condiviso offline con qualcuno. Portalo qui.",
   "weeklyPrompt12": "Un'annotazione che hai fatto anni fa e che oggi leggeresti in modo diverso.",
-
   "libraryImportTooltip": "Importa · Tieni premuto per reimportare da zero",
   "bookHighlightLabel": "HIGHLIGHT",
   "highlightFromLabel": "DA",
@@ -1524,7 +1467,6 @@
   "colorBlue": "Blu",
   "colorPink": "Rosa",
   "colorOrange": "Arancione",
-
   "widgetNoHighlight": "Nessun highlight disponibile",
   "widgetUpdatedOnPhone": "Widget aggiornato sul telefono",
   "widgetUpdatedCheck": "Widget aggiornato ✓",
@@ -1535,21 +1477,17 @@
   "widgetWeatherCloudy": "Nuvoloso",
   "widgetWeatherSnow": "Neve",
   "widgetWeatherClear": "Cielo",
-
   "settingsInJamsSection": "NELLE JAM",
   "settingsSettingsSection": "IMPOSTAZIONI",
   "settingsShareInvite": "Leggo su Scripta\nVieni a leggere con me!\nhttps://get-scripta.app",
   "settingsNothingToExport": "Nessun highlight da esportare. Importa prima My Clippings.txt.",
   "settingsCurrentlyReading": "IN LETTURA",
   "settingsSignInPromoBody": "Tieni traccia dei tuoi libri,\nhighlight e connessioni.",
-
   "privacyTitle": "Privacy",
   "privacyPreviewUnavailable": "Anteprima non disponibile su questa piattaforma.",
   "privacyOpenInBrowser": "Apri nel browser",
-
   "authTermsPrefix": "Creando un account accetti la nostra ",
   "authTermsSuffix": " e confermi di avere almeno 16 anni.",
-
   "chatUnableToLoad": "Impossibile caricare i messaggi",
   "chatEmptyBody": "Inizia la conversazione\ninviando il primo messaggio.",
   "chatDateToday": "Oggi",
@@ -1558,7 +1496,6 @@
   "msgUserFallback": "Utente",
   "searchUserFallback": "Lettore",
   "statsShareUserFallback": "io",
-
   "shareCardTitle": "Condividi highlight",
   "shareCardStatsTitle": "Condividi statistiche",
   "shareImagePreparing": "Preparazione…",
@@ -1567,13 +1504,24 @@
   "shareStatsStreakLabel": "GIORNI DI FILA",
   "shareStatsMonthLabel": "QUESTO MESE",
   "shareStatsReadingOf": "La lettura di {userName}",
-  "@shareStatsReadingOf": { "placeholders": { "userName": { "type": "String" } } },
+  "@shareStatsReadingOf": {
+    "placeholders": {
+      "userName": {
+        "type": "String"
+      }
+    }
+  },
   "shareStatsBooksLabel": "LIBRI {year}",
-  "@shareStatsBooksLabel": { "placeholders": { "year": { "type": "int" } } },
+  "@shareStatsBooksLabel": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
   "shareAsStory": "Condividi come storia",
   "shareStoryPreparing": "Creazione storia…",
   "shareStoryError": "Impossibile creare la storia",
-
   "reviewsSectionTitle": "LE TUE RECENSIONI",
   "reviewsWriteCta": "Scrivi recensione",
   "reviewsEmptyTitle": "Nessuna recensione",
@@ -1592,7 +1540,6 @@
   "reviewsPickerEmpty": "Importa i tuoi highlight Kindle per recensire i libri che hai letto.",
   "reviewsHighlightPickerTitle": "Allega un highlight",
   "reviewsNoHighlights": "Nessun highlight per questo libro.",
-
   "sharePostTitle": "Condividi",
   "sharePostSearchHint": "Cerca chat o persone",
   "sharePostSent": "Inviato ✓",
@@ -1603,180 +1550,183 @@
   "sharePostNoResults": "Nessun risultato",
   "sharePostStartConvo": "Avvia conversazione",
   "sharePostError": "Errore: {error}",
-  "@sharePostError": { "placeholders": { "error": { "type": "String" } } },
-
+  "@sharePostError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "chatSharedPost": "Post condiviso",
   "chatSharedPostTap": "Tocca per aprire",
-
   "profileTabPosts": "Profilo",
   "profileTabReviews": "Recensioni",
-
   "jamBadge": "JAM",
-
   "reportSheetTitle": "Segnala contenuto",
   "@reportSheetTitle": {},
-
   "reportReasonSpam": "Spam",
   "@reportReasonSpam": {},
-
   "reportReasonHarassment": "Molestie o bullismo",
   "@reportReasonHarassment": {},
-
   "reportReasonHate": "Incitamento all'odio",
   "@reportReasonHate": {},
-
   "reportReasonSexual": "Nudità o contenuti sessuali",
   "@reportReasonSexual": {},
-
   "reportReasonViolence": "Violenza o contenuti pericolosi",
   "@reportReasonViolence": {},
-
   "reportReasonMisinformation": "Disinformazione",
   "@reportReasonMisinformation": {},
-
   "reportReasonOther": "Altro",
   "@reportReasonOther": {},
-
   "reportSuccess": "Segnalazione inviata — grazie per aiutare a mantenere sicura la community.",
   "@reportSuccess": {},
-
   "reportRateLimited": "Hai segnalato troppi contenuti oggi. Riprova più tardi.",
   "@reportRateLimited": {},
-
   "reportError": "Impossibile inviare la segnalazione. Riprova.",
   "@reportError": {},
-
   "reportAction": "Segnala",
   "@reportAction": {},
-
   "reportUser": "Segnala utente",
   "@reportUser": {},
-
   "reportMessage": "Segnala messaggio",
   "@reportMessage": {},
-
   "blockUser": "Blocca utente",
   "@blockUser": {},
-
   "unblockUser": "Sblocca utente",
   "@unblockUser": {},
-
   "blockUserConfirmTitle": "Bloccare questo utente?",
   "@blockUserConfirmTitle": {},
-
   "blockUserConfirmBody": "Non vedrai più i suoi post, commenti e messaggi, e non potrà più contattarti. Puoi sbloccarlo in qualsiasi momento.",
   "@blockUserConfirmBody": {},
-
   "blockUserConfirmConfirm": "Blocca",
   "@blockUserConfirmConfirm": {},
-
   "blockUserConfirmCancel": "Annulla",
   "@blockUserConfirmCancel": {},
-
   "userBlocked": "Utente bloccato",
   "@userBlocked": {},
-
   "userUnblocked": "Utente sbloccato",
   "@userUnblocked": {},
-
   "blockedUsersTitle": "Utenti bloccati",
   "@blockedUsersTitle": {},
-
   "blockedUsersEmpty": "Non hai bloccato nessuno.",
   "@blockedUsersEmpty": {},
-
   "unblockAction": "Sblocca",
   "@unblockAction": {},
-
   "termsTitle": "Termini di servizio",
   "@termsTitle": {},
-
   "settingsTermsOfService": "Termini di servizio",
   "@settingsTermsOfService": {},
-
   "signupAcceptPrefix": "Accetto i ",
   "@signupAcceptPrefix": {},
-
   "signupAcceptTerms": "Termini di servizio",
   "@signupAcceptTerms": {},
-
   "signupAcceptAnd": " e la ",
   "@signupAcceptAnd": {},
-
   "signupAcceptPrivacy": "Informativa Privacy",
   "@signupAcceptPrivacy": {},
-
   "authMustAcceptTerms": "Accetta i Termini di servizio per continuare.",
   "@authMustAcceptTerms": {},
-
   "contentBlockedTitle": "Contenuto non pubblicabile",
   "@contentBlockedTitle": {},
-
   "contentBlockedMessage": "Il tuo contenuto sembra violare le regole della community ({category}). Modificalo prima di pubblicare.",
   "@contentBlockedMessage": {
     "description": "Shown when a post/comment is blocked at creation by the keyword filter. {category} is a localized category label.",
-    "placeholders": { "category": { "type": "String" } }
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
   },
-
   "contentHiddenTitle": "Contenuto potenzialmente inappropriato",
   "@contentHiddenTitle": {},
-
   "contentRevealAction": "Tocca per mostrare",
   "@contentRevealAction": {},
-
   "contentCategoryViolence": "violenza",
   "@contentCategoryViolence": {},
-
   "contentCategorySpam": "spam",
   "@contentCategorySpam": {},
-
   "contentCategoryScam": "truffa",
   "@contentCategoryScam": {},
-
   "contentCategorySexual": "contenuti sessuali",
   "@contentCategorySexual": {},
-
   "storyPreviewTitle": "Anteprima storia",
   "@storyPreviewTitle": {},
-
   "storyShareInstagram": "Instagram Stories",
   "@storyShareInstagram": {},
-
   "storyShareMore": "Altre app",
   "@storyShareMore": {},
-
   "otpTitle": "Conferma la tua email",
   "@otpTitle": {},
   "otpSubtitle": "Inserisci il codice a 6 cifre che abbiamo inviato a {email}",
-  "@otpSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "@otpSubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
   "otpVerifyCta": "Conferma",
   "@otpVerifyCta": {},
   "otpResend": "Invia di nuovo il codice",
   "@otpResend": {},
   "otpResendIn": "Invia di nuovo tra {seconds}s",
-  "@otpResendIn": { "placeholders": { "seconds": { "type": "int" } } },
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "otpErrorInvalid": "Codice non valido o scaduto. Riprova.",
   "@otpErrorInvalid": {},
   "otpResent": "Ti abbiamo inviato un nuovo codice.",
   "@otpResent": {},
-
   "storyShareTagline": "Condividi e fai scoprire Scripta ✨",
   "@storyShareTagline": {},
-
   "ripassoTitle": "Ripasso",
   "ripassoOfTheDay": "Ripasso del giorno",
   "ripassoDueCount": "{count, plural, =1{1 da ripassare} other{{count} da ripassare}}",
-  "@ripassoDueCount": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoDueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoStreak": "{count, plural, =1{1 giorno di fila} other{{count} giorni di fila}}",
-  "@ripassoStreak": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoStreakDays": "{count, plural, =0{Torna domani per iniziare una serie.} =1{1 giorno di fila. A domani.} other{{count} giorni di fila. A domani.}}",
-  "@ripassoStreakDays": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoDoneToday": "{count, plural, =0{Ripassato per oggi} =1{Ripassato per oggi · 1 giorno 🔥} other{Ripassato per oggi · {count} giorni 🔥}}",
-  "@ripassoDoneToday": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoDoneToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoTodayCompleted": "Ripasso di oggi completato!",
   "@ripassoTodayCompleted": {},
   "ripassoRecapCards": "{count, plural, =1{1 carta ripassata} other{{count} carte ripassate}}",
-  "@ripassoRecapCards": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoRecapCards": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoRecapGood": "Ricordate",
   "@ripassoRecapGood": {},
   "ripassoRecapHard": "Difficili",
@@ -1784,165 +1734,410 @@
   "ripassoRecapForgot": "Da rivedere",
   "@ripassoRecapForgot": {},
   "ripassoRecapLine": "{cards} carte · {good} ricordate · {hard} difficili · {forgot} da rivedere",
-  "@ripassoRecapLine": { "placeholders": { "cards": { "type": "int" }, "good": { "type": "int" }, "hard": { "type": "int" }, "forgot": { "type": "int" } } },
+  "@ripassoRecapLine": {
+    "placeholders": {
+      "cards": {
+        "type": "int"
+      },
+      "good": {
+        "type": "int"
+      },
+      "hard": {
+        "type": "int"
+      },
+      "forgot": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoComeBackTomorrow": "Torna domani per il prossimo",
   "@ripassoComeBackTomorrow": {},
   "ripassoForgot": "Non ricordo",
   "ripassoHard": "Difficile",
   "ripassoGood": "Ricordo",
   "ripassoProgress": "{done} di {total}",
-  "@ripassoProgress": { "placeholders": { "done": { "type": "int" }, "total": { "type": "int" } } },
+  "@ripassoProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoAllDone": "Tutto ripassato per oggi",
   "ripassoEmptyTitle": "Niente da ripassare",
   "ripassoEmpty": "Niente da ripassare oggi. Importa altri highlight per continuare il rituale.",
   "ripassoBackToLibrary": "Torna alla libreria",
   "ripassoNextTomorrow": "domani",
   "ripassoNextDays": "tra {count}g",
-  "@ripassoNextDays": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoNextDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoNextWeeks": "{count, plural, =1{tra 1 settimana} other{tra {count} settimane}}",
-  "@ripassoNextWeeks": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoNextWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "profileStreakStat": "SERIE",
   "ripassoNextReview": "Prossimo ripasso tra {time}",
-  "@ripassoNextReview": { "placeholders": { "time": { "type": "String", "example": "07:42:18" } } },
+  "@ripassoNextReview": {
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "07:42:18"
+      }
+    }
+  },
   "ripassoStreakLabel": "{count, plural, =1{1 giorno di fila} other{{count} giorni di fila}}",
-  "@ripassoStreakLabel": { "placeholders": { "count": { "type": "int" } } },
+  "@ripassoStreakLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "ripassoStreakStart": "Inizia la tua serie",
   "ripassoBestStreak": "Record {count}",
-  "@ripassoBestStreak": { "placeholders": { "count": { "type": "int" } } },
-
+  "@ripassoBestStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "profileTabActivity": "Attività",
   "activityReadingTitle": "Letture",
   "activityReviewTitle": "Ripasso",
   "activityReadTodayLabel": "Letto oggi",
   "activityReviewedTodayLabel": "Ripassato oggi",
   "activityReadingSummary": "{days, plural, =0{Ancora nessun giorno di lettura nell'ultimo anno} =1{1 giorno di lettura nell'ultimo anno · serie più lunga {streak}} other{{days} giorni di lettura nell'ultimo anno · serie più lunga {streak}}}",
-  "@activityReadingSummary": { "placeholders": { "days": { "type": "int" }, "streak": { "type": "int" } } },
+  "@activityReadingSummary": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
   "activityReviewSummary": "{reviews, plural, =0{Ancora nessun ripasso · serie attuale {current} · record {best}} =1{1 ripasso · serie attuale {current} · record {best}} other{{reviews} ripassi · serie attuale {current} · record {best}}}",
-  "@activityReviewSummary": { "placeholders": { "reviews": { "type": "int" }, "current": { "type": "int" }, "best": { "type": "int" } } },
+  "@activityReviewSummary": {
+    "placeholders": {
+      "reviews": {
+        "type": "int"
+      },
+      "current": {
+        "type": "int"
+      },
+      "best": {
+        "type": "int"
+      }
+    }
+  },
   "activityShareTooltip": "Condividi",
   "activityShareSheetTitle": "Condividi la tua attività",
   "activityShareSheetTagline": "Un anno della tua vita da lettore, pronto da pubblicare.",
   "activityShareReadingHeadline": "{days, plural, =0{Un anno di letture} =1{1 giorno di lettura quest'anno} other{{days} giorni di lettura quest'anno}}",
-  "@activityShareReadingHeadline": { "placeholders": { "days": { "type": "int" } } },
+  "@activityShareReadingHeadline": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "activityShareReviewHeadline": "{reviews, plural, =0{Un anno di ripasso} =1{1 ripasso quest'anno} other{{reviews} ripassi quest'anno}}",
-  "@activityShareReviewHeadline": { "placeholders": { "reviews": { "type": "int" } } },
-
+  "@activityShareReviewHeadline": {
+    "placeholders": {
+      "reviews": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedShareTitle": "Il tuo Reading Wrapped",
-  "@wrappedShareTitle": { "description": "Title of the share sheet that previews a Reading Wrapped story card." },
+  "@wrappedShareTitle": {
+    "description": "Title of the share sheet that previews a Reading Wrapped story card."
+  },
   "wrappedShareTagline": "Condividilo e mostra cosa hai letto ✨",
-  "@wrappedShareTagline": { "description": "Sub-title under the Reading Wrapped share-sheet title." },
-
+  "@wrappedShareTagline": {
+    "description": "Sub-title under the Reading Wrapped share-sheet title."
+  },
   "wrappedPeriodWeek": "Settimana",
-  "@wrappedPeriodWeek": { "description": "Period label for the weekly Reading Wrapped recap." },
+  "@wrappedPeriodWeek": {
+    "description": "Period label for the weekly Reading Wrapped recap."
+  },
   "wrappedPeriodMonth": "Mese",
-  "@wrappedPeriodMonth": { "description": "Period label for the monthly Reading Wrapped recap." },
+  "@wrappedPeriodMonth": {
+    "description": "Period label for the monthly Reading Wrapped recap."
+  },
   "wrappedPeriodAllTime": "Sempre",
-  "@wrappedPeriodAllTime": { "description": "Period label for the all-time Reading Wrapped recap." },
-
+  "@wrappedPeriodAllTime": {
+    "description": "Period label for the all-time Reading Wrapped recap."
+  },
   "wrappedIntroEyebrow": "Reading Wrapped",
-  "@wrappedIntroEyebrow": { "description": "Small caps eyebrow on the intro slide of Reading Wrapped." },
+  "@wrappedIntroEyebrow": {
+    "description": "Small caps eyebrow on the intro slide of Reading Wrapped."
+  },
   "wrappedIntroTitle": "La tua lettura, {period}",
-  "@wrappedIntroTitle": { "description": "Headline on the intro slide. {period} is a localized period label (Week / Month / All-time).", "placeholders": { "period": { "type": "String", "example": "Settimana" } } },
+  "@wrappedIntroTitle": {
+    "description": "Headline on the intro slide. {period} is a localized period label (Week / Month / All-time).",
+    "placeholders": {
+      "period": {
+        "type": "String",
+        "example": "Settimana"
+      }
+    }
+  },
   "wrappedIntroSubtitle": "Una piccola retrospettiva di ciò che hai sottolineato, costruita solo dai tuoi dati.",
-  "@wrappedIntroSubtitle": { "description": "Subtitle on the intro slide of Reading Wrapped." },
-
+  "@wrappedIntroSubtitle": {
+    "description": "Subtitle on the intro slide of Reading Wrapped."
+  },
   "wrappedHighlightsLabel": "Highlight",
-  "@wrappedHighlightsLabel": { "description": "Label under the big highlights number, and on recap chips." },
+  "@wrappedHighlightsLabel": {
+    "description": "Label under the big highlights number, and on recap chips."
+  },
   "wrappedHighlightsFootnote": "su {count} di sempre",
-  "@wrappedHighlightsFootnote": { "description": "Footnote under the highlights count, comparing to the lifetime total. {count} is the all-time highlight count.", "placeholders": { "count": { "type": "int" } } },
-
+  "@wrappedHighlightsFootnote": {
+    "description": "Footnote under the highlights count, comparing to the lifetime total. {count} is the all-time highlight count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedBooksLabel": "Libri",
-  "@wrappedBooksLabel": { "description": "Label next to the books-touched number on the duo-stat slide and recap chips." },
+  "@wrappedBooksLabel": {
+    "description": "Label next to the books-touched number on the duo-stat slide and recap chips."
+  },
   "wrappedDaysReadLabel": "Giorni di lettura",
-  "@wrappedDaysReadLabel": { "description": "Label next to the distinct-days-read number." },
+  "@wrappedDaysReadLabel": {
+    "description": "Label next to the distinct-days-read number."
+  },
   "wrappedBusiestDay": "Il tuo giorno più intenso è stato {day}.",
-  "@wrappedBusiestDay": { "description": "Caption on the duo-stat slide naming the busiest weekday. {day} is a localized weekday name.", "placeholders": { "day": { "type": "String", "example": "lunedì" } } },
-
+  "@wrappedBusiestDay": {
+    "description": "Caption on the duo-stat slide naming the busiest weekday. {day} is a localized weekday name.",
+    "placeholders": {
+      "day": {
+        "type": "String",
+        "example": "lunedì"
+      }
+    }
+  },
   "wrappedTopBookEyebrow": "Il più sottolineato",
-  "@wrappedTopBookEyebrow": { "description": "Eyebrow above the most-highlighted book on its slide." },
+  "@wrappedTopBookEyebrow": {
+    "description": "Eyebrow above the most-highlighted book on its slide."
+  },
   "wrappedTopBookCount": "{count, plural, =1{1 highlight da questo libro} other{{count} highlight da questo libro}}",
-  "@wrappedTopBookCount": { "description": "Highlight count for the top book, shown under its cover.", "placeholders": { "count": { "type": "int" } } },
-
+  "@wrappedTopBookCount": {
+    "description": "Highlight count for the top book, shown under its cover.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedStandoutEyebrow": "Il passaggio che spicca",
-  "@wrappedStandoutEyebrow": { "description": "Eyebrow above the standout highlight quote slide." },
-
+  "@wrappedStandoutEyebrow": {
+    "description": "Eyebrow above the standout highlight quote slide."
+  },
   "wrappedStreakLabel": "Giorni di fila",
-  "@wrappedStreakLabel": { "description": "Label under the review-streak number on the streak slide and recap chips." },
+  "@wrappedStreakLabel": {
+    "description": "Label under the review-streak number on the streak slide and recap chips."
+  },
   "wrappedStreakZero": "Il tuo prossimo ripasso può accendere la fiamma. Si comincia domani.",
-  "@wrappedStreakZero": { "description": "Caption on the streak slide when the current streak is zero." },
+  "@wrappedStreakZero": {
+    "description": "Caption on the streak slide when the current streak is zero."
+  },
   "wrappedStreakCaption": "{count, plural, =1{Un giorno di ripasso di fila. Tienila accesa.} other{{count} giorni di ripasso di fila. Tienila accesa.}}",
-  "@wrappedStreakCaption": { "description": "Caption on the streak slide when the streak is one or more days.", "placeholders": { "count": { "type": "int" } } },
-
+  "@wrappedStreakCaption": {
+    "description": "Caption on the streak slide when the streak is one or more days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedSummaryEyebrow": "La tua personalità di lettura",
-  "@wrappedSummaryEyebrow": { "description": "Eyebrow above the reading-personality on the final summary slide." },
-
+  "@wrappedSummaryEyebrow": {
+    "description": "Eyebrow above the reading-personality on the final summary slide."
+  },
   "wrappedWeekdayMon": "lunedì",
-  "@wrappedWeekdayMon": { "description": "Weekday name (Monday) used in the busiest-day caption." },
+  "@wrappedWeekdayMon": {
+    "description": "Weekday name (Monday) used in the busiest-day caption."
+  },
   "wrappedWeekdayTue": "martedì",
-  "@wrappedWeekdayTue": { "description": "Weekday name (Tuesday)." },
+  "@wrappedWeekdayTue": {
+    "description": "Weekday name (Tuesday)."
+  },
   "wrappedWeekdayWed": "mercoledì",
-  "@wrappedWeekdayWed": { "description": "Weekday name (Wednesday)." },
+  "@wrappedWeekdayWed": {
+    "description": "Weekday name (Wednesday)."
+  },
   "wrappedWeekdayThu": "giovedì",
-  "@wrappedWeekdayThu": { "description": "Weekday name (Thursday)." },
+  "@wrappedWeekdayThu": {
+    "description": "Weekday name (Thursday)."
+  },
   "wrappedWeekdayFri": "venerdì",
-  "@wrappedWeekdayFri": { "description": "Weekday name (Friday)." },
+  "@wrappedWeekdayFri": {
+    "description": "Weekday name (Friday)."
+  },
   "wrappedWeekdaySat": "sabato",
-  "@wrappedWeekdaySat": { "description": "Weekday name (Saturday)." },
+  "@wrappedWeekdaySat": {
+    "description": "Weekday name (Saturday)."
+  },
   "wrappedWeekdaySun": "domenica",
-  "@wrappedWeekdaySun": { "description": "Weekday name (Sunday)." },
-
+  "@wrappedWeekdaySun": {
+    "description": "Weekday name (Sunday)."
+  },
   "wrappedPersonaScripta": "Il Marginalista",
-  "@wrappedPersonaScripta": { "description": "Reading personality name: the balanced, house-default reader." },
+  "@wrappedPersonaScripta": {
+    "description": "Reading personality name: the balanced, house-default reader."
+  },
   "wrappedPersonaScriptaDesc": "Leggi con equilibrio e annoti con misura — le tue postille sono il cuore di tutto.",
-  "@wrappedPersonaScriptaDesc": { "description": "Description of the Scripta reading personality." },
+  "@wrappedPersonaScriptaDesc": {
+    "description": "Description of the Scripta reading personality."
+  },
   "wrappedPersonaDevourer": "Il Divoratore",
-  "@wrappedPersonaDevourer": { "description": "Reading personality name: many highlights, few books." },
+  "@wrappedPersonaDevourer": {
+    "description": "Reading personality name: many highlights, few books."
+  },
   "wrappedPersonaDevourerDesc": "Quando un libro ti prende non lo molli: lo sottolinei da cima a fondo.",
-  "@wrappedPersonaDevourerDesc": { "description": "Description of the Devourer reading personality." },
+  "@wrappedPersonaDevourerDesc": {
+    "description": "Description of the Devourer reading personality."
+  },
   "wrappedPersonaCollector": "Il Collezionista",
-  "@wrappedPersonaCollector": { "description": "Reading personality name: many books, lighter touch each." },
+  "@wrappedPersonaCollector": {
+    "description": "Reading personality name: many books, lighter touch each."
+  },
   "wrappedPersonaCollectorDesc": "Spazi tra molti libri, raccogliendo un pensiero qui e uno là.",
-  "@wrappedPersonaCollectorDesc": { "description": "Description of the Collector reading personality." },
+  "@wrappedPersonaCollectorDesc": {
+    "description": "Description of the Collector reading personality."
+  },
   "wrappedPersonaDeepDiver": "Il Sommozzatore",
-  "@wrappedPersonaDeepDiver": { "description": "Reading personality name: one or two books, deeply annotated." },
+  "@wrappedPersonaDeepDiver": {
+    "description": "Reading personality name: one or two books, deeply annotated."
+  },
   "wrappedPersonaDeepDiverDesc": "Ti immergi in pochi libri e li esplori fino in fondo.",
-  "@wrappedPersonaDeepDiverDesc": { "description": "Description of the Deep Diver reading personality." },
+  "@wrappedPersonaDeepDiverDesc": {
+    "description": "Description of the Deep Diver reading personality."
+  },
   "wrappedPersonaDabbler": "L'Esploratore",
-  "@wrappedPersonaDabbler": { "description": "Reading personality name: a gentle handful — just getting started." },
+  "@wrappedPersonaDabbler": {
+    "description": "Reading personality name: a gentle handful — just getting started."
+  },
   "wrappedPersonaDabblerDesc": "Stai appena cominciando ad annotare: ogni riga è un buon inizio.",
-  "@wrappedPersonaDabblerDesc": { "description": "Description of the Dabbler reading personality." },
+  "@wrappedPersonaDabblerDesc": {
+    "description": "Description of the Dabbler reading personality."
+  },
   "wrappedPersonaMarathoner": "Il Maratoneta",
-  "@wrappedPersonaMarathoner": { "description": "Reading personality name: read on many distinct days — a steady ritual." },
+  "@wrappedPersonaMarathoner": {
+    "description": "Reading personality name: read on many distinct days — a steady ritual."
+  },
   "wrappedPersonaMarathonerDesc": "Giorno dopo giorno torni tra le pagine: la lettura è il tuo rituale.",
-  "@wrappedPersonaMarathonerDesc": { "description": "Description of the Marathoner reading personality." },
-
+  "@wrappedPersonaMarathonerDesc": {
+    "description": "Description of the Marathoner reading personality."
+  },
   "wrappedPersonaShareCaption": "Quest'anno la mia personalità di lettura è {persona}",
-  "@wrappedPersonaShareCaption": { "description": "Share caption stamped on the summary slide. {persona} is a localized personality name.", "placeholders": { "persona": { "type": "String", "example": "Il Marginalista" } } },
-
+  "@wrappedPersonaShareCaption": {
+    "description": "Share caption stamped on the summary slide. {persona} is a localized personality name.",
+    "placeholders": {
+      "persona": {
+        "type": "String",
+        "example": "Il Marginalista"
+      }
+    }
+  },
   "wrappedShareHighlightsCaption": "{count, plural, =1{1 highlight in questa {period}} other{{count} highlight in questa {period}}}",
-  "@wrappedShareHighlightsCaption": { "description": "Share caption for the highlights slide. {count} highlights, {period} is a localized period label.", "placeholders": { "count": { "type": "int" }, "period": { "type": "String", "example": "settimana" } } },
+  "@wrappedShareHighlightsCaption": {
+    "description": "Share caption for the highlights slide. {count} highlights, {period} is a localized period label.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "period": {
+        "type": "String",
+        "example": "settimana"
+      }
+    }
+  },
   "wrappedShareBooksCaption": "{count, plural, =1{1 libro tra le mani} other{{count} libri tra le mani}}",
-  "@wrappedShareBooksCaption": { "description": "Share caption for the books slide.", "placeholders": { "count": { "type": "int" } } },
+  "@wrappedShareBooksCaption": {
+    "description": "Share caption for the books slide.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "savedHighlightsError": "Non sono riuscito a salvarla. Riprova.",
-  "@savedHighlightsError": { "description": "Shown when saving/unsaving a highlight failed to persist." },
+  "@savedHighlightsError": {
+    "description": "Shown when saving/unsaving a highlight failed to persist."
+  },
   "savedHighlightsTile": "Salvati",
-  "@savedHighlightsTile": { "description": "Settings row opening the reader's private list of saved highlights." },
+  "@savedHighlightsTile": {
+    "description": "Settings row opening the reader's private list of saved highlights."
+  },
   "savedHighlightsSubtitle": "Le frasi che hai messo da parte",
-  "@savedHighlightsSubtitle": { "description": "Subtitle of the Saved settings row." },
+  "@savedHighlightsSubtitle": {
+    "description": "Subtitle of the Saved settings row."
+  },
   "savedHighlightsTitle": "Salvati",
-  "@savedHighlightsTitle": { "description": "Title of the saved-highlights screen." },
+  "@savedHighlightsTitle": {
+    "description": "Title of the saved-highlights screen."
+  },
   "savedHighlightsCount": "{count, plural, =0{Nessuna frase salvata} =1{1 frase salvata} other{{count} frasi salvate}}",
-  "@savedHighlightsCount": { "description": "How many highlights the reader has saved.", "placeholders": { "count": { "type": "int" } } },
+  "@savedHighlightsCount": {
+    "description": "How many highlights the reader has saved.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "savedHighlightsEmpty": "Ancora niente qui",
-  "@savedHighlightsEmpty": { "description": "Empty state title on the saved-highlights screen." },
+  "@savedHighlightsEmpty": {
+    "description": "Empty state title on the saved-highlights screen."
+  },
   "savedHighlightsEmptyHint": "Tocca il segnalibro su una frase per ritrovarla qui. Questa lista la vedi solo tu.",
-  "@savedHighlightsEmptyHint": { "description": "Empty state body on the saved-highlights screen." },
+  "@savedHighlightsEmptyHint": {
+    "description": "Empty state body on the saved-highlights screen."
+  },
   "savedHighlightsPrivate": "Solo tu puoi vedere questa lista",
-  "@savedHighlightsPrivate": { "description": "Privacy reassurance shown at the top of the saved-highlights screen." },
+  "@savedHighlightsPrivate": {
+    "description": "Privacy reassurance shown at the top of the saved-highlights screen."
+  },
   "savedHighlightsRemoved": "Rimossa dai salvati",
-  "@savedHighlightsRemoved": { "description": "Snackbar shown after unsaving a highlight." },
+  "@savedHighlightsRemoved": {
+    "description": "Snackbar shown after unsaving a highlight."
+  },
   "wrappedShareTopBookCaption": "Il mio libro più sottolineato: {title} ({count})",
-  "@wrappedShareTopBookCaption": { "description": "Share caption for the top-book slide. {title} book title, {count} highlight count.", "placeholders": { "title": { "type": "String" }, "count": { "type": "int" } } },
+  "@wrappedShareTopBookCaption": {
+    "description": "Share caption for the top-book slide. {title} book title, {count} highlight count.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "wrappedShareStreakCaption": "{count, plural, =0{La mia serie di ripassi sta per iniziare} =1{1 giorno di ripasso di fila} other{{count} giorni di ripasso di fila}}",
-  "@wrappedShareStreakCaption": { "description": "Share caption for the streak slide.", "placeholders": { "count": { "type": "int" } } }
+  "@wrappedShareStreakCaption": {
+    "description": "Share caption for the streak slide.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

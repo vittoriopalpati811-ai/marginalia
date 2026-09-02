@@ -26,8 +26,6 @@
   NOT included (add later if/when the feature ships):
     * NSCameraUsageDescription — only needed when barcode scanner
       ships (task #26 had it deferred to native-only).
-    * NSHealthShareUsageDescription / NSHealthUpdateUsageDescription
-      — health_service is stubbed; not wired to the `health` package.
     * NSLocationWhenInUseUsageDescription — weather uses IP-based
       geolocation, no GPS permission needed.
 -->
@@ -167,10 +165,6 @@
 	<string>Scripta reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Scripta reads today's calendar events to tailor your daily reading highlight. Event titles may be sent to our phrase-selection service to choose your highlight; they are not stored on our servers.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>Scripta reads your step count and cycle phase on your device to gently tailor your daily reading highlight. Your health data stays on your device — only a coarse mood hint, with no health details, informs your phrase.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Scripta does not write any data to Apple Health. This key is required because the linked Health framework references write APIs; the app requests read access only.</string>
 	<!--
 	  Export-compliance declaration. Scripta uses only Apple's stock
 	  HTTPS/TLS (Supabase, the `http` package) — i.e. standard encryption

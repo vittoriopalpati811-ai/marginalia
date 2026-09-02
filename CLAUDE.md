@@ -543,6 +543,30 @@ Second resubmission, this time carrying real code fixes rather than answers.
   l'invio* on save; the Resolution Center reply link survives that, so reply
   BEFORE resubmitting or you lose the chance until Apple writes again.
 
+### REJECTED 2.5.1 — HealthKit removed from iOS (2026-09-02)
+Third rejection, and this one is not a bug: *"The app's binary includes
+references to HealthKit components, but the app does not appear to include any
+primary features that require health or fitness data."*
+- **Apple is right, and our own words proved it.** Steps/sleep/workouts/cycle
+  only tinted the daily phrase, and the reviewer notes said the app "works fully
+  if access is declined" — which is the argument AGAINST holding the
+  entitlement. There is nothing to appeal here; 2.5.1 asks for a primary
+  feature, and a garnish is not one.
+- **Removed from the iOS app, all four places Apple names**: the `health`
+  package (a linked framework is a reference even if no line of ours runs), the
+  `com.apple.developer.healthkit*` entitlements, the `NSHealthShare/Update`
+  purpose strings, and the user-facing copy (the onboarding permissions step
+  said "today's steps (Health)"; Settings had a Health data row).
+- `health_service_native.dart` is now a no-op that keeps the SAME types as the
+  web stub, so `daily_highlight_provider`, `daily_subtitle_provider` and
+  `recommendations_section` compile untouched and just see an empty snapshot —
+  exactly what they already got when a reader declined the permission.
+- ⚠️ The **Android port keeps Health Connect** — Google reviews it under its own
+  declaration (the one with the cycle, which the founder asked for). `lib` is
+  synced to `../Marginalia_ANDROID` with `robocopy /MIR`, so a blind sync now
+  DELETES health on Android too. Sync deliberately, not wholesale.
+- Do not re-add HealthKit to iOS without a primary health feature to justify it.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT

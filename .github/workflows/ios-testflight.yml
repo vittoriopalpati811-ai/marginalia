@@ -193,8 +193,8 @@ jobs:
           # first time the camera/photo library is opened.
           /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription Take a photo to use as a custom book cover." ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'Take a photo to use as a custom book cover.'" ios/Runner/Info.plist
           /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription Choose a photo to use as a custom book cover." ios/Runner/Info.plist 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string 'Choose a photo to use as a custom book cover.'" ios/Runner/Info.plist
-          # NOTE: the Calendar (NSCalendars*) and HealthKit (NSHealthShare/Update)
-          # purpose strings, NSPhotoLibraryAddUsageDescription, and
+          # NOTE: the Calendar (NSCalendars*) purpose strings,
+          # NSPhotoLibraryAddUsageDescription, and
           # ITSAppUsesNonExemptEncryption are NOT re-injected here on purpose:
           # `flutter create` PRESERVES existing custom Info.plist keys (verified —
           # a probe key survives a re-run), so the committed ios/Runner/Info.plist

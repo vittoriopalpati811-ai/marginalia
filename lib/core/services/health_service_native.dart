@@ -1,297 +1,97 @@
-// ─── Health Service — Native (iOS / Android) ──────────────────────────────────
+// ─── Health Service — DISABLED (Apple Guideline 2.5.1) ────────────────────────
 //
-// Reads HealthKit signals for the "frase scelta per te" daily-highlight context:
-//   • TODAY'S STEPS  via getTotalStepsInInterval (version-stable).
-//   • MENSTRUAL-CYCLE PHASE inferred from MENSTRUATION_FLOW samples.
+// This used to read steps, sleep, workouts and cycle phase from HealthKit to
+// tint the daily phrase. App Review rejected the app for it on 2026-09-02:
 //
-// Read-only, on-device — nothing is uploaded. The cycle phase is derived locally
-// and only its coarse label (menstruation / follicular / ovulation / luteal) is
-// passed to the edge function; raw health samples never leave the device.
+//   "The app's binary includes references to HealthKit components, but the app
+//    does not appear to include any primary features that require health or
+//    fitness data."
 //
-// Requires: health: >=11.1.1 <12 (11.x adds HealthDataType.MENSTRUATION_FLOW and
-// keeps the Health() singleton + getTotalStepsInInterval; 12.x drops the
-// singleton). Plus the HealthKit entitlement (Runner.entitlements, wired in
-// codemagic.yaml), the NSHealth*UsageDescription strings in Info.plist, and the
-// HealthKit capability on the App ID. Menstrual flow is a standard HKCategoryType
-// — no extra clinical-records entitlement is needed.
-
-import 'dart:io' show Platform;
-
-import 'health_service_web.dart' show HealthSnapshot, WorkoutActivity, CyclePhase;
-
-export 'health_service_web.dart'
-    show WorkoutActivity, CyclePhase, HealthSnapshot;
+// That is a fair reading. The phrase-selection tone was a garnish, not a
+// feature — we had even told App Review the app "works fully if access is
+// declined", which is exactly the argument against keeping the entitlement.
+// Apple asked for HealthKit to be removed from the binary, the entitlement, the
+// Info.plist keys AND any third-party call into HealthKit, so the `health`
+// package is gone from pubspec.yaml too: a linked framework is a reference,
+// whether or not a line of our code runs.
+//
+// The TYPES stay, identical to the web stub, so every caller
+// (daily_highlight_provider, daily_subtitle_provider, recommendations_section)
+// keeps compiling and simply sees an empty snapshot — the same thing they
+// already saw whenever the reader declined the permission.
+//
+// ⚠️ Do NOT re-add `health` or the HealthKit entitlement to the iOS app without
+// a primary, user-visible health feature to justify them; it is a guaranteed
+// 2.5.1 rejection. The ANDROID port is a separate copy and can keep Health
+// Connect: Google reviews that under its own declaration.
 
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:health/health.dart';
+
+// ─── Data classes (mirrored in health_service_web.dart) ───────────────────────
+
+/// A single workout session.
+class WorkoutActivity {
+  const WorkoutActivity({
+    required this.type,
+    required this.typeLabel,
+    required this.durationMinutes,
+    required this.date,
+    this.caloriesBurned,
+  });
+
+  final String type;
+  final String typeLabel;
+  final int durationMinutes;
+  final DateTime date;
+  final double? caloriesBurned;
+}
+
+/// Menstrual cycle phase. Kept so the snapshot shape is stable; nothing
+/// populates it any more.
+enum CyclePhase {
+  menstruation,
+  follicular,
+  ovulation,
+  luteal,
+  unknown,
+}
+
+/// Snapshot of today's health metrics. Always empty since 2026-09-02.
+class HealthSnapshot {
+  const HealthSnapshot({
+    this.stepsToday,
+    this.workoutsThisWeek = const [],
+    this.cyclePhase,
+    this.sleepHoursLastNight,
+    this.isAvailable = false,
+  });
+
+  final int? stepsToday;
+  final List<WorkoutActivity> workoutsThisWeek;
+  final CyclePhase? cyclePhase;
+  final double? sleepHoursLastNight;
+  final bool isAvailable;
+
+  bool get hasSteps    => stepsToday != null;
+  bool get hasWorkouts => workoutsThisWeek.isNotEmpty;
+  bool get hasCycle    => cyclePhase != null && cyclePhase != CyclePhase.unknown;
+  bool get hasSleep    => sleepHoursLastNight != null;
+
+  static const empty = HealthSnapshot();
+}
+
+// ─── Service ──────────────────────────────────────────────────────────────────
 
 class HealthService {
   const HealthService();
 
-  static const _types = [
-    HealthDataType.STEPS,
-    HealthDataType.MENSTRUATION_FLOW,
-    HealthDataType.WORKOUT,
-    HealthDataType.SLEEP_ASLEEP,
-  ];
-  static const _permissions = [
-    HealthDataAccess.READ,
-    HealthDataAccess.READ,
-    HealthDataAccess.READ,
-    HealthDataAccess.READ,
-  ];
-
-  // `Health()` is a factory returning a process-wide singleton, so creating it
-  // per call is free and keeps this class const-constructible.
-
+  /// No permission is requested: the app no longer links HealthKit.
   Future<bool> requestPermissions() async {
-    try {
-      final granted = await Health().requestAuthorization(
-        _types,
-        permissions: _permissions,
-      );
-      debugPrint('[Health] permissions granted: $granted');
-      return granted;
-    } catch (e) {
-      debugPrint('[Health] requestPermissions error: $e');
-      return false;
-    }
+    debugPrint('[Health] disabled — HealthKit removed (App Review 2.5.1)');
+    return false;
   }
 
-  Future<HealthSnapshot> fetchSnapshot() async {
-    try {
-      // Asking here is safe on iOS: HealthKit shows its sheet once, remembers
-      // the answer, and deliberately refuses to report read-permission status —
-      // so there is nothing to check first and re-asking costs nothing.
-      //
-      // Android is the opposite, and assuming otherwise locked readers out of
-      // the app. Health Connect LAUNCHES its permission screen every time it is
-      // asked while a permission is missing, and this runs on every daily-phrase
-      // read — so someone who declined was thrown from the app into the system
-      // dialog on launch, declined again, and was thrown out again, forever.
-      // There, ask for nothing: read only what has already been granted, and
-      // leave requesting to the single explicit step in onboarding.
-      if (Platform.isAndroid) {
-        final granted =
-            await Health().hasPermissions(_types, permissions: _permissions);
-        if (granted != true) {
-          debugPrint('[Health] Android permissions not granted — skipping read');
-          return HealthSnapshot.empty;
-        }
-      } else {
-        await Health().requestAuthorization(_types, permissions: _permissions);
-      }
-
-      final now = DateTime.now();
-      final midnight = DateTime(now.year, now.month, now.day);
-
-      // Steps and cycle are independent: isolate each so one failing (e.g. the
-      // user granted steps but not cycle) never wipes the other signal.
-      int? steps;
-      try {
-        steps = await Health().getTotalStepsInInterval(midnight, now);
-      } catch (e) {
-        debugPrint('[Health] steps error: $e');
-      }
-
-      CyclePhase? cyclePhase;
-      try {
-        cyclePhase = await _fetchCyclePhase(now);
-      } catch (e) {
-        debugPrint('[Health] cycle error: $e');
-      }
-
-      var workouts = const <WorkoutActivity>[];
-      try {
-        workouts = await _fetchWorkouts(now);
-      } catch (e) {
-        debugPrint('[Health] workouts error: $e');
-      }
-
-      double? sleepHours;
-      try {
-        sleepHours = await _fetchSleepHours(now);
-      } catch (e) {
-        debugPrint('[Health] sleep error: $e');
-      }
-
-      debugPrint('[Health] stepsToday=$steps '
-          'cyclePhase=${cyclePhase?.name} workouts=${workouts.length} '
-          'sleepH=${sleepHours?.toStringAsFixed(1)}');
-
-      return HealthSnapshot(
-        stepsToday: steps,
-        workoutsThisWeek: workouts,
-        cyclePhase: cyclePhase,
-        sleepHoursLastNight: sleepHours,
-        isAvailable: true,
-      );
-    } catch (e, st) {
-      debugPrint('[Health] fetchSnapshot error: $e\n$st');
-      return HealthSnapshot.empty;
-    }
-  }
-
-  // ── Cycle-phase inference ───────────────────────────────────────────────────
-  //
-  // HealthKit exposes menstrual *flow* samples, not a ready phase. We read the
-  // last 120 days of MENSTRUATION_FLOW and map the days elapsed since the latest
-  // period start onto the canonical four phases using a typical 28-day cycle.
-  // It is an approximation — good enough to gently colour the daily phrase,
-  // never presented as medical fact.
-  //
-  // CONSERVATIVE BY DESIGN (fixes the founder's 2026-06-19 report of cycle
-  // phrasing shown to someone who doesn't have a cycle): we only return a phase
-  // when there's evidence of a *real, recurring* cycle — at least two logged
-  // period starts in the window — AND the latest period started within one
-  // plausible cycle (≤33 days). A single stale or one-off flow entry, or an
-  // overdue/irregular gap, yields null so the phrase stays neutral.
-
-  Future<CyclePhase?> _fetchCyclePhase(DateTime now) async {
-    final start = now.subtract(const Duration(days: 120));
-    final points = await Health().getHealthDataFromTypes(
-      types: const [HealthDataType.MENSTRUATION_FLOW],
-      startTime: start,
-      endTime: now,
-    );
-    if (points.isEmpty) return null;
-
-    // Collapse samples to the distinct calendar days that had any flow logged.
-    final days = <DateTime>{};
-    for (final p in points) {
-      final d = p.dateFrom;
-      days.add(DateTime(d.year, d.month, d.day));
-    }
-    final sorted = days.toList()..sort();
-    if (sorted.isEmpty) return null;
-
-    // Identify period STARTS: a flow day that opens a new run — the first day,
-    // or one preceded by a gap of >9 days (flow days inside a period are close
-    // together; periods are ~3 weeks apart). An actively-tracked cycle shows
-    // several of these across 120 days; a one-off / stale log shows just one.
-    final starts = <DateTime>[];
-    for (var i = 0; i < sorted.length; i++) {
-      if (i == 0 || sorted[i].difference(sorted[i - 1]).inDays > 9) {
-        starts.add(sorted[i]);
-      }
-    }
-    // Require evidence of a real, recurring cycle. This is what stops a single
-    // stale flow entry from colouring weeks of phrases for someone who doesn't
-    // actually track a cycle.
-    if (starts.length < 2) return null;
-
-    final periodStart = starts.last;
-    final today = DateTime(now.year, now.month, now.day);
-    final daysSince = today.difference(periodStart).inDays;
-    final flowToday = days.contains(today);
-
-    if (flowToday || daysSince <= 5) return CyclePhase.menstruation;
-    if (daysSince <= 12) return CyclePhase.follicular;
-    if (daysSince <= 16) return CyclePhase.ovulation;
-    if (daysSince <= 33) return CyclePhase.luteal; // within one plausible cycle
-    return null; // overdue / not currently tracking — don't guess
-  }
-
-  // ── Sleep ─────────────────────────────────────────────────────────────────
-  //
-  // Hours actually asleep "last night": sum the SLEEP_ASLEEP samples in the
-  // window from yesterday evening to now. Like the other signals it stays
-  // on-device and is only distilled into the daily-phrase tone (a short night →
-  // a gentler phrase). Returns null when there's no sleep data.
-
-  Future<double?> _fetchSleepHours(DateTime now) async {
-    final today = DateTime(now.year, now.month, now.day);
-    final start = today.subtract(const Duration(hours: 6)); // ~yesterday 18:00
-    final points = await Health().getHealthDataFromTypes(
-      types: const [HealthDataType.SLEEP_ASLEEP],
-      startTime: start,
-      endTime: now,
-    );
-    if (points.isEmpty) return null;
-
-    // De-duplicate overlapping samples (Apple Watch + phone can both log) by
-    // merging intervals before summing, so double-counting can't inflate hours.
-    final intervals = <({DateTime a, DateTime b})>[];
-    for (final p in points) {
-      if (p.dateTo.isAfter(p.dateFrom)) {
-        intervals.add((a: p.dateFrom, b: p.dateTo));
-      }
-    }
-    if (intervals.isEmpty) return null;
-    intervals.sort((x, y) => x.a.compareTo(y.a));
-    var minutes = 0;
-    DateTime? curA = intervals.first.a;
-    DateTime? curB = intervals.first.b;
-    for (final iv in intervals.skip(1)) {
-      if (iv.a.isBefore(curB!) || iv.a.isAtSameMomentAs(curB)) {
-        if (iv.b.isAfter(curB)) curB = iv.b; // extend the merged interval
-      } else {
-        minutes += curB.difference(curA!).inMinutes;
-        curA = iv.a;
-        curB = iv.b;
-      }
-    }
-    minutes += curB!.difference(curA!).inMinutes;
-    if (minutes <= 0) return null;
-    return minutes / 60.0;
-  }
-
-  // ── Workouts ────────────────────────────────────────────────────────────────
-  //
-  // Last 7 days of WORKOUT sessions. Like steps and cycle, this stays on-device
-  // and is only distilled into the daily-phrase "tone" (a recent workout → a more
-  // energetic phrase). Raw workout data never leaves the device.
-
-  Future<List<WorkoutActivity>> _fetchWorkouts(DateTime now) async {
-    final start = now.subtract(const Duration(days: 7));
-    final points = await Health().getHealthDataFromTypes(
-      types: const [HealthDataType.WORKOUT],
-      startTime: start,
-      endTime: now,
-    );
-
-    final workouts = <WorkoutActivity>[];
-    for (final p in points) {
-      final value = p.value;
-      if (value is! WorkoutHealthValue) continue;
-      final type = value.workoutActivityType.name;
-      final minutes = p.dateTo.difference(p.dateFrom).inMinutes;
-      workouts.add(WorkoutActivity(
-        type: type,
-        typeLabel: _workoutLabel(type),
-        durationMinutes: minutes < 0 ? 0 : minutes,
-        date: p.dateFrom,
-        caloriesBurned: value.totalEnergyBurned?.toDouble(),
-      ));
-    }
-    workouts.sort((a, b) => b.date.compareTo(a.date)); // most recent first
-    return workouts;
-  }
-
-  // Short Italian label for common workout types; unknown types fall back to a
-  // title-cased version of the raw HealthKit name.
-  String _workoutLabel(String type) {
-    const map = {
-      'RUNNING': 'Corsa',
-      'WALKING': 'Camminata',
-      'CYCLING': 'Ciclismo',
-      'SWIMMING': 'Nuoto',
-      'YOGA': 'Yoga',
-      'FUNCTIONAL_STRENGTH_TRAINING': 'Forza funzionale',
-      'TRADITIONAL_STRENGTH_TRAINING': 'Pesi',
-      'HIGH_INTENSITY_INTERVAL_TRAINING': 'HIIT',
-      'PILATES': 'Pilates',
-      'HIKING': 'Escursione',
-      'DANCE': 'Danza',
-      'ELLIPTICAL': 'Ellittica',
-      'ROWING': 'Vogatore',
-      'CORE_TRAINING': 'Core',
-    };
-    final label = map[type];
-    if (label != null) return label;
-    final words = type.toLowerCase().replaceAll('_', ' ').trim();
-    return words.isEmpty
-        ? 'Allenamento'
-        : words[0].toUpperCase() + words.substring(1);
-  }
+  /// Always empty. Callers already handle this: it is what they received
+  /// whenever the reader declined the permission.
+  Future<HealthSnapshot> fetchSnapshot() async => HealthSnapshot.empty;
 }
