@@ -688,26 +688,24 @@
             </div>
           </div>
           <div class="row">
-            <div class="label">Steps &amp; workouts</div>
+            <div class="label">Steps, workouts &amp; sleep <em>(Android only)</em></div>
             <div class="value">
-              Used only to pick a fitting highlight (e.g. a quote about momentum after a run).
+              On Android, and only with your permission, Health Connect data nudges
+              the tone of the daily highlight (a gentler line after a short night).
               Read on-device; never uploaded.
+              <strong>On iPhone and iPad this is not read at all</strong> — Scripta
+              no longer uses Apple HealthKit.
               <br><span class="opt">Optional</span>
             </div>
           </div>
           <div class="row">
-            <div class="label">Sleep</div>
+            <div class="label">Your cycle <em>(only if you enter it)</em></div>
             <div class="value">
-              Last night's sleep duration nudges the morning highlight's tone
-              (gentler after a short night). Read on-device; never uploaded.
-              <br><span class="opt">Optional</span>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">Menstrual cycle phase</div>
-            <div class="value">
-              Further personalises the daily highlight if — and only if — you enable it.
-              Stays on your device.
+              You can tell Scripta, in Settings, when your last period started and how
+              long your cycle usually runs. The phase is worked out on your device to
+              tint the daily highlight. It is <strong>typed by you, not read from your
+              phone</strong>, it never leaves the device, and removing it in Settings
+              deletes it immediately.
               <br><span class="opt">Optional</span>
             </div>
           </div>
@@ -750,11 +748,13 @@
         </div>
 
         <p style="margin-top: 24px;">
-          Health data (steps, workouts, sleep, menstrual cycle) is read from
-          Apple HealthKit (iOS) or Health Connect (Android) on your device, used
-          in the moment to choose a highlight, and then discarded. It
-          <strong>never reaches our servers</strong>, and it is never shared
-          with anyone.
+          On iPhone and iPad, Scripta reads <strong>no health data</strong>: Apple
+          HealthKit is not used, and the app requests no health permission. On
+          Android, steps, workouts and sleep may be read from Health Connect with
+          your permission. Anything of this kind is used on your device, in the
+          moment a highlight is chosen, and then discarded. It
+          <strong>never reaches our servers</strong>, and it is never shared with
+          anyone.
         </p>
 
         <div class="scribble-fallback">— anyway, health data stays on your phone. always.</div>
@@ -818,12 +818,14 @@
           necessary to provide the service you signed up for.
         </p>
         <p>
-          <strong>Consent (Art. 6.1.a &amp; Art. 9.2.a)</strong> — health and
-          calendar data are processed only if you explicitly grant permission on
-          your device. You can revoke this at any time: on iOS in Settings →
-          Privacy &amp; Security → Health (and → Calendars); on Android in
-          Settings → Security &amp; privacy → Health Connect (and the calendar
-          permission under Apps → Scripta).
+          <strong>Consent (Art. 6.1.a &amp; Art. 9.2.a)</strong> — calendar data,
+          and on Android health data, are processed only if you explicitly grant
+          permission on your device; cycle information is processed only if you
+          type it in yourself. You can withdraw consent at any time: remove the
+          cycle in Scripta's Settings, and revoke permissions on iOS in Settings →
+          Privacy &amp; Security → Calendars, or on Android in Settings → Security
+          &amp; privacy → Health Connect (and the calendar permission under
+          Apps → Scripta).
         </p>
         <p>
           <strong>Legitimate interest (Art. 6.1.f)</strong> — city-level weather via

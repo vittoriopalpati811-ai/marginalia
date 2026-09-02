@@ -587,6 +587,42 @@ primary features that require health or fitness data."*
   DELETES health on Android too. Sync deliberately, not wholesale.
 - Do not re-add HealthKit to iOS without a primary health feature to justify it.
 
+### Pre-submission audit, 2026-09-02 (what else Apple could have caught)
+Ran after the 2.5.1 rejection, checking the app and the store record rather than
+reciting guidelines. Two real findings, both fixed; two risks left standing on
+purpose.
+- **FIXED — the privacy policy still described HealthKit.** Apple's 2.5.1 note
+  says to remove HealthKit references from the app *or its metadata*, and
+  reviewers open the policy URL. `docs/privacy/` (EN + IT) now says iOS reads no
+  health data, marks steps/workouts/sleep as **Android-only via Health
+  Connect**, describes the cycle as typed by the reader, and fixes the GDPR
+  consent paragraph (which told iOS users to revoke a Health permission that no
+  longer exists). Deployed with `deploy_site.ps1` — the site is Cloudflare Pages
+  with NO git integration, so committing changes nothing; verified live.
+- **FIXED — the reviewer notes claimed "No iPad/watchOS features"** while the
+  build ships a **watchOS companion** (`ios/scripts/add_watch_targets.rb`,
+  bundle ids `…watchkitapp` + `…watchkitapp.MarginaliaWatchWidgets`; the version
+  page lists "Apple Watch" under *Risorse incluse*). After three rejections a
+  provably false line in the review materials is the last thing to leave lying
+  around. The notes now describe the watch app and say it mirrors the paired
+  iPhone, so a reviewer who opens it on a bare watch is not surprised by an
+  empty screen.
+- **LEFT STANDING (decisions, not bugs)**:
+  - the Amazon sign-in WKWebView, and especially the extractor JS **fetched from
+    Supabase at runtime** (`amazon_sync_scripts`). The header comment says the
+    point is to fix a broken scrape "WITHOUT an App Store release" — that is
+    what Guideline **2.5.2** is about. JS inside WKWebView is the tolerated grey
+    area; the stated intent is the exposed part.
+  - **age 13+ with open UGC** (posts, chat, profiles) while Play is set to 18+.
+    Defensible with EULA + report + block + automated moderation, but the two
+    stores disagree about the same app.
+- **CHECKED AND CLEAN**: every `NS*UsageDescription` maps to real code (camera
+  and photos in `book_detail_screen`, calendar in `calendar_service`); no
+  location key is actually declared (it only appears in a comment); no
+  `UIBackgroundModes`; App Privacy declares no health data; description,
+  keywords and promotional text mention none; in-app account deletion exists;
+  Sign in with Apple sits beside Google; no IAP; encryption declared.
+
 ### Tooling paths (NOT on PATH — use absolute)
 - Flutter: `C:\Users\User\AppData\Local\flutter-3.22.0\bin\flutter.bat`
 - Run flutter from inside `Marginalia/` (working dir is the PARENT
