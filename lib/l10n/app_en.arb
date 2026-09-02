@@ -1703,5 +1703,19 @@
         "type": "int"
       }
     }
+  },
+  "cycleSectionTitle": "Your cycle",
+  "cycleSectionBody": "Tell Scripta when your last period started and the daily phrase will follow your rhythm. It is stored on this iPhone only, never uploaded, and you can remove it at any time.",
+  "cycleLastPeriod": "Last period started",
+  "cycleNotSet": "Not set",
+  "cycleLength": "Usual length",
+  "cycleDays": "{days} days",
+  "cycleRemove": "Remove my cycle",
+  "@cycleDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   }
 }

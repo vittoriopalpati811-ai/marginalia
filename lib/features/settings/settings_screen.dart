@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/errors.dart';
 import 'package:flutter/services.dart';
 import '../../core/utils/share_helper.dart';
@@ -17,6 +18,7 @@ import '../../core/services/export_service.dart';
 import '../../core/services/clippings_importer.dart';
 import '../import/paste_import_screen.dart';
 import '../../core/services/gender_service.dart';
+import '../../core/services/cycle_service.dart';
 import '../../core/services/kindle_auto_sync.dart';
 import '../../generated/app_localizations.dart';
 import '../widget/widget_preview_screen.dart';
@@ -568,11 +570,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               selected: current == 'unspecified',
               onTap: () => _setGender(ctx, ref, 'unspecified'),
             ),
+            // The cycle itself, only for readers it applies to. It is TYPED,
+            // never read from the phone: HealthKit is gone (Apple 2.5.1), and
+            // asking is the honest version of the promise anyway — the value is
+            // visible here and one tap from being deleted.
+            Consumer(builder: (c, r, _) {
+              if (r.watch(genderProvider) != 'female') {
+                return const SizedBox.shrink();
+              }
+              return const _CycleEditor();
+            }),
           ],
         ),
       ),
     );
   }
+
 
   Future<void> _setGender(
       BuildContext sheetContext, WidgetRef ref, String value) async {
@@ -958,6 +971,211 @@ class _DataRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Writes the cycle line and pushes it into [cycleProvider] so the daily phrase
+/// follows immediately — healthSnapshotProvider watches that provider, so there
+/// is nothing to refresh and no restart to wait for.
+Future<void> _saveCycleSetting(WidgetRef ref, DateTime start, int length) async {
+  final d = '${start.year.toString().padLeft(4, '0')}-'
+      '${start.month.toString().padLeft(2, '0')}-'
+      '${start.day.toString().padLeft(2, '0')}';
+  final value = '$d|$length';
+  await CycleService.write(value);
+  ref.read(cycleProvider.notifier).state = value;
+}
+
+Future<void> _clearCycleSetting(WidgetRef ref) async {
+  await CycleService.clear();
+  ref.read(cycleProvider.notifier).state = null;
+}
+
+/// The cycle row inside the "Phrase personalization" sheet.
+///
+/// Nothing is read from the device: the reader picks the day their last period
+/// started and, if they want, corrects the usual length. That is what feeds
+/// [cyclePhaseFromSetting]. Removing it is a single tap and takes effect at
+/// once — no restart, no lingering copy anywhere else, because the value only
+/// ever lived in one file on this phone.
+class _CycleEditor extends ConsumerWidget {
+  const _CycleEditor();
+
+  static const _defaultLength = 28;
+
+  ({DateTime start, int length})? _parse(String? raw) {
+    if (raw == null) return null;
+    final parts = raw.split('|');
+    final d = DateTime.tryParse(parts.first.trim());
+    if (d == null) return null;
+    final l = parts.length > 1 ? int.tryParse(parts[1].trim()) : null;
+    return (start: d, length: l ?? _defaultLength);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = _parse(ref.watch(cycleProvider));
+    final l10n = context.l10n;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(color: ScriptaColors.rule, height: 1),
+          const SizedBox(height: 18),
+          Text(
+            l10n.cycleSectionTitle,
+            style: const TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.cycleSectionBody,
+            style: const TextStyle(
+                fontSize: 12.5, height: 1.5, color: ScriptaColors.inkMuted),
+          ),
+          const SizedBox(height: 16),
+          _CycleRow(
+            label: l10n.cycleLastPeriod,
+            value: current == null
+                ? l10n.cycleNotSet
+                : _formatDate(context, current.start),
+            onTap: () async {
+              final now = DateTime.now();
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: current?.start ?? now,
+                firstDate: now.subtract(const Duration(days: 120)),
+                lastDate: now,
+                helpText: l10n.cycleLastPeriod,
+              );
+              if (picked == null) return;
+              await _saveCycleSetting(
+                  ref, picked, current?.length ?? _defaultLength);
+            },
+          ),
+          if (current != null) ...[
+            const SizedBox(height: 4),
+            _CycleRow(
+              label: l10n.cycleLength,
+              value: l10n.cycleDays(current.length),
+              // 21–35 covers the range a cycle realistically runs; outside it
+              // the phase maths stops meaning anything.
+              onMinus: current.length > 21
+                  ? () => _saveCycleSetting(
+                      ref, current.start, current.length - 1)
+                  : null,
+              onPlus: current.length < 35
+                  ? () => _saveCycleSetting(
+                      ref, current.start, current.length + 1)
+                  : null,
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => _clearCycleSetting(ref),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  l10n.cycleRemove,
+                  style: const TextStyle(
+                      fontSize: 13, color: ScriptaColors.sienna),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(BuildContext context, DateTime d) =>
+      DateFormat.yMMMMd(Localizations.localeOf(context).toLanguageTag())
+          .format(d);
+}
+
+/// One line of the cycle editor: a label, a value, and either a tap target or
+/// a −/+ pair. Kept private and dumb so the editor above stays readable.
+class _CycleRow extends StatelessWidget {
+  const _CycleRow({
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.onMinus,
+    this.onPlus,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+  final VoidCallback? onMinus;
+  final VoidCallback? onPlus;
+
+  @override
+  Widget build(BuildContext context) {
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(fontSize: 14, color: ScriptaColors.ink)),
+          ),
+          if (onMinus != null || onPlus != null) ...[
+            _StepButton(icon: Icons.remove_rounded, onTap: onMinus),
+            SizedBox(
+              width: 74,
+              child: Text(value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 14, color: ScriptaColors.inkMuted)),
+            ),
+            _StepButton(icon: Icons.add_rounded, onTap: onPlus),
+          ] else ...[
+            Text(value,
+                style: const TextStyle(
+                    fontSize: 14, color: ScriptaColors.primaryDark)),
+            const SizedBox(width: 6),
+            const Icon(Icons.chevron_right_rounded,
+                size: 18, color: ScriptaColors.inkFaint),
+          ],
+        ],
+      ),
+    );
+    if (onTap == null) return row;
+    return InkWell(onTap: onTap, child: row);
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: 30,
+        height: 30,
+        decoration: BoxDecoration(
+          color: ScriptaColors.primaryFaint,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon,
+            size: 17,
+            color: enabled ? ScriptaColors.primaryDark : ScriptaColors.inkFaint),
       ),
     );
   }

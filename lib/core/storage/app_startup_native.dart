@@ -18,6 +18,7 @@ import '../providers/locale_provider.dart';
 import '../providers/onboarding_provider.dart';
 import '../services/event_approach_service.dart';
 import '../services/gender_service.dart';
+import '../services/cycle_service.dart';
 import '../services/locale_service.dart';
 import '../services/onboarding_service.dart';
 
@@ -56,6 +57,14 @@ Future<void> launchApp() async {
   } catch (error) {
     debugPrint('[launchApp] gender read failed (non-fatal): $error');
   }
+  // The reader's self-declared cycle (never uploaded), so the phrase can follow
+  // their rhythm without HealthKit — see CycleService.
+  String? savedCycle;
+  try {
+    savedCycle = await CycleService.read();
+  } catch (error) {
+    debugPrint('[launchApp] cycle read failed (non-fatal): $error');
+  }
   // Locally-stored "how I approach a calendar event" (never uploaded) so the
   // daily-phrase personalisation can restore it across launches.
   String? savedEventApproach;
@@ -72,6 +81,7 @@ Future<void> launchApp() async {
         onboardingCompleteProvider.overrideWith((ref) => onboardingComplete),
         localeProvider.overrideWith((ref) => savedLocale),
         genderProvider.overrideWith((ref) => savedGender),
+        cycleProvider.overrideWith((ref) => savedCycle),
         eventApproachProvider.overrideWith((ref) => savedEventApproach),
       ],
       child: const ScriptaApp(),

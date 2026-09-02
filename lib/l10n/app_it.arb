@@ -2139,5 +2139,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "cycleSectionTitle": "Il tuo ciclo",
+  "cycleSectionBody": "Dì a Scripta quando è iniziato l'ultimo ciclo e la frase del giorno seguirà il tuo ritmo. Resta solo su questo iPhone, non viene mai caricato, e puoi rimuoverlo quando vuoi.",
+  "cycleLastPeriod": "Inizio dell'ultimo ciclo",
+  "cycleNotSet": "Non impostato",
+  "cycleLength": "Durata abituale",
+  "cycleDays": "{days} giorni",
+  "cycleRemove": "Rimuovi il mio ciclo"
 }

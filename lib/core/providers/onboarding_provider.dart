@@ -25,6 +25,20 @@ final onboardingCompleteProvider = StateProvider<bool>((ref) => false);
 /// [onboardingCompleteProvider].
 final genderProvider = StateProvider<String?>((ref) => null);
 
+/// The reader's own description of their cycle, as `yyyy-MM-dd|length` (the
+/// day their last period started, and how many days their cycle usually runs).
+/// Null until they set it, and cleared the moment they remove it.
+///
+/// This replaced the HealthKit read that Apple rejected under Guideline 2.5.1.
+/// It is a better fit for the promise the app makes: the reader CHOOSES to tell
+/// Scripta, sees the value in Settings and can delete it, instead of the phone
+/// handing over cycle samples in the background.
+///
+/// PRIVACY: special-category data, persisted ONLY on-device via [CycleService]
+/// and NEVER uploaded. Seeded at startup via [ProviderScope.overrides] like
+/// [genderProvider].
+final cycleProvider = StateProvider<String?>((ref) => null);
+
 /// How the user tends to feel before something on their calendar, used ONLY
 /// locally to tailor the daily-phrase tone when an event is coming up. Values:
 /// 'calm' | 'focused' | 'anxious' (or null until chosen / skipped).

@@ -561,6 +561,26 @@ primary features that require health or fitness data."*
   web stub, so `daily_highlight_provider`, `daily_subtitle_provider` and
   `recommendations_section` compile untouched and just see an empty snapshot —
   exactly what they already got when a reader declined the permission.
+- **The promise was kept, the sensor was not.** Removing HealthKit left a
+  Settings row ("Phrase personalization — Woman · phrases may include your
+  cycle") promising something nothing could deliver any more. The founder was
+  right to push back: the point was never the sensor, it was that a reader can
+  CHOOSE to have the phrase follow her rhythm. So the cycle is now **typed, not
+  read** — `CycleService` stores `yyyy-MM-dd|length` in one on-device file
+  (mirroring `GenderService`), `cycleProvider` is seeded at startup like
+  `genderProvider`, and `cyclePhaseFromSetting()` in `health_provider.dart`
+  works out the phase with the SAME thresholds the HealthKit path used,
+  rescaled around ovulation ≈ length − 14.
+  - `healthSnapshotProvider` now WATCHES `cycleProvider`, so editing the date in
+    Settings re-tints the phrase with no restart and no refresh call.
+  - It refuses to guess twice over: a future date (a mis-tap in the picker) and
+    an entry older than three cycles both yield null, so a stale date cannot
+    colour phrases for months. `test/providers/cycle_phase_test.dart` pins both,
+    plus the phase boundaries and the roll-forward.
+  - This is *better* than what Apple took away: the value is visible, editable
+    and one tap from deletion, instead of cycle samples arriving in the
+    background. Steps/sleep/workouts are gone for good — they were sensors, and
+    there is nothing honest to type in their place.
 - ⚠️ The **Android port keeps Health Connect** — Google reviews it under its own
   declaration (the one with the cycle, which the founder asked for). `lib` is
   synced to `../Marginalia_ANDROID` with `robocopy /MIR`, so a blind sync now

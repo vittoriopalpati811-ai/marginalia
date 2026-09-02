@@ -5,6 +5,7 @@ import '../../app.dart';
 import '../providers/onboarding_provider.dart';
 import '../services/event_approach_service.dart';
 import '../services/gender_service.dart';
+import '../services/cycle_service.dart';
 import '../services/onboarding_service.dart';
 
 Future<void> launchApp() async {
@@ -15,6 +16,7 @@ Future<void> launchApp() async {
   // Privacy-sensitive: read the locally-stored gender (never uploaded) so the
   // daily-phrase personalisation can restore it across launches.
   final savedGender = await GenderService.read();
+  final savedCycle = await CycleService.read();
   final savedEventApproach = await EventApproachService.read();
 
   runApp(
@@ -22,6 +24,7 @@ Future<void> launchApp() async {
       overrides: [
         onboardingCompleteProvider.overrideWith((ref) => onboardingComplete),
         genderProvider.overrideWith((ref) => savedGender),
+        cycleProvider.overrideWith((ref) => savedCycle),
         eventApproachProvider.overrideWith((ref) => savedEventApproach),
       ],
       child: const ScriptaApp(),
