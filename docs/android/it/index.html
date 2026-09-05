@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dodici lettori, quattordici giorni · Scripta per Android</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://get-scripta.app/android/">
+  <meta http-equiv="refresh" content="0; url=/android/?lang=it">
+
+  <!-- The site's other pages ship two files (/privacy/ + /privacy/it/), and
+       that is exactly how the live privacy policy ended up a version behind the
+       repo: two copies of the same prose, one of them forgotten. /android/ is a
+       recruitment page whose copy will be edited while the test runs, so it
+       carries BOTH languages in one file and lets CSS pick — with a visible
+       EN/IT switch and ?lang= to force it.
+       This file keeps the conventional URL working for anyone who types it or
+       is sent it, without becoming a second copy that can drift. -->
+
+  <style>
+    body { margin: 0; background: #F9F8F5; color: #6B6560;
+           font-family: 'Manrope', -apple-system, sans-serif;
+           display: flex; align-items: center; justify-content: center;
+           min-height: 100vh; text-align: center; padding: 24px; }
+    a { color: #5D6E4E; }
+  </style>
+</head>
+<body>
+  <p>
+    La pagina è qui: <a href="/android/?lang=it">get-scripta.app/android</a>
+  </p>
+  <script>location.replace("/android/?lang=it");</script>
+</body>
+</html>

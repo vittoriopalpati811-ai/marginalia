@@ -124,6 +124,7 @@
       <button onclick="loadWaitlist()">Mostra gli indirizzi</button>
       <button id="wl-mail" onclick="mailWaitlist()" style="display:none">Scrivi a tutti</button>
       <button class="ghost" id="wl-copy" onclick="copyWaitlist()" style="display:none">Copia tutte le email</button>
+      <button class="ghost" id="wl-testers" onclick="copyTesters()" style="display:none">Copia tester Android</button>
       <button class="ghost" id="wl-csv" onclick="downloadWaitlist()" style="display:none">Scarica CSV</button>
       <span id="wl-status" style="font-size:12.5px;color:var(--ink-muted)"></span>
     </div>
@@ -277,9 +278,19 @@ function renderWaitlist() {
   document.getElementById('wl-copy').style.display = show;
   document.getElementById('wl-csv').style.display = show;
   if (!waitlist.length) {
+    document.getElementById('wl-testers').style.display = 'none';
     box.innerHTML = '<p class="wl-empty">Ancora nessun iscritto.</p>';
     return;
   }
+  // The Android closed test is a COUNT problem, not a mailing-list problem:
+  // Google wants 12 addresses opted in for 14 consecutive days, so the useful
+  // thing to see here is how far from twelve we are — and the useful thing to
+  // copy is only those addresses, not the whole waiting list.
+  const testers = waitlist.filter(s => s.source === 'android-tester');
+  const tb = document.getElementById('wl-testers');
+  tb.style.display = testers.length ? '' : 'none';
+  tb.textContent = 'Copia tester Android (' + testers.length + ' di 12)';
+
   const rows = waitlist.map(s => {
     const when = s.created_at ? new Date(s.created_at).toLocaleString('it-IT') : '—';
     return '<tr><td class="email">' + esc(s.email) + '</td>' +
@@ -326,6 +337,27 @@ function copyWaitlist() {
   const list = waitlist.map(s => s.email).join(', ');
   const done = () => { document.getElementById('wl-status').textContent =
     waitlist.length + ' email copiate.'; };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(list).then(done, () => fallbackCopy(list, done));
+  } else {
+    fallbackCopy(list, done);
+  }
+}
+
+function copyTesters() {
+  // Comma-separated is exactly what Play Console's tester list pastes into.
+  // No BCC variant here on purpose: these people get the opt-in link, and that
+  // link is the same for everybody, so it belongs in the Play Console rather
+  // than in a mail draft assembled by hand.
+  const testers = waitlist.filter(s => s.source === 'android-tester');
+  if (!testers.length) return;
+  const list = testers.map(s => s.email).join(', ');
+  const st = document.getElementById('wl-status');
+  const done = () => {
+    st.textContent = testers.length + ' indirizzi copiati' +
+      (testers.length < 12 ? ' — ne mancano ' + (12 - testers.length) +
+       ' per i 14 giorni.' : '. Bastano per far partire i 14 giorni.');
+  };
   if (navigator.clipboard) {
     navigator.clipboard.writeText(list).then(done, () => fallbackCopy(list, done));
   } else {

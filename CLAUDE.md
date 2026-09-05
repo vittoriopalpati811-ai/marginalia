@@ -303,6 +303,46 @@ testers × 14 consecutive days** for a personal developer account), upload
 be dragged into the release by hand), then *Visualizza l'anteprima e conferma*
 and *Invia la release a Google per la revisione*.
 
+### Recruiting the 12 testers (2026-09-05)
+The list held only the founder's two addresses, so the 14-day clock could not
+start. Built the machinery so the ten missing ones arrive on their own rather
+than being collected by hand over WhatsApp.
+- **`docs/android/`** — one public page, `get-scripta.app/android`. It states
+  the rule (12 × 14, and that dropping below twelve restarts it), explains the
+  three steps, and takes the **Google account address** — the address Play
+  checks, which is the single detail most volunteers get wrong.
+- **It ships BOTH languages in one file**, CSS picks one (`html[data-lang]`),
+  with a visible EN/IT switch, `?lang=` to force it, and browser-language
+  detection. English is the default in the markup, so no JS still renders a
+  readable page. The rest of the site uses two files per language, and that is
+  precisely how the live privacy policy ended up a version behind the repo — a
+  page whose copy gets edited *while a campaign runs* must not exist twice.
+  `docs/android/it/` is a redirect to `/android/?lang=it` so the conventional
+  URL still works without becoming a second copy.
+- **No new backend.** The form writes `waitlist_signups` with
+  `source = 'android-tester'`, so the anon-insert/no-select RLS from migration
+  073 already covers it and the addresses stay unreadable with the public key.
+- **The confirmation email had to learn which list you joined.** 082 sent only
+  `{email, locale}`, so a tester would have been told "we'll write when there's
+  a place for you" — the waiting list's promise, and the wrong answer for
+  somebody who just volunteered for fourteen days. Migration **083** adds
+  `source` to the pg_net payload and `waitlist-welcome` (**v4**) branches to a
+  TESTER copy ("Sei uno dei dodici"). Verified end-to-end from the live page:
+  form → row (`source=android-tester`, `locale=it`) → trigger → function →
+  Resend `{"sent":true}`; both test rows deleted afterwards.
+- **Admin console**: a *Copia tester Android (n di 12)* button that copies only
+  those addresses, comma-separated — the shape Play Console's tester list
+  pastes into — and says how many are still missing. The existing "Copia tutte
+  le email" would have mixed the waiting list into the tester list.
+- **`marketing/post-tester-android.md`** — ready-to-paste copy for WhatsApp,
+  Facebook reading groups, Instagram/Threads + Stories, r/kindle (EN),
+  reciprocal-testing subs (EN), LinkedIn, plus the day-7 and day-14 messages,
+  which matter more than the first post: the hard part is not reaching twelve,
+  it is nobody uninstalling before day fourteen.
+- ⚠️ **Never buy testers, and never invent Google accounts.** Google screens for
+  inauthentic testing and the penalty lands when production access is requested
+  — the most expensive possible moment — and can reach the developer account.
+
 ### Saved highlights (2026-08-28)
 The bookmark on the highlight-detail screen had **never worked**. Every tap threw
 `IsarError: Cannot perform this operation from within an active transaction`

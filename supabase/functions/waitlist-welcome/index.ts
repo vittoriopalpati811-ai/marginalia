@@ -1,8 +1,9 @@
-// ─── The welcome email for the waiting list ─────────────────────────────────
+// ─── The confirmation email (waiting list, and the Android test) ────────────
 //
 // Fired by a Postgres trigger on insert into `waitlist_signups`, not by the
 // landing page's JavaScript — so it works whatever put the row there, and a
-// slow email provider can never delay somebody's sign-up.
+// slow email provider can never delay somebody's sign-up. That is also why
+// /android/ needed no plumbing of its own: it writes the same table.
 //
 // One thing shapes this whole file. The sign-up form on get-scripta.app says,
 // in as many words: "no spam, just one email when it's your turn." A welcome
@@ -50,7 +51,15 @@ function timingSafeEqual(a: string, b: string): boolean {
 // for looking like AI slop. Nothing here would survive being pasted into
 // another product's welcome email, which is the test.
 
-const COPY = {
+// There are two lists behind one table. `source` tells them apart: the landing
+// page writes 'landing', /android/ writes 'android-tester'. Sending the waiting
+// list's "we'll write when there's a place for you" to somebody who just
+// volunteered to test for fourteen days would be answering a different question
+// than the one they asked.
+
+type Copy = { subject: string; lines: string[]; sign: string };
+
+const WAITLIST: Record<"it" | "en", Copy> = {
   it: {
     subject: "Sei in lista",
     lines: [
@@ -71,17 +80,44 @@ const COPY = {
   },
 };
 
-function pickCopy(locale: string | null) {
-  return (locale ?? "").toLowerCase().startsWith("it") ? COPY.it : COPY.en;
+// The Android closed test. This one has a job the waiting-list email does not:
+// it has to make the fourteen days sound like what they are - the whole reason
+// the person was asked - without sounding like a contract.
+const TESTER: Record<"it" | "en", Copy> = {
+  it: {
+    subject: "Sei uno dei dodici",
+    lines: [
+      "Ricevuto. Il tuo indirizzo va nella lista tester di Scripta.",
+      "Entro un giorno ti arriva il link per entrare nella beta: un tocco, \u00abDiventa tester\u00bb, e Scripta si installa dal Play Store come qualsiasi altra app. Niente APK, niente origini sconosciute.",
+      "Poi la parte che conta davvero: tienila sul telefono per quattordici giorni. Google non lascia pubblicare l\u2019app finch\u00e9 dodici persone non arrivano in fondo insieme, e se qualcuno esce prima il conto riparte da zero.",
+      "Aprila ogni tanto. Quando qualcosa \u00e8 lento, sbagliato o brutto, rispondi a questa mail: soprattutto brutto.",
+    ],
+    sign: "\u2014 Scripta",
+  },
+  en: {
+    subject: "You're one of the twelve",
+    lines: [
+      "Got it. Your address is going on the Scripta tester list.",
+      "Within a day you'll have the link to join the beta: one tap, Become a tester, and Scripta installs from the Play Store like any other app. No APK files, no unknown sources.",
+      "Then the part that actually matters: keep it on your phone for fourteen days. Google won't let the app be published until twelve people reach the end together, and if somebody leaves early the count starts again from zero.",
+      "Open it now and then. When something is slow, wrong or ugly, reply to this email \u2014 ugly especially.",
+    ],
+    sign: "\u2014 Scripta",
+  },
+};
+
+function pickCopy(locale: string | null, source: string | null): Copy {
+  const list = source === "android-tester" ? TESTER : WAITLIST;
+  return (locale ?? "").toLowerCase().startsWith("it") ? list.it : list.en;
 }
 
-function textBody(c: typeof COPY.it): string {
+function textBody(c: Copy): string {
   return c.lines.join("\n\n") + "\n\n" + c.sign + "\nget-scripta.app";
 }
 
 // Deliberately plain: cream paper, one serif, no images, no tracking pixel, no
 // buttons to click. An email that looks like a campaign gets read like one.
-function htmlBody(c: typeof COPY.it): string {
+function htmlBody(c: Copy): string {
   const paras = c.lines
     .map((l) => `<p style="margin:0 0 18px;">${l}</p>`)
     .join("");
@@ -117,11 +153,12 @@ serve(async (req) => {
     return new Response(JSON.stringify({ skipped: "no api key" }), { status: 200 });
   }
 
-  let email = "", locale: string | null = null;
+  let email = "", locale: string | null = null, source: string | null = null;
   try {
     const body = await req.json();
     email = (body?.email ?? "").toString().trim();
     locale = body?.locale ?? null;
+    source = body?.source ?? null;
   } catch (_) {
     return new Response(JSON.stringify({ error: "bad json" }), { status: 400 });
   }
@@ -129,7 +166,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: "bad email" }), { status: 400 });
   }
 
-  const c = pickCopy(locale);
+  const c = pickCopy(locale, source);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {

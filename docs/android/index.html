@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Scripta is looking for twelve readers to test the Android app for fourteen days. Leave your Google address and you're in.">
+  <title>Be one of the twelve · Scripta for Android</title>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://get-scripta.app/android/">
+  <meta property="og:title" content="Scripta — Android closed beta">
+  <meta property="og:description" content="Twelve readers. Fourteen days. Then Scripta is on the Play Store.">
+  <meta property="og:image" content="https://get-scripta.app/assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#F9F8F5">
+
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;600;700;800&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --sage: #C0CFB2; --sage-dark: #82966E; --sage-ink: #5D6E4E;
+      --cream: #F9F8F5; --paper: #FFFEF9;
+      --ink: #2B2A26; --ink-muted: #6B6560; --ink-faint: #9E9689;
+      --rule: #E8E4DC; --red: #B94A41;
+      --marker: rgba(192, 207, 178, .55);
+      --pencil: #8B8578;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--cream); color: var(--ink);
+      font-family: 'Manrope', -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      background-image: repeating-linear-gradient(
+        transparent, transparent 43px, rgba(43,42,38,.028) 43px, rgba(43,42,38,.028) 44px);
+    }
+    ::selection { background: var(--marker); }
+
+    /* Language: both copies ship, CSS picks one. No JS means English, which is
+       the site's own language — never a blank page. */
+    html[data-lang="en"] .it, html[data-lang="it"] .en { display: none; }
+
+    .page { max-width: 620px; margin: 0 auto; padding: 0 26px 80px; position: relative; }
+
+    .bookmark {
+      position: fixed; top: -6px; right: clamp(16px, 6vw, 70px); z-index: 50;
+      width: 30px; height: 96px; background: var(--red);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
+      transform-origin: top center; animation: swing 5.2s ease-in-out infinite;
+      box-shadow: 0 4px 10px rgba(43,42,38,.18);
+    }
+    @keyframes swing { 0%,100% { transform: rotate(-3.5deg); } 50% { transform: rotate(3.5deg); } }
+
+    header { display: flex; align-items: center; gap: 11px; padding: 26px 0 0; }
+    .mark-sm { width: 38px; height: 38px; border-radius: 11px; }
+    .brand { font-family: 'EB Garamond', Georgia, serif; font-weight: 600; font-size: 21px; }
+    .lang {
+      margin-left: auto; margin-right: 46px; display: flex; gap: 2px;
+      background: var(--paper); border: 1px solid var(--rule); border-radius: 999px; padding: 3px;
+    }
+    .lang button {
+      font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .04em;
+      border: 0; background: none; color: var(--ink-faint); cursor: pointer;
+      padding: 5px 11px; border-radius: 999px; transition: background .2s, color .2s;
+    }
+    html[data-lang="en"] .lang [data-set="en"],
+    html[data-lang="it"] .lang [data-set="it"] { background: var(--ink); color: var(--cream); }
+
+    .eyebrow {
+      margin-top: clamp(44px, 8vw, 70px); font-size: 12px; font-weight: 800;
+      letter-spacing: .16em; text-transform: uppercase; color: var(--sage-ink);
+    }
+    h1 {
+      font-family: 'EB Garamond', Georgia, serif; font-weight: 500;
+      font-size: clamp(38px, 9vw, 56px); line-height: 1.08; letter-spacing: -.015em;
+      margin-top: 12px;
+    }
+    h1 .dim { color: var(--ink-faint); }
+    .lede { margin-top: 20px; font-size: 16.5px; line-height: 1.62; color: var(--ink-muted); max-width: 47ch; }
+    .lede strong { color: var(--ink); font-weight: 700; }
+
+    /* The rule, drawn. Twelve marks and a span of days: this is a picture of
+       Google's requirement, NOT a live counter — nothing here claims to know
+       how many people have signed up. */
+    .rule-fig { margin-top: 34px; background: var(--paper); border: 1px solid var(--rule);
+      border-radius: 18px; padding: 22px 24px; transform: rotate(-.35deg); }
+    .spines { display: flex; gap: 5px; align-items: flex-end; height: 34px; }
+    .spines i { display: block; width: 11px; background: var(--sage); border-radius: 2px; opacity: .9; }
+    .rule-cap { font-size: 14px; line-height: 1.55; color: var(--ink-muted); }
+    .rule-cap b { color: var(--ink); font-weight: 800; }
+
+    h2 {
+      font-family: 'EB Garamond', Georgia, serif; font-weight: 600;
+      font-size: 27px; letter-spacing: -.01em; margin-top: 62px;
+    }
+    p { font-size: 16px; line-height: 1.62; color: var(--ink-muted); margin-top: 13px; max-width: 52ch; }
+    p strong { color: var(--ink); font-weight: 700; }
+    a { color: var(--sage-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    a:hover { color: var(--red); }
+
+    .wl { margin-top: 26px; }
+    .wl-form { display: flex; gap: 8px; flex-wrap: wrap; }
+    .wl-input { flex: 1 1 240px; min-width: 0; padding: 15px 19px; font: inherit; font-size: 15.5px;
+      color: var(--ink); background: var(--paper); border: 1.5px solid var(--rule);
+      border-radius: 999px; outline: none; transition: border-color .2s; }
+    .wl-input:focus { border-color: var(--sage-dark); }
+    .wl-input::placeholder { color: var(--ink-faint); }
+    .wl-btn { flex: none; background: var(--ink); color: var(--cream); border: 0;
+      font: inherit; font-weight: 800; font-size: 14.5px; padding: 15px 26px;
+      border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+      transition: transform .18s ease, background .2s; }
+    .wl-btn:hover { transform: translateY(-1px); background: #403e38; }
+    .wl-btn:active { transform: translateY(0) scale(.98); }
+    .wl-btn:disabled { opacity: .55; cursor: default; transform: none; }
+    .wl-btn .arr { display: inline-block; transition: transform .25s cubic-bezier(.2,.9,.3,1.4); }
+    .wl-btn:hover .arr { transform: translateX(4px); }
+    .wl-msg { margin-top: 11px; font-size: 14.5px; line-height: 1.5; min-height: 20px; max-width: 46ch; }
+    .wl-msg.ok { color: var(--sage-ink); font-weight: 700; }
+    .wl-msg.err { color: var(--red); }
+    .wl-under { font-size: 13.5px; line-height: 1.55; color: var(--ink-faint); max-width: 46ch; }
+    .wl-hp { position: absolute; left: -9999px; opacity: 0; }
+
+    .note-pencil { font-family: 'Caveat', cursive; font-size: 21px; color: var(--pencil);
+      transform: rotate(-2deg); display: inline-block; margin-top: 18px; }
+
+    ol.steps { list-style: none; margin-top: 22px; }
+    ol.steps li { position: relative; padding-left: 46px; margin-top: 26px; }
+    ol.steps .n {
+      position: absolute; left: 0; top: -2px; line-height: 1;
+      font-family: 'EB Garamond', Georgia, serif; font-size: 30px; color: var(--sage-dark);
+    }
+    ol.steps h3 { font-size: 16px; font-weight: 800; letter-spacing: -.005em; }
+    ol.steps p { margin-top: 6px; font-size: 15.5px; }
+
+    ul.asks { list-style: none; margin-top: 20px; }
+    ul.asks li { position: relative; padding-left: 26px; margin-top: 15px;
+      font-size: 15.5px; line-height: 1.6; color: var(--ink-muted); max-width: 52ch; }
+    ul.asks li::before { content: ""; position: absolute; left: 4px; top: 10px;
+      width: 7px; height: 7px; border-radius: 2px; background: var(--sage); }
+    ul.asks b { color: var(--ink); font-weight: 800; }
+
+    .faq { margin-top: 22px; border-top: 1px solid var(--rule); }
+    .faq-row { border-bottom: 1px solid var(--rule); padding: 17px 0; }
+    .faq-q { font-size: 15.5px; font-weight: 800; }
+    .faq-a { margin-top: 6px; font-size: 15px; line-height: 1.6; color: var(--ink-muted); max-width: 52ch; }
+
+    .already { margin-top: 46px; background: var(--paper); border: 1px solid var(--rule);
+      border-radius: 16px; padding: 18px 22px; font-size: 15px; color: var(--ink-muted); }
+    .already a { font-weight: 700; }
+
+    footer { margin-top: 58px; padding-top: 20px; border-top: 1px solid var(--rule);
+      font-size: 13.5px; line-height: 1.9; color: var(--ink-faint); }
+    footer a { color: var(--ink-faint); }
+    footer a:hover { color: var(--ink); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bookmark { animation: none; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bookmark" aria-hidden="true"></div>
+
+  <div class="page">
+    <header>
+      <img class="mark-sm" src="/assets/favicon-32.png" alt="" width="38" height="38">
+      <span class="brand">Scripta</span>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-set="en">EN</button>
+        <button type="button" data-set="it">IT</button>
+      </div>
+    </header>
+
+    <p class="eyebrow">
+      <span class="en">Android · closed beta</span>
+      <span class="it">Android · beta chiusa</span>
+    </p>
+
+    <h1>
+      <span class="en">Twelve readers.<br><span class="dim">Fourteen days.</span></span>
+      <span class="it">Dodici lettori.<br><span class="dim">Quattordici giorni.</span></span>
+    </h1>
+
+    <div class="lede en">
+      Google will not let an independent developer publish on the Play Store until
+      <strong>twelve people have kept the app installed for fourteen days straight</strong>.
+      Not a suggestion — the rule. This page is me asking you to be one of the twelve.
+    </div>
+    <div class="lede it">
+      Google non lascia pubblicare sul Play Store l'app di uno sviluppatore indipendente
+      finché <strong>dodici persone non l'hanno tenuta installata per quattordici giorni
+      di fila</strong>. Non è un consiglio, è la regola. Questa pagina è la richiesta:
+      essere uno dei dodici.
+    </div>
+
+    <div class="rule-fig">
+      <div class="spines" aria-hidden="true">
+        <i style="height:26px"></i><i style="height:32px"></i><i style="height:22px"></i>
+        <i style="height:34px"></i><i style="height:28px"></i><i style="height:20px"></i>
+        <i style="height:31px"></i><i style="height:24px"></i><i style="height:33px"></i>
+        <i style="height:27px"></i><i style="height:21px"></i><i style="height:30px"></i>
+      </div>
+      <p class="rule-cap en" style="margin:14px 0 0">
+        <b>12 testers</b> &nbsp;×&nbsp; <b>14 consecutive days</b>. If the count drops below
+        twelve, the clock goes back to zero. That is the whole reason this page exists.
+      </p>
+      <p class="rule-cap it" style="margin:14px 0 0">
+        <b>12 tester</b> &nbsp;×&nbsp; <b>14 giorni consecutivi</b>. Se si scende sotto i
+        dodici, il conto riparte da zero. È tutto qui il motivo di questa pagina.
+      </p>
+    </div>
+
+    <h2>
+      <span class="en">What you would be testing</span>
+      <span class="it">Cosa andresti a provare</span>
+    </h2>
+    <p class="en">
+      Scripta takes the lines you underlined on your Kindle and gives them back to you.
+      One a day, on your home screen, usually long after you had forgotten you ever
+      marked them. <strong>You read. You forget. Scripta remembers.</strong>
+    </p>
+    <p class="it">
+      Scripta prende le frasi che hai sottolineato sul Kindle e te le restituisce.
+      Una al giorno, sulla schermata home, di solito molto dopo che avevi dimenticato
+      di averle segnate. <strong>Leggi. Dimentichi. Scripta ricorda.</strong>
+    </p>
+
+    <h2>
+      <span class="en">Count me in</span>
+      <span class="it">Ci sto</span>
+    </h2>
+    <p class="en">
+      Leave the address of the <strong>Google account you use on the Play Store</strong>.
+      That is the one Google checks — with any other address the test simply will not
+      appear.
+    </p>
+    <p class="it">
+      Lascia l'indirizzo dell'<strong>account Google che usi sul Play Store</strong>.
+      È quello che controlla Google: con un altro indirizzo il test non compare
+      proprio.
+    </p>
+
+    <div class="wl">
+      <form class="wl-form" novalidate>
+        <input class="wl-hp" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
+        <input class="wl-input" type="email" inputmode="email" autocomplete="email"
+               placeholder="nome@gmail.com" aria-label="Google account email" required>
+        <button class="wl-btn" type="submit">
+          <span class="en">Count me in</span><span class="it">Ci sto</span>
+          <span class="arr" aria-hidden="true">&rarr;</span>
+        </button>
+      </form>
+      <div class="wl-msg" role="status" aria-live="polite"></div>
+      <p class="wl-under en" style="margin:10px 0 0">
+        No password, no payment, nothing to install yet. The address goes on the Play
+        Console tester list and nowhere else.
+      </p>
+      <p class="wl-under it" style="margin:10px 0 0">
+        Nessuna password, nessun pagamento, niente da installare per ora. L'indirizzo
+        finisce nella lista tester della Play Console e da nessun'altra parte.
+      </p>
+      <span class="note-pencil en">fourteen days. then do whatever you like.</span>
+      <span class="note-pencil it">quattordici giorni. poi fai quello che vuoi.</span>
+    </div>
+
+    <h2>
+      <span class="en">How it goes</span>
+      <span class="it">Come funziona</span>
+    </h2>
+
+    <ol class="steps">
+      <li>
+        <span class="n" aria-hidden="true">1</span>
+        <h3><span class="en">You leave your Google address</span><span class="it">Lasci il tuo indirizzo Google</span></h3>
+        <p class="en">It goes on the tester list, usually the same day. One email comes back, with the link.</p>
+        <p class="it">Finisce nella lista tester, di solito in giornata. Torna indietro una mail, con il link.</p>
+      </li>
+      <li>
+        <span class="n" aria-hidden="true">2</span>
+        <h3><span class="en">You accept the invitation</span><span class="it">Accetti l'invito</span></h3>
+        <p class="en">One tap on the link, then <em>Become a tester</em>, and Scripta installs from the Play Store like any other app. No sideloading, no APK files, no unknown sources.</p>
+        <p class="it">Un tocco sul link, poi <em>Diventa tester</em>, e Scripta si installa dal Play Store come qualsiasi altra app. Niente sideload, niente file APK, niente origini sconosciute.</p>
+      </li>
+      <li>
+        <span class="n" aria-hidden="true">3</span>
+        <h3><span class="en">You keep it for fourteen days</span><span class="it">La tieni quattordici giorni</span></h3>
+        <p class="en">Open it when you feel like it. Then say what broke, what was slow, what was ugly.</p>
+        <p class="it">La apri quando ti va. Poi dici cosa si è rotto, cosa era lento, cosa era brutto.</p>
+      </li>
+    </ol>
+
+    <h2>
+      <span class="en">What I am actually asking</span>
+      <span class="it">Cosa ti chiedo davvero</span>
+    </h2>
+    <ul class="asks">
+      <li class="en"><b>Don't uninstall before the two weeks are up.</b> One person leaving early puts the count under twelve, and the fourteen days restart for everybody.</li>
+      <li class="it"><b>Non disinstallarla prima delle due settimane.</b> Se una persona esce in anticipo il conto scende sotto dodici e i quattordici giorni ripartono per tutti.</li>
+      <li class="en"><b>Open it now and then.</b> A tester who never opens the app is a number. I would rather have a reader.</li>
+      <li class="it"><b>Aprila ogni tanto.</b> Un tester che non apre mai l'app è un numero. Preferisco un lettore.</li>
+      <li class="en"><b>Say what is wrong.</b> Write to <a href="mailto:support@get-scripta.app">support@get-scripta.app</a>. The ugly parts especially — those are the ones nobody reports and everybody notices.</li>
+      <li class="it"><b>Dimmi cosa non va.</b> Scrivi a <a href="mailto:support@get-scripta.app">support@get-scripta.app</a>. Soprattutto le cose brutte: sono quelle che nessuno segnala e che tutti notano.</li>
+    </ul>
+
+    <h2>
+      <span class="en">The small print</span>
+      <span class="it">Le domande giuste</span>
+    </h2>
+
+    <div class="faq">
+      <div class="faq-row">
+        <div class="faq-q"><span class="en">Does it cost anything?</span><span class="it">Costa qualcosa?</span></div>
+        <div class="faq-a en">No. Not during the test, not after it. No card, no subscription, no trial that quietly turns into one.</div>
+        <div class="faq-a it">No. Né durante il test né dopo. Nessuna carta, nessun abbonamento, nessuna prova che poi diventa un abbonamento.</div>
+      </div>
+      <div class="faq-row">
+        <div class="faq-q"><span class="en">What do I need?</span><span class="it">Cosa mi serve?</span></div>
+        <div class="faq-a en">An Android phone on 8.0 or newer, and a Google account. A Kindle helps — Scripta imports your highlights straight from your Amazon account — but you can also paste in a <em>My Clippings.txt</em> or add lines by hand.</div>
+        <div class="faq-a it">Un telefono Android dalla 8.0 in su e un account Google. Avere un Kindle aiuta — Scripta importa le sottolineature direttamente dall'account Amazon — ma puoi anche incollare un <em>My Clippings.txt</em> o aggiungere le frasi a mano.</div>
+      </div>
+      <div class="faq-row">
+        <div class="faq-q"><span class="en">Can I pull out?</span><span class="it">Posso tirarmi indietro?</span></div>
+        <div class="faq-a en">Any time. Say so first, so there is time to find a replacement before the count drops.</div>
+        <div class="faq-a it">Quando vuoi. Dillo prima, così c'è il tempo di trovare un sostituto prima che il conto scenda.</div>
+      </div>
+      <div class="faq-row">
+        <div class="faq-q"><span class="en">What happens to my address?</span><span class="it">Che fine fa il mio indirizzo?</span></div>
+        <div class="faq-a en">It goes on the tester list in the Play Console, and it is used to send you the invitation. No newsletter, no resale, no third parties. The details are in the <a href="/privacy/">privacy policy</a>.</div>
+        <div class="faq-a it">Finisce nella lista tester della Play Console e serve a mandarti l'invito. Nessuna newsletter, nessuna rivendita, nessun terzo. I dettagli sono nella <a href="/privacy/it/">privacy policy</a>.</div>
+      </div>
+      <div class="faq-row">
+        <div class="faq-q"><span class="en">And the iPhone?</span><span class="it">E l'iPhone?</span></div>
+        <div class="faq-a en">A separate test, on TestFlight, already running. Write to <a href="mailto:support@get-scripta.app">support@get-scripta.app</a> and that invitation comes instead.</div>
+        <div class="faq-a it">È un test a parte, su TestFlight, già in corso. Scrivi a <a href="mailto:support@get-scripta.app">support@get-scripta.app</a> e ti arriva quell'invito.</div>
+      </div>
+    </div>
+
+    <div class="already">
+      <span class="en">Already have access? <a href="https://play.google.com/apps/testing/io.marginalia.app">Open the test on Google Play</a>.</span>
+      <span class="it">Hai già l'accesso? <a href="https://play.google.com/apps/testing/io.marginalia.app">Apri il test su Google Play</a>.</span>
+    </div>
+
+    <footer>
+      <a href="/">Scripta</a> &nbsp;·&nbsp;
+      <a href="/privacy/">Privacy</a> &nbsp;·&nbsp;
+      <a href="/terms/">Terms</a> &nbsp;·&nbsp;
+      <a href="mailto:support@get-scripta.app">support@get-scripta.app</a>
+      <br>
+      <span class="en">Scripta App · <a href="?lang=it">Italiano</a></span>
+      <span class="it">Scripta App · <a href="?lang=en">English</a></span>
+    </footer>
+  </div>
+
+  <script>
+  (function () {
+    /* Language. ?lang= wins, then a remembered choice, then the browser.
+       English is the default in the markup, so a broken script still leaves a
+       readable page rather than an empty one. */
+    var root = document.documentElement;
+    function setLang(l, remember) {
+      l = (l === "it") ? "it" : "en";
+      root.setAttribute("data-lang", l);
+      root.setAttribute("lang", l);
+      if (remember) { try { localStorage.setItem("scripta-lang", l); } catch (e) {} }
+    }
+    var qs = new URLSearchParams(location.search).get("lang");
+    var saved = null;
+    try { saved = localStorage.getItem("scripta-lang"); } catch (e) {}
+    setLang(qs || saved || ((navigator.language || "en").toLowerCase().slice(0, 2)), false);
+    document.querySelectorAll(".lang button").forEach(function (b) {
+      b.addEventListener("click", function () { setLang(b.getAttribute("data-set"), true); });
+    });
+
+    /* Sign-up. Same table as the landing waitlist, tagged source=android-tester
+       so the confirmation email says "you are a tester" and not "you are in
+       line" — the two are answered by different copy in waitlist-welcome. */
+    var ENDPOINT = "https://ibucvloawkfwobaelwbr.supabase.co/rest/v1/waitlist_signups";
+    var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlidWN2bG9hd2tmd29iYWVsd2JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NDA0NDAsImV4cCI6MjA5NDAxNjQ0MH0.TDjLBCVsjoITyT_GlsVw8fOTfelvL8ld56rTMdBizmc";
+
+    var T = {
+      en: {
+        bad:  "That address doesn't look right.",
+        ok:   "You're on the list. The invitation arrives by email, usually within a day.",
+        dup:  "You're already on the list. The invitation is on its way.",
+        oops: "Something went sideways. Try again?",
+        off:  "No connection. Try again?"
+      },
+      it: {
+        bad:  "Questo indirizzo non torna.",
+        ok:   "Sei in lista. L'invito arriva per mail, di solito in giornata.",
+        dup:  "Sei già in lista. L'invito sta arrivando.",
+        oops: "Qualcosa è andato storto. Riprovi?",
+        off:  "Niente connessione. Riprovi?"
+      }
+    };
+    function t(k) { return T[root.getAttribute("data-lang") === "it" ? "it" : "en"][k]; }
+
+    var wl = document.querySelector(".wl");
+    var form = wl.querySelector(".wl-form");
+    var input = wl.querySelector(".wl-input");
+    var hp = wl.querySelector(".wl-hp");
+    var btn = wl.querySelector(".wl-btn");
+    var msg = wl.querySelector(".wl-msg");
+    function show(text, cls) { msg.textContent = text; msg.className = "wl-msg " + cls; }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (hp.value) return;
+      var email = (input.value || "").trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { show(t("bad"), "err"); return; }
+      btn.disabled = true; show("…", "");
+      fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json", "apikey": KEY,
+                   "authorization": "Bearer " + KEY, "prefer": "return=minimal" },
+        body: JSON.stringify({
+          email: email,
+          locale: (navigator.language || "").slice(0, 8),
+          source: "android-tester"
+        })
+      }).then(function (r) {
+        if (r.status === 201) { show(t("ok"), "ok"); form.reset(); }
+        else if (r.status === 409) { show(t("dup"), "ok"); }
+        else { show(t("oops"), "err"); btn.disabled = false; }
+      }).catch(function () { show(t("off"), "err"); btn.disabled = false; });
+    });
+  })();
+  </script>
+</body>
+</html>
